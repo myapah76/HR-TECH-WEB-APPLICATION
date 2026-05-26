@@ -1,0 +1,9 @@
+services:
+  postgres:
+    image: 'postgres:latest'
+    environment:
+      - 'POSTGRES_DB=hrtechapplication'
+      - 'POSTGRES_PASSWORD=okmaylanhat'
+      - 'POSTGRES_USER=admin'
+    ports:
+      - '5432'
