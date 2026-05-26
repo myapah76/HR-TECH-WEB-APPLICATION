@@ -1,26 +1,24 @@
 services:
   postgres:
-      image: postgres:16-alpine
-      container_name: hrt_postgres
-      restart: always
-      environment:
-        POSTGRES_USER: ${POSTGRES_USER}
-        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      ports:
-        - "${POSTGRES_PORT}:5432"
-      volumes:
-        - postgres_data:/var/lib/postgresql/data
-        - ./init-db:/docker-entrypoint-initdb.d
-      healthcheck:
-        test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-        interval: 10s
-        timeout: 5s
-        retries: 5
-      networks:
+    image: postgres:16-alpine
+    container_name: hrt_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
       - hrt-network
-  # ==========================================
-  # 2. CACHE: REDIS
-  # ==========================================
+
   redis:
     image: redis:alpine
     container_name: hrt_redis
@@ -31,3 +29,10 @@ services:
       - redis_data:/data
     networks:
       - hrt-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  hrt-network:
