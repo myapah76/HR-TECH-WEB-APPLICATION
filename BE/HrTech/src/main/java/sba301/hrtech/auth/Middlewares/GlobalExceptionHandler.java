@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-import sba301.hrtech.auth.Domain.Common.ErrorCode;
+import sba301.hrtech.shared.Common.ErrorCode;
 import sba301.hrtech.auth.Domain.Exceptions.Token.TokenException;
 import sba301.hrtech.auth.Dtos.ErrorResponse;
 

@@ -1,4 +1,4 @@
-package sba301.hrtech.auth.Domain.Common;
+package sba301.hrtech.shared.Common;
 
 import jakarta.persistence.*;
 import lombok.Getter;

@@ -1,7 +1,7 @@
 package sba301.hrtech.auth.Domain.Exceptions.Auth;
 
 
-import sba301.hrtech.auth.Domain.Common.ErrorCode;
+import sba301.hrtech.shared.Common.ErrorCode;
 
 public class EmailNotFoundException extends AuthException {
     public EmailNotFoundException(String message) {

@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import sba301.hrtech.auth.Abstrations.Cache.IRedisTokenService;
 import sba301.hrtech.auth.Abstrations.Repositories.RoleRepository;
 import sba301.hrtech.auth.Abstrations.Repositories.UserRepository;
-import sba301.hrtech.auth.Domain.Common.ErrorCode;
+import sba301.hrtech.shared.Common.ErrorCode;
 import sba301.hrtech.auth.Domain.Entities.RefreshToken;
 import sba301.hrtech.auth.Domain.Entities.Role;
 import sba301.hrtech.auth.Domain.Entities.User;

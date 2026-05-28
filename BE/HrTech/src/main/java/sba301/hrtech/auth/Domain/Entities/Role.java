@@ -3,9 +3,7 @@ package sba301.hrtech.auth.Domain.Entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import sba301.hrtech.auth.Domain.Common.SoftDeleteEntity;
-
-import java.util.Set;
+import sba301.hrtech.shared.Common.SoftDeleteEntity;
 
 @Entity
 @Getter

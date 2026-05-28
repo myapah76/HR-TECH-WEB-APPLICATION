@@ -1,11 +1,9 @@
-package sba301.hrtech.auth.Domain.Common;
+package sba301.hrtech.shared.Common;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.time.Instant;
 
 @MappedSuperclass
 @Getter

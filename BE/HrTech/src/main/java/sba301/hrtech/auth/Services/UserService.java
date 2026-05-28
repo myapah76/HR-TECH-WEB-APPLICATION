@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sba301.hrtech.auth.Abstrations.Repositories.RoleRepository;
 import sba301.hrtech.auth.Abstrations.Repositories.UserRepository;
-import sba301.hrtech.auth.Domain.Common.ErrorCode;
+import sba301.hrtech.shared.Common.ErrorCode;
 import sba301.hrtech.auth.Domain.Entities.Role;
 import sba301.hrtech.auth.Domain.Entities.User;
 import sba301.hrtech.auth.Domain.Exceptions.Auth.WrongPasswordException;
