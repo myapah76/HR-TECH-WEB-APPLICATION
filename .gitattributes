@@ -1,2 +1,5 @@
-/mvnw text eol=lf
-*.cmd text eol=crlf
+# Ensure shell scripts always use LF line endings (required for Docker/Linux)
+*.sh text eol=lf
+
+# SQL files should also use LF for Docker init scripts
+*.sql text eol=lf

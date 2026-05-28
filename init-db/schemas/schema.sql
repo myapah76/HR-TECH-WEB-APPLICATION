@@ -24,12 +24,12 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
     address TEXT,
-    gender INT NOT NULL DEFAULT 0, -- 0: Male, 1: Female
-    date_of_birth TIMESTAMP NOT NULL,
-    is_blocked BOOLEAN DEFAULT FALSE,
 
-    -- Định danh nhân viên này thuộc biên chế cửa hàng nào
-    company_id UUID,
+    gender INT NOT NULL DEFAULT 0, -- 0: Male, 1: Female
+
+    date_of_birth TIMESTAMP WITH TIME ZONE,
+
+    is_blocked BOOLEAN DEFAULT FALSE,
 
     avatar_url VARCHAR(500),
     avatar_public_id VARCHAR(255),
@@ -39,9 +39,10 @@ CREATE TABLE IF NOT EXISTS users (
     is_deleted BOOLEAN DEFAULT FALSE,
 
     role_id UUID,
-    CONSTRAINT fk_users_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE SET NULL
+    CONSTRAINT fk_users_role
+        FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE SET NULL
 );
-CREATE INDEX idx_users_company ON users(company_id) WHERE is_deleted = FALSE;
+
 
 -- TABLE TOKEN
 CREATE TABLE IF NOT EXISTS refresh_tokens (
@@ -58,3 +59,6 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     user_id UUID NOT NULL,
     CONSTRAINT fk_tokens_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+
+

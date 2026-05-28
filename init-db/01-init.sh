@@ -46,11 +46,10 @@ run_sql_script() {
 }
 
 # Core Services
-create_db_safe "hr_tech_application_db"
-run_sql_script "hr_tech_application_db" "/docker-entrypoint-initdb.d/schemas/schema.sql"
+create_db_safe "hrtech_db"
+run_sql_script "hrtech_db" "/docker-entrypoint-initdb.d/schemas/schema.sql"
 
 # Seed data
-
-# seed test release
+run_sql_script "hrtech_db" "/docker-entrypoint-initdb.d/seeding/auth.sql"
 
 echo "Database initialization process finished!"
