@@ -1,15 +1,15 @@
-package sba301.hrtech.auth.Controllers;
+package sba301.hrtech.auth.controllers;
 
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sba301.hrtech.auth.Abstrations.Service.UserService;
-import sba301.hrtech.auth.Dtos.User.Request.ChangePasswordRequest;
-import sba301.hrtech.auth.Dtos.User.Request.CreateUserRequest;
-import sba301.hrtech.auth.Dtos.User.Request.UserCommonRequest;
-import sba301.hrtech.auth.Dtos.User.Respone.UserResponse;
+import sba301.hrtech.auth.abstractions.services.IUserService;
+import sba301.hrtech.auth.dtos.user.request.ChangePasswordRequest;
+import sba301.hrtech.auth.dtos.user.request.CreateUserRequest;
+import sba301.hrtech.auth.dtos.user.request.UserCommonRequest;
+import sba301.hrtech.auth.dtos.user.respone.UserResponse;
 
 import java.net.URI;
 import java.util.List;
@@ -20,7 +20,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
+    private final IUserService userService;
 
     @PostMapping
     public ResponseEntity<UserResponse> createUser(

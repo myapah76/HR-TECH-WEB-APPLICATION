@@ -1,4 +1,4 @@
-package sba301.hrtech.auth.Config;
+package sba301.hrtech.auth.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;

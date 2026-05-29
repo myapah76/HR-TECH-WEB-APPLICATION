@@ -1,4 +1,4 @@
-package sba301.hrtech.notification.Config;
+package sba301.hrtech.notification.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

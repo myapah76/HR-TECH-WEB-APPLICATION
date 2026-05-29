@@ -1,4 +1,4 @@
-package sba301.hrtech.auth.Dtos.Role.Response;
+package sba301.hrtech.auth.dtos.role.response;
 
 
 import lombok.Getter;

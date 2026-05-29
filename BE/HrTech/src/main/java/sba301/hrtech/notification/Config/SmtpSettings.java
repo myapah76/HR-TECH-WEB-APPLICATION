@@ -1,4 +1,4 @@
-package sba301.hrtech.notification.Config;
+package sba301.hrtech.notification.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

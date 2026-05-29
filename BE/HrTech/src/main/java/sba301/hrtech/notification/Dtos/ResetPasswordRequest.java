@@ -1,4 +1,4 @@
-package sba301.hrtech.notification.Dtos;
+package sba301.hrtech.notification.dtos;
 
 public record ResetPasswordRequest(
         String email,

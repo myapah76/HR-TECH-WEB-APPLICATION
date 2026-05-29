@@ -1,4 +1,4 @@
-package sba301.hrtech.auth.Dtos.User.Respone;
+package sba301.hrtech.auth.dtos.user.respone;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

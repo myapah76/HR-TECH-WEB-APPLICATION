@@ -1,4 +1,4 @@
-package sba301.hrtech.auth.Dtos.Role.Request;
+package sba301.hrtech.auth.dtos.role.request;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;

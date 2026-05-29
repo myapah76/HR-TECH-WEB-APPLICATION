@@ -1,4 +1,4 @@
-package sba301.hrtech.auth.Dtos.Auth;
+package sba301.hrtech.auth.dtos.auth;
 
 public record PendingUser(
         String email,

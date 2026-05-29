@@ -1,4 +1,4 @@
-package sba301.hrtech.auth.Controllers;
+package sba301.hrtech.auth.controllers;
 
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -6,21 +6,21 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sba301.hrtech.auth.Abstrations.Service.AuthService;
-import sba301.hrtech.auth.Domain.Exceptions.Token.TokenExpiredException;
-import sba301.hrtech.auth.Dtos.Auth.Request.ConfirmOtpRequest;
-import sba301.hrtech.auth.Dtos.Auth.Request.RegisterRequest;
-import sba301.hrtech.auth.Dtos.User.Request.LoginRequest;
-import sba301.hrtech.auth.Dtos.User.Request.RefreshRequest;
-import sba301.hrtech.auth.Dtos.User.Respone.AuthResponse;
-import sba301.hrtech.auth.Dtos.User.Respone.UserResponse;
+import sba301.hrtech.auth.abstractions.services.IAuthService;
+import sba301.hrtech.auth.exceptions.token.TokenExpiredException;
+import sba301.hrtech.auth.dtos.auth.request.ConfirmOtpRequest;
+import sba301.hrtech.auth.dtos.auth.request.RegisterRequest;
+import sba301.hrtech.auth.dtos.user.request.LoginRequest;
+import sba301.hrtech.auth.dtos.user.request.RefreshRequest;
+import sba301.hrtech.auth.dtos.user.respone.AuthResponse;
+import sba301.hrtech.auth.dtos.user.respone.UserResponse;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
+    private final IAuthService authService;
 
     @PostMapping("/register")
     public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest request) {

@@ -1,4 +1,4 @@
-package sba301.hrtech.shared.Common;
+package sba301.hrtech.shared.common;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;

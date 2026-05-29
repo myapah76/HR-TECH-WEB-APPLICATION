@@ -1,4 +1,4 @@
-package sba301.hrtech.auth.Dtos.Auth.Request;
+package sba301.hrtech.auth.dtos.auth.request;
 
 public record ConfirmOtpRequest(
         String email,

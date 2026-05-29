@@ -1,4 +1,4 @@
-package sba301.hrtech.auth.Config;
+package sba301.hrtech.auth.config;
 
 
 import lombok.RequiredArgsConstructor;
@@ -11,19 +11,19 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
-import sba301.hrtech.auth.Abstrations.Repositories.UserRepository;
-import sba301.hrtech.auth.Domain.Entities.User;
-import sba301.hrtech.auth.Dtos.User.CustomUserDetails;
-import sba301.hrtech.auth.Abstrations.Service.JwtService;
-import sba301.hrtech.auth.Services.Cache.RedisTokenService;
+import sba301.hrtech.auth.abstractions.repositories.UserRepository;
+import sba301.hrtech.auth.entities.User;
+import sba301.hrtech.auth.dtos.user.CustomUserDetails;
+import sba301.hrtech.auth.abstractions.services.IJwtService;
+import sba301.hrtech.auth.services.cache.RedisTokenServiceImpl;
 
 import java.io.IOException;
 
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
-    private final RedisTokenService redisTokenService;
+    private final IJwtService jwtService;
+    private final RedisTokenServiceImpl redisTokenService;
     private final UserRepository userRepository;
     @Override
     protected void doFilterInternal(HttpServletRequest request,

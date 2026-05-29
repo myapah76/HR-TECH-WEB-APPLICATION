@@ -1,9 +1,9 @@
-package sba301.hrtech.auth.Dtos.User;
+package sba301.hrtech.auth.dtos.user;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import sba301.hrtech.auth.Domain.Entities.User;
+import sba301.hrtech.auth.entities.User;
 
 import java.util.Collection;
 import java.util.List;

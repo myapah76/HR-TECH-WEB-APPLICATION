@@ -1,13 +1,13 @@
-package sba301.hrtech.auth.Controllers;
+package sba301.hrtech.auth.controllers;
 
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sba301.hrtech.auth.Abstrations.Service.RoleService;
-import sba301.hrtech.auth.Dtos.Role.Request.CommonRoleRequest;
-import sba301.hrtech.auth.Dtos.Role.Request.CreateRoleRequest;
-import sba301.hrtech.auth.Dtos.Role.Response.RoleResponse;
+import sba301.hrtech.auth.abstractions.services.IRoleService;
+import sba301.hrtech.auth.dtos.role.request.CommonRoleRequest;
+import sba301.hrtech.auth.dtos.role.request.CreateRoleRequest;
+import sba301.hrtech.auth.dtos.role.response.RoleResponse;
 
 import java.net.URI;
 import java.util.List;
@@ -18,7 +18,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RoleController {
 
-    private final RoleService roleService;
+    private final IRoleService roleService;
 
     @PostMapping
     public ResponseEntity<RoleResponse> createRole(

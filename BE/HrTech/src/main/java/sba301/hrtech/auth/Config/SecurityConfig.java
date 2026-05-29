@@ -1,4 +1,4 @@
-package sba301.hrtech.auth.Config;
+package sba301.hrtech.auth.config;
 
 
 import lombok.RequiredArgsConstructor;
@@ -13,16 +13,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import sba301.hrtech.auth.Abstrations.Repositories.UserRepository;
-import sba301.hrtech.auth.Abstrations.Service.JwtService;
-import sba301.hrtech.auth.Services.Cache.RedisTokenService;
+import sba301.hrtech.auth.abstractions.repositories.UserRepository;
+import sba301.hrtech.auth.abstractions.services.IJwtService;
+import sba301.hrtech.auth.services.cache.RedisTokenServiceImpl;
 
 @Configuration
 @RequiredArgsConstructor
 @EnableMethodSecurity
 public class SecurityConfig {
-    private final JwtService jwtService;
-    private final RedisTokenService redisTokenService;
+    private final IJwtService jwtService;
+    private final RedisTokenServiceImpl redisTokenService;
     private final UserRepository userRepository;
     private final UserDetailsService userDetailsService;
 

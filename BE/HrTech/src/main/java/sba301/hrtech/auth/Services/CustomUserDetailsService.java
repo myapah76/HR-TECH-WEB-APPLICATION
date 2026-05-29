@@ -1,13 +1,13 @@
-package sba301.hrtech.auth.Services;
+package sba301.hrtech.auth.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import sba301.hrtech.auth.Abstrations.Repositories.UserRepository;
-import sba301.hrtech.auth.Domain.Entities.User;
-import sba301.hrtech.auth.Dtos.User.CustomUserDetails;
+import sba301.hrtech.auth.abstractions.repositories.UserRepository;
+import sba301.hrtech.auth.entities.User;
+import sba301.hrtech.auth.dtos.user.CustomUserDetails;
 
 @Service
 @RequiredArgsConstructor
@@ -22,4 +22,3 @@ public class CustomUserDetailsService implements UserDetailsService {
         return new CustomUserDetails(user);
     }
 }
-

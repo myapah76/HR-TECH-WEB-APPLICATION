@@ -1,4 +1,4 @@
-package sba301.hrtech.shared.Common;
+package sba301.hrtech.shared.common;
 
 import org.springframework.stereotype.Component;
 

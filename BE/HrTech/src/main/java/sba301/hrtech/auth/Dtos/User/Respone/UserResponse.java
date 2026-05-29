@@ -1,8 +1,8 @@
-package sba301.hrtech.auth.Dtos.User.Respone;
+package sba301.hrtech.auth.dtos.user.respone;
 
 import lombok.Getter;
 import lombok.Setter;
-import sba301.hrtech.auth.Dtos.Role.Response.RoleResponse;
+import sba301.hrtech.auth.dtos.role.response.RoleResponse;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;

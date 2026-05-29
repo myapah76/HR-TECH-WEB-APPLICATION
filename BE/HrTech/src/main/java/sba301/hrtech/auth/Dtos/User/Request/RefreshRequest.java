@@ -1,4 +1,4 @@
-package sba301.hrtech.auth.Dtos.User.Request;
+package sba301.hrtech.auth.dtos.user.request;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -1,4 +1,4 @@
-package sba301.hrtech.auth.Services.Cache;
+package sba301.hrtech.auth.services.cache;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;

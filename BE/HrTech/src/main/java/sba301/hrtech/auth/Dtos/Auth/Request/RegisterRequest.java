@@ -1,4 +1,4 @@
-package sba301.hrtech.auth.Dtos.Auth.Request;
+package sba301.hrtech.auth.dtos.auth.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

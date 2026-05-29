@@ -1,4 +1,4 @@
-package sba301.hrtech.notification.Helper;
+package sba301.hrtech.notification.helper;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;

@@ -1,0 +1,17 @@
+package sba301.hrtech.auth.abstractions.services;
+
+import sba301.hrtech.auth.dtos.auth.request.ConfirmOtpRequest;
+import sba301.hrtech.auth.dtos.auth.request.RegisterRequest;
+import sba301.hrtech.auth.dtos.user.request.LoginRequest;
+import sba301.hrtech.auth.dtos.user.request.RefreshRequest;
+import sba301.hrtech.auth.dtos.user.respone.AuthResponse;
+import sba301.hrtech.auth.dtos.user.respone.UserResponse;
+
+public interface IAuthService {
+    void register(RegisterRequest request);
+    UserResponse confirmOtp(ConfirmOtpRequest request);
+
+    AuthResponse login(LoginRequest request);
+    AuthResponse refresh(RefreshRequest request);
+    void logout(String accessToken);
+}
