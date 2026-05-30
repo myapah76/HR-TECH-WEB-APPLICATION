@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.shared.common.ErrorResponse;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -69,9 +69,11 @@ public class GlobalExceptionHandler {
                 status.value(),
                 message,
                 code,
-                OffsetDateTime.now(),
+                Instant.now(),
                 path
         );
         return new ResponseEntity<>(error, status);
     }
 }
+
+

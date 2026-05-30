@@ -13,8 +13,8 @@ import sba301.hrtech.auth.exceptions.token.TokenExpiredException;
 import sba301.hrtech.auth.exceptions.token.TokenRevokedException;
 import sba301.hrtech.auth.dtos.user.CustomUserDetails;
 import sba301.hrtech.auth.services.JwtServiceImpl;
-
-import java.time.OffsetDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Service
@@ -26,19 +26,21 @@ public class RefreshTokenServiceImpl implements IRefreshTokenService {
 
     @Value("${jwt.refresh-expiration}")
     private long refreshTokenDays;
+
     @Override
     public String createRefreshToken(User user) {
         RefreshToken token = new RefreshToken();
 
         token.setToken(UUID.randomUUID().toString());
         token.setUser(user);
-        token.setExpiresAt(OffsetDateTime.now().plusDays(refreshTokenDays));
+        token.setExpiresAt(Instant.now().plus(refreshTokenDays, ChronoUnit.DAYS));
         token.setIsRevoked(false);
 
         refreshTokenRepository.save(token);
 
         return token.getToken();
     }
+
     @Override
     public RefreshToken validateRefreshToken(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
@@ -48,12 +50,13 @@ public class RefreshTokenServiceImpl implements IRefreshTokenService {
             throw new TokenRevokedException("Refresh token revoked");
         }
 
-        if (refreshToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
+        if (refreshToken.getExpiresAt().isBefore(Instant.now())) {
             throw new TokenExpiredException("Refresh token expired");
         }
 
         return refreshToken;
     }
+
     @Override
     public String refreshAccessToken(String refreshTokenStr) {
 
@@ -68,6 +71,7 @@ public class RefreshTokenServiceImpl implements IRefreshTokenService {
         UserDetails userDetails = new CustomUserDetails(user);
         return jwtService.generateToken(userDetails);
     }
+
     @Override
     public void revokeToken(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)

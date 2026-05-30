@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Getter
@@ -18,4 +20,6 @@ public class Role extends SoftDeleteEntity {
 
     private String description;
 
+    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL)
+    private List<User> users = new ArrayList<>();
 }

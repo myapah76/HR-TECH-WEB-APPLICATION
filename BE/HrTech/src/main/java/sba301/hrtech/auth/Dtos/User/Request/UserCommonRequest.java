@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 @Getter
 @Setter
 public class UserCommonRequest {
@@ -29,7 +29,7 @@ public class UserCommonRequest {
     private Integer gender; // 0: Male, 1: Female
 
     @NotNull(message = "Date of birth is required")
-    private OffsetDateTime dateOfBirth;
+    private Instant dateOfBirth;
 
     private Boolean isBlocked;
 
@@ -39,3 +39,4 @@ public class UserCommonRequest {
     
     private String roleId; // nhận từ client (UUID dạng string)
 }
+

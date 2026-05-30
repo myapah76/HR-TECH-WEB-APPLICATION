@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import sba301.hrtech.auth.dtos.role.response.RoleResponse;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Getter
@@ -22,14 +22,14 @@ public class UserResponse {
     private String address;
     private Integer gender;
 
-    private OffsetDateTime dateOfBirth;
+    private Instant dateOfBirth;
 
     private Boolean isBlocked;
 
     private String avatarUrl;
 
-    private OffsetDateTime createdAt;
-    private OffsetDateTime updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     private RoleResponse roleResponse;
 }

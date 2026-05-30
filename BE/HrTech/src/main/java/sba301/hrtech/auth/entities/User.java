@@ -3,9 +3,16 @@ package sba301.hrtech.auth.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import sba301.hrtech.application.entities.Application;
+import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
+import sba301.hrtech.subscription.entities.CandidateSubscription;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import sba301.hrtech.company.entities.Company;
+import sba301.hrtech.subscription.entities.Payment;
 
 @Entity
 @Table(name = "users")
@@ -33,7 +40,7 @@ public class User extends SoftDeleteEntity {
     private Integer gender;
 
     @Column(name = "date_of_birth")
-    private OffsetDateTime dateOfBirth;
+    private Instant dateOfBirth;
 
     @Column(name = "is_blocked")
     private Boolean isBlocked = false;
@@ -47,4 +54,20 @@ public class User extends SoftDeleteEntity {
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Cv> cvs = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Application> applications = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CandidateSubscription> subscriptions = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Payment> payments = new ArrayList<>();
 }

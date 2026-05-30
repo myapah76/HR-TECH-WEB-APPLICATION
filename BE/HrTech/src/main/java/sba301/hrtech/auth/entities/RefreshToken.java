@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import sba301.hrtech.shared.common.BaseEntity;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "refresh_tokens")
@@ -17,10 +17,10 @@ public class RefreshToken extends BaseEntity {
     private String token;
 
     @Column(name = "issued_at")
-    private OffsetDateTime issuedAt;
+    private Instant issuedAt;
 
     @Column(name = "expires_at")
-    private OffsetDateTime expiresAt;
+    private Instant expiresAt;
 
     @Column(name = "is_revoked")
     private Boolean isRevoked = false;

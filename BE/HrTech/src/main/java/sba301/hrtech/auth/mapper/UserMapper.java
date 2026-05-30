@@ -19,6 +19,9 @@ public interface UserMapper {
     @Mapping(target = "deleted", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "cvs", ignore = true)
+    @Mapping(target = "applications", ignore = true)
+    @Mapping(target = "subscriptions", ignore = true)
     @Mapping(target = "firstName", source = "userCommonRequest.firstName")
     @Mapping(target = "lastName", source = "userCommonRequest.lastName")
     @Mapping(target = "email", source = "userCommonRequest.email")
@@ -39,5 +42,8 @@ public interface UserMapper {
     @Mapping(target = "deleted", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "cvs", ignore = true)
+    @Mapping(target = "applications", ignore = true)
+    @Mapping(target = "subscriptions", ignore = true)
     void updateUserFromRequest(UserCommonRequest request, @MappingTarget User user);
 }

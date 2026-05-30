@@ -38,7 +38,7 @@ import sba301.hrtech.notification.dtos.OtpNotificationRequest;
 import sba301.hrtech.notification.dtos.OtpRequest;
 
 import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
@@ -153,7 +153,7 @@ public class AuthServiceImpl implements IAuthService {
         Role role = roleRepository.findByName("Customer")
                 .orElseThrow(() -> new RuntimeException(ErrorCode.Role_Not_Found));
         user.setRole(role);
-        user.setCreatedAt(OffsetDateTime.now());
+        user.setCreatedAt(Instant.now());
 
         userRepository.save(user);
         
@@ -216,3 +216,4 @@ public class AuthServiceImpl implements IAuthService {
         return String.valueOf((int)(Math.random() * 900000) + 100000);
     }
 }
+
