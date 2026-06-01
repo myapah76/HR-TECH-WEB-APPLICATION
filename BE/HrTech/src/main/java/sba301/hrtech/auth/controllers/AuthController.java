@@ -7,11 +7,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.auth.abstractions.services.IAuthService;
+import sba301.hrtech.auth.dtos.auth.request.LoginRequest;
+import sba301.hrtech.auth.dtos.auth.request.RefreshRequest;
 import sba301.hrtech.auth.exceptions.token.TokenExpiredException;
 import sba301.hrtech.auth.dtos.auth.request.ConfirmOtpRequest;
 import sba301.hrtech.auth.dtos.auth.request.RegisterRequest;
-import sba301.hrtech.auth.dtos.user.request.LoginRequest;
-import sba301.hrtech.auth.dtos.user.request.RefreshRequest;
 import sba301.hrtech.auth.dtos.user.respone.AuthResponse;
 import sba301.hrtech.auth.dtos.user.respone.UserResponse;
 
