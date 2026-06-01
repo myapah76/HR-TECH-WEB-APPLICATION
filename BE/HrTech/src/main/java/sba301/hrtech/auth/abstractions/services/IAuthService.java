@@ -1,9 +1,9 @@
 package sba301.hrtech.auth.abstractions.services;
 
 import sba301.hrtech.auth.dtos.auth.request.ConfirmOtpRequest;
+import sba301.hrtech.auth.dtos.auth.request.LoginRequest;
+import sba301.hrtech.auth.dtos.auth.request.RefreshRequest;
 import sba301.hrtech.auth.dtos.auth.request.RegisterRequest;
-import sba301.hrtech.auth.dtos.user.request.LoginRequest;
-import sba301.hrtech.auth.dtos.user.request.RefreshRequest;
 import sba301.hrtech.auth.dtos.user.respone.AuthResponse;
 import sba301.hrtech.auth.dtos.user.respone.UserResponse;
 

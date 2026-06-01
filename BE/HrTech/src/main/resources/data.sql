@@ -1,11 +1,11 @@
 -- Seed Roles (idempotent via ON CONFLICT)
-INSERT INTO roles (id, created_at, updated_at, is_deleted, name, description)
+INSERT INTO roles (id, created_at, updated_at, is_deleted, name,slug, description)
 VALUES
-    ('a0000000-0000-0000-0000-000000000001', NOW(), NOW(), false, 'ADMIN_SYSTEM', 'System Administrator'),
-    ('a0000000-0000-0000-0000-000000000002', NOW(), NOW(), false, 'COMPANY_OWNER', 'Company Owner'),
-    ('a0000000-0000-0000-0000-000000000003', NOW(), NOW(), false, 'HR_MANAGER', 'HR Manager'),
-    ('a0000000-0000-0000-0000-000000000004', NOW(), NOW(), false, 'HR', 'Human Resources'),
-    ('a0000000-0000-0000-0000-000000000005', NOW(), NOW(), false, 'CANDIDATE', 'Candidate / Job Seeker')
+    ('a0000000-0000-0000-0000-000000000001', NOW(), NOW(), false, 'ADMIN_SYSTEM', 'System Administrator','System Administrator'),
+    ('a0000000-0000-0000-0000-000000000002', NOW(), NOW(), false, 'COMPANY_OWNER', 'Company Owner','Company Owner'),
+    ('a0000000-0000-0000-0000-000000000003', NOW(), NOW(), false, 'HR_MANAGER', 'HR Manager','HR Manager'),
+    ('a0000000-0000-0000-0000-000000000004', NOW(), NOW(), false, 'HR', 'Human Resources','Human Resources'),
+    ('a0000000-0000-0000-0000-000000000005', NOW(), NOW(), false, 'CANDIDATE', 'Candidate / Job Seeker','Candidate / Job Seeker')
 ON CONFLICT (id) DO NOTHING;
 
 -- Seed Users (password = 123456, BCrypt pre-hashed)
