@@ -9,7 +9,7 @@ import sba301.hrtech.auth.abstractions.services.IUserService;
 import sba301.hrtech.auth.dtos.user.request.ChangePasswordRequest;
 import sba301.hrtech.auth.dtos.user.request.CreateUserRequest;
 import sba301.hrtech.auth.dtos.user.request.UserCommonRequest;
-import sba301.hrtech.auth.dtos.user.respone.UserResponse;
+import sba301.hrtech.auth.dtos.user.response.UserResponse;
 
 import java.net.URI;
 import java.util.List;

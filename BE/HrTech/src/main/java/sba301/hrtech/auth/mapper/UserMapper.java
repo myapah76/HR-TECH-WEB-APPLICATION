@@ -4,7 +4,7 @@ import org.mapstruct.*;
 import sba301.hrtech.auth.entities.User;
 import sba301.hrtech.auth.dtos.user.request.CreateUserRequest;
 import sba301.hrtech.auth.dtos.user.request.UserCommonRequest;
-import sba301.hrtech.auth.dtos.user.respone.UserResponse;
+import sba301.hrtech.auth.dtos.user.response.UserResponse;
 
 @Mapper(componentModel = "spring", uses = {RoleMapper.class})
 public interface UserMapper {

@@ -16,7 +16,7 @@ import sba301.hrtech.auth.exceptions.user.UserNotFoundException;
 import sba301.hrtech.auth.dtos.user.request.ChangePasswordRequest;
 import sba301.hrtech.auth.dtos.user.request.CreateUserRequest;
 import sba301.hrtech.auth.dtos.user.request.UserCommonRequest;
-import sba301.hrtech.auth.dtos.user.respone.UserResponse;
+import sba301.hrtech.auth.dtos.user.response.UserResponse;
 import sba301.hrtech.auth.mapper.UserMapper;
 
 import java.util.List;

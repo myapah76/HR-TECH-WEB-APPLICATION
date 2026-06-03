@@ -4,8 +4,8 @@ import sba301.hrtech.auth.dtos.auth.request.ConfirmOtpRequest;
 import sba301.hrtech.auth.dtos.auth.request.LoginRequest;
 import sba301.hrtech.auth.dtos.auth.request.RefreshRequest;
 import sba301.hrtech.auth.dtos.auth.request.RegisterRequest;
-import sba301.hrtech.auth.dtos.user.respone.AuthResponse;
-import sba301.hrtech.auth.dtos.user.respone.UserResponse;
+import sba301.hrtech.auth.dtos.user.response.AuthResponse;
+import sba301.hrtech.auth.dtos.user.response.UserResponse;
 
 public interface IAuthService {
     void register(RegisterRequest request);

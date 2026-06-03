@@ -1,6 +1,5 @@
 package sba301.hrtech.auth;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -12,8 +11,8 @@ import sba301.hrtech.auth.abstractions.cache.IRedisTokenService;
 import sba301.hrtech.auth.abstractions.repositories.RoleRepository;
 import sba301.hrtech.auth.abstractions.repositories.UserRepository;
 import sba301.hrtech.auth.dtos.auth.request.LoginRequest;
-import sba301.hrtech.auth.dtos.user.respone.AuthResponse;
-import sba301.hrtech.auth.dtos.user.respone.UserResponse;
+import sba301.hrtech.auth.dtos.user.response.AuthResponse;
+import sba301.hrtech.auth.dtos.user.response.UserResponse;
 import sba301.hrtech.auth.entities.User;
 import sba301.hrtech.auth.exceptions.auth.EmailNotFoundException;
 import sba301.hrtech.auth.exceptions.auth.WrongPasswordException;
@@ -24,7 +23,6 @@ import sba301.hrtech.notification.abstractions.INotificationService;
 import sba301.hrtech.notification.abstractions.cache.IRedisOtpService;
 
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
