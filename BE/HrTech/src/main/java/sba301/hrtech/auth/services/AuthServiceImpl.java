@@ -129,7 +129,7 @@ public class AuthServiceImpl implements IAuthService {
 
         // 2. Validate OTP using Lua script
         if (request.otp() == null || !otpService.validateOtp(email, request.otp())) {
-            int remainingAttempts = 5 - otpAttemptTracker.recordFailedAttempt(email);
+            int remainingAttempts = otpAttemptTracker.recordFailedAttempt(email);
             
             if (remainingAttempts <= 0) {
                 long lockoutTime = otpAttemptTracker.getLockoutRemainingTime(email);
@@ -150,7 +150,7 @@ public class AuthServiceImpl implements IAuthService {
         user.setFirstName(pendingUser.firstName() != null ? pendingUser.firstName() : "Unknown");
         user.setLastName(pendingUser.lastName() != null ? pendingUser.lastName() : "Unknown");
 
-        Role role = roleRepository.findByName("Customer")
+        Role role = roleRepository.findByName("CANDIDATE")
                 .orElseThrow(() -> new RuntimeException(ErrorCode.Role_Not_Found));
         user.setRole(role);
         user.setCreatedAt(Instant.now());

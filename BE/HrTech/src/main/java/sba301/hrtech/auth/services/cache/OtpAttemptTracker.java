@@ -47,8 +47,8 @@ public class OtpAttemptTracker {
         if (attempts > MAX_ATTEMPTS) {
             lockoutEmail(email);
         }
-        
-        return MAX_ATTEMPTS - attempts.intValue();
+        int ans = MAX_ATTEMPTS - attempts.intValue();
+        return ans;
     }
 
 
