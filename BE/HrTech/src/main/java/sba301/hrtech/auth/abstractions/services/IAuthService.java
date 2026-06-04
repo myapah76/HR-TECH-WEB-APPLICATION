@@ -13,6 +13,6 @@ public interface IAuthService {
     UserResponse confirmOtp(ConfirmOtpRequest request);
 
     AuthResponse login(LoginRequest request);
-    TokenResponse refresh(String request);
+    AuthResponse refresh(String request);
     void logout(String accessToken);
 }

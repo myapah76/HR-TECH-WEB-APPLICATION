@@ -187,10 +187,14 @@ public class AuthServiceImpl implements IAuthService {
         );
     }
     @Override
-    public TokenResponse refresh(String request) {
+    public AuthResponse refresh(String request) {
+        RefreshToken refreshToken = refreshTokenService.validateRefreshToken(request);
+        User user = refreshToken.getUser();
         String newAccessToken = refreshTokenService.refreshAccessToken(request);
-        return new TokenResponse(
-                newAccessToken
+        return new AuthResponse(
+                userMapper.toResponse(user),
+                newAccessToken,
+                request
         );
     }
     @Override

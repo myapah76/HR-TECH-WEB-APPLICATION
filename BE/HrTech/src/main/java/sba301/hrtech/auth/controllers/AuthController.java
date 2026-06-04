@@ -54,7 +54,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public TokenResponse refresh(
+    public AuthResponse refresh(
             @CookieValue("refreshToken") String refreshToken,
             HttpServletResponse response
     ) {
