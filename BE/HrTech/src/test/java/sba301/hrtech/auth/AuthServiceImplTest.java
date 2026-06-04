@@ -11,7 +11,7 @@ import sba301.hrtech.auth.abstractions.cache.IRedisTokenService;
 import sba301.hrtech.auth.abstractions.repositories.RoleRepository;
 import sba301.hrtech.auth.abstractions.repositories.UserRepository;
 import sba301.hrtech.auth.dtos.auth.request.LoginRequest;
-import sba301.hrtech.auth.dtos.user.response.AuthResponse;
+import sba301.hrtech.auth.dtos.auth.response.AuthResponse;
 import sba301.hrtech.auth.dtos.user.response.UserResponse;
 import sba301.hrtech.auth.entities.User;
 import sba301.hrtech.auth.exceptions.auth.EmailNotFoundException;

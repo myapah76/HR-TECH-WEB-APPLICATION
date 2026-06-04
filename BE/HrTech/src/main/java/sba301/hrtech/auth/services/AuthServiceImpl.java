@@ -14,6 +14,7 @@ import sba301.hrtech.auth.abstractions.repositories.UserRepository;
 import sba301.hrtech.auth.abstractions.services.IAuthService;
 import sba301.hrtech.auth.dtos.auth.request.LoginRequest;
 import sba301.hrtech.auth.dtos.auth.request.RefreshRequest;
+import sba301.hrtech.auth.dtos.auth.response.TokenResponse;
 import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.auth.entities.RefreshToken;
 import sba301.hrtech.auth.entities.Role;
@@ -26,7 +27,7 @@ import sba301.hrtech.auth.dtos.auth.PendingUser;
 import sba301.hrtech.auth.dtos.auth.request.ConfirmOtpRequest;
 import sba301.hrtech.auth.dtos.auth.request.RegisterRequest;
 import sba301.hrtech.auth.dtos.user.CustomUserDetails;
-import sba301.hrtech.auth.dtos.user.response.AuthResponse;
+import sba301.hrtech.auth.dtos.auth.response.AuthResponse;
 import sba301.hrtech.auth.dtos.user.response.UserResponse;
 import sba301.hrtech.auth.mapper.UserMapper;
 import sba301.hrtech.auth.services.cache.OtpAttemptTracker;
@@ -186,16 +187,11 @@ public class AuthServiceImpl implements IAuthService {
         );
     }
     @Override
-    public AuthResponse refresh(RefreshRequest request) {
-        RefreshToken token = refreshTokenService.validateRefreshToken(request.getRefreshToken());
-        UserDetails userDetails = new CustomUserDetails(token.getUser());
-        String newAccessToken = jwtService.generateToken(userDetails);
-        refreshTokenService.revokeToken(token.getToken());
-        User user = token.getUser();
-        return new AuthResponse(
-                userMapper.toResponse(user),
-                newAccessToken,
-                request.getRefreshToken()
+    public TokenResponse refresh(String request) {
+        RefreshToken token = refreshTokenService.validateRefreshToken(request);
+        String newAccessToken = refreshTokenService.refreshAccessToken(token.getToken());
+        return new TokenResponse(
+                newAccessToken
         );
     }
     @Override

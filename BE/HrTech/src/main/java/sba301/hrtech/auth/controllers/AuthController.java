@@ -1,6 +1,7 @@
 package sba301.hrtech.auth.controllers;
 
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -8,11 +9,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.auth.abstractions.services.IAuthService;
 import sba301.hrtech.auth.dtos.auth.request.LoginRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import sba301.hrtech.auth.dtos.auth.request.RefreshRequest;
+import sba301.hrtech.auth.dtos.auth.response.TokenResponse;
 import sba301.hrtech.auth.exceptions.token.TokenExpiredException;
 import sba301.hrtech.auth.dtos.auth.request.ConfirmOtpRequest;
 import sba301.hrtech.auth.dtos.auth.request.RegisterRequest;
-import sba301.hrtech.auth.dtos.user.response.AuthResponse;
+import sba301.hrtech.auth.dtos.auth.response.AuthResponse;
 import sba301.hrtech.auth.dtos.user.response.UserResponse;
 
 @RestController
@@ -38,8 +41,25 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public AuthResponse refresh(@RequestBody RefreshRequest request) {
-        return authService.refresh(request);
+    public TokenResponse refresh(
+            @CookieValue("accessToken") String refreshToken,
+            HttpServletResponse response
+    ) {
+        TokenResponse tokenResponse = authService.refresh(refreshToken);
+
+        Cookie cookie = new Cookie(
+                "accessToken",
+                tokenResponse.getAccessToken()
+        );
+
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(7 * 24 * 60 * 60);
+        response.addCookie(cookie);
+
+        return new TokenResponse(
+                tokenResponse.getAccessToken()
+        );
     }
 
     @PostMapping("/logout")
