@@ -198,12 +198,16 @@ public class AuthServiceImpl implements IAuthService {
         );
     }
     @Override
-    public void logout(String accessToken) {
+    public void logout(String refreshToken) {
+        try {
+            String jti = jwtService.extractJwtId(refreshToken);
+            long ttl = getRemainingTime(refreshToken);
 
-        String jti = jwtService.extractJwtId(accessToken);
-        long ttl = getRemainingTime(accessToken);
-        redisTokenService.blacklistToken(jti, ttl);
-
+            if (ttl > 0) {
+                redisTokenService.blacklistToken(jti, ttl);
+            }
+        } catch (Exception e) {
+        }
     }
 
 // Function Helper

@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.shared.common.ErrorResponse;
@@ -74,6 +75,19 @@ public class GlobalExceptionHandler {
                 path
         );
         return new ResponseEntity<>(error, status);
+    }
+
+    @ExceptionHandler(MissingRequestCookieException.class)
+    public ResponseEntity<ErrorResponse> handleMissingCookie(
+            MissingRequestCookieException ex,
+            HttpServletRequest request
+    ) {
+        return buildError(
+                HttpStatus.UNAUTHORIZED, // hoặc BAD_REQUEST
+                ex.getCookieName() + " is required",
+                ErrorCode.MISSING_COOKIE,
+                request.getRequestURI()
+        );
     }
 }
 
