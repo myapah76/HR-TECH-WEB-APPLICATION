@@ -36,7 +36,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public void login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
+    public AuthResponse login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
 
         AuthResponse authResponse = authService.login(request);
 
@@ -50,6 +50,7 @@ public class AuthController {
         refreshCookie.setMaxAge(7 * 24 * 60 * 60);
 
         response.addCookie(refreshCookie);
+        return authResponse;
     }
 
     @PostMapping("/refresh")
@@ -57,18 +58,7 @@ public class AuthController {
             @CookieValue("refreshToken") String refreshToken,
             HttpServletResponse response
     ) {
-        TokenResponse tokenResponse = authService.refresh(refreshToken);
-
-        Cookie cookie = new Cookie(
-                "accessToken",
-                tokenResponse.getAccessToken()
-        );
-
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(7 * 24 * 60 * 60);
-        response.addCookie(cookie);
-        return  tokenResponse;
+        return  authService.refresh(refreshToken);
     }
 
     @PostMapping("/logout")
