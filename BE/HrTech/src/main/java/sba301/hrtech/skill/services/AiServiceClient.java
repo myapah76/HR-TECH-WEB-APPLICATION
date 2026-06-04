@@ -37,8 +37,10 @@ public class AiServiceClient {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
+            log.info("Sending CV text (length: {}) to Python AI Service for skill extraction", text.length());
             HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
             ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
+            log.info("Received response from Python AI Service with status: {}", response.getStatusCode());
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 List<Map<String, String>> skillsData = (List<Map<String, String>>) response.getBody().get("skills");
@@ -47,6 +49,7 @@ public class AiServiceClient {
                     for (Map<String, String> s : skillsData) {
                         result.add(new ExtractedSkillDto(s.get("name"), s.get("level")));
                     }
+                    log.info("Successfully extracted {} skills from Python AI Service", result.size());
                     return result;
                 }
             }
@@ -74,12 +77,15 @@ public class AiServiceClient {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
+            log.info("Sending {} texts to Python AI Service for embedding generation", texts.size());
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
             ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
+            log.info("Received response from Python AI Service with status: {}", response.getStatusCode());
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 List<List<Double>> embeddings = (List<List<Double>>) response.getBody().get("embeddings");
                 if (embeddings != null) {
+                    log.info("Successfully received {} embeddings from Python AI Service", embeddings.size());
                     return embeddings;
                 }
             }

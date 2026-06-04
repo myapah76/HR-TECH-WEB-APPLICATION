@@ -60,7 +60,6 @@ public class AuthServiceImpl implements IAuthService {
     private final IRedisOtpService otpService;
     private final OtpAttemptTracker otpAttemptTracker;
 
-
     @Override
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
@@ -82,8 +81,7 @@ public class AuthServiceImpl implements IAuthService {
                 request.lastName(),
                 request.gender(),
                 null, // hashed otp is no longer stored in pending user
-                false
-        );
+                false);
         // 3. save to Redis
         try {
             if (redisTemplate.hasKey(key)) {
@@ -95,13 +93,12 @@ public class AuthServiceImpl implements IAuthService {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-        
+
         // 4. create OTP notification
         notificationService.OtpNotificationHandler(new OtpNotificationRequest(
                 new OtpRequest(request.email(), otp),
-                request.email()+ otp,
-                OtpType.REGISTER
-        ));
+                request.email() + otp,
+                OtpType.REGISTER));
 
         return RegisterResponse.builder()
                 .email(request.email())
@@ -120,12 +117,15 @@ public class AuthServiceImpl implements IAuthService {
             long remainingTime = otpAttemptTracker.getLockoutRemainingTime(email);
             throw new OtpLockoutException(
                     "Too many failed OTP attempts. Please try again later.",
-                    remainingTime
-            );
+                    remainingTime);
         }
 
         String key = "PENDING_USER:" + email;
         String json = (String) redisTemplate.opsForValue().get(key);
+
+        if (json == null) {
+            throw new RuntimeException(ErrorCode.Pending_User_Not_Found);
+        }
 
         PendingUser pendingUser = null;
         try {
@@ -134,20 +134,15 @@ public class AuthServiceImpl implements IAuthService {
             throw new RuntimeException(e);
         }
 
-        if (pendingUser == null) {
-            throw new RuntimeException(ErrorCode.Pending_User_Not_Found);
-        }
-
         // 2. Validate OTP using Lua script
         if (request.otp() == null || !otpService.validateOtp(email, request.otp())) {
             int remainingAttempts = otpAttemptTracker.recordFailedAttempt(email);
-            
+
             if (remainingAttempts <= 0) {
                 long lockoutTime = otpAttemptTracker.getLockoutRemainingTime(email);
                 throw new OtpLockoutException(
                         "Too many failed OTP attempts. Please try again later.",
-                        lockoutTime
-                );
+                        lockoutTime);
             }
             throw new WrongOtpCodeException("Invalid OTP. " + remainingAttempts + " attempts remaining.");
         }
@@ -167,11 +162,11 @@ public class AuthServiceImpl implements IAuthService {
         user.setCreatedAt(Instant.now());
 
         userRepository.save(user);
-        
+
         // 4. Cleanup: delete pending user and reset OTP attempts
         redisTemplate.delete(key);
         otpAttemptTracker.resetAttempts(email);
-        
+
         return userMapper.toResponse(user);
     }
 
@@ -193,9 +188,9 @@ public class AuthServiceImpl implements IAuthService {
         return new AuthResponse(
                 userMapper.toResponse(user),
                 accessToken,
-                refreshToken
-        );
+                refreshToken);
     }
+
     @Override
     public AuthResponse refresh(String request) {
         RefreshToken refreshToken = refreshTokenService.validateRefreshToken(request);
@@ -204,9 +199,9 @@ public class AuthServiceImpl implements IAuthService {
         return new AuthResponse(
                 userMapper.toResponse(user),
                 newAccessToken,
-                request
-        );
+                request);
     }
+
     @Override
     public void logout(String refreshToken) {
         try {
@@ -220,13 +215,13 @@ public class AuthServiceImpl implements IAuthService {
         }
     }
 
-// Function Helper
+    // Function Helper
     public long getRemainingTime(String token) {
         long ttl = jwtService.extractExpiration(token).getTime() - System.currentTimeMillis();
         return Math.max(ttl, 0);
     }
+
     private String generateOtp() {
-        return String.valueOf((int)(Math.random() * 900000) + 100000);
+        return String.valueOf((int) (Math.random() * 900000) + 100000);
     }
 }
-

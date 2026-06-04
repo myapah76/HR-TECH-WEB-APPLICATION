@@ -58,10 +58,31 @@ services:
     networks:
       - hrt-network
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: hrt_ollama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - hrt-network
+
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: hrt_ollama_init
+    depends_on:
+      - ollama
+    networks:
+      - hrt-network
+    entrypoint: ["sh", "-c", "sleep 10 && OLLAMA_HOST=ollama:11434 ollama pull qwen3-embedding:0.6b"]
+
 volumes:
   postgres_data:
   redis_data:
   neo4j_data:
+  ollama_data:
 
 networks:
   hrt-network:
