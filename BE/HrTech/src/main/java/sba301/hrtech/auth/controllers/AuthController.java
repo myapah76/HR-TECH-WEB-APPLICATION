@@ -36,13 +36,37 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public AuthResponse login(@Valid @RequestBody LoginRequest request) {
-        return authService.login(request);
+    public AuthResponse login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
+
+        AuthResponse authResponse = authService.login(request);
+
+        Cookie accessCookie = new Cookie(
+                "accessToken",
+                authResponse.getAccessToken()
+        );
+
+        accessCookie.setHttpOnly(true);
+        accessCookie.setPath("/");
+        accessCookie.setMaxAge(15 * 60);
+
+        Cookie refreshCookie = new Cookie(
+                "refreshToken",
+                authResponse.getRefreshToken()
+        );
+
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(7 * 24 * 60 * 60);
+
+        response.addCookie(accessCookie);
+        response.addCookie(refreshCookie);
+
+        return authResponse;
     }
 
     @PostMapping("/refresh")
     public TokenResponse refresh(
-            @CookieValue("accessToken") String refreshToken,
+            @CookieValue("refreshToken") String refreshToken,
             HttpServletResponse response
     ) {
         TokenResponse tokenResponse = authService.refresh(refreshToken);
