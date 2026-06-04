@@ -10,6 +10,7 @@ import sba301.hrtech.job.entities.Job;
 import jakarta.persistence.*;
 import lombok.*;
 import sba301.hrtech.company.entities.enums.CompanySize;
+import sba301.hrtech.company.entities.enums.CompanyStatus;
 
 @Entity
 @Table(name = "companies")
@@ -46,6 +47,19 @@ public class Company extends SoftDeleteEntity {
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Job> jobs = new ArrayList<>();
+
+    @Column(name = "tax_code", unique = true)
+    private String taxCode;
+
+    @Column(name = "business_license_url")
+    private String businessLicenseUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private CompanyStatus status;
+
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CompanyMember> members = new ArrayList<>();
 }
 
 
