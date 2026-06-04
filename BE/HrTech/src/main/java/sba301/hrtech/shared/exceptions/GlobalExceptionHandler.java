@@ -51,6 +51,7 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
+        ex.printStackTrace(); // Log lỗi ra console để debug
         return buildError(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Internal server error",

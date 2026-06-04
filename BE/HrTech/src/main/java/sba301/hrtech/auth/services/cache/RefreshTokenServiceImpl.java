@@ -59,9 +59,7 @@ public class RefreshTokenServiceImpl implements IRefreshTokenService {
 
     @Override
     public String refreshAccessToken(String refreshTokenStr) {
-
         RefreshToken refreshToken = validateRefreshToken(refreshTokenStr);
-
         // revoke token cũ
         refreshToken.setIsRevoked(true);
         refreshTokenRepository.save(refreshToken);
