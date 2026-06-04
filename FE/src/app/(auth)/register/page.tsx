@@ -1,20 +1,16 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import Link from "next/link"
-import { Mail, Lock, Eye, EyeOff, User, Briefcase } from "lucide-react"
-import { motion } from "motion/react"
-import { Button } from "@/src/components/ui/button"
-import { Input } from "@/src/components/ui/input"
-import { Checkbox } from "@/src/components/ui/checkbox"
-import { Card, CardContent } from "@/src/components/ui/card"
-import { Label } from "@/src/components/ui/label"
-import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs"
+import { useState } from 'react'
+import Link from 'next/link'
+import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react'
+import { motion } from 'motion/react'
+import { Button } from '@/src/components/ui/button'
+import { Input } from '@/src/components/ui/input'
+import { Checkbox } from '@/src/components/ui/checkbox'
+import { Card, CardContent } from '@/src/components/ui/card'
+import { Label } from '@/src/components/ui/label'
 
 export default function RegisterPage() {
-  const [activeRole, setActiveRole] = useState<"candidate" | "recruiter">(
-    "candidate",
-  )
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
@@ -37,30 +33,10 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            <Tabs
-              value={activeRole}
-              onValueChange={(val) => setActiveRole(val as "candidate" | "recruiter")}
-              className="w-full mt-6"
+            <form
+              onSubmit={(e) => e.preventDefault()}
+              className="mt-5 space-y-4"
             >
-              <TabsList className="flex bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/40 gap-1.5 w-full h-auto">
-                <TabsTrigger
-                  value="candidate"
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer data-active:bg-white data-active:text-blue-600 data-active:shadow-sm data-active:border data-active:border-slate-200/20 text-slate-650 h-auto"
-                >
-                  <User className="h-4 w-4" />
-                  Ứng Viên
-                </TabsTrigger>
-                <TabsTrigger
-                  value="recruiter"
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer data-active:bg-white data-active:text-blue-600 data-active:shadow-sm data-active:border data-active:border-slate-200/20 text-slate-650 h-auto"
-                >
-                  <Briefcase className="h-4 w-4" />
-                  Nhà Tuyển Dụng
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-
-            <form onSubmit={(e) => e.preventDefault()} className="mt-5 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-[11px] font-bold text-slate-500">
@@ -80,6 +56,22 @@ export default function RegisterPage() {
                     type="text"
                     placeholder="Nguyen Hoang"
                     className="h-auto px-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[11px] font-bold text-slate-500">
+                  * Username
+                </Label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                    <User className="h-4 w-4" />
+                  </span>
+                  <Input
+                    type="text"
+                    placeholder="username"
+                    className="h-auto pl-9 pr-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
                   />
                 </div>
               </div>
@@ -109,7 +101,7 @@ export default function RegisterPage() {
                     <Lock className="h-4 w-4" />
                   </span>
                   <Input
-                    type={showPassword ? "text" : "password"}
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     className="h-auto pl-9 pr-10 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
                   />
@@ -137,7 +129,7 @@ export default function RegisterPage() {
                     <Lock className="h-4 w-4" />
                   </span>
                   <Input
-                    type={showConfirmPassword ? "text" : "password"}
+                    type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     className="h-auto pl-9 pr-10 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
                   />
@@ -160,7 +152,8 @@ export default function RegisterPage() {
                 <Label className="flex items-start gap-2.5 cursor-pointer select-none text-[11px] font-medium leading-relaxed text-slate-550">
                   <Checkbox className="mt-1 shrink-0" />
                   <span>
-                    Tôi đồng ý với Điều khoản Sử dụng và Chính sách Bảo mật của HR-Tech.
+                    Tôi đồng ý với Điều khoản Sử dụng và Chính sách Bảo mật của
+                    HR-Tech.
                   </span>
                 </Label>
               </div>
@@ -174,7 +167,7 @@ export default function RegisterPage() {
             </form>
 
             <p className="text-center text-[10px] text-slate-400 font-bold mt-7">
-              Đã có tài khoản?{" "}
+              Đã có tài khoản?{' '}
               <Link
                 href="/login"
                 className="text-blue-600 hover:text-blue-800 hover:underline font-extrabold"

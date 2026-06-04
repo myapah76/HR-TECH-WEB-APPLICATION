@@ -1,0 +1,35 @@
+package sba301.hrtech.cv.dtos;
+
+import lombok.*;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class CvDetailResponse {
+    private UUID id;
+    private UUID userId;
+    private String title;
+    private String fileUrl;
+    private String parsedContent;
+    private Boolean isPrimary;
+    private LocalDateTime createdAt;
+    private List<CvSkillResponse> cvSkills;
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CvSkillResponse {
+        private UUID id;
+        private String skillNeo4jId;
+        private String proficiencyLevel;
+        private java.math.BigDecimal yearsOfExperience;
+        private Boolean isAiExtracted;
+    }
+}
