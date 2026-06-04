@@ -1,51 +1,46 @@
-"use client";
-import { useState } from "react";
-import Link from "next/link";
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  User,
-  Briefcase,
-  Globe,
-  Code,
-} from "lucide-react";
-import { motion } from "motion/react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSchema, LoginFormData } from "@/src/schemas/auth.schema";
-import { useAuthStore } from "@/src/stores/auth.store";
-import { login } from "@/src/services/auth.service";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
-import { Checkbox } from "@/src/components/ui/checkbox";
-import { Card, CardContent } from "@/src/components/ui/card";
-import { Label } from "@/src/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+'use client'
+import { useState } from 'react'
+import Link from 'next/link'
+import { Mail, Lock, Eye, EyeOff, Globe, Code } from 'lucide-react'
+import { motion } from 'motion/react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { loginSchema, LoginFormData } from '@/src/schemas/auth.schema'
+import { useAuthStore } from '@/src/stores/auth.store'
+import { login } from '@/src/services/auth.service'
+import { Button } from '@/src/components/ui/button'
+import { Input } from '@/src/components/ui/input'
+import { Checkbox } from '@/src/components/ui/checkbox'
+import { Card, CardContent } from '@/src/components/ui/card'
+import { Label } from '@/src/components/ui/label'
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false)
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-  });
+  })
 
-  const setToken = useAuthStore((state) => state.setAccessToken);
+  const setAuth = useAuthStore((state) => state.setAuth)
+  const user = useAuthStore((state) => state.user)
+  console.log('user', user)
 
   const onSubmit = async (data: LoginFormData) => {
-    console.log("Form Data:", data);
+    console.log('Form Data:', data)
     try {
-      const response = await login(data);
-      console.log("Login successful:", response);
-      setToken(response.accessToken);
+      const response = await login(data)
+      console.log('Login successful:', response)
+      setAuth({
+        user: response.userResponse,
+        accessToken: response.accessToken,
+      })
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error('Login failed:', error)
     }
-  };
+  }
 
   return (
     <div className="min-h-[calc(100vh-180px)] flex items-center justify-center px-4 py-12">
@@ -67,28 +62,6 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Role Tabs */}
-            <Tabs defaultValue="candidate" className="w-full mt-6">
-              <TabsList className="flex bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/40 gap-1.5 w-full h-auto">
-                <TabsTrigger
-                  value="candidate"
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all 
-                  cursor-pointer data-active:bg-white data-active:text-blue-600 data-active:shadow-sm data-active:border data-active:border-slate-200/20 text-slate-650 hover:text-slate-900 h-auto"
-                >
-                  <User className="h-4 w-4" />
-                  <span>Ứng viên</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="recruiter"
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all 
-                  cursor-pointer data-active:bg-white data-active:text-blue-600 data-active:shadow-sm data-active:border data-active:border-slate-200/20 text-slate-650 hover:text-slate-900 h-auto"
-                >
-                  <Briefcase className="h-4 w-4" />
-                  <span>Nhà tuyển dụng</span>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-
             <form className="mt-5 space-y-4" onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-slate-700">
@@ -99,7 +72,7 @@ export default function LoginPage() {
                     <Mail className="h-4 w-4" />
                   </span>
                   <Input
-                    {...register("email")}
+                    {...register('email')}
                     type="email"
                     placeholder="tenban@email.com"
                     className="pl-10 text-xs font-semibold"
@@ -129,8 +102,8 @@ export default function LoginPage() {
                     <Lock className="h-4 w-4" />
                   </span>
                   <Input
-                    {...register("password")}
-                    type={showPassword ? "text" : "password"}
+                    {...register('password')}
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     className="pl-10 text-xs font-semibold"
                   />
@@ -203,7 +176,7 @@ export default function LoginPage() {
             </div>
 
             <p className="text-center text-[10px] text-slate-400 font-bold mt-7">
-              Chưa có tài khoản?{" "}
+              Chưa có tài khoản?{' '}
               <Link
                 href="/register"
                 className="text-blue-600 hover:text-blue-800 hover:underline font-extrabold"
@@ -215,5 +188,5 @@ export default function LoginPage() {
         </Card>
       </motion.div>
     </div>
-  );
+  )
 }
