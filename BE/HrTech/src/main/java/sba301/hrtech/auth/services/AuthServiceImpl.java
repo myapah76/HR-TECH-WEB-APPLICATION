@@ -16,6 +16,7 @@ import sba301.hrtech.auth.dtos.auth.request.LoginRequest;
 import sba301.hrtech.auth.dtos.auth.request.RefreshRequest;
 import sba301.hrtech.auth.dtos.auth.response.RegisterResponse;
 import sba301.hrtech.auth.dtos.auth.response.TokenResponse;
+import sba301.hrtech.auth.exceptions.user.UserExistException;
 import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.auth.entities.RefreshToken;
 import sba301.hrtech.auth.entities.Role;
@@ -68,9 +69,8 @@ public class AuthServiceImpl implements IAuthService {
         // 1. generate OTP
         String otp = generateOtp();
 
-        if (userRepository.findByEmail(request.email()).isPresent()
-                || redisTemplate.hasKey(key)) {
-            throw new RuntimeException(ErrorCode.Email_Already_Registered);
+        if (userRepository.findByEmail(request.email()).isPresent()) {
+            throw new UserExistException(ErrorCode.Email_Already_Registered);
         }
 
         // 2. create pending user object (staging in Redis)
@@ -86,6 +86,10 @@ public class AuthServiceImpl implements IAuthService {
         );
         // 3. save to Redis
         try {
+            if (redisTemplate.hasKey(key)) {
+                redisTemplate.delete(key);
+            }
+
             redisTemplate.opsForValue()
                     .set(key, objectMapper.writeValueAsString(pendingUser), Duration.ofMinutes(1));
         } catch (JsonProcessingException e) {

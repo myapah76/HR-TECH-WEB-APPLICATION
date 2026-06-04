@@ -18,6 +18,7 @@ import sba301.hrtech.auth.dtos.auth.request.ConfirmOtpRequest;
 import sba301.hrtech.auth.dtos.auth.request.RegisterRequest;
 import sba301.hrtech.auth.dtos.auth.response.AuthResponse;
 import sba301.hrtech.auth.dtos.user.response.UserResponse;
+import sba301.hrtech.shared.common.ApiResponse;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -27,17 +28,39 @@ public class AuthController {
     private final IAuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponse<RegisterResponse>> register(
+            @Valid @RequestBody RegisterRequest request) {
+
         RegisterResponse response = authService.register(request);
-        return ResponseEntity.ok(response);
+
+        return ResponseEntity.ok(
+                ApiResponse.<RegisterResponse>builder()
+                        .success(true)
+                        .message("Register successfully")
+                        .data(response)
+                        .build()
+        );
     }
+
     @PostMapping("/confirm-otp")
-    public UserResponse confirmOtp(@RequestBody ConfirmOtpRequest request){
-        return authService.confirmOtp(request);
+    public ResponseEntity<ApiResponse<UserResponse>> confirmOtp(
+            @RequestBody ConfirmOtpRequest request) {
+
+        UserResponse response = authService.confirmOtp(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.<UserResponse>builder()
+                        .success(true)
+                        .message("OTP confirmed successfully")
+                        .data(response)
+                        .build()
+        );
     }
 
     @PostMapping("/login")
-    public AuthResponse login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<AuthResponse>> login(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletResponse response) {
 
         AuthResponse authResponse = authService.login(request);
 
@@ -51,25 +74,39 @@ public class AuthController {
         refreshToken.setMaxAge(60 * 60 * 24 * 7);
 
         response.addCookie(refreshToken);
+
         authResponse.setRefreshToken("");
-        return authResponse;
+
+        return ResponseEntity.ok(
+                ApiResponse.<AuthResponse>builder()
+                        .success(true)
+                        .message("Login successfully")
+                        .data(authResponse)
+                        .build()
+        );
     }
 
     @PostMapping("/refresh")
-    public AuthResponse refresh(
+    public ResponseEntity<ApiResponse<AuthResponse>> refresh(
             @CookieValue("refreshToken") String refreshToken,
-            HttpServletResponse response
-    ) {
+            HttpServletResponse response) {
+
         AuthResponse authResponse = authService.refresh(refreshToken);
         authResponse.setRefreshToken("");
-        return  authResponse;
+
+        return ResponseEntity.ok(
+                ApiResponse.<AuthResponse>builder()
+                        .success(true)
+                        .message("Token refreshed successfully")
+                        .data(authResponse)
+                        .build()
+        );
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(
+    public ResponseEntity<ApiResponse<Void>> logout(
             @CookieValue(value = "refreshToken", required = false) String refreshToken,
-            HttpServletResponse response
-    ) {
+            HttpServletResponse response) {
 
         if (refreshToken != null) {
             authService.logout(refreshToken);
@@ -83,6 +120,11 @@ public class AuthController {
 
         response.addCookie(refreshCookie);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .success(true)
+                        .message("Logout successfully")
+                        .build()
+        );
     }
 }

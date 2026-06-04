@@ -83,7 +83,7 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return buildError(
-                HttpStatus.UNAUTHORIZED, // 401
+                HttpStatus.UNAUTHORIZED, // 401git f
                 ex.getCookieName() + " is required",
                 ErrorCode.MISSING_COOKIE,
                 request.getRequestURI()
