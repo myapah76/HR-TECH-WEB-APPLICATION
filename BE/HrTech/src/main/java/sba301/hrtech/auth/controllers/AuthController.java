@@ -83,7 +83,6 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
             @CookieValue(value = "accessToken", required = false) String accessToken,
-            @CookieValue(value = "refreshToken", required = false) String refreshToken,
             HttpServletResponse response
     ) {
 
@@ -94,13 +93,7 @@ public class AuthController {
         Cookie accessCookie = new Cookie("accessToken", null);
         accessCookie.setPath("/");
         accessCookie.setMaxAge(0);
-
-        Cookie refreshCookie = new Cookie("refreshToken", null);
-        refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(0);
-
         response.addCookie(accessCookie);
-        response.addCookie(refreshCookie);
 
         return ResponseEntity.ok().build();
     }
