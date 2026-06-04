@@ -41,8 +41,8 @@ export default function VerifyOtpPage() {
                 </h1>
                 <p className="text-sm text-slate-500 font-medium px-4">
                   Chúng tôi đã gửi một mã OTP gồm 6 chữ số đến email:
-                  <span className="font-bold text-slate-900">{email}</span>. Vui
-                  lòng nhập mã để tiếp tục.
+                  <span className="font-bold text-slate-900">{email}</span>. Vui lòng nhập mã để
+                  tiếp tục.
                 </p>
               </div>
             </div>

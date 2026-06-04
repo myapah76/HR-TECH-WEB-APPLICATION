@@ -10,19 +10,23 @@ import { Input } from '@/src/components/ui/input'
 import { Checkbox } from '@/src/components/ui/checkbox'
 import { Card, CardContent } from '@/src/components/ui/card'
 import { Label } from '@/src/components/ui/label'
+import { Controller } from 'react-hook-form'
 
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema, RegisterFormData } from '@/src/schemas/auth.schema'
-import { registerUser } from '@/src/services/auth.service'
+import { useRegister } from '@/src/hooks/useRegister'
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const router = useRouter()
 
+  const registerMutation = useRegister()
+
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<RegisterFormData>({
@@ -30,22 +34,26 @@ export default function RegisterPage() {
   })
 
   const onSubmit = async (data: RegisterFormData) => {
-    try {
-      const response = await registerUser({
+    registerMutation.mutate(
+      {
         firstName: data.firstName,
         lastName: data.lastName,
         username: data.username,
         email: data.email,
         password: data.password,
         gender: Number(data.gender),
-      })
-
-      router.push(
-        `/verify-otp?email=${response.email}&expireIn=${response.expireIn}`,
-      )
-    } catch (error) {
-      console.log('error', error)
-    }
+      },
+      {
+        onSuccess: (response) => {
+          router.push(
+            `/verify-otp?email=${response.email}&expireIn=${response.expireIn}`,
+          )
+        },
+        onError: (error) => {
+          console.log('error', error)
+        },
+      },
+    )
   }
 
   return (
@@ -241,22 +249,41 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              <div className="pt-1">
-                <Label className="flex items-start gap-2.5 cursor-pointer select-none text-[11px] font-medium leading-relaxed text-slate-550">
-                  <Checkbox className="mt-1 shrink-0" />
-                  <span>
-                    Tôi đồng ý với Điều khoản Sử dụng và Chính sách Bảo mật của
-                    HR-Tech.
-                  </span>
-                </Label>
+              <div className="space-y-1">
+                <Controller
+                  control={control}
+                  name="acceptTerms"
+                  defaultValue={false}
+                  render={({ field }) => (
+                    <Label className="flex items-start gap-2.5 cursor-pointer select-none text-[11px] font-medium leading-relaxed text-slate-550">
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="mt-1 shrink-0"
+                      />
+                      <span>
+                        Tôi đồng ý với Điều khoản Sử dụng và Chính sách Bảo mật
+                        của HR-Tech.
+                      </span>
+                    </Label>
+                  )}
+                />
+                {errors.acceptTerms && (
+                  <p className="text-xs font-bold text-red-500 mt-1.5">
+                    {errors.acceptTerms.message}
+                  </p>
+                )}
               </div>
 
               <Button
                 type="submit"
+                disabled={registerMutation.isPending}
                 className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs sm:text-sm py-4 rounded-xl transition-all duration-300 
                 shadow-lg shadow-blue-600/20 hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer tracking-wider uppercase h-auto"
               >
-                ĐĂNG KÝ MIỄN PHÍ
+                {registerMutation.isPending
+                  ? 'ĐANG ĐĂNG KÝ...'
+                  : 'ĐĂNG KÝ MIỄN PHÍ'}
               </Button>
             </form>
 

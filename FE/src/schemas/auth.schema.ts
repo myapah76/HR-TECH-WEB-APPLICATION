@@ -16,6 +16,9 @@ export const registerSchema = z
     }),
     password: z.string().min(5, 'Mật khẩu phải có ít nhất 5 ký tự'),
     confirmPassword: z.string(),
+    acceptTerms: z.boolean().refine((value) => value === true, {
+      message: 'Bạn phải đồng ý với Điều khoản sử dụng',
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Mật khẩu không khớp',

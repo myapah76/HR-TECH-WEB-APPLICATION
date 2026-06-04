@@ -4,8 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircle2, Loader2 } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
-import { verifyOtp } from '@/src/services/auth.service'
-import axios from 'axios'
+import { useConfirmOtp } from '../hooks/useConfirmOtp'
 
 interface VerifyOtpFormProps {
   email: string
@@ -15,8 +14,9 @@ interface VerifyOtpFormProps {
 export function VerifyOtpForm({ email, expireIn }: VerifyOtpFormProps) {
   const router = useRouter()
 
+  const confirmOtpMutation = useConfirmOtp()
+
   const [otp, setOtp] = useState<string[]>(Array(6).fill(''))
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
@@ -59,10 +59,7 @@ export function VerifyOtpForm({ email, expireIn }: VerifyOtpFormProps) {
     }
   }
 
-  const handleKeyDown = (
-    index: number,
-    e: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
       // Move to previous input on backspace if current is empty
       inputRefs.current[index - 1]?.focus()
@@ -83,26 +80,23 @@ export function VerifyOtpForm({ email, expireIn }: VerifyOtpFormProps) {
       return
     }
 
-    setError('')
-    setIsSubmitting(true)
-
-    try {
-      await verifyOtp({ email, otp: otpValue })
-      // Redirect to login or home after success
-      router.push('/login')
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message ?? 'Mã OTP không chính xác')
+    confirmOtpMutation.mutate(
+      { email, otp: otpValue },
+      {
+        onSuccess: () => {
+          router.push('/login')
+        },
+        onError: (error) => {
+          setError(error.message)
+        },
       }
-    } finally {
-      setIsSubmitting(false)
-    }
+    )
   }
 
   return (
     <form onSubmit={handleSubmit} className="mt-8 space-y-6">
       <div>
-        <div className="flex justify-between gap-2 sm:gap-4 mb-2">
+        <div className="flex justify-between gap-2 mb-2">
           {otp.map((digit, index) => (
             <input
               key={index}
@@ -119,19 +113,15 @@ export function VerifyOtpForm({ email, expireIn }: VerifyOtpFormProps) {
             />
           ))}
         </div>
-        {error && (
-          <p className="text-sm font-bold text-red-500 mt-3 text-center">
-            {error}
-          </p>
-        )}
+        {error && <p className="text-sm font-bold text-red-500 mt-3 text-center">{error}</p>}
       </div>
 
       <Button
         type="submit"
-        disabled={isSubmitting || otp.join('').length < 6}
+        disabled={confirmOtpMutation.isPending || otp.join('').length < 6}
         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl transition-all duration-300 shadow-lg shadow-blue-600/20 hover:shadow-xl flex items-center justify-center gap-2 uppercase h-auto"
       >
-        {isSubmitting ? (
+        {confirmOtpMutation.isPending ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
             ĐANG XÁC THỰC...
@@ -147,10 +137,7 @@ export function VerifyOtpForm({ email, expireIn }: VerifyOtpFormProps) {
       <div className="text-center mt-6">
         <p className="text-sm text-slate-500 font-medium">
           Chưa nhận được mã?{' '}
-          <button
-            type="button"
-            className="text-blue-600 font-bold hover:underline"
-          >
+          <button type="button" className="text-blue-600 font-bold hover:underline">
             Gửi lại OTP
           </button>
         </p>

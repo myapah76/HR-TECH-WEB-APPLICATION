@@ -6,16 +6,20 @@ import { motion } from 'motion/react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, LoginFormData } from '@/src/schemas/auth.schema'
-import { useAuthStore } from '@/src/stores/auth.store'
-import { login } from '@/src/services/auth.service'
 import { Button } from '@/src/components/ui/button'
 import { Input } from '@/src/components/ui/input'
 import { Checkbox } from '@/src/components/ui/checkbox'
 import { Card, CardContent } from '@/src/components/ui/card'
 import { Label } from '@/src/components/ui/label'
+import { useRouter } from 'next/navigation'
+import { useLogin } from '@/src/hooks/useLogin'
 
 export default function LoginPage() {
+  const loginMutation = useLogin()
+  const router = useRouter()
+
   const [showPassword, setShowPassword] = useState(false)
+
   const {
     register,
     handleSubmit,
@@ -24,22 +28,15 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   })
 
-  const setAuth = useAuthStore((state) => state.setAuth)
-  const user = useAuthStore((state) => state.user)
-  console.log('user', user)
-
   const onSubmit = async (data: LoginFormData) => {
-    console.log('Form Data:', data)
-    try {
-      const response = await login(data)
-      console.log('Login successful:', response)
-      setAuth({
-        user: response.userResponse,
-        accessToken: response.accessToken,
-      })
-    } catch (error) {
-      console.error('Login failed:', error)
-    }
+    loginMutation.mutate(data, {
+      onSuccess: () => {
+        router.push('/dashboard')
+      },
+      onError: (error) => {
+        console.error('Login failed:', error)
+      },
+    })
   }
 
   return (
@@ -64,9 +61,7 @@ export default function LoginPage() {
 
             <form className="mt-5 space-y-4" onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">
-                  Email
-                </Label>
+                <Label className="text-xs font-bold text-slate-700">Email</Label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
                     <Mail className="h-4 w-4" />
@@ -79,17 +74,13 @@ export default function LoginPage() {
                   />
                 </div>
                 {errors.email && (
-                  <p className="text-xs font-bold text-red-500 mt-1.5">
-                    {errors.email.message}
-                  </p>
+                  <p className="text-xs font-bold text-red-500 mt-1.5">{errors.email.message}</p>
                 )}
               </div>
 
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <Label className="text-xs font-bold text-slate-700">
-                    Mật khẩu
-                  </Label>
+                  <Label className="text-xs font-bold text-slate-700">Mật khẩu</Label>
                   <Link
                     href="/forgot-password"
                     className="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors"
@@ -113,34 +104,27 @@ export default function LoginPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-slate-650 hover:bg-transparent cursor-pointer"
                   >
-                    {showPassword ? (
-                      <Eye className="h-4 w-4" />
-                    ) : (
-                      <EyeOff className="h-4 w-4" />
-                    )}
+                    {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                   </Button>
                 </div>
                 {errors.password && (
-                  <p className="text-xs font-bold text-red-500 mt-1.5">
-                    {errors.password.message}
-                  </p>
+                  <p className="text-xs font-bold text-red-500 mt-1.5">{errors.password.message}</p>
                 )}
               </div>
 
               <Label className="flex items-center gap-3 cursor-pointer select-none">
                 <Checkbox className="h-4 w-4" />
-                <span className="text-[11px] font-bold text-slate-500">
-                  Ghi nhớ tôi
-                </span>
+                <span className="text-[11px] font-bold text-slate-500">Ghi nhớ tôi</span>
               </Label>
 
               <Button
                 type="submit"
+                disabled={loginMutation.isPending}
                 className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs sm:text-sm py-4 rounded-xl 
                 transition-all duration-300 shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/30 hover:scale-[1.02] 
                 hover:-translate-y-0.5 active:scale-98 flex items-center justify-center gap-2 cursor-pointer tracking-wider uppercase h-auto"
               >
-                ĐĂNG NHẬP
+                {loginMutation.isPending ? 'ĐANG ĐĂNG NHẬP...' : 'ĐĂNG NHẬP'}
               </Button>
             </form>
 
