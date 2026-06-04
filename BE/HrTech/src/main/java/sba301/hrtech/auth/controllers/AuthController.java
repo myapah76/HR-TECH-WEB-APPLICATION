@@ -36,7 +36,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public AuthResponse login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
+    public void login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
 
         AuthResponse authResponse = authService.login(request);
 
@@ -60,12 +60,10 @@ public class AuthController {
 
         response.addCookie(accessCookie);
         response.addCookie(refreshCookie);
-
-        return authResponse;
     }
 
     @PostMapping("/refresh")
-    public TokenResponse refresh(
+    public void refresh(
             @CookieValue("refreshToken") String refreshToken,
             HttpServletResponse response
     ) {
@@ -80,22 +78,29 @@ public class AuthController {
         cookie.setPath("/");
         cookie.setMaxAge(7 * 24 * 60 * 60);
         response.addCookie(cookie);
-
-        return new TokenResponse(
-                tokenResponse.getAccessToken()
-        );
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletRequest request) {
-        String header = request.getHeader("Authorization");
+    public ResponseEntity<Void> logout(
+            @CookieValue(value = "accessToken", required = false) String accessToken,
+            @CookieValue(value = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse response
+    ) {
 
-        if (header == null || !header.startsWith("Bearer ")) {
-            throw new TokenExpiredException("Missing token");
+        if (accessToken != null) {
+            authService.logout(accessToken);
         }
 
-        String token = header.substring(7);
-        authService.logout(token);
+        Cookie accessCookie = new Cookie("accessToken", null);
+        accessCookie.setPath("/");
+        accessCookie.setMaxAge(0);
+
+        Cookie refreshCookie = new Cookie("refreshToken", null);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(0);
+
+        response.addCookie(accessCookie);
+        response.addCookie(refreshCookie);
 
         return ResponseEntity.ok().build();
     }
