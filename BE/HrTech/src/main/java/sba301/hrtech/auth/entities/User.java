@@ -1,17 +1,24 @@
 package sba301.hrtech.auth.entities;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import sba301.hrtech.application.entities.Application;
-import sba301.hrtech.cv.entities.Cv;
-import sba301.hrtech.shared.common.SoftDeleteEntity;
-import sba301.hrtech.subscription.entities.CandidateSubscription;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
+import sba301.hrtech.application.entities.Application;
 import sba301.hrtech.company.entities.Company;
+import sba301.hrtech.cv.entities.Cv;
+import sba301.hrtech.shared.common.SoftDeleteEntity;
+import sba301.hrtech.subscription.entities.CandidateSubscription;
 import sba301.hrtech.subscription.entities.Payment;
 
 @Entity
