@@ -1,0 +1,472 @@
+package sba301.hrtech.skill.services;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import sba301.hrtech.cv.abstractions.repositories.CvRepository;
+import sba301.hrtech.cv.abstractions.repositories.CvSkillRepository;
+import sba301.hrtech.cv.entities.Cv;
+import sba301.hrtech.cv.entities.CvSkill;
+import sba301.hrtech.job.abstractions.repositories.JobRepository;
+import sba301.hrtech.job.abstractions.repositories.JobSkillRepository;
+import sba301.hrtech.job.entities.Job;
+import sba301.hrtech.job.entities.JobSkill;
+import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.enums.SkillLevel;
+import sba301.hrtech.shared.exceptions.AppException;
+import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
+import sba301.hrtech.skill.abstractions.services.IRecommendationService;
+import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
+import sba301.hrtech.skill.dtos.response.*;
+import sba301.hrtech.skill.entities.SkillNode;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class RecommendationServiceImpl implements IRecommendationService {
+
+    private final CvRepository cvRepository;
+    private final CvSkillRepository cvSkillRepository;
+    private final JobRepository jobRepository;
+    private final JobSkillRepository jobSkillRepository;
+    private final SkillNodeRepository skillNodeRepository;
+    private final ISkillExtractionService skillExtractionService;
+
+    @Value("${recommendation.graph-weight}")
+    private double graphWeight;
+
+    @Value("${recommendation.embedding-weight}")
+    private double embeddingWeight;
+
+    // === Skill level numeric values ===
+    private static final Map<SkillLevel, Integer> LEVEL_VALUES = Map.of(
+            SkillLevel.BEGINNER, 1,
+            SkillLevel.INTERMEDIATE, 2,
+            SkillLevel.ADVANCED, 3,
+            SkillLevel.EXPERT, 4);
+
+    // === Graph match multipliers ===
+    private static final double EXACT_MATCH = 1.0;
+    private static final double SYNONYM_MATCH = 0.95;
+    private static final double RELATED_MATCH = 0.7;
+    private static final double PARENT_MATCH = 0.6;
+
+    @Override
+    public RecommendationResultResponse analyzeCvAndRecommend(UUID cvId, int limit) {
+        // 1. Extract skills from CV
+        CvExtractionResponse extraction = skillExtractionService.extractAndSaveSkills(cvId);
+
+        // 2. Recommend jobs
+        List<JobRecommendationResponse> recommendations = recommendJobsForCv(cvId, limit);
+
+        return RecommendationResultResponse.builder()
+                .cvId(cvId)
+                .extraction(extraction)
+                .recommendedJobs(recommendations)
+                .build();
+    }
+
+    @Override
+    public List<JobRecommendationResponse> recommendJobsForCv(UUID cvId, int limit) {
+        // 1. Validate CV exists
+        Cv cv = cvRepository.findById(cvId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND,
+                        ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
+
+        // 2. Get CV skills from PostgreSQL
+        List<CvSkill> cvSkills = cv.getCvSkills();
+        if (cvSkills == null || cvSkills.isEmpty()) {
+            throw new AppException(HttpStatus.BAD_REQUEST,
+                    ErrorCode.CV_HAS_NO_SKILLS, "CV has no extracted skills");
+        }
+
+        // 3. Build CV skill map: neo4jId -> CvSkill
+        Map<String, CvSkill> cvSkillMap = cvSkills.stream()
+                .collect(Collectors.toMap(CvSkill::getSkillNeo4jId, s -> s, (a, b) -> a));
+
+        // 4. Expand CV skills via graph (SYNONYM, RELATED_TO)
+        Map<String, Double> expandedCvSkillWeights = expandSkillsThroughGraphWithWeights(cvSkillMap.keySet());
+
+        // 5. Get CV skill embeddings for embedding score
+        List<Double> cvCentroid = calculateCentroidEmbedding(cvSkillMap.keySet());
+
+        // 6. Get all jobs with their skills
+        List<Job> allJobs = jobRepository.findAll();
+
+        // 7. Score each job
+        List<JobRecommendationResponse> recommendations = new ArrayList<>();
+
+        for (Job job : allJobs) {
+            List<JobSkill> jobSkills = job.getJobSkills();
+            if (jobSkills == null || jobSkills.isEmpty()) {
+                continue;
+            }
+
+            // Calculate graph score
+            double graphScore = calculateGraphScore(cvSkillMap, expandedCvSkillWeights, jobSkills);
+
+            // Calculate embedding score
+            double embScore = calculateEmbeddingScore(cvCentroid, jobSkills);
+
+            // Company specific weights or fallback
+            double jobGraphWeight = graphWeight;
+            double jobEmbeddingWeight = embeddingWeight;
+            if (job.getCompany() != null) {
+                if (job.getCompany().getGraphWeight() != null) {
+                    jobGraphWeight = job.getCompany().getGraphWeight();
+                }
+                if (job.getCompany().getEmbeddingWeight() != null) {
+                    jobEmbeddingWeight = job.getCompany().getEmbeddingWeight();
+                }
+            }
+
+            // Hybrid score
+            double finalScore = jobGraphWeight * graphScore + jobEmbeddingWeight * embScore;
+
+            // Determine matched and missing skills
+            List<String> matchedSkills = new ArrayList<>();
+            List<String> missingSkills = new ArrayList<>();
+            categorizeSkills(cvSkillMap.keySet(), expandedCvSkillWeights, jobSkills,
+                    matchedSkills, missingSkills);
+
+            recommendations.add(JobRecommendationResponse.builder()
+                    .jobId(job.getId())
+                    .jobTitle(job.getTitle())
+                    .companyName(job.getCompany() != null ? job.getCompany().getName() : null)
+                    .location(job.getLocation())
+                    .salaryMin(job.getSalaryMin())
+                    .salaryMax(job.getSalaryMax())
+                    .matchScore(Math.round(finalScore * 100.0) / 100.0)
+                    .graphScore(Math.round(graphScore * 100.0) / 100.0)
+                    .embeddingScore(Math.round(embScore * 100.0) / 100.0)
+                    .matchGrade(getGrade(finalScore))
+                    .matchedSkills(matchedSkills)
+                    .missingSkills(missingSkills)
+                    .build());
+        }
+
+        // Sort by score descending, take top N
+        return recommendations.stream()
+                .sorted(Comparator.comparingDouble(JobRecommendationResponse::getMatchScore).reversed())
+                .limit(limit)
+                .toList();
+    }
+
+    @Override
+    public SkillMatchScoreResponse calculateMatchScore(UUID cvId, UUID jobId) {
+        // Get CV and Job
+        Cv cv = cvRepository.findById(cvId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND,
+                        ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
+
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND,
+                        ErrorCode.JOB_NOT_FOUND, "Job not found: " + jobId));
+
+        List<CvSkill> cvSkills = cv.getCvSkills();
+        List<JobSkill> jobSkills = job.getJobSkills();
+
+        Map<String, CvSkill> cvSkillMap = cvSkills.stream()
+                .collect(Collectors.toMap(CvSkill::getSkillNeo4jId, s -> s, (a, b) -> a));
+
+        Set<String> cvSkillIds = cvSkillMap.keySet();
+        Map<String, Double> expandedCvSkillWeights = expandSkillsThroughGraphWithWeights(cvSkillIds);
+        List<Double> cvCentroid = calculateCentroidEmbedding(cvSkillIds);
+
+        double graphScore = calculateGraphScore(cvSkillMap, expandedCvSkillWeights, jobSkills);
+        double embScore = calculateEmbeddingScore(cvCentroid, jobSkills);
+
+        // Company specific weights or fallback
+        double jobGraphWeight = graphWeight;
+        double jobEmbeddingWeight = embeddingWeight;
+        if (job.getCompany() != null) {
+            if (job.getCompany().getGraphWeight() != null) {
+                jobGraphWeight = job.getCompany().getGraphWeight();
+            }
+            if (job.getCompany().getEmbeddingWeight() != null) {
+                jobEmbeddingWeight = job.getCompany().getEmbeddingWeight();
+            }
+        }
+
+        double finalScore = jobGraphWeight * graphScore + jobEmbeddingWeight * embScore;
+
+        List<String> matchedSkills = new ArrayList<>();
+        List<String> missingSkills = new ArrayList<>();
+        categorizeSkills(cvSkillIds, expandedCvSkillWeights, jobSkills, matchedSkills, missingSkills);
+        List<SkillMatchDetail> details = buildSkillMatchDetails(cvSkillMap, expandedCvSkillWeights, jobSkills);
+
+        return SkillMatchScoreResponse.builder()
+                .overallScore(Math.round(finalScore * 100.0) / 100.0)
+                .grade(getGrade(finalScore))
+                .graphScore(Math.round(graphScore * 100.0) / 100.0)
+                .embeddingScore(Math.round(embScore * 100.0) / 100.0)
+                .skillDetails(details)
+                .build();
+    }
+
+    // ========== PRIVATE HELPER METHODS ==========
+
+    /**
+     * Expand skill IDs through graph relationships and return their respective weights.
+     * Weights: SYNONYM (0.95), RELATED (0.7), PARENT/CHILD (0.6).
+     */
+    private Map<String, Double> expandSkillsThroughGraphWithWeights(Set<String> originalSkillIds) {
+        Map<String, Double> expanded = new HashMap<>();
+
+        for (String skillId : originalSkillIds) {
+            // Synonyms
+            try {
+                List<SkillNode> synonyms = skillNodeRepository.findSynonyms(skillId);
+                for (SkillNode s : synonyms) {
+                    expanded.merge(s.getId(), SYNONYM_MATCH, Math::max);
+                }
+            } catch (Exception e) {
+                log.warn("Could not expand synonyms for skill {}: {}", skillId, e.getMessage());
+            }
+
+            // Related
+            try {
+                List<SkillNode> related = skillNodeRepository.findRelatedSkills(skillId);
+                for (SkillNode r : related) {
+                    expanded.merge(r.getId(), RELATED_MATCH, Math::max);
+                }
+            } catch (Exception e) {
+                log.warn("Could not expand related for skill {}: {}", skillId, e.getMessage());
+            }
+
+            // Parents and Children
+            try {
+                List<SkillNode> family = skillNodeRepository.findParentsAndChildren(skillId);
+                for (SkillNode f : family) {
+                    expanded.merge(f.getId(), PARENT_MATCH, Math::max);
+                }
+            } catch (Exception e) {
+                log.warn("Could not expand family for skill {}: {}", skillId, e.getMessage());
+            }
+        }
+
+        return expanded;
+    }
+
+    /**
+     * Calculate centroid (average) embedding for a set of skill IDs.
+     */
+    private List<Double> calculateCentroidEmbedding(Set<String> skillIds) {
+        List<List<Double>> embeddings = new ArrayList<>();
+
+        List<SkillNode> skills = skillNodeRepository.findAllByIds(new ArrayList<>(skillIds));
+        for (SkillNode skill : skills) {
+            if (skill.getEmbedding() != null && !skill.getEmbedding().isEmpty()) {
+                embeddings.add(skill.getEmbedding());
+            }
+        }
+
+        if (embeddings.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Average all embedding vectors
+        int dim = embeddings.getFirst().size();
+        List<Double> centroid = new ArrayList<>(Collections.nCopies(dim, 0.0));
+
+        for (List<Double> emb : embeddings) {
+            if (emb.size() != dim)
+                continue;
+            for (int i = 0; i < dim; i++) {
+                centroid.set(i, centroid.get(i) + emb.get(i));
+            }
+        }
+
+        for (int i = 0; i < dim; i++) {
+            centroid.set(i, centroid.get(i) / embeddings.size());
+        }
+
+        return centroid;
+    }
+
+    /**
+     * Calculate graph-based matching score.
+     * Score = Σ(matchWeight × levelScore) / Σ(totalWeight)
+     */
+    private double calculateGraphScore(Map<String, CvSkill> cvSkillMap,
+            Map<String, Double> expandedCvSkillWeights,
+            List<JobSkill> jobSkills) {
+        double totalWeight = 0.0;
+        double matchedWeight = 0.0;
+
+        for (JobSkill jobSkill : jobSkills) {
+            double weight = Boolean.TRUE.equals(jobSkill.getIsMandatory()) ? 1.0 : 0.5;
+            totalWeight += weight;
+
+            String jobSkillNeo4jId = jobSkill.getSkillNeo4jId();
+
+            if (cvSkillMap.containsKey(jobSkillNeo4jId)) {
+                // EXACT match
+                double levelScore = calculateLevelScore(
+                        cvSkillMap.get(jobSkillNeo4jId).getProficiencyLevel(),
+                        jobSkill.getRequiredLevel());
+                matchedWeight += weight * EXACT_MATCH * levelScore;
+            } else if (expandedCvSkillWeights.containsKey(jobSkillNeo4jId)) {
+                // RELATED/SYNONYM/PARENT match (from graph expansion)
+                double multiplier = expandedCvSkillWeights.get(jobSkillNeo4jId);
+                matchedWeight += weight * multiplier;
+            }
+            // else: MISSING → contributes 0
+        }
+
+        return totalWeight > 0 ? matchedWeight / totalWeight : 0.0;
+    }
+
+    /**
+     * Calculate embedding-based similarity score using cosine similarity.
+     */
+    private double calculateEmbeddingScore(List<Double> cvCentroid, List<JobSkill> jobSkills) {
+        if (cvCentroid == null || cvCentroid.isEmpty()) {
+            return 0.0;
+        }
+
+        // Get job skill IDs and calculate job centroid
+        Set<String> jobSkillIds = jobSkills.stream()
+                .map(JobSkill::getSkillNeo4jId)
+                .collect(Collectors.toSet());
+
+        List<Double> jobCentroid = calculateCentroidEmbedding(jobSkillIds);
+
+        if (jobCentroid.isEmpty()) {
+            return 0.0;
+        }
+
+        return cosineSimilarity(cvCentroid, jobCentroid);
+    }
+
+    /**
+     * Cosine similarity between two vectors.
+     */
+    private double cosineSimilarity(List<Double> a, List<Double> b) {
+        if (a.size() != b.size() || a.isEmpty())
+            return 0.0;
+
+        double dotProduct = 0.0;
+        double normA = 0.0;
+        double normB = 0.0;
+
+        for (int i = 0; i < a.size(); i++) {
+            dotProduct += a.get(i) * b.get(i);
+            normA += a.get(i) * a.get(i);
+            normB += b.get(i) * b.get(i);
+        }
+
+        double denominator = Math.sqrt(normA) * Math.sqrt(normB);
+        return denominator > 0 ? dotProduct / denominator : 0.0;
+    }
+
+    /**
+     * Calculate level score: min(candidateLevel / requiredLevel, 1.0)
+     */
+    private double calculateLevelScore(SkillLevel candidateLevel, SkillLevel requiredLevel) {
+        if (candidateLevel == null || requiredLevel == null)
+            return 0.5;
+
+        int candidate = LEVEL_VALUES.getOrDefault(candidateLevel, 1);
+        int required = LEVEL_VALUES.getOrDefault(requiredLevel, 1);
+
+        return Math.min((double) candidate / required, 1.0);
+    }
+
+    /**
+     * Categorize job skills into matched and missing lists.
+     */
+    private void categorizeSkills(Set<String> cvSkillIds, Map<String, Double> expandedCvSkillWeights,
+            List<JobSkill> jobSkills,
+            List<String> matchedSkills, List<String> missingSkills) {
+        for (JobSkill jobSkill : jobSkills) {
+            String neo4jId = jobSkill.getSkillNeo4jId();
+            Optional<SkillNode> skillNode = skillNodeRepository.findById(neo4jId);
+            String skillName = skillNode.map(SkillNode::getName).orElse(neo4jId);
+
+            if (cvSkillIds.contains(neo4jId) || expandedCvSkillWeights.containsKey(neo4jId)) {
+                matchedSkills.add(skillName);
+            } else {
+                missingSkills.add(skillName);
+            }
+        }
+    }
+
+    /**
+     * Build detailed skill match information for each job skill.
+     */
+    private List<SkillMatchDetail> buildSkillMatchDetails(Map<String, CvSkill> cvSkillMap,
+            Map<String, Double> expandedCvSkillWeights,
+            List<JobSkill> jobSkills) {
+        List<SkillMatchDetail> details = new ArrayList<>();
+
+        for (JobSkill jobSkill : jobSkills) {
+            String neo4jId = jobSkill.getSkillNeo4jId();
+            Optional<SkillNode> skillNode = skillNodeRepository.findById(neo4jId);
+            String skillName = skillNode.map(SkillNode::getName).orElse(neo4jId);
+
+            String matchType;
+            String matchStatus;
+            String candidateLevel = null;
+
+            if (cvSkillMap.containsKey(neo4jId)) {
+                matchType = "EXACT";
+                CvSkill cvSkill = cvSkillMap.get(neo4jId);
+                candidateLevel = cvSkill.getProficiencyLevel() != null
+                        ? cvSkill.getProficiencyLevel().name()
+                        : null;
+
+                int candVal = LEVEL_VALUES.getOrDefault(cvSkill.getProficiencyLevel(), 1);
+                int reqVal = LEVEL_VALUES.getOrDefault(jobSkill.getRequiredLevel(), 1);
+
+                if (candVal >= reqVal) {
+                    matchStatus = candVal > reqVal ? "EXCEEDED" : "MATCHED";
+                } else {
+                    matchStatus = "PARTIAL";
+                }
+            } else if (expandedCvSkillWeights.containsKey(neo4jId)) {
+                double w = expandedCvSkillWeights.get(neo4jId);
+                if (w == SYNONYM_MATCH) matchType = "SYNONYM";
+                else if (w == RELATED_MATCH) matchType = "RELATED";
+                else if (w == PARENT_MATCH) matchType = "PARENT_CHILD";
+                else matchType = "EXPANDED";
+                
+                matchStatus = "MATCHED";
+            } else {
+                matchType = "NONE";
+                matchStatus = "MISSING";
+            }
+
+            details.add(SkillMatchDetail.builder()
+                    .skillName(skillName)
+                    .matchType(matchType)
+                    .requiredLevel(jobSkill.getRequiredLevel() != null
+                            ? jobSkill.getRequiredLevel().name()
+                            : null)
+                    .candidateLevel(candidateLevel)
+                    .matchStatus(matchStatus)
+                    .similarityScore(0.0) // Could compute per-skill embedding similarity
+                    .build());
+        }
+
+        return details;
+    }
+
+    /**
+     * Determine match grade based on final score.
+     */
+    private String getGrade(double score) {
+        if (score >= 0.80)
+            return "EXCELLENT";
+        if (score >= 0.60)
+            return "GOOD";
+        if (score >= 0.40)
+            return "FAIR";
+        return "POOR";
+    }
+}

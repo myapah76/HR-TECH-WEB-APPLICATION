@@ -31,5 +31,20 @@ public class ErrorCode {
     public static final String NOT_FOUND = "NOT_FOUND";
     public static final String VALIDATION_ERROR = "VALIDATION_ERROR";
     public static final String INTERNAL_ERROR = "INTERNAL_ERROR";
+
+    //Skill
+    public static final String SKILL_NOT_FOUND = "SKILL_NOT_FOUND";
+    public static final String SKILL_ALREADY_EXISTS = "SKILL_ALREADY_EXISTS";
+    public static final String SKILL_SELF_RELATIONSHIP = "SKILL_SELF_RELATIONSHIP";
+
+    //Recommendation
+    public static final String CV_NOT_FOUND = "CV_NOT_FOUND";
+    public static final String JOB_NOT_FOUND = "JOB_NOT_FOUND";
+    public static final String CV_HAS_NO_SKILLS = "CV_HAS_NO_SKILLS";
+    public static final String CV_CONTENT_EMPTY = "CV_CONTENT_EMPTY";
+
+    //AI / Ollama / Gemini
+    public static final String AI_SERVICE_UNAVAILABLE = "AI_SERVICE_UNAVAILABLE";
+    public static final String AI_EXTRACTION_FAILED = "AI_EXTRACTION_FAILED";
 }
 

@@ -45,6 +45,19 @@ services:
     networks:
       - hrt-network
 
+  ai_service:
+    build: 
+      context: ./BE/ai-service
+      dockerfile: Dockerfile
+    container_name: hrt_ai_service
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    networks:
+      - hrt-network
+
 volumes:
   postgres_data:
   redis_data:

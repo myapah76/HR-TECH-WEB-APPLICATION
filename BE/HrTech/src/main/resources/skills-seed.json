@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Java",
+    "related": ["Spring Boot"]
+  },
+  {
+    "name": "Python",
+    "related": []
+  },
+  {
+    "name": "JavaScript",
+    "related": ["TypeScript", "React", "Node.js"]
+  },
+  {
+    "name": "TypeScript",
+    "related": []
+  },
+  {
+    "name": "Spring Boot",
+    "related": ["REST API"]
+  },
+  {
+    "name": "React",
+    "related": []
+  },
+  {
+    "name": "Node.js",
+    "related": ["REST API"]
+  },
+  {
+    "name": "PostgreSQL",
+    "related": ["MongoDB"]
+  },
+  {
+    "name": "MongoDB",
+    "related": []
+  },
+  {
+    "name": "Redis",
+    "related": []
+  },
+  {
+    "name": "Docker",
+    "related": ["AWS"]
+  },
+  {
+    "name": "AWS",
+    "related": []
+  },
+  {
+    "name": "Git",
+    "related": []
+  },
+  {
+    "name": "Agile",
+    "related": []
+  },
+  {
+    "name": "REST API",
+    "related": []
+  }
+]

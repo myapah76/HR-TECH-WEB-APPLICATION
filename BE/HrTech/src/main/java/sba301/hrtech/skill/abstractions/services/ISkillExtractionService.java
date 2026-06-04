@@ -1,0 +1,18 @@
+package sba301.hrtech.skill.abstractions.services;
+
+import sba301.hrtech.skill.dtos.response.CvExtractionResponse;
+
+import java.util.UUID;
+
+public interface ISkillExtractionService {
+
+    /**
+     * Extract skills from CV using Gemini AI.
+     * 1. Get parsedContent from CV (PostgreSQL)
+     * 2. Send to Gemini API for skill extraction
+     * 3. Match extracted skills with existing Neo4j skills
+     * 4. Create new SkillNodes (isVerified=false) with embeddings for unknown skills
+     * 5. Create CvSkill bridge records in PostgreSQL
+     */
+    CvExtractionResponse extractAndSaveSkills(UUID cvId);
+}

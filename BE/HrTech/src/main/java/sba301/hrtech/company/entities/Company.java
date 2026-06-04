@@ -60,6 +60,12 @@ public class Company extends SoftDeleteEntity {
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CompanyMember> members = new ArrayList<>();
+
+    @Column(name = "graph_weight")
+    private Double graphWeight;
+
+    @Column(name = "embedding_weight")
+    private Double embeddingWeight;
 }
 
 
