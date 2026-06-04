@@ -5,6 +5,7 @@ import sba301.hrtech.shared.common.SoftDeleteEntity;
 import java.util.List;
 import java.util.ArrayList;
 import sba301.hrtech.application.entities.Application;
+import sba301.hrtech.cv.entities.CvSkill;
 
 import jakarta.persistence.*;
 import lombok.*;
