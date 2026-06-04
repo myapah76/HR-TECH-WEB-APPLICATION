@@ -1,7 +1,7 @@
 'use client'
 import { useEffect } from 'react'
 import { useAuthStore } from '../stores/auth.store'
-import { api } from '../lib/axios'
+import { apiRaw } from '../lib/axios'
 
 export default function AuthProvider({
   children,
@@ -14,8 +14,7 @@ export default function AuthProvider({
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const res = await api.post('/auth/refresh')
-        console.log('refresh', res)
+        const res = await apiRaw.post('/auth/refresh')
         setAuth({
           user: res.data.userResponse,
           accessToken: res.data.accessToken,

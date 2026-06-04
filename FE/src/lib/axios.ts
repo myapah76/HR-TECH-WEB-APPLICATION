@@ -9,6 +9,10 @@ export const api = axios.create({
   withCredentials: true,
 })
 
+export const apiRaw = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+})
+
 // Request Interceptor: Add token into headers
 api.interceptors.request.use(
   (config) => {
@@ -25,22 +29,68 @@ api.interceptors.request.use(
   },
 )
 
-// Response Interceptor: Handle refresh token
+// Response Interceptor: Handle refresh token with no race condition
+type QueueItem = {
+  resolve: (value: string | null) => void
+  reject: (reason?: unknown) => void
+}
+let isRefreshing = false
+let failedQueue: QueueItem[] = []
+// queue of request that failed due to 401 before refresh token
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((item) => {
+    if (error) {
+      item.reject(error)
+    } else {
+      item.resolve(token)
+    }
+  })
+  failedQueue = []
+}
+// api response interceptor
 api.interceptors.response.use(
   (response) => {
     return response
   },
   async (error) => {
-    if (error.response?.status === 401) {
-      const res = await api.post('/auth/refresh')
-      console.log(res)
-      const newAccess = res.data.accessToken
-      // update token
-      useAuthStore.getState().updateTokens(newAccess)
-      // update header
-      error.config.headers.Authorization = `Bearer ${newAccess}`
-      // return request again
-      return api(error.config)
+    const originalRequest = error.config
+    // if request is refresh token request, return error
+    if (error.config.url?.includes('/auth/refresh')) {
+      return Promise.reject(error)
+    }
+    // if request is 401 and not retry
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`
+            return api(originalRequest)
+          })
+          .catch((err) => {
+            return Promise.reject(err)
+          })
+      }
+      isRefreshing = true
+      originalRequest._retry = true
+      try {
+        const res = await apiRaw.post('/auth/refresh')
+        const newAccess = res.data.accessToken
+        // update token
+        useAuthStore.getState().updateTokens(newAccess)
+        processQueue(null, newAccess)
+        // update header
+        error.config.headers.Authorization = `Bearer ${newAccess}`
+        // return request again
+        return api(error.config)
+      } catch (err) {
+        processQueue(err, null)
+        useAuthStore.getState().logout()
+        return Promise.reject(err)
+      } finally {
+        isRefreshing = false
+      }
     }
     return Promise.reject(error)
   },

@@ -11,6 +11,7 @@ import sba301.hrtech.auth.abstractions.services.IAuthService;
 import sba301.hrtech.auth.dtos.auth.request.LoginRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import sba301.hrtech.auth.dtos.auth.request.RefreshRequest;
+import sba301.hrtech.auth.dtos.auth.response.RegisterResponse;
 import sba301.hrtech.auth.dtos.auth.response.TokenResponse;
 import sba301.hrtech.auth.exceptions.token.TokenExpiredException;
 import sba301.hrtech.auth.dtos.auth.request.ConfirmOtpRequest;
@@ -26,9 +27,9 @@ public class AuthController {
     private final IAuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest request) {
-        authService.register(request);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
+        RegisterResponse response = authService.register(request);
+        return ResponseEntity.ok(response);
     }
     @PostMapping("/confirm-otp")
     public UserResponse confirmOtp(@RequestBody ConfirmOtpRequest request){

@@ -14,6 +14,7 @@ import sba301.hrtech.auth.abstractions.repositories.UserRepository;
 import sba301.hrtech.auth.abstractions.services.IAuthService;
 import sba301.hrtech.auth.dtos.auth.request.LoginRequest;
 import sba301.hrtech.auth.dtos.auth.request.RefreshRequest;
+import sba301.hrtech.auth.dtos.auth.response.RegisterResponse;
 import sba301.hrtech.auth.dtos.auth.response.TokenResponse;
 import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.auth.entities.RefreshToken;
@@ -61,7 +62,7 @@ public class AuthServiceImpl implements IAuthService {
 
     @Override
     @Transactional
-    public void register(RegisterRequest request) {
+    public RegisterResponse register(RegisterRequest request) {
 
         String key = "PENDING_USER:" + request.email();
         // 1. generate OTP
@@ -86,7 +87,7 @@ public class AuthServiceImpl implements IAuthService {
         // 3. save to Redis
         try {
             redisTemplate.opsForValue()
-                    .set(key, objectMapper.writeValueAsString(pendingUser), Duration.ofMinutes(5));
+                    .set(key, objectMapper.writeValueAsString(pendingUser), Duration.ofMinutes(1));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -97,6 +98,11 @@ public class AuthServiceImpl implements IAuthService {
                 request.email()+ otp,
                 OtpType.REGISTER
         ));
+
+        return RegisterResponse.builder()
+                .email(request.email())
+                .expireIn(5 * 60) // 5 minutes in seconds
+                .build();
     }
 
     @Override
