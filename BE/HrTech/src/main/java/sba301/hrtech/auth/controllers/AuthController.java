@@ -40,15 +40,6 @@ public class AuthController {
 
         AuthResponse authResponse = authService.login(request);
 
-        Cookie accessCookie = new Cookie(
-                "accessToken",
-                authResponse.getAccessToken()
-        );
-
-        accessCookie.setHttpOnly(true);
-        accessCookie.setPath("/");
-        accessCookie.setMaxAge(15 * 60);
-
         Cookie refreshCookie = new Cookie(
                 "refreshToken",
                 authResponse.getRefreshToken()
@@ -58,12 +49,11 @@ public class AuthController {
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(7 * 24 * 60 * 60);
 
-        response.addCookie(accessCookie);
         response.addCookie(refreshCookie);
     }
 
     @PostMapping("/refresh")
-    public void refresh(
+    public TokenResponse refresh(
             @CookieValue("refreshToken") String refreshToken,
             HttpServletResponse response
     ) {
@@ -78,6 +68,7 @@ public class AuthController {
         cookie.setPath("/");
         cookie.setMaxAge(7 * 24 * 60 * 60);
         response.addCookie(cookie);
+        return  tokenResponse;
     }
 
     @PostMapping("/logout")
