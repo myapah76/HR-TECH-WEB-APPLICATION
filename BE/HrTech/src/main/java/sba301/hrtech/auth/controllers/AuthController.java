@@ -58,7 +58,17 @@ public class AuthController {
             @CookieValue("refreshToken") String refreshToken,
             HttpServletResponse response
     ) {
-        return  authService.refresh(refreshToken);
+        AuthResponse authResponse = authService.refresh(refreshToken);
+        Cookie accessCookie = new Cookie(
+                "accessToken",
+                authResponse.getAccessToken()
+        );
+
+        accessCookie.setHttpOnly(true);
+        accessCookie.setPath("/");
+        accessCookie.setMaxAge(15 * 60);
+
+        return  authResponse;
     }
 
     @PostMapping("/logout")
