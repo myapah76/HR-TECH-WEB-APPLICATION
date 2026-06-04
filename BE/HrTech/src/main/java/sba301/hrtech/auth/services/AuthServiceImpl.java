@@ -14,7 +14,9 @@ import sba301.hrtech.auth.abstractions.repositories.UserRepository;
 import sba301.hrtech.auth.abstractions.services.IAuthService;
 import sba301.hrtech.auth.dtos.auth.request.LoginRequest;
 import sba301.hrtech.auth.dtos.auth.request.RefreshRequest;
+import sba301.hrtech.auth.dtos.auth.response.RegisterResponse;
 import sba301.hrtech.auth.dtos.auth.response.TokenResponse;
+import sba301.hrtech.auth.exceptions.user.UserExistException;
 import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.auth.entities.RefreshToken;
 import sba301.hrtech.auth.entities.Role;
@@ -61,15 +63,14 @@ public class AuthServiceImpl implements IAuthService {
 
     @Override
     @Transactional
-    public void register(RegisterRequest request) {
+    public RegisterResponse register(RegisterRequest request) {
 
         String key = "PENDING_USER:" + request.email();
         // 1. generate OTP
         String otp = generateOtp();
 
-        if (userRepository.findByEmail(request.email()).isPresent()
-                || redisTemplate.hasKey(key)) {
-            throw new RuntimeException(ErrorCode.Email_Already_Registered);
+        if (userRepository.findByEmail(request.email()).isPresent()) {
+            throw new UserExistException(ErrorCode.Email_Already_Registered);
         }
 
         // 2. create pending user object (staging in Redis)
@@ -85,8 +86,12 @@ public class AuthServiceImpl implements IAuthService {
         );
         // 3. save to Redis
         try {
+            if (redisTemplate.hasKey(key)) {
+                redisTemplate.delete(key);
+            }
+
             redisTemplate.opsForValue()
-                    .set(key, objectMapper.writeValueAsString(pendingUser), Duration.ofMinutes(5));
+                    .set(key, objectMapper.writeValueAsString(pendingUser), Duration.ofMinutes(1));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -97,6 +102,11 @@ public class AuthServiceImpl implements IAuthService {
                 request.email()+ otp,
                 OtpType.REGISTER
         ));
+
+        return RegisterResponse.builder()
+                .email(request.email())
+                .expireIn(5 * 60) // 5 minutes in seconds
+                .build();
     }
 
     @Override
@@ -198,12 +208,16 @@ public class AuthServiceImpl implements IAuthService {
         );
     }
     @Override
-    public void logout(String accessToken) {
+    public void logout(String refreshToken) {
+        try {
+            String jti = jwtService.extractJwtId(refreshToken);
+            long ttl = getRemainingTime(refreshToken);
 
-        String jti = jwtService.extractJwtId(accessToken);
-        long ttl = getRemainingTime(accessToken);
-        redisTokenService.blacklistToken(jti, ttl);
-
+            if (ttl > 0) {
+                redisTokenService.blacklistToken(jti, ttl);
+            }
+        } catch (Exception e) {
+        }
     }
 
 // Function Helper

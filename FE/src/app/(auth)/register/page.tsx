@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react'
 import { motion } from 'motion/react'
@@ -9,10 +10,51 @@ import { Input } from '@/src/components/ui/input'
 import { Checkbox } from '@/src/components/ui/checkbox'
 import { Card, CardContent } from '@/src/components/ui/card'
 import { Label } from '@/src/components/ui/label'
+import { Controller } from 'react-hook-form'
+
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { registerSchema, RegisterFormData } from '@/src/schemas/auth.schema'
+import { useRegister } from '@/src/hooks/useRegister'
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const router = useRouter()
+
+  const registerMutation = useRegister()
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+  })
+
+  const onSubmit = async (data: RegisterFormData) => {
+    registerMutation.mutate(
+      {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        username: data.username,
+        email: data.email,
+        password: data.password,
+        gender: Number(data.gender),
+      },
+      {
+        onSuccess: (response) => {
+          router.push(
+            `/verify-otp?email=${response.email}&expireIn=${response.expireIn}`,
+          )
+        },
+        onError: (error) => {
+          console.log('error', error)
+        },
+      },
+    )
+  }
 
   return (
     <div className="min-h-[calc(100vh-180px)] flex items-center justify-center px-4 py-12">
@@ -33,30 +75,41 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            <form
-              onSubmit={(e) => e.preventDefault()}
-              className="mt-5 space-y-4"
-            >
+            <form onSubmit={handleSubmit(onSubmit)} className="mt-5 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-[11px] font-bold text-slate-500">
                     * Tên
                   </Label>
                   <Input
+                    {...register('lastName')}
                     type="text"
                     placeholder="Nam"
-                    className="h-auto px-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
+                    className="h-auto px-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none 
+                    focus:bg-white focus:border-blue-500 transition-all"
                   />
+                  {errors.lastName && (
+                    <p className="text-xs font-bold text-red-500 mt-1.5">
+                      {errors.lastName.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <Label className="text-[11px] font-bold text-slate-500">
                     * Họ
                   </Label>
                   <Input
+                    {...register('firstName')}
                     type="text"
                     placeholder="Nguyen Hoang"
-                    className="h-auto px-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
+                    className="h-auto px-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none 
+                    focus:bg-white focus:border-blue-500 transition-all"
                   />
+                  {errors.firstName && (
+                    <p className="text-xs font-bold text-red-500 mt-1.5">
+                      {errors.firstName.message}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -69,10 +122,17 @@ export default function RegisterPage() {
                     <User className="h-4 w-4" />
                   </span>
                   <Input
+                    {...register('username')}
                     type="text"
                     placeholder="username"
-                    className="h-auto pl-9 pr-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
+                    className="h-auto pl-9 pr-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none 
+                    focus:bg-white focus:border-blue-500 transition-all"
                   />
+                  {errors.username && (
+                    <p className="text-xs font-bold text-red-500 mt-1.5">
+                      {errors.username.message}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -85,11 +145,38 @@ export default function RegisterPage() {
                     <Mail className="h-4 w-4" />
                   </span>
                   <Input
+                    {...register('email')}
                     type="email"
                     placeholder="yourname@email.com"
-                    className="h-auto pl-9 pr-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
+                    className="h-auto pl-9 pr-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none 
+                    focus:bg-white focus:border-blue-500 transition-all"
                   />
+                  {errors.email && (
+                    <p className="text-xs font-bold text-red-500 mt-1.5">
+                      {errors.email.message}
+                    </p>
+                  )}
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[11px] font-bold text-slate-500">
+                  * Giới tính
+                </Label>
+
+                <select
+                  {...register('gender')}
+                  className="w-full h-auto px-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
+                >
+                  <option value="0">Nam</option>
+                  <option value="1">Nữ</option>
+                </select>
+
+                {errors.gender && (
+                  <p className="text-xs font-bold text-red-500 mt-1.5">
+                    {errors.gender.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
@@ -101,9 +188,11 @@ export default function RegisterPage() {
                     <Lock className="h-4 w-4" />
                   </span>
                   <Input
+                    {...register('password')}
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
-                    className="h-auto pl-9 pr-10 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
+                    className="h-auto pl-9 pr-10 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none 
+                    focus:bg-white focus:border-blue-500 transition-all"
                   />
                   <Button
                     type="button"
@@ -112,12 +201,17 @@ export default function RegisterPage() {
                     className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-slate-650 hover:bg-transparent cursor-pointer"
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
                       <Eye className="h-4 w-4" />
+                    ) : (
+                      <EyeOff className="h-4 w-4" />
                     )}
                   </Button>
                 </div>
+                {errors.password && (
+                  <p className="text-xs font-bold text-red-500 mt-1.5">
+                    {errors.password.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
@@ -129,9 +223,11 @@ export default function RegisterPage() {
                     <Lock className="h-4 w-4" />
                   </span>
                   <Input
+                    {...register('confirmPassword')}
                     type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="••••••••"
-                    className="h-auto pl-9 pr-10 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
+                    className="h-auto pl-9 pr-10 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none 
+                    focus:bg-white focus:border-blue-500 transition-all"
                   />
                   <Button
                     type="button"
@@ -140,29 +236,54 @@ export default function RegisterPage() {
                     className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-slate-650 hover:bg-transparent cursor-pointer"
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
                       <Eye className="h-4 w-4" />
+                    ) : (
+                      <EyeOff className="h-4 w-4" />
                     )}
                   </Button>
                 </div>
+                {errors.confirmPassword && (
+                  <p className="text-xs font-bold text-red-500 mt-1.5">
+                    {errors.confirmPassword.message}
+                  </p>
+                )}
               </div>
 
-              <div className="pt-1">
-                <Label className="flex items-start gap-2.5 cursor-pointer select-none text-[11px] font-medium leading-relaxed text-slate-550">
-                  <Checkbox className="mt-1 shrink-0" />
-                  <span>
-                    Tôi đồng ý với Điều khoản Sử dụng và Chính sách Bảo mật của
-                    HR-Tech.
-                  </span>
-                </Label>
+              <div className="space-y-1">
+                <Controller
+                  control={control}
+                  name="acceptTerms"
+                  defaultValue={false}
+                  render={({ field }) => (
+                    <Label className="flex items-start gap-2.5 cursor-pointer select-none text-[11px] font-medium leading-relaxed text-slate-550">
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="mt-1 shrink-0"
+                      />
+                      <span>
+                        Tôi đồng ý với Điều khoản Sử dụng và Chính sách Bảo mật
+                        của HR-Tech.
+                      </span>
+                    </Label>
+                  )}
+                />
+                {errors.acceptTerms && (
+                  <p className="text-xs font-bold text-red-500 mt-1.5">
+                    {errors.acceptTerms.message}
+                  </p>
+                )}
               </div>
 
               <Button
                 type="submit"
-                className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs sm:text-sm py-4 rounded-xl transition-all duration-300 shadow-lg shadow-blue-600/20 hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer tracking-wider uppercase h-auto"
+                disabled={registerMutation.isPending}
+                className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs sm:text-sm py-4 rounded-xl transition-all duration-300 
+                shadow-lg shadow-blue-600/20 hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer tracking-wider uppercase h-auto"
               >
-                ĐĂNG KÝ MIỄN PHÍ
+                {registerMutation.isPending
+                  ? 'ĐANG ĐĂNG KÝ...'
+                  : 'ĐĂNG KÝ MIỄN PHÍ'}
               </Button>
             </form>
 

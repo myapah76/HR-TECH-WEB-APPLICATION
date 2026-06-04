@@ -3,7 +3,6 @@ package sba301.hrtech.company.entities;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
 import java.util.List;
 import java.util.ArrayList;
-import sba301.hrtech.auth.entities.User;
 import sba301.hrtech.subscription.entities.CompanySubscription;
 import sba301.hrtech.job.entities.Job;
 
@@ -38,9 +37,6 @@ public class Company extends SoftDeleteEntity {
     private CompanySize size;
 
     private String address;
-
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<User> users = new ArrayList<>();
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CompanySubscription> subscriptions = new ArrayList<>();

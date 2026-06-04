@@ -8,6 +8,7 @@ public class ErrorCode {
     public static final String TOKEN_EXPIRED = "TOKEN_EXPIRED";
     public static final String TOKEN_INVALID = "TOKEN_INVALID";
     public static final String TOKEN_REVOKED = "TOKEN_REVOKED";
+    public static final String MISSING_COOKIE = "MISSING_COOKIE";
 
     //Auth
     public static final String Email_Not_Found = "Email_Not_Found";
