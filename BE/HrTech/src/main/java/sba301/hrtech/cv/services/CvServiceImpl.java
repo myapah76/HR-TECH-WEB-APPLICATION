@@ -28,7 +28,6 @@ public class CvServiceImpl implements CvService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại với ID: " + userId));
 
-        // Tối ưu: Dùng hàm custom trong repo để kiểm tra số lượng CV hiện có của ứng viên
         List<Cv> existingCvs = cvRepository.findByUserId(userId);
         boolean isFirstCv = existingCvs.isEmpty();
 
@@ -45,7 +44,6 @@ public class CvServiceImpl implements CvService {
     @Override
     @Transactional(readOnly = true)
     public List<Cv> getCvsByUserId(UUID userId) {
-        // Tối ưu: Lấy trực tiếp danh sách CV dựa trên kết nối Id của User dưới DB
         return cvRepository.findByUserId(userId);
     }
 
@@ -64,7 +62,6 @@ public class CvServiceImpl implements CvService {
             throw new IllegalArgumentException("Hành vi bất hợp pháp! CV này không thuộc quyền sở hữu của bạn.");
         }
 
-        // Tối ưu: Chỉ tìm duy nhất bản ghi Primary cũ để hạ quyền nhằm giảm thiểu chi phí quét bảng
         cvRepository.findByUserIdAndIsPrimaryTrue(userId)
                 .ifPresent(oldPrimary -> {
                     oldPrimary.setIsPrimary(false);

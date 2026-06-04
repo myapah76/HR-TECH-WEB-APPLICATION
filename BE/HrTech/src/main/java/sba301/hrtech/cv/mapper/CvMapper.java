@@ -22,7 +22,7 @@ public class CvMapper {
                 .fileUrl(entity.getFileUrl())
                 .isPrimary(entity.getIsPrimary())
                 .createdAt(entity.getCreatedAt() != null
-                        ? entity.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDateTime()  // ✅ FIX
+                        ? entity.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDateTime()
                         : null)
 
                 .build();
@@ -51,7 +51,7 @@ public class CvMapper {
                 .parsedContent(entity.getParsedContent())
                 .isPrimary(entity.getIsPrimary())
                 .createdAt(entity.getCreatedAt() != null
-                        ? entity.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDateTime()  // ✅ FIX
+                        ? entity.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDateTime()
                         : null)
 
                 .build();
