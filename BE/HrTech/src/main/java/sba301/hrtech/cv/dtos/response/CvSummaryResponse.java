@@ -1,4 +1,4 @@
-package sba301.hrtech.cv.dtos;
+package sba301.hrtech.cv.dtos.response;
 
 import lombok.*;
 import java.time.LocalDateTime;

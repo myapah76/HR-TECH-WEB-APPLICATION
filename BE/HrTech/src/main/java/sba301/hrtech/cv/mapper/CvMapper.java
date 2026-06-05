@@ -1,8 +1,8 @@
 package sba301.hrtech.cv.mapper;
 
 import org.springframework.stereotype.Component;
-import sba301.hrtech.cv.dtos.CvDetailResponse;
-import sba301.hrtech.cv.dtos.CvSummaryResponse;
+import sba301.hrtech.cv.dtos.response.CvDetailResponse;
+import sba301.hrtech.cv.dtos.response.CvSummaryResponse;
 import sba301.hrtech.cv.entities.Cv;
 
 import java.time.Instant;

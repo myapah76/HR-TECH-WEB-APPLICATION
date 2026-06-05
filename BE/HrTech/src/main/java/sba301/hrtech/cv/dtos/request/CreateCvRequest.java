@@ -1,4 +1,4 @@
-package sba301.hrtech.cv.dtos;
+package sba301.hrtech.cv.dtos.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
