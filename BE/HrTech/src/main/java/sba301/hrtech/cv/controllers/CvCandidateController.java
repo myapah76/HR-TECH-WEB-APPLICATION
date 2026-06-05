@@ -12,6 +12,7 @@ import sba301.hrtech.auth.dtos.user.CustomUserDetails;
 import sba301.hrtech.cv.dtos.CreateCvRequest;
 import sba301.hrtech.cv.dtos.CvDetailResponse;
 import sba301.hrtech.cv.dtos.CvSummaryResponse;
+import sba301.hrtech.shared.common.ApiResponse;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.cv.mapper.CvMapper;
 import sba301.hrtech.cv.services.CvService;
@@ -33,46 +34,46 @@ public class CvCandidateController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CvSummaryResponse>> getAllCvs() {
+    public ResponseEntity<ApiResponse<List<CvSummaryResponse>>> getAllCvs() {
         UUID currentUserId = getAuthenticatedUserId();
         List<Cv> entities = cvService.getCvsByUserId(currentUserId);
         List<CvSummaryResponse> response = entities.stream()
                 .map(cvMapper::toSummaryResponse)
                 .toList();
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/{cvId}")
-    public ResponseEntity<CvDetailResponse> getCvDetail(@PathVariable UUID cvId) {
+    public ResponseEntity<ApiResponse<CvDetailResponse>> getCvDetail(@PathVariable UUID cvId) {
         Cv cv = cvService.getCvById(cvId)
                 .orElseThrow(() -> new RuntimeException("CV không tồn tại hoặc đã bị xóa"));
 
         if (!cv.getUser().getId().equals(getAuthenticatedUserId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.failed(403, "Forbidden"));
         }
 
-        return ResponseEntity.ok(cvMapper.toDetailResponse(cv));
+        return ResponseEntity.ok(ApiResponse.success(cvMapper.toDetailResponse(cv)));
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<CvSummaryResponse> uploadCv(@Valid @RequestBody CreateCvRequest request) {
+    public ResponseEntity<ApiResponse<CvSummaryResponse>> uploadCv(@Valid @RequestBody CreateCvRequest request) {
         UUID currentUserId = getAuthenticatedUserId();
         Cv savedCv = cvService.createCv(currentUserId, request.getTitle(), request.getFileUrl());
-        return ResponseEntity.status(HttpStatus.CREATED).body(cvMapper.toSummaryResponse(savedCv));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(cvMapper.toSummaryResponse(savedCv)));
     }
 
     @PutMapping("/{cvId}/set-primary")
-    public ResponseEntity<CvSummaryResponse> setPrimary(@PathVariable UUID cvId) {
+    public ResponseEntity<ApiResponse<CvSummaryResponse>> setPrimary(@PathVariable UUID cvId) {
         UUID currentUserId = getAuthenticatedUserId();
         Cv updatedCv = cvService.setPrimaryCv(currentUserId, cvId);
-        return ResponseEntity.ok(cvMapper.toSummaryResponse(updatedCv));
+        return ResponseEntity.ok(ApiResponse.success(cvMapper.toSummaryResponse(updatedCv)));
     }
 
     @DeleteMapping("/{cvId}")
-    public ResponseEntity<String> deleteCv(@PathVariable UUID cvId) {
+    public ResponseEntity<ApiResponse<String>> deleteCv(@PathVariable UUID cvId) {
         UUID currentUserId = getAuthenticatedUserId();
         cvService.deleteCv(currentUserId, cvId);
-        return ResponseEntity.ok("Xóa hồ sơ thành công!");
+        return ResponseEntity.ok(ApiResponse.success("Xóa hồ sơ thành công!"));
     }
 
 

@@ -16,6 +16,7 @@ import sba301.hrtech.skill.entities.SkillNode;
 import sba301.hrtech.skill.mapper.SkillMapper;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -139,7 +140,7 @@ public class SkillServiceImpl implements ISkillService {
         SkillNode synonym = findSkillOrThrow(synonymId);
 
         if (skill.getSynonyms() == null) {
-            skill.setSynonyms(new java.util.ArrayList<>());
+            skill.setSynonyms(new ArrayList<>());
         }
         skill.getSynonyms().add(synonym);
         skillNodeRepository.save(skill);
@@ -153,7 +154,7 @@ public class SkillServiceImpl implements ISkillService {
         SkillNode related = findSkillOrThrow(relatedSkillId);
 
         if (skill.getRelatedSkills() == null) {
-            skill.setRelatedSkills(new java.util.ArrayList<>());
+            skill.setRelatedSkills(new ArrayList<>());
         }
         skill.getRelatedSkills().add(related);
         skillNodeRepository.save(skill);
@@ -167,7 +168,7 @@ public class SkillServiceImpl implements ISkillService {
         SkillNode child = findSkillOrThrow(childId);
 
         if (parent.getChildren() == null) {
-            parent.setChildren(new java.util.ArrayList<>());
+            parent.setChildren(new ArrayList<>());
         }
         parent.getChildren().add(child);
         skillNodeRepository.save(parent);

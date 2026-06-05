@@ -30,13 +30,7 @@ public class AuthController {
 
         EmailActionResponse response = authService.register(request);
 
-        return ResponseEntity.ok(
-                ApiResponse.<EmailActionResponse>builder()
-                        .success(true)
-                        .message("Register successfully")
-                        .data(response)
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(response, "Register successfully"));
     }
 
     @PostMapping("/forgot-password")
@@ -45,13 +39,7 @@ public class AuthController {
 
         EmailActionResponse response = authService.forgetPassword(request);
 
-        return ResponseEntity.ok(
-                ApiResponse.<EmailActionResponse>builder()
-                        .success(true)
-                        .message("OTP sent successfully")
-                        .data(response)
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(response, "OTP sent successfully"));
     }
 
     @PostMapping("/confirm-otp")
@@ -59,13 +47,7 @@ public class AuthController {
             @RequestBody ConfirmOtpRequest request) throws RoleNotFoundException {
 
         ConfirmOtpResult response = authService.confirmOtp(request);
-        return ResponseEntity.ok(
-                ApiResponse.<ConfirmOtpResult>builder()
-                        .success(true)
-                        .message("OTP confirmed successfully")
-                        .data(response)
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(response, "OTP confirmed successfully"));
     }
 
     @PostMapping("/reset-password")
@@ -74,12 +56,7 @@ public class AuthController {
 
         authService.resetPassword(request);
 
-        return ResponseEntity.ok(
-                ApiResponse.<Void>builder()
-                        .success(true)
-                        .message("Password reset successfully")
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(null, "Password reset successfully"));
     }
 
     @PostMapping("/login")
@@ -102,13 +79,7 @@ public class AuthController {
 
         authResponse.setRefreshToken("");
 
-        return ResponseEntity.ok(
-                ApiResponse.<AuthResponse>builder()
-                        .success(true)
-                        .message("Login successfully")
-                        .data(authResponse)
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(authResponse, "Login successfully"));
     }
 
     @PostMapping("/refresh")
@@ -119,13 +90,7 @@ public class AuthController {
         AuthResponse authResponse = authService.refresh(refreshToken);
         authResponse.setRefreshToken("");
 
-        return ResponseEntity.ok(
-                ApiResponse.<AuthResponse>builder()
-                        .success(true)
-                        .message("Token refreshed successfully")
-                        .data(authResponse)
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(authResponse, "Token refreshed successfully"));
     }
 
     @PostMapping("/logout")
@@ -145,11 +110,6 @@ public class AuthController {
 
         response.addCookie(refreshCookie);
 
-        return ResponseEntity.ok(
-                ApiResponse.<Void>builder()
-                        .success(true)
-                        .message("Logout successfully")
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(null, "Logout successfully"));
     }
 }

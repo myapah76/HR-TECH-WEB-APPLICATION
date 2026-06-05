@@ -31,63 +31,33 @@ public class UserController {
 
         return ResponseEntity
                 .created(URI.create("/api/users/" + response.getId()))
-                .body(
-                        ApiResponse.<UserResponse>builder()
-                                .success(true)
-                                .message("User created successfully")
-                                .data(response)
-                                .build()
-                );
+                .body(ApiResponse.success(response, "User created successfully"));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> getById(
             @PathVariable UUID id
     ) {
-        return ResponseEntity.ok(
-                ApiResponse.<UserResponse>builder()
-                        .success(true)
-                        .message("User retrieved successfully")
-                        .data(userService.getById(id))
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(userService.getById(id), "User retrieved successfully"));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAll() {
-        return ResponseEntity.ok(
-                ApiResponse.<List<UserResponse>>builder()
-                        .success(true)
-                        .message("Users retrieved successfully")
-                        .data(userService.getAll())
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(userService.getAll(), "Users retrieved successfully"));
     }
 
     @PatchMapping
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @RequestBody UserCommonRequest request
     ) {
-        return ResponseEntity.ok(
-                ApiResponse.<UserResponse>builder()
-                        .success(true)
-                        .message("User updated successfully")
-                        .data(userService.update(request))
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(userService.update(request), "User updated successfully"));
     }
 
     @PatchMapping("/change-password")
     public ResponseEntity<ApiResponse<UserResponse>> updatePassword(
             @RequestBody ChangePasswordRequest request
     ) {
-        return ResponseEntity.ok(
-                ApiResponse.<UserResponse>builder()
-                        .success(true)
-                        .message("Password changed successfully")
-                        .data(userService.changePassword(request))
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(userService.changePassword(request), "Password changed successfully"));
     }
 
     @DeleteMapping("/{id}")
@@ -96,11 +66,6 @@ public class UserController {
     ) {
         userService.deleteById(id);
 
-        return ResponseEntity.ok(
-                ApiResponse.<Void>builder()
-                        .success(true)
-                        .message("User deleted successfully")
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(null, "User deleted successfully"));
     }
 }
