@@ -3,7 +3,7 @@ package sba301.hrtech.notification.dtos;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import sba301.hrtech.notification.dtos.enums.OtpType;
+import sba301.hrtech.shared.enums.OtpType;
 
 @Getter
 @Setter

@@ -10,6 +10,9 @@ public class ErrorCode {
     public static final String TOKEN_REVOKED = "TOKEN_REVOKED";
     public static final String MISSING_COOKIE = "MISSING_COOKIE";
 
+    //Redis
+    public static final String REDIS_DATA_NOT_FOUND= "REDIS_DATA_NOT_FOUND";
+
     //Auth
     public static final String Email_Not_Found = "Email_Not_Found";
     public static final String Email_Already_Registered = "Email_Already_Registered";

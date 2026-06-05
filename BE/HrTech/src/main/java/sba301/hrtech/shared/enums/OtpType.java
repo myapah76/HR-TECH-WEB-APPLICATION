@@ -1,4 +1,4 @@
-package sba301.hrtech.notification.dtos.enums;
+package sba301.hrtech.shared.enums;
 
 public enum OtpType {
     REGISTER,

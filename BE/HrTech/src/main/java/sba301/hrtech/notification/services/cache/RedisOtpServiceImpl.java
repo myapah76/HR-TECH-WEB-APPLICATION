@@ -20,8 +20,8 @@ public class RedisOtpServiceImpl implements IRedisOtpService {
     private static final long OTP_TTL_MINUTES = 5;
 
     @Override
-    public boolean saveOtp(String email, String otp) {
-        String key = PREFIX + email;
+    public boolean saveOtp(String type, String email, String otp) {
+        String key = PREFIX + type + ":" + email;
 
         Long result = redisTemplate.execute(
                 saveOtpScript,
@@ -43,9 +43,8 @@ public class RedisOtpServiceImpl implements IRedisOtpService {
         redisTemplate.delete(PREFIX + email);
     }
 
-    @Override
-    public boolean validateOtp(String email, String inputOtp) {
-        String key = PREFIX + email;
+    public boolean validateOtp(String type, String email, String inputOtp) {
+        String key = PREFIX + type + ":" + email;
 
         Long result = redisTemplate.execute(
                 validateOtpScript,

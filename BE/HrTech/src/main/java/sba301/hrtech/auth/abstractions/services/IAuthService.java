@@ -1,17 +1,20 @@
 package sba301.hrtech.auth.abstractions.services;
 
-import sba301.hrtech.auth.dtos.auth.request.ConfirmOtpRequest;
-import sba301.hrtech.auth.dtos.auth.request.LoginRequest;
-import sba301.hrtech.auth.dtos.auth.request.RefreshRequest;
-import sba301.hrtech.auth.dtos.auth.request.RegisterRequest;
+import sba301.hrtech.auth.dtos.auth.request.*;
 import sba301.hrtech.auth.dtos.auth.response.AuthResponse;
-import sba301.hrtech.auth.dtos.auth.response.RegisterResponse;
-import sba301.hrtech.auth.dtos.auth.response.TokenResponse;
-import sba301.hrtech.auth.dtos.user.response.UserResponse;
+import sba301.hrtech.auth.dtos.auth.response.ConfirmOtpResult;
+import sba301.hrtech.auth.dtos.auth.response.EmailActionResponse;
+
+import javax.management.relation.RoleNotFoundException;
 
 public interface IAuthService {
-    RegisterResponse register(RegisterRequest request);
-    UserResponse confirmOtp(ConfirmOtpRequest request);
+    EmailActionResponse register(RegisterRequest request);
+    EmailActionResponse forgetPassword(ForgetPasswordRequest request);
+    void resetPassword(ResetPasswordRequest request);
+
+    ConfirmOtpResult confirmOtp(ConfirmOtpRequest request) throws RoleNotFoundException;
+
+
 
     AuthResponse login(LoginRequest request);
     AuthResponse refresh(String request);
