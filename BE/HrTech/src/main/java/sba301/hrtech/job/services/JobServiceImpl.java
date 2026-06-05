@@ -8,13 +8,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sba301.hrtech.auth.dtos.user.CustomUserDetails;
 import sba301.hrtech.auth.entities.User;
-import sba301.hrtech.company.abstractions.repositories.CompanyMemberRepository;
+import sba301.hrtech.auth.dtos.user.CustomUserDetails;
 import sba301.hrtech.company.abstractions.repositories.CompanyRepository;
 import sba301.hrtech.company.entities.Company;
-import sba301.hrtech.company.entities.CompanyMember;
-import sba301.hrtech.company.entities.enums.CompanyRole;
 import sba301.hrtech.company.entities.enums.CompanyStatus;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
 import sba301.hrtech.job.abstractions.repositories.JobSkillRepository;
@@ -49,12 +46,8 @@ public class JobServiceImpl implements IJobService {
     private final JobRepository jobRepository;
     private final JobSkillRepository jobSkillRepository;
     private final CompanyRepository companyRepository;
-    private final CompanyMemberRepository companyMemberRepository;
     private final SkillNodeRepository skillNodeRepository;
 
-    // =============================================
-    //  Security & Validation Helpers
-    // =============================================
 
     private User getCurrentUser() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -79,31 +72,38 @@ public class JobServiceImpl implements IJobService {
         return company;
     }
 
-    private CompanyMember validateCompanyMember(UUID companyId, UUID userId) {
-        return companyMemberRepository.findByCompanyIdAndUserIdAndDeletedFalse(companyId, userId)
-                .orElseThrow(() -> new AppException(HttpStatus.FORBIDDEN,
-                        ErrorCode.JOB_PERMISSION_DENIED,
-                        "You are not a member of this company."));
+    private void validateCompanyAccess(User user, UUID companyId) {
+        if (user.getCompany() == null || !user.getCompany().getId().equals(companyId)) {
+            throw new AppException(HttpStatus.FORBIDDEN,
+                    ErrorCode.JOB_PERMISSION_DENIED,
+                    "You do not belong to this company.");
+        }
     }
 
-    private void validateHrRole(CompanyMember member) {
-        if (member.getRole() != CompanyRole.HR) {
+    private void validateHrRole(User user) {
+        if (user.getRole() == null || !"HR".equals(user.getRole().getName())) {
             throw new AppException(HttpStatus.FORBIDDEN,
                     ErrorCode.JOB_PERMISSION_DENIED,
                     "Only HR staff can perform this action.");
         }
     }
 
-    private void validateManagerRole(CompanyMember member) {
-        if (member.getRole() != CompanyRole.HR_MANAGER) {
+    private void validateManagerRole(User user) {
+        if (user.getRole() == null || !"HR_MANAGER".equals(user.getRole().getName())) {
             throw new AppException(HttpStatus.FORBIDDEN,
                     ErrorCode.JOB_PERMISSION_DENIED,
                     "Only HR Manager can perform this action.");
         }
     }
 
-    private void validateOwnerOrManagerRole(CompanyMember member) {
-        if (member.getRole() != CompanyRole.OWNER && member.getRole() != CompanyRole.HR_MANAGER) {
+    private void validateOwnerOrManagerRole(User user) {
+        if (user.getRole() == null) {
+            throw new AppException(HttpStatus.FORBIDDEN,
+                    ErrorCode.JOB_PERMISSION_DENIED,
+                    "Only Owner or HR Manager can perform this action.");
+        }
+        String roleName = user.getRole().getName();
+        if (!"COMPANY_OWNER".equals(roleName) && !"HR_MANAGER".equals(roleName)) {
             throw new AppException(HttpStatus.FORBIDDEN,
                     ErrorCode.JOB_PERMISSION_DENIED,
                     "Only Owner or HR Manager can perform this action.");
@@ -127,10 +127,6 @@ public class JobServiceImpl implements IJobService {
         }
         return job;
     }
-
-    // =============================================
-    //  Mapping Helpers
-    // =============================================
 
     private JobResponse toResponse(Job job) {
         List<JobSkillResponse> skillResponses = job.getJobSkills().stream()
@@ -236,17 +232,13 @@ public class JobServiceImpl implements IJobService {
         }
     }
 
-    // =============================================
-    //  Job Lifecycle Operations
-    // =============================================
-
     @Override
     @Transactional
     public JobResponse createJob(JobRequest request) {
         User currentUser = getCurrentUser();
         Company company = validateCompanyApproved(request.companyId());
-        CompanyMember member = validateCompanyMember(company.getId(), currentUser.getId());
-        validateHrRole(member);
+        validateCompanyAccess(currentUser, company.getId());
+        validateHrRole(currentUser);
 
         Job job = Job.builder()
                 .company(company)
@@ -274,7 +266,7 @@ public class JobServiceImpl implements IJobService {
         Job job = getActiveJob(jobId);
 
         validateCompanyApproved(job.getCompany().getId());
-        validateCompanyMember(job.getCompany().getId(), currentUser.getId());
+        validateCompanyAccess(currentUser, job.getCompany().getId());
         validateJobOwnership(job, currentUser.getId());
 
         if (job.getStatus() != JobStatus.DRAFT) {
@@ -302,7 +294,7 @@ public class JobServiceImpl implements IJobService {
         Job job = getActiveJob(jobId);
 
         validateCompanyApproved(job.getCompany().getId());
-        validateCompanyMember(job.getCompany().getId(), currentUser.getId());
+        validateCompanyAccess(currentUser, job.getCompany().getId());
         validateJobOwnership(job, currentUser.getId());
 
         if (job.getStatus() != JobStatus.DRAFT) {
@@ -324,8 +316,8 @@ public class JobServiceImpl implements IJobService {
         Job job = getActiveJob(jobId);
 
         validateCompanyApproved(job.getCompany().getId());
-        CompanyMember member = validateCompanyMember(job.getCompany().getId(), currentUser.getId());
-        validateManagerRole(member);
+        validateCompanyAccess(currentUser, job.getCompany().getId());
+        validateManagerRole(currentUser);
 
         if (job.getStatus() != JobStatus.PENDING) {
             throw new AppException(HttpStatus.BAD_REQUEST,
@@ -346,8 +338,8 @@ public class JobServiceImpl implements IJobService {
         Job job = getActiveJob(jobId);
 
         validateCompanyApproved(job.getCompany().getId());
-        CompanyMember member = validateCompanyMember(job.getCompany().getId(), currentUser.getId());
-        validateManagerRole(member);
+        validateCompanyAccess(currentUser, job.getCompany().getId());
+        validateManagerRole(currentUser);
 
         if (job.getStatus() != JobStatus.PENDING) {
             throw new AppException(HttpStatus.BAD_REQUEST,
@@ -369,8 +361,8 @@ public class JobServiceImpl implements IJobService {
         Job job = getActiveJob(jobId);
 
         validateCompanyApproved(job.getCompany().getId());
-        CompanyMember member = validateCompanyMember(job.getCompany().getId(), currentUser.getId());
-        validateOwnerOrManagerRole(member);
+        validateCompanyAccess(currentUser, job.getCompany().getId());
+        validateOwnerOrManagerRole(currentUser);
 
         if (job.getStatus() != JobStatus.OPEN) {
             throw new AppException(HttpStatus.BAD_REQUEST,
@@ -380,7 +372,7 @@ public class JobServiceImpl implements IJobService {
 
         job.setStatus(JobStatus.CLOSED);
         Job savedJob = jobRepository.save(job);
-        log.info("User {} ({}) closed job {}", currentUser.getId(), member.getRole(), jobId);
+        log.info("User {} ({}) closed job {}", currentUser.getId(), currentUser.getRole().getName(), jobId);
         return toResponse(savedJob);
     }
 
@@ -436,8 +428,8 @@ public class JobServiceImpl implements IJobService {
     public List<JobResponse> getCompanyJobs(UUID companyId) {
         User currentUser = getCurrentUser();
         validateCompanyApproved(companyId);
-        CompanyMember member = validateCompanyMember(companyId, currentUser.getId());
-        validateOwnerOrManagerRole(member);
+        validateCompanyAccess(currentUser, companyId);
+        validateOwnerOrManagerRole(currentUser);
 
         return jobRepository.findByCompanyIdAndDeletedFalse(companyId)
                 .stream().map(this::toResponse).collect(Collectors.toList());
@@ -448,8 +440,8 @@ public class JobServiceImpl implements IJobService {
     public List<JobResponse> getPendingJobs(UUID companyId) {
         User currentUser = getCurrentUser();
         validateCompanyApproved(companyId);
-        CompanyMember member = validateCompanyMember(companyId, currentUser.getId());
-        validateManagerRole(member);
+        validateCompanyAccess(currentUser, companyId);
+        validateManagerRole(currentUser);
 
         return jobRepository.findByCompanyIdAndStatusAndDeletedFalse(companyId, JobStatus.PENDING)
                 .stream().map(this::toResponse).collect(Collectors.toList());
@@ -460,8 +452,8 @@ public class JobServiceImpl implements IJobService {
     public List<JobResponse> getMyJobs(UUID companyId) {
         User currentUser = getCurrentUser();
         validateCompanyApproved(companyId);
-        CompanyMember member = validateCompanyMember(companyId, currentUser.getId());
-        validateHrRole(member);
+        validateCompanyAccess(currentUser, companyId);
+        validateHrRole(currentUser);
 
         return jobRepository.findByCompanyIdAndCreatedByIdAndDeletedFalse(companyId, currentUser.getId())
                 .stream().map(this::toResponse).collect(Collectors.toList());

@@ -54,8 +54,9 @@ public class Company extends SoftDeleteEntity {
     @Column(nullable = false)
     private CompanyStatus status;
 
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CompanyMember> members = new ArrayList<>();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private sba301.hrtech.auth.entities.User owner;
 
     @Column(name = "graph_weight")
     private Double graphWeight;

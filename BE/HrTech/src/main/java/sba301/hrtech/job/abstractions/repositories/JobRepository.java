@@ -15,16 +15,12 @@ import java.util.UUID;
 @Repository
 public interface JobRepository extends JpaRepository<Job, UUID> {
 
-    // Find all non-deleted jobs for a company (internal view for OWNER/HR_MANAGER)
     List<Job> findByCompanyIdAndDeletedFalse(UUID companyId);
 
-    // Find all PENDING jobs for a company (for HR Manager approval queue)
     List<Job> findByCompanyIdAndStatusAndDeletedFalse(UUID companyId, JobStatus status);
 
-    // Find all jobs created by a specific user in a company (HR views own jobs)
     List<Job> findByCompanyIdAndCreatedByIdAndDeletedFalse(UUID companyId, UUID createdById);
 
-    // Public candidate search: only OPEN, non-deleted, with dynamic filters
     @Query("""
         SELECT j FROM Job j
         WHERE j.deleted = false

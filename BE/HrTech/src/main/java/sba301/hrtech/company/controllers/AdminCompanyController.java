@@ -27,5 +27,11 @@ public class AdminCompanyController {
     public ResponseEntity<ApiResponse<CompanyResponse>> rejectCompany(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(companyService.rejectCompany(id)));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteCompany(@PathVariable UUID id) {
+        companyService.deleteCompany(id);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
 }
 

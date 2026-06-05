@@ -5,13 +5,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.job.abstractions.services.IJobService;
+import sba301.hrtech.shared.common.ApiResponse;
 
 import java.util.UUID;
 
-/**
- * System Admin moderation endpoints.
- * Only ADMIN_SYSTEM role may access these endpoints.
- */
 @RestController
 @RequestMapping("/api/admin/jobs")
 @RequiredArgsConstructor
@@ -20,12 +17,9 @@ public class AdminJobController {
 
     private final IJobService jobService;
 
-    /**
-     * Force soft-delete any job to remove spam or policy-violating JDs.
-     */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> adminDeleteJob(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<Void>> adminDeleteJob(@PathVariable UUID id) {
         jobService.adminDeleteJob(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

@@ -21,10 +21,8 @@ public record JobRequest(
         BigDecimal salaryMin,
         BigDecimal salaryMax,
 
-        // Must match JobType enum value string
         String jobType,
 
-        // Must match ExperienceLevel enum value string
         String experienceLevel,
 
         LocalDate deadline,

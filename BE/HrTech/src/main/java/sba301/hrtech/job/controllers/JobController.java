@@ -13,6 +13,7 @@ import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.job.dtos.request.JobRequest;
 import sba301.hrtech.job.dtos.request.JobSearchCriteria;
 import sba301.hrtech.job.dtos.response.JobResponse;
+import sba301.hrtech.shared.common.ApiResponse;
 
 import java.math.BigDecimal;
 import java.net.URI;
@@ -30,12 +31,8 @@ public class JobController {
 
     private final IJobService jobService;
 
-    /**
-     * Public search — returns only OPEN jobs.
-     * No authentication required.
-     */
     @GetMapping
-    public ResponseEntity<Page<JobResponse>> searchJobs(
+    public ResponseEntity<ApiResponse<Page<JobResponse>>> searchJobs(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String experienceLevel,
@@ -47,48 +44,35 @@ public class JobController {
         JobSearchCriteria criteria = new JobSearchCriteria(
                 keyword, location, experienceLevel, jobType, salaryMin, salaryMax
         );
-        return ResponseEntity.ok(jobService.searchJobs(criteria, pageable));
+        return ResponseEntity.ok(ApiResponse.success(jobService.searchJobs(criteria, pageable)));
     }
 
-    /**
-     * View any single job's details.
-     * The service enforces visibility rules if needed.
-     */
     @GetMapping("/{id}")
-    public ResponseEntity<JobResponse> getJobDetails(@PathVariable UUID id) {
-        return ResponseEntity.ok(jobService.getJobDetails(id));
+    public ResponseEntity<ApiResponse<JobResponse>> getJobDetails(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(jobService.getJobDetails(id)));
     }
 
-    /**
-     * HR creates a new job (status = DRAFT).
-     */
     @PostMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<JobResponse> createJob(@Valid @RequestBody JobRequest request) {
+    public ResponseEntity<ApiResponse<JobResponse>> createJob(@Valid @RequestBody JobRequest request) {
         JobResponse response = jobService.createJob(request);
         return ResponseEntity
                 .created(URI.create("/api/jobs/" + response.id()))
-                .body(response);
+                .body(ApiResponse.success(response));
     }
 
-    /**
-     * HR updates their own DRAFT job.
-     */
     @PutMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<JobResponse> updateOwnJob(
+    public ResponseEntity<ApiResponse<JobResponse>> updateOwnJob(
             @PathVariable UUID id,
             @Valid @RequestBody JobRequest request
     ) {
-        return ResponseEntity.ok(jobService.updateOwnJob(id, request));
+        return ResponseEntity.ok(ApiResponse.success(jobService.updateOwnJob(id, request)));
     }
 
-    /**
-     * HR submits their DRAFT job for approval (DRAFT -> PENDING).
-     */
     @PatchMapping("/{id}/submit")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<JobResponse> submitJob(@PathVariable UUID id) {
-        return ResponseEntity.ok(jobService.submitJob(id));
+    public ResponseEntity<ApiResponse<JobResponse>> submitJob(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(jobService.submitJob(id)));
     }
 }
