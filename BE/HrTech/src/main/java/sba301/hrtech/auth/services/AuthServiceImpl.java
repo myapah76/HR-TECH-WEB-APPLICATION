@@ -17,11 +17,10 @@ import sba301.hrtech.auth.dtos.auth.response.ConfirmOtpResult;
 import sba301.hrtech.auth.dtos.auth.response.EmailActionResponse;
 import sba301.hrtech.auth.dtos.auth.response.ForgotPasswordResponse;
 import sba301.hrtech.auth.exceptions.RedisDataNotFoundException;
-import sba301.hrtech.auth.exceptions.auth.OtpLockoutException;
+import sba301.hrtech.auth.exceptions.auth.otp.OtpLockoutException;
 import sba301.hrtech.auth.exceptions.auth.WrongOtpCodeException;
 import sba301.hrtech.auth.exceptions.token.TokenExpiredException;
 import sba301.hrtech.auth.exceptions.user.UserExistException;
-import sba301.hrtech.auth.exceptions.user.UserNotFoundException;
 import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.auth.entities.RefreshToken;
 import sba301.hrtech.auth.entities.Role;
@@ -31,7 +30,6 @@ import sba301.hrtech.auth.exceptions.auth.WrongPasswordException;
 import sba301.hrtech.auth.dtos.auth.PendingUser;
 import sba301.hrtech.auth.dtos.user.CustomUserDetails;
 import sba301.hrtech.auth.dtos.auth.response.AuthResponse;
-import sba301.hrtech.auth.dtos.user.response.UserResponse;
 import sba301.hrtech.auth.mapper.UserMapper;
 import sba301.hrtech.auth.services.cache.OtpAttemptTracker;
 import sba301.hrtech.auth.services.cache.RefreshTokenServiceImpl;
@@ -44,8 +42,6 @@ import sba301.hrtech.notification.dtos.OtpRequest;
 import javax.management.relation.RoleNotFoundException;
 import java.time.Duration;
 import java.util.UUID;
-
-import static sba301.hrtech.shared.common.ErrorCode.TOKEN_EXPIRED;
 
 @Service
 @RequiredArgsConstructor
@@ -117,6 +113,24 @@ public class AuthServiceImpl implements IAuthService {
                 new OtpRequest(request.email(), otp),
                 request.email() + otp,
                 OtpType.FORGET_PASSWORD));
+
+        return EmailActionResponse.builder()
+                .email(request.email())
+                .expireIn(5 * 60)
+                .build();
+    }
+
+    @Override
+    public EmailActionResponse reSendOtp(ResendOtpRequest request) {
+        String otp = generateOtp();
+
+        notificationService.OtpNotificationHandler(
+                new OtpNotificationRequest(
+                        new OtpRequest(request.email(), otp),
+                        request.email() + System.currentTimeMillis(),
+                        request.type()
+                )
+        );
 
         return EmailActionResponse.builder()
                 .email(request.email())
@@ -287,6 +301,8 @@ public class AuthServiceImpl implements IAuthService {
 
         user.setEmail(pendingUser.email());
         user.setUsername(pendingUser.username());
+        user.setFirstName(pendingUser.firstName());
+        user.setLastName(pendingUser.lastName());
         user.setPassword(passwordEncoder.encode(pendingUser.password()));
         user.setGender(pendingUser.gender());
 
