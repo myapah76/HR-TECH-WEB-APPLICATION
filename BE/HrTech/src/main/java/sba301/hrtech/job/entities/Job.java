@@ -1,5 +1,6 @@
 package sba301.hrtech.job.entities;
 
+import sba301.hrtech.auth.entities.User;
 import sba301.hrtech.company.entities.Company;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
 import java.util.List;
@@ -27,6 +28,10 @@ public class Job extends SoftDeleteEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id")
+    private User createdBy;
 
     @Column(nullable = false)
     private String title;
@@ -61,6 +66,7 @@ public class Job extends SoftDeleteEntity {
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<JobSkill> jobSkills = new ArrayList<>();
 }
+
 
 
 

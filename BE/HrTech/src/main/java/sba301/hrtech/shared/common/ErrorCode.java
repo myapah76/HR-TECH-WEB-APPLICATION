@@ -50,5 +50,13 @@ public class ErrorCode {
     //AI / Ollama / Gemini
     public static final String AI_SERVICE_UNAVAILABLE = "AI_SERVICE_UNAVAILABLE";
     public static final String AI_EXTRACTION_FAILED = "AI_EXTRACTION_FAILED";
+
+    //Job
+    public static final String JOB_NOT_FOUND_CODE = "JOB_NOT_FOUND";
+    public static final String JOB_INVALID_STATUS = "JOB_INVALID_STATUS";
+    public static final String JOB_NOT_OWNER = "JOB_NOT_OWNER";
+    public static final String JOB_COMPANY_NOT_APPROVED = "JOB_COMPANY_NOT_APPROVED";
+    public static final String JOB_PERMISSION_DENIED = "JOB_PERMISSION_DENIED";
+    public static final String JOB_SKILL_NOT_FOUND = "JOB_SKILL_NOT_FOUND";
 }
 
