@@ -2,11 +2,11 @@ package sba301.hrtech.notification.abstractions.cache;
 
 public interface IRedisOtpService {
 
-    boolean saveOtp(String email, String otp);
+    boolean saveOtp(String type, String email, String otp);
 
     String getOtp(String email);
 
     void deleteOtp(String email);
 
-    boolean validateOtp(String email, String inputOtp);
+    boolean validateOtp(String type, String email, String inputOtp);
 }

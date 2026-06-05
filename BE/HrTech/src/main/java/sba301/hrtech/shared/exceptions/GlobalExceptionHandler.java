@@ -6,17 +6,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.*;
+import sba301.hrtech.shared.common.ApiResponse;
 import sba301.hrtech.shared.common.ErrorCode;
-import sba301.hrtech.shared.common.ErrorResponse;
 
-import java.time.Instant;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(AppException.class)
-    public ResponseEntity<ErrorResponse> handleAppException(
+    public ResponseEntity<ApiResponse<Void>> handleAppException(
             AppException ex,
             HttpServletRequest request
     ) {
@@ -29,7 +28,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidation(
+    public ResponseEntity<ApiResponse<Void>> handleValidation(
             MethodArgumentNotValidException ex,
             HttpServletRequest request
     ) {
@@ -48,7 +47,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleAll(
+    public ResponseEntity<ApiResponse<Void>> handleAll(
             Exception ex,
             HttpServletRequest request
     ) {
@@ -61,29 +60,28 @@ public class GlobalExceptionHandler {
         );
     }
 
-    private ResponseEntity<ErrorResponse> buildError(
+    private ResponseEntity<ApiResponse<Void>> buildError(
             HttpStatus status,
             String message,
             String code,
             String path
     ) {
-        ErrorResponse error = new ErrorResponse(
+        ApiResponse<Void> error = ApiResponse.failed(
                 status.value(),
                 message,
                 code,
-                Instant.now(),
                 path
         );
         return new ResponseEntity<>(error, status);
     }
 
     @ExceptionHandler(MissingRequestCookieException.class)
-    public ResponseEntity<ErrorResponse> handleMissingCookie(
+    public ResponseEntity<ApiResponse<Void>> handleMissingCookie(
             MissingRequestCookieException ex,
             HttpServletRequest request
     ) {
         return buildError(
-                HttpStatus.UNAUTHORIZED, // 401git f
+                HttpStatus.UNAUTHORIZED, // 401
                 ex.getCookieName() + " is required",
                 ErrorCode.MISSING_COOKIE,
                 request.getRequestURI()

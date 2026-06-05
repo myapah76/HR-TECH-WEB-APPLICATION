@@ -6,6 +6,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.company.abstractions.services.ICompanyService;
 import sba301.hrtech.company.dtos.response.CompanyResponse;
+import sba301.hrtech.shared.common.ApiResponse;
 
 import java.util.UUID;
 
@@ -18,13 +19,13 @@ public class AdminCompanyController {
     private final ICompanyService companyService;
 
     @PatchMapping("/{id}/approve")
-    public ResponseEntity<CompanyResponse> approveCompany(@PathVariable UUID id) {
-        return ResponseEntity.ok(companyService.approveCompany(id));
+    public ResponseEntity<ApiResponse<CompanyResponse>> approveCompany(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(companyService.approveCompany(id)));
     }
 
     @PatchMapping("/{id}/reject")
-    public ResponseEntity<CompanyResponse> rejectCompany(@PathVariable UUID id) {
-        return ResponseEntity.ok(companyService.rejectCompany(id));
+    public ResponseEntity<ApiResponse<CompanyResponse>> rejectCompany(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(companyService.rejectCompany(id)));
     }
 }
 

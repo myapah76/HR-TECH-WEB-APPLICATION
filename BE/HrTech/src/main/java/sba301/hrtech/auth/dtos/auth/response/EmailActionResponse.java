@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @Builder
-public class RegisterResponse {
+public class EmailActionResponse {
     private String email;
     private int expireIn;
 }

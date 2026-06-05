@@ -33,7 +33,7 @@ public class NotificationServiceImpl implements INotificationService {
             return; // NOT throw
         }
 
-        if(!otpService.saveOtp(request.getOtpRequest().email(), request.getOtpRequest().otp())){
+        if(!otpService.saveOtp(request.getOtpType().toString(),request.getOtpRequest().email(), request.getOtpRequest().otp())){
             throw new RuntimeException("Fail to save otp code with email: " + request.getOtpRequest().email());
         }
 

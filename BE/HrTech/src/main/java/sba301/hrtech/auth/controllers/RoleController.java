@@ -28,50 +28,26 @@ public class RoleController {
 
         return ResponseEntity.created(
                         URI.create("/api/roles/" + response.getId()))
-                .body(
-                        ApiResponse.<RoleResponse>builder()
-                                .success(true)
-                                .message("Role created successfully")
-                                .data(response)
-                                .build()
-                );
+                .body(ApiResponse.success(response, "Role created successfully"));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getAll() {
-        return ResponseEntity.ok(
-                ApiResponse.<List<RoleResponse>>builder()
-                        .success(true)
-                        .message("Roles retrieved successfully")
-                        .data(roleService.getAll())
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(roleService.getAll(), "Roles retrieved successfully"));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<RoleResponse>> getById(
             @PathVariable UUID id
     ) {
-        return ResponseEntity.ok(
-                ApiResponse.<RoleResponse>builder()
-                        .success(true)
-                        .message("Role retrieved successfully")
-                        .data(roleService.getById(id))
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(roleService.getById(id), "Role retrieved successfully"));
     }
 
     @GetMapping("/name/{name}")
     public ResponseEntity<ApiResponse<RoleResponse>> getByName(
             @PathVariable String name
     ) {
-        return ResponseEntity.ok(
-                ApiResponse.<RoleResponse>builder()
-                        .success(true)
-                        .message("Role retrieved successfully")
-                        .data(roleService.getByName(name))
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(roleService.getByName(name), "Role retrieved successfully"));
     }
 
     @PatchMapping("/{id}")
@@ -79,13 +55,7 @@ public class RoleController {
             @PathVariable UUID id,
             @RequestBody CommonRoleRequest request
     ) {
-        return ResponseEntity.ok(
-                ApiResponse.<RoleResponse>builder()
-                        .success(true)
-                        .message("Role updated successfully")
-                        .data(roleService.update(id, request))
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(roleService.update(id, request), "Role updated successfully"));
     }
 
     @DeleteMapping("/{id}")
@@ -94,11 +64,6 @@ public class RoleController {
     ) {
         roleService.deleteById(id);
 
-        return ResponseEntity.ok(
-                ApiResponse.<Void>builder()
-                        .success(true)
-                        .message("Role deleted successfully")
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponse.success(null, "Role deleted successfully"));
     }
 }
