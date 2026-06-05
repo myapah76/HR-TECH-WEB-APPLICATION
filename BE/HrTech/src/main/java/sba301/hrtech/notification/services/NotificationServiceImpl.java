@@ -29,7 +29,7 @@ public class NotificationServiceImpl implements INotificationService {
         }
 
         //RATE LIMIT CHECK
-        if (!rateLimitService.isAllowed(request.getOtpRequest().email())) {
+        if (!rateLimitService.isAllowed(request.getOtpType().toString(),request.getOtpRequest().email())) {
             log.warn("Rate limit hit for email {}", request.getOtpRequest().email());
             return; // NOT throw
         }

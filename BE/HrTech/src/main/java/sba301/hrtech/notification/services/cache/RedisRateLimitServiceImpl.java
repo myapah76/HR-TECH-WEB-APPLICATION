@@ -20,8 +20,8 @@ public class RedisRateLimitServiceImpl implements IRedisRateLimitService {
     private static final int WINDOW_SECONDS = 60;
 
     @Override
-    public boolean isAllowed(String key) {
-        String redisKey = PREFIX + "otp:" + key;
+    public boolean isAllowed(String type, String key) {
+        String redisKey =  PREFIX + type + ":" + key;
 
         Long result = redisTemplate.execute(
                 rateLimitScript,
