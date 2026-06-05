@@ -1,3 +1,4 @@
+import { OtpType } from '@/src/enums/otp.enum'
 import { User } from './user'
 
 export interface LoginRequest {
@@ -24,11 +25,26 @@ export interface RegisterResponse {
   expireIn: number
 }
 
-export interface VerifyOtpRequest {
+export interface ConfirmOtpRequest {
   email: string
   otp: string
+  type: OtpType
 }
 
-export interface VerifyOtpResponse {
-  message: string
+export interface ConfirmForgotPasswordOtpResponse {
+  resetToken: string
+}
+
+export interface ForgotPasswordRequest {
+  email: string
+}
+
+export interface ForgotPasswordResponse {
+  email: string
+  expireIn: number
+}
+
+export interface ResetPasswordRequest {
+  resetToken: string
+  newPassword: string
 }

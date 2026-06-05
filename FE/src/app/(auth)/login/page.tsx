@@ -14,6 +14,8 @@ import { Label } from '@/src/components/ui/label'
 import { useRouter } from 'next/navigation'
 import { useLogin } from '@/src/hooks/useLogin'
 
+import { toast } from 'sonner'
+
 export default function LoginPage() {
   const loginMutation = useLogin()
   const router = useRouter()
@@ -31,10 +33,11 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     loginMutation.mutate(data, {
       onSuccess: () => {
+        toast.success('Đăng nhập thành công')
         router.push('/dashboard')
       },
       onError: (error) => {
-        console.error('Login failed:', error)
+        toast.error(error.message)
       },
     })
   }

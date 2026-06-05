@@ -7,11 +7,13 @@ import { motion } from 'motion/react'
 import { Card, CardContent } from '@/src/components/ui/card'
 import { VerifyOtpForm } from '@/src/components/VerifyOtpForm'
 import { useSearchParams } from 'next/navigation'
+import { OtpType } from '@/src/enums/otp.enum'
 
 export default function VerifyOtpPage() {
   const searchParams = useSearchParams()
   const email = searchParams.get('email') || ''
   const expireIn = searchParams.get('expireIn') || ''
+  const otpType = searchParams.get('otpType') || ''
   return (
     <div className="min-h-[calc(100vh-180px)] flex items-center justify-center px-4 py-12">
       <motion.div
@@ -54,7 +56,11 @@ export default function VerifyOtpPage() {
                 </div>
               }
             >
-              <VerifyOtpForm email={email} expireIn={Number(expireIn)} />
+              <VerifyOtpForm
+                email={email}
+                expireIn={Number(expireIn)}
+                otpType={otpType as OtpType}
+              />
             </Suspense>
           </CardContent>
         </Card>

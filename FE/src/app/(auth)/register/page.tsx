@@ -16,6 +16,10 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema, RegisterFormData } from '@/src/schemas/auth.schema'
 import { useRegister } from '@/src/hooks/useRegister'
+import { OtpType } from '@/src/enums/otp.enum'
+import { getErrorMessage } from '@/src/utils/get-error-message'
+
+import { toast } from 'sonner'
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -45,14 +49,15 @@ export default function RegisterPage() {
       },
       {
         onSuccess: (response) => {
+          toast.success('Đã gửi mã xác nhận. Vui lòng kiểm tra email!')
           router.push(
-            `/verify-otp?email=${response.email}&expireIn=${response.expireIn}`,
+            `/confirm-otp?email=${response?.data?.email}&expireIn=${response?.data?.expireIn}&otpType=${OtpType.REGISTER}`
           )
         },
         onError: (error) => {
-          console.log('error', error)
+          toast.error(getErrorMessage(error))
         },
-      },
+      }
     )
   }
 
@@ -78,9 +83,7 @@ export default function RegisterPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="mt-5 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-[11px] font-bold text-slate-500">
-                    * Tên
-                  </Label>
+                  <Label className="text-[11px] font-bold text-slate-500">* Tên</Label>
                   <Input
                     {...register('lastName')}
                     type="text"
@@ -95,9 +98,7 @@ export default function RegisterPage() {
                   )}
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[11px] font-bold text-slate-500">
-                    * Họ
-                  </Label>
+                  <Label className="text-[11px] font-bold text-slate-500">* Họ</Label>
                   <Input
                     {...register('firstName')}
                     type="text"
@@ -114,9 +115,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-[11px] font-bold text-slate-500">
-                  * Username
-                </Label>
+                <Label className="text-[11px] font-bold text-slate-500">* Username</Label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
                     <User className="h-4 w-4" />
@@ -137,9 +136,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-[11px] font-bold text-slate-500">
-                  * Email
-                </Label>
+                <Label className="text-[11px] font-bold text-slate-500">* Email</Label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
                     <Mail className="h-4 w-4" />
@@ -152,17 +149,13 @@ export default function RegisterPage() {
                     focus:bg-white focus:border-blue-500 transition-all"
                   />
                   {errors.email && (
-                    <p className="text-xs font-bold text-red-500 mt-1.5">
-                      {errors.email.message}
-                    </p>
+                    <p className="text-xs font-bold text-red-500 mt-1.5">{errors.email.message}</p>
                   )}
                 </div>
               </div>
 
               <div className="space-y-1">
-                <Label className="text-[11px] font-bold text-slate-500">
-                  * Giới tính
-                </Label>
+                <Label className="text-[11px] font-bold text-slate-500">* Giới tính</Label>
 
                 <select
                   {...register('gender')}
@@ -173,16 +166,12 @@ export default function RegisterPage() {
                 </select>
 
                 {errors.gender && (
-                  <p className="text-xs font-bold text-red-500 mt-1.5">
-                    {errors.gender.message}
-                  </p>
+                  <p className="text-xs font-bold text-red-500 mt-1.5">{errors.gender.message}</p>
                 )}
               </div>
 
               <div className="space-y-1">
-                <Label className="text-[11px] font-bold text-slate-500">
-                  * Mật khẩu
-                </Label>
+                <Label className="text-[11px] font-bold text-slate-500">* Mật khẩu</Label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
                     <Lock className="h-4 w-4" />
@@ -200,24 +189,16 @@ export default function RegisterPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-slate-650 hover:bg-transparent cursor-pointer"
                   >
-                    {showPassword ? (
-                      <Eye className="h-4 w-4" />
-                    ) : (
-                      <EyeOff className="h-4 w-4" />
-                    )}
+                    {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                   </Button>
                 </div>
                 {errors.password && (
-                  <p className="text-xs font-bold text-red-500 mt-1.5">
-                    {errors.password.message}
-                  </p>
+                  <p className="text-xs font-bold text-red-500 mt-1.5">{errors.password.message}</p>
                 )}
               </div>
 
               <div className="space-y-1">
-                <Label className="text-[11px] font-bold text-slate-500">
-                  * Xác nhận mật khẩu
-                </Label>
+                <Label className="text-[11px] font-bold text-slate-500">* Xác nhận mật khẩu</Label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
                     <Lock className="h-4 w-4" />
@@ -262,8 +243,7 @@ export default function RegisterPage() {
                         className="mt-1 shrink-0"
                       />
                       <span>
-                        Tôi đồng ý với Điều khoản Sử dụng và Chính sách Bảo mật
-                        của HR-Tech.
+                        Tôi đồng ý với Điều khoản Sử dụng và Chính sách Bảo mật của HR-Tech.
                       </span>
                     </Label>
                   )}
@@ -281,9 +261,7 @@ export default function RegisterPage() {
                 className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs sm:text-sm py-4 rounded-xl transition-all duration-300 
                 shadow-lg shadow-blue-600/20 hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer tracking-wider uppercase h-auto"
               >
-                {registerMutation.isPending
-                  ? 'ĐANG ĐĂNG KÝ...'
-                  : 'ĐĂNG KÝ MIỄN PHÍ'}
+                {registerMutation.isPending ? 'ĐANG ĐĂNG KÝ...' : 'ĐĂNG KÝ MIỄN PHÍ'}
               </Button>
             </form>
 

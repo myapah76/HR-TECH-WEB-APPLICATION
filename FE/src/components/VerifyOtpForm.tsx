@@ -4,20 +4,25 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircle2, Loader2 } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
-import { useConfirmOtp } from '../hooks/useConfirmOtp'
+import { useConfirmRegisterOtp, useConfirmForgotPasswordOtp } from '@/src/hooks/useConfirmOtp'
+import { OtpType } from '@/src/enums/otp.enum'
+import { getErrorMessage } from '@/src/utils/get-error-message'
+
+import { toast } from 'sonner'
 
 interface VerifyOtpFormProps {
   email: string
   expireIn: number
+  otpType: OtpType
 }
 
-export function VerifyOtpForm({ email, expireIn }: VerifyOtpFormProps) {
+export function VerifyOtpForm({ email, expireIn, otpType }: VerifyOtpFormProps) {
   const router = useRouter()
 
-  const confirmOtpMutation = useConfirmOtp()
+  const confirmRegisterOtpMutation = useConfirmRegisterOtp()
+  const confirmForgotPasswordOtpMutation = useConfirmForgotPasswordOtp()
 
   const [otp, setOtp] = useState<string[]>(Array(6).fill(''))
-  const [error, setError] = useState('')
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   // focus the first input on mount
@@ -70,27 +75,36 @@ export function VerifyOtpForm({ email, expireIn }: VerifyOtpFormProps) {
     e.preventDefault()
     const otpValue = otp.join('')
 
-    if (otpValue.length < 6) {
-      setError('Vui lòng nhập đủ 6 số OTP')
-      return
+    if (otpType === OtpType.REGISTER) {
+      confirmRegisterOtpMutation.mutate(
+        { email, otp: otpValue, type: otpType },
+        {
+          onSuccess: () => {
+            toast.success('Xác thực OTP thành công! Bây giờ bạn có thể đăng nhập vào tài khoản.')
+            router.push('/login')
+          },
+          onError: (error) => {
+            toast.error(getErrorMessage(error))
+          },
+        }
+      )
+    } else {
+      confirmForgotPasswordOtpMutation.mutate(
+        { email, otp: otpValue, type: otpType },
+        {
+          onSuccess: (response) => {
+            toast.success('Xác thực OTP thành công! Bây giờ bạn có thể reset mật khẩu.')
+            console.log('res', response)
+            router.push(
+              `/reset-password?reset-token=${encodeURIComponent(response.data.resetToken)}`
+            )
+          },
+          onError: (error) => {
+            toast.error(getErrorMessage(error))
+          },
+        }
+      )
     }
-
-    if (!email) {
-      setError('Không tìm thấy email cần xác thực. Vui lòng thử lại.')
-      return
-    }
-
-    confirmOtpMutation.mutate(
-      { email, otp: otpValue },
-      {
-        onSuccess: () => {
-          router.push('/login')
-        },
-        onError: (error) => {
-          setError(error.message)
-        },
-      }
-    )
   }
 
   return (
@@ -113,15 +127,20 @@ export function VerifyOtpForm({ email, expireIn }: VerifyOtpFormProps) {
             />
           ))}
         </div>
-        {error && <p className="text-sm font-bold text-red-500 mt-3 text-center">{error}</p>}
       </div>
 
       <Button
         type="submit"
-        disabled={confirmOtpMutation.isPending || otp.join('').length < 6}
+        disabled={
+          (otpType === OtpType.REGISTER
+            ? confirmRegisterOtpMutation.isPending
+            : confirmForgotPasswordOtpMutation.isPending) || otp.join('').length < 6
+        }
         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl transition-all duration-300 shadow-lg shadow-blue-600/20 hover:shadow-xl flex items-center justify-center gap-2 uppercase h-auto"
       >
-        {confirmOtpMutation.isPending ? (
+        {otpType === OtpType.REGISTER ? (
+          confirmRegisterOtpMutation.isPending
+        ) : confirmForgotPasswordOtpMutation.isPending ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
             ĐANG XÁC THỰC...
