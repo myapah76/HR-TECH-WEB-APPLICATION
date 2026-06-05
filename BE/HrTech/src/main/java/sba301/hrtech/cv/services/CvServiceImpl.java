@@ -1,11 +1,16 @@
 package sba301.hrtech.cv.services;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import sba301.hrtech.auth.abstractions.repositories.UserRepository;
+import sba301.hrtech.auth.entities.User;
 import sba301.hrtech.cv.abstractions.repositories.CvRepository;
 import sba301.hrtech.cv.entities.Cv;
-import sba301.hrtech.auth.entities.User;
-import sba301.hrtech.auth.abstractions.repositories.UserRepository;
+import sba301.hrtech.shared.exceptions.AppException;
+import sba301.hrtech.shared.services.CloudinaryService;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,24 +18,42 @@ import java.util.UUID;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class CvServiceImpl implements CvService {
 
     private final CvRepository cvRepository;
     private final UserRepository userRepository;
-
-    public CvServiceImpl(CvRepository cvRepository, UserRepository userRepository) {
-        this.cvRepository = cvRepository;
-        this.userRepository = userRepository;
-    }
+    private final CloudinaryService cloudinaryService;
 
     @Override
-    public Cv createCv(UUID userId, String title, String fileUrl) {
+    public Cv createCv(UUID userId, String title, MultipartFile file) {
+        // 1. Validate user tồn tại
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại với ID: " + userId));
+                .orElseThrow(() -> new AppException(
+                        HttpStatus.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        "Người dùng không tồn tại với ID: " + userId
+                ));
 
-        List<Cv> existingCvs = cvRepository.findByUserId(userId);
-        boolean isFirstCv = existingCvs.isEmpty();
+        // 2. Validate loại file
+        String contentType = file.getContentType();
+        if (contentType == null ||
+                (!contentType.equals("application/pdf") &&
+                        !contentType.startsWith("image/"))) {
+            throw new AppException(
+                    HttpStatus.BAD_REQUEST,
+                    "INVALID_FILE_TYPE",
+                    "Chỉ chấp nhận file PDF hoặc ảnh!"
+            );
+        }
 
+        // 3. Upload lên Cloudinary
+        String fileUrl = cloudinaryService.uploadFile(file, "hrtech/cvs");
+
+        // 4. CV đầu tiên tự động là Primary
+        boolean isFirstCv = cvRepository.findByUserId(userId).isEmpty();
+
+        // 5. Lưu vào DB
         Cv newCv = Cv.builder()
                 .user(user)
                 .title(title)
@@ -56,12 +79,21 @@ public class CvServiceImpl implements CvService {
     @Override
     public Cv setPrimaryCv(UUID userId, UUID cvId) {
         Cv targetCv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy CV với ID: " + cvId));
+                .orElseThrow(() -> new AppException(
+                        HttpStatus.NOT_FOUND,
+                        "CV_NOT_FOUND",
+                        "Không tìm thấy CV với ID: " + cvId
+                ));
 
         if (!targetCv.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Hành vi bất hợp pháp! CV này không thuộc quyền sở hữu của bạn.");
+            throw new AppException(
+                    HttpStatus.FORBIDDEN,
+                    "CV_ACCESS_DENIED",
+                    "CV này không thuộc quyền sở hữu của bạn!"
+            );
         }
 
+        // Hạ primary CV cũ
         cvRepository.findByUserIdAndIsPrimaryTrue(userId)
                 .ifPresent(oldPrimary -> {
                     oldPrimary.setIsPrimary(false);
@@ -75,14 +107,26 @@ public class CvServiceImpl implements CvService {
     @Override
     public void deleteCv(UUID userId, UUID cvId) {
         Cv cv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy CV để xóa"));
+                .orElseThrow(() -> new AppException(
+                        HttpStatus.NOT_FOUND,
+                        "CV_NOT_FOUND",
+                        "Không tìm thấy CV để xóa"
+                ));
 
         if (!cv.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Bạn không có quyền xóa CV này!");
+            throw new AppException(
+                    HttpStatus.FORBIDDEN,
+                    "CV_ACCESS_DENIED",
+                    "Bạn không có quyền xóa CV này!"
+            );
         }
 
         if (Boolean.TRUE.equals(cv.getIsPrimary())) {
-            throw new IllegalStateException("Không thể xóa CV mặc định. Vui lòng chọn CV khác làm mặc định trước!");
+            throw new AppException(
+                    HttpStatus.BAD_REQUEST,
+                    "CV_IS_PRIMARY",
+                    "Không thể xóa CV mặc định. Vui lòng chọn CV khác làm mặc định trước!"
+            );
         }
 
         cvRepository.delete(cv);
@@ -91,7 +135,12 @@ public class CvServiceImpl implements CvService {
     @Override
     public Cv updateAiParsedContent(UUID cvId, String jsonContent) {
         Cv cv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy CV để cập nhật AI"));
+                .orElseThrow(() -> new AppException(
+                        HttpStatus.NOT_FOUND,
+                        "CV_NOT_FOUND",
+                        "Không tìm thấy CV để cập nhật AI"
+                ));
+
         cv.setParsedContent(jsonContent);
         return cvRepository.save(cv);
     }

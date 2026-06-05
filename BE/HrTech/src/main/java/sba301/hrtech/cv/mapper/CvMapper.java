@@ -1,10 +1,11 @@
 package sba301.hrtech.cv.mapper;
 
 import org.springframework.stereotype.Component;
-import sba301.hrtech.cv.dtos.CvDetailResponse;
-import sba301.hrtech.cv.dtos.CvSummaryResponse;
+import sba301.hrtech.cv.dtos.response.CvDetailResponse;
+import sba301.hrtech.cv.dtos.response.CvSummaryResponse;
 import sba301.hrtech.cv.entities.Cv;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
@@ -21,10 +22,7 @@ public class CvMapper {
                 .title(entity.getTitle())
                 .fileUrl(entity.getFileUrl())
                 .isPrimary(entity.getIsPrimary())
-                .createdAt(entity.getCreatedAt() != null
-                        ? entity.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDateTime()
-                        : null)
-
+                .createdAt(toLocalDateTime(entity.getCreatedAt()))
                 .build();
     }
 
@@ -37,7 +35,9 @@ public class CvMapper {
                 .map(skill -> CvDetailResponse.CvSkillResponse.builder()
                         .id(skill.getId())
                         .skillNeo4jId(skill.getSkillNeo4jId())
-                        .proficiencyLevel(skill.getProficiencyLevel() != null ? skill.getProficiencyLevel().name() : null)
+                        .proficiencyLevel(skill.getProficiencyLevel() != null
+                                ? skill.getProficiencyLevel().name()
+                                : null)
                         .yearsOfExperience(skill.getYearsOfExperience())
                         .isAiExtracted(skill.getIsAiExtracted())
                         .build())
@@ -50,10 +50,13 @@ public class CvMapper {
                 .fileUrl(entity.getFileUrl())
                 .parsedContent(entity.getParsedContent())
                 .isPrimary(entity.getIsPrimary())
-                .createdAt(entity.getCreatedAt() != null
-                        ? entity.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDateTime()
-                        : null)
-
+                .createdAt(toLocalDateTime(entity.getCreatedAt()))
+                .cvSkills(skillResponses)
                 .build();
+    }
+
+    private LocalDateTime toLocalDateTime(Instant instant) {
+        if (instant == null) return null;
+        return instant.atZone(ZoneOffset.UTC).toLocalDateTime();
     }
 }

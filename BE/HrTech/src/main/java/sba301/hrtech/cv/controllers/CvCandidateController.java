@@ -1,99 +1,74 @@
 package sba301.hrtech.cv.controllers;
 
-import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.Authentication;
-
-
-import sba301.hrtech.auth.dtos.user.CustomUserDetails;
-import sba301.hrtech.cv.dtos.CreateCvRequest;
-import sba301.hrtech.cv.dtos.CvDetailResponse;
-import sba301.hrtech.cv.dtos.CvSummaryResponse;
-import sba301.hrtech.shared.common.ApiResponse;
+import org.springframework.web.multipart.MultipartFile;
+import sba301.hrtech.auth.utils.AuthUtils;
+import sba301.hrtech.cv.dtos.response.CvDetailResponse;
+import sba301.hrtech.cv.dtos.response.CvSummaryResponse;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.cv.mapper.CvMapper;
 import sba301.hrtech.cv.services.CvService;
-import sba301.hrtech.auth.entities.User;
+import sba301.hrtech.shared.exceptions.AppException;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/my-cvs")
+@RequiredArgsConstructor
 public class CvCandidateController {
 
     private final CvService cvService;
     private final CvMapper cvMapper;
-
-    public CvCandidateController(CvService cvService, CvMapper cvMapper) {
-        this.cvService = cvService;
-        this.cvMapper = cvMapper;
-    }
+    private final AuthUtils authUtils;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<CvSummaryResponse>>> getAllCvs() {
-        UUID currentUserId = getAuthenticatedUserId();
-        List<Cv> entities = cvService.getCvsByUserId(currentUserId);
-        List<CvSummaryResponse> response = entities.stream()
-                .map(cvMapper::toSummaryResponse)
-                .toList();
-        return ResponseEntity.ok(ApiResponse.success(response));
+    public ResponseEntity<List<CvSummaryResponse>> getAllCvs() {
+        List<Cv> entities = cvService.getCvsByUserId(authUtils.getCurrentUserId());
+        return ResponseEntity.ok(entities.stream().map(cvMapper::toSummaryResponse).toList());
     }
 
     @GetMapping("/{cvId}")
-    public ResponseEntity<ApiResponse<CvDetailResponse>> getCvDetail(@PathVariable UUID cvId) {
+    public ResponseEntity<CvDetailResponse> getCvDetail(@PathVariable UUID cvId) {
         Cv cv = cvService.getCvById(cvId)
-                .orElseThrow(() -> new RuntimeException("CV không tồn tại hoặc đã bị xóa"));
+                .orElseThrow(() -> new AppException(
+                        HttpStatus.NOT_FOUND,
+                        "CV_NOT_FOUND",
+                        "CV không tồn tại hoặc đã bị xóa"
+                ));
 
-        if (!cv.getUser().getId().equals(getAuthenticatedUserId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.failed(403, "Forbidden"));
+        if (!cv.getUser().getId().equals(authUtils.getCurrentUserId())) {
+            throw new AppException(
+                    HttpStatus.FORBIDDEN,
+                    "CV_ACCESS_DENIED",
+                    "Bạn không có quyền xem CV này!"
+            );
         }
 
-        return ResponseEntity.ok(ApiResponse.success(cvMapper.toDetailResponse(cv)));
+        return ResponseEntity.ok(cvMapper.toDetailResponse(cv));
     }
 
-    @PostMapping("/upload")
-    public ResponseEntity<ApiResponse<CvSummaryResponse>> uploadCv(@Valid @RequestBody CreateCvRequest request) {
-        UUID currentUserId = getAuthenticatedUserId();
-        Cv savedCv = cvService.createCv(currentUserId, request.getTitle(), request.getFileUrl());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(cvMapper.toSummaryResponse(savedCv)));
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<CvSummaryResponse> uploadCv(
+            @RequestParam("title") String title,
+            @RequestParam("file") MultipartFile file) {
+        Cv savedCv = cvService.createCv(authUtils.getCurrentUserId(), title, file);
+        return ResponseEntity.status(HttpStatus.CREATED).body(cvMapper.toSummaryResponse(savedCv));
     }
 
     @PutMapping("/{cvId}/set-primary")
-    public ResponseEntity<ApiResponse<CvSummaryResponse>> setPrimary(@PathVariable UUID cvId) {
-        UUID currentUserId = getAuthenticatedUserId();
-        Cv updatedCv = cvService.setPrimaryCv(currentUserId, cvId);
-        return ResponseEntity.ok(ApiResponse.success(cvMapper.toSummaryResponse(updatedCv)));
+    public ResponseEntity<CvSummaryResponse> setPrimary(@PathVariable UUID cvId) {
+        Cv updatedCv = cvService.setPrimaryCv(authUtils.getCurrentUserId(), cvId);
+        return ResponseEntity.ok(cvMapper.toSummaryResponse(updatedCv));
     }
 
-    @DeleteMapping("/{cvId}")
-    public ResponseEntity<ApiResponse<String>> deleteCv(@PathVariable UUID cvId) {
-        UUID currentUserId = getAuthenticatedUserId();
-        cvService.deleteCv(currentUserId, cvId);
-        return ResponseEntity.ok(ApiResponse.success("Xóa hồ sơ thành công!"));
-    }
-
-
-    private UUID getAuthenticatedUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("Phiên đăng nhập không tồn tại hoặc đã hết hạn!");
-        }
-
-        Object principal = authentication.getPrincipal();
-
-        if (principal instanceof CustomUserDetails customUserDetails) {
-            return customUserDetails.user().getId();
-        }
-
-        if (principal instanceof User user) {
-            return user.getId();
-        }
-
-        throw new RuntimeException("Tài khoản chưa được xác thực trên hệ thống bảo mật!");
+     @DeleteMapping("/{cvId}")
+    public ResponseEntity<String> deleteCv(@PathVariable UUID cvId) {
+        cvService.deleteCv(authUtils.getCurrentUserId(), cvId);
+        return ResponseEntity.ok("Xóa hồ sơ thành công!");
     }
 }
