@@ -125,6 +125,24 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     @Override
+    public EmailActionResponse reSendOtp(ResendOtpRequest request) {
+        String otp = generateOtp();
+
+        notificationService.OtpNotificationHandler(
+                new OtpNotificationRequest(
+                        new OtpRequest(request.email(), otp),
+                        request.email() + System.currentTimeMillis(),
+                        request.type()
+                )
+        );
+
+        return EmailActionResponse.builder()
+                .email(request.email())
+                .expireIn(5 * 60)
+                .build();
+    }
+
+    @Override
     public void resetPassword(ResetPasswordRequest request) {
         String key = "reset:" + request.resetToken();
 
@@ -287,6 +305,8 @@ public class AuthServiceImpl implements IAuthService {
 
         user.setEmail(pendingUser.email());
         user.setUsername(pendingUser.username());
+        user.setFirstName(pendingUser.firstName());
+        user.setLastName(pendingUser.lastName());
         user.setPassword(passwordEncoder.encode(pendingUser.password()));
         user.setGender(pendingUser.gender());
 

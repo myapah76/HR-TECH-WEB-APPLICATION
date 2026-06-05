@@ -10,6 +10,7 @@ import javax.management.relation.RoleNotFoundException;
 public interface IAuthService {
     EmailActionResponse register(RegisterRequest request);
     EmailActionResponse forgetPassword(ForgetPasswordRequest request);
+    EmailActionResponse reSendOtp(ResendOtpRequest request);
     void resetPassword(ResetPasswordRequest request);
 
     ConfirmOtpResult confirmOtp(ConfirmOtpRequest request) throws RoleNotFoundException;

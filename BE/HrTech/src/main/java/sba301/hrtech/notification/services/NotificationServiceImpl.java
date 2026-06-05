@@ -3,6 +3,7 @@ package sba301.hrtech.notification.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import sba301.hrtech.auth.exceptions.auth.OtpSavedFailException;
 import sba301.hrtech.notification.abstractions.cache.IRedisIdempotencyService;
 import sba301.hrtech.notification.abstractions.cache.IRedisOtpService;
 import sba301.hrtech.notification.abstractions.cache.IRedisRateLimitService;
@@ -34,7 +35,7 @@ public class NotificationServiceImpl implements INotificationService {
         }
 
         if(!otpService.saveOtp(request.getOtpType().toString(),request.getOtpRequest().email(), request.getOtpRequest().otp())){
-            throw new RuntimeException("Fail to save otp code with email: " + request.getOtpRequest().email());
+            throw new OtpSavedFailException("Fail to save otp code with email: " + request.getOtpRequest().email());
         }
 
         //SEND EMAIL

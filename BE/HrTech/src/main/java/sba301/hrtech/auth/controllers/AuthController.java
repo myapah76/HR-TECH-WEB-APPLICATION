@@ -42,6 +42,17 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(response, "OTP sent successfully"));
     }
 
+    @PostMapping("/resend-otp")
+    public ResponseEntity<ApiResponse<EmailActionResponse>> resendOtp(
+            @Valid @RequestBody ResendOtpRequest request) {
+
+        EmailActionResponse response = authService.reSendOtp(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(response, "OTP resent successfully")
+        );
+    }
+
     @PostMapping("/confirm-otp")
     public ResponseEntity<ApiResponse<ConfirmOtpResult>> confirmOtp(
             @RequestBody ConfirmOtpRequest request) throws RoleNotFoundException {

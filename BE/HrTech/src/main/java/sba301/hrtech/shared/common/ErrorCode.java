@@ -12,6 +12,8 @@ public class ErrorCode {
 
     //Redis
     public static final String REDIS_DATA_NOT_FOUND= "REDIS_DATA_NOT_FOUND";
+    public static final String OTP_SAVE_FAILED = "OTP_SAVE_FAILED";
+
 
     //Auth
     public static final String Email_Not_Found = "Email_Not_Found";
