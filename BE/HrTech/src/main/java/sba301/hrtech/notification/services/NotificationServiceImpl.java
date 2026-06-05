@@ -3,6 +3,7 @@ package sba301.hrtech.notification.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import sba301.hrtech.auth.exceptions.auth.otp.OtpRateLimitException;
 import sba301.hrtech.auth.exceptions.auth.otp.OtpSavedFailException;
 import sba301.hrtech.notification.abstractions.cache.IRedisIdempotencyService;
 import sba301.hrtech.notification.abstractions.cache.IRedisOtpService;
@@ -31,7 +32,7 @@ public class NotificationServiceImpl implements INotificationService {
         //RATE LIMIT CHECK
         if (!rateLimitService.isAllowed(request.getOtpType().toString(),request.getOtpRequest().email())) {
             log.warn("Rate limit hit for email {}", request.getOtpRequest().email());
-            return; // NOT throw
+            throw new OtpRateLimitException("Rate limit exceeded for email: " + request.getOtpRequest().email()); // NOT throw
         }
 
         if(!otpService.saveOtp(request.getOtpType().toString(),request.getOtpRequest().email(), request.getOtpRequest().otp())){

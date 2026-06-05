@@ -13,7 +13,8 @@ public class ErrorCode {
     //Redis
     public static final String REDIS_DATA_NOT_FOUND= "REDIS_DATA_NOT_FOUND";
     public static final String OTP_SAVE_FAILED = "OTP_SAVE_FAILED";
-
+    public static final String OTP_DELETE_FAILED = "OTP_DELETE_FAILED";
+    public static final String OTP_RATE_LIMIT_EXCEEDED = "OTP_RATE_LIMIT_EXCEEDED";
 
     //Auth
     public static final String Email_Not_Found = "Email_Not_Found";
