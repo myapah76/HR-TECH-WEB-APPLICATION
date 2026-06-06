@@ -69,6 +69,46 @@ def extract_skills(cv_text: str) -> list:
         print(f"Error parsing Gemini response: {e}")
         return []
 
+JOB_EXTRACTION_PROMPT = PromptTemplate.from_template("""
+You are a skill extraction engine for HR/recruitment.
+Analyze the following Job Description and Requirements to extract all technical and professional skills mentioned.
+
+Rules:
+- Use canonical skill names (e.g., "JavaScript" not "JS", "Kubernetes" not "k8s")
+- Determine required proficiency level from context: BEGINNER, INTERMEDIATE, ADVANCED, EXPERT. If unspecified, assume INTERMEDIATE.
+- Include both hard skills and soft skills.
+- The employer may have already explicitly defined some mandatory skills elsewhere, but your job here is to extract additional skills implied or listed in the text. However, if the text explicitly states a skill is an absolute "must-have" or "required", set is_mandatory to true. Otherwise, set is_mandatory to false.
+
+Return ONLY a valid JSON array with no extra text. Example:
+[{"name": "Java", "level": "ADVANCED", "is_mandatory": true}, {"name": "React", "level": "INTERMEDIATE", "is_mandatory": false}]
+
+If no skills are found, return: []
+
+Job Description:
+---
+{description}
+
+Job Requirements:
+---
+{requirements}
+""")
+
+def extract_job_skills(description: str, requirements: str = "") -> list:
+    """Extracts nice-to-have and additional mandatory skills from Job posting using Gemini."""
+    if not description and not requirements:
+        return []
+    
+    prompt_value = JOB_EXTRACTION_PROMPT.format_prompt(description=description, requirements=requirements)
+    response = llm.invoke(prompt_value)
+    
+    try:
+        result_json = response.content
+        skills = json.loads(result_json)
+        return skills
+    except Exception as e:
+        print(f"Error parsing Gemini response: {e}")
+        return []
+
 def get_embeddings(texts: list[str]) -> list[list[float]]:
     """Generates embeddings using Ollama."""
     if not texts:

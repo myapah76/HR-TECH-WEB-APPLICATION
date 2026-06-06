@@ -1,8 +1,8 @@
 package sba301.hrtech.skill.abstractions.services;
 
 import sba301.hrtech.skill.dtos.response.CvExtractionResponse;
-
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public interface ISkillExtractionService {
 
@@ -14,5 +14,7 @@ public interface ISkillExtractionService {
      * 4. Create new SkillNodes (isVerified=false) with embeddings for unknown skills
      * 5. Create CvSkill bridge records in PostgreSQL
      */
-    CvExtractionResponse extractAndSaveSkills(UUID cvId);
+    CompletableFuture<CvExtractionResponse> extractAndSaveSkills(UUID cvId);
+
+    void extractAndSaveJobSkills(UUID jobId);
 }

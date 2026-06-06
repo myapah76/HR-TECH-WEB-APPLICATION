@@ -2,10 +2,10 @@ package sba301.hrtech.cv.entities;
 
 import sba301.hrtech.auth.entities.User;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
+import sba301.hrtech.shared.enums.ExtractionStatus;
 import java.util.List;
 import java.util.ArrayList;
 import sba301.hrtech.application.entities.Application;
-import sba301.hrtech.cv.entities.CvSkill;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -37,15 +37,13 @@ public class Cv extends SoftDeleteEntity {
     @Column(name = "is_primary")
     private Boolean isPrimary;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "extraction_status")
+    private ExtractionStatus extractionStatus;
+
     @OneToMany(mappedBy = "cv", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Application> applications = new ArrayList<>();
 
     @OneToMany(mappedBy = "cv", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CvSkill> cvSkills = new ArrayList<>();
 }
-
-
-
-
-
-

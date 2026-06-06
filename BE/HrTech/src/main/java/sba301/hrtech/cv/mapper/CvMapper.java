@@ -22,6 +22,7 @@ public class CvMapper {
                 .title(entity.getTitle())
                 .fileUrl(entity.getFileUrl())
                 .isPrimary(entity.getIsPrimary())
+                .extractionStatus(entity.getExtractionStatus())
                 .createdAt(toLocalDateTime(entity.getCreatedAt()))
                 .build();
     }
@@ -50,6 +51,7 @@ public class CvMapper {
                 .fileUrl(entity.getFileUrl())
                 .parsedContent(entity.getParsedContent())
                 .isPrimary(entity.getIsPrimary())
+                .extractionStatus(entity.getExtractionStatus())
                 .createdAt(toLocalDateTime(entity.getCreatedAt()))
                 .cvSkills(skillResponses)
                 .build();

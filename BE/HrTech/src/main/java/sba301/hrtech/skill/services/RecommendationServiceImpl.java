@@ -58,7 +58,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
     @Override
     public RecommendationResultResponse analyzeCvAndRecommend(UUID cvId, int limit) {
         // 1. Extract skills from CV
-        CvExtractionResponse extraction = skillExtractionService.extractAndSaveSkills(cvId);
+        CvExtractionResponse extraction = skillExtractionService.extractAndSaveSkills(cvId).join();
 
         // 2. Recommend jobs
         List<JobRecommendationResponse> recommendations = recommendJobsForCv(cvId, limit);

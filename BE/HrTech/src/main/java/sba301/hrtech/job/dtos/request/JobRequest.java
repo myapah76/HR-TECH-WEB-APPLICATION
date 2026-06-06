@@ -27,6 +27,8 @@ public record JobRequest(
 
         LocalDate deadline,
 
+        String requirements,
+
         @Valid
         List<JobSkillRequest> skills
 ) {}

@@ -1,6 +1,7 @@
 package sba301.hrtech.cv.dtos.response;
 
 import lombok.*;
+import sba301.hrtech.shared.enums.ExtractionStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -17,6 +18,7 @@ public class CvDetailResponse {
     private String fileUrl;
     private String parsedContent;
     private Boolean isPrimary;
+    private ExtractionStatus extractionStatus;
     private LocalDateTime createdAt;
     private List<CvSkillResponse> cvSkills;
 

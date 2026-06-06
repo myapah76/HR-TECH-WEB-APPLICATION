@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from models import ExtractionRequest, ExtractionResponse, EmbedRequest, EmbedResponse, ExtractedSkill
-from services import extract_skills, get_embeddings
+from models import ExtractionRequest, ExtractionResponse, EmbedRequest, EmbedResponse, ExtractedSkill, JobExtractionRequest, JobExtractionResponse, ExtractedJobSkill
+from services import extract_skills, get_embeddings, extract_job_skills
 
 app = FastAPI(title="HrTech AI Microservice", version="1.0.0")
 
@@ -30,6 +30,20 @@ def api_extract_skills(req: ExtractionRequest):
                 parsed_skills.append(ExtractedSkill(name=s["name"], level=s["level"]))
                 
         return ExtractionResponse(skills=parsed_skills)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/extract-job", response_model=JobExtractionResponse)
+def api_extract_job_skills(req: JobExtractionRequest):
+    try:
+        skills_data = extract_job_skills(req.description, req.requirements)
+        
+        parsed_skills = []
+        for s in skills_data:
+            if "name" in s and "level" in s and "is_mandatory" in s:
+                parsed_skills.append(ExtractedJobSkill(name=s["name"], level=s["level"], is_mandatory=s["is_mandatory"]))
+                
+        return JobExtractionResponse(skills=parsed_skills)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

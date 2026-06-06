@@ -14,7 +14,6 @@ import sba301.hrtech.company.abstractions.repositories.CompanyRepository;
 import sba301.hrtech.company.entities.Company;
 import sba301.hrtech.company.entities.enums.CompanyStatus;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
-import sba301.hrtech.job.abstractions.repositories.JobSkillRepository;
 import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.job.dtos.request.JobRequest;
 import sba301.hrtech.job.dtos.request.JobSearchCriteria;
@@ -27,14 +26,15 @@ import sba301.hrtech.job.entities.enums.ExperienceLevel;
 import sba301.hrtech.job.entities.enums.JobStatus;
 import sba301.hrtech.job.entities.enums.JobType;
 import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.enums.ExtractionStatus;
 import sba301.hrtech.shared.enums.SkillLevel;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
+import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
 import sba301.hrtech.skill.entities.SkillNode;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -44,10 +44,9 @@ import java.util.stream.Collectors;
 public class JobServiceImpl implements IJobService {
 
     private final JobRepository jobRepository;
-    private final JobSkillRepository jobSkillRepository;
     private final CompanyRepository companyRepository;
     private final SkillNodeRepository skillNodeRepository;
-
+    private final ISkillExtractionService skillExtractionService;
 
     private User getCurrentUser() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -167,6 +166,8 @@ public class JobServiceImpl implements IJobService {
                 job.getExperienceLevel() != null ? job.getExperienceLevel().name() : null,
                 job.getStatus() != null ? job.getStatus().name() : null,
                 job.getDeadline(),
+                job.getRequirements(),
+                job.getExtractionStatus(),
                 skillResponses,
                 job.getCreatedAt(),
                 job.getUpdatedAt()
@@ -209,6 +210,7 @@ public class JobServiceImpl implements IJobService {
     private void applyJobFields(Job job, JobRequest request) {
         job.setTitle(request.title());
         job.setDescription(request.description());
+        job.setRequirements(request.requirements());
         job.setLocation(request.location());
         job.setSalaryMin(request.salaryMin());
         job.setSalaryMax(request.salaryMax());
@@ -253,7 +255,10 @@ public class JobServiceImpl implements IJobService {
         // Build and save skills
         List<JobSkill> skills = buildJobSkills(savedJob, request.skills());
         savedJob.getJobSkills().addAll(skills);
-        jobRepository.save(savedJob);
+        savedJob.setExtractionStatus(ExtractionStatus.PENDING);
+        savedJob = jobRepository.save(savedJob);
+
+        skillExtractionService.extractAndSaveJobSkills(savedJob.getId());
 
         log.info("HR {} created job '{}' for company {}", currentUser.getId(), savedJob.getTitle(), company.getId());
         return toResponse(savedJob);
@@ -282,7 +287,10 @@ public class JobServiceImpl implements IJobService {
         List<JobSkill> newSkills = buildJobSkills(job, request.skills());
         job.getJobSkills().addAll(newSkills);
 
+        job.setExtractionStatus(ExtractionStatus.PENDING);
         Job updatedJob = jobRepository.save(job);
+
+        skillExtractionService.extractAndSaveJobSkills(updatedJob.getId());
         log.info("HR {} updated job {}", currentUser.getId(), jobId);
         return toResponse(updatedJob);
     }

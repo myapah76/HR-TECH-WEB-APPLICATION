@@ -3,6 +3,7 @@ package sba301.hrtech.job.entities;
 import sba301.hrtech.auth.entities.User;
 import sba301.hrtech.company.entities.Company;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
+import sba301.hrtech.shared.enums.ExtractionStatus;
 import java.util.List;
 import java.util.ArrayList;
 import sba301.hrtech.application.entities.Application;
@@ -60,16 +61,16 @@ public class Job extends SoftDeleteEntity {
 
     private LocalDate deadline;
 
+    @Column(columnDefinition = "TEXT")
+    private String requirements;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "extraction_status")
+    private ExtractionStatus extractionStatus;
+
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Application> applications = new ArrayList<>();
 
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<JobSkill> jobSkills = new ArrayList<>();
 }
-
-
-
-
-
-
-

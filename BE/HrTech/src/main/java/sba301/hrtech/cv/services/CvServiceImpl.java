@@ -9,8 +9,10 @@ import sba301.hrtech.auth.abstractions.repositories.UserRepository;
 import sba301.hrtech.auth.entities.User;
 import sba301.hrtech.cv.abstractions.repositories.CvRepository;
 import sba301.hrtech.cv.entities.Cv;
+import sba301.hrtech.shared.enums.ExtractionStatus;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.shared.services.CloudinaryService;
+import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +26,7 @@ public class CvServiceImpl implements CvService {
     private final CvRepository cvRepository;
     private final UserRepository userRepository;
     private final CloudinaryService cloudinaryService;
+    private final ISkillExtractionService skillExtractionService;
 
     @Override
     public Cv createCv(UUID userId, String title, MultipartFile file) {
@@ -142,6 +145,11 @@ public class CvServiceImpl implements CvService {
                 ));
 
         cv.setParsedContent(jsonContent);
-        return cvRepository.save(cv);
+        cv.setExtractionStatus(ExtractionStatus.PENDING);
+        Cv savedCv = cvRepository.save(cv);
+
+        skillExtractionService.extractAndSaveSkills(savedCv.getId());
+
+        return savedCv;
     }
 }
