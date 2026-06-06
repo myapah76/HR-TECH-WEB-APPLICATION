@@ -1,17 +1,19 @@
 package sba301.hrtech.cv.controllers;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+
 import sba301.hrtech.auth.utils.AuthUtils;
+import sba301.hrtech.cv.dtos.request.CreateCvRequest;
 import sba301.hrtech.cv.dtos.response.CvDetailResponse;
 import sba301.hrtech.cv.dtos.response.CvSummaryResponse;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.cv.mapper.CvMapper;
-import sba301.hrtech.cv.services.CvService;
+import sba301.hrtech.cv.abstractions.services.CvService;
 import sba301.hrtech.shared.exceptions.AppException;
 
 import java.util.List;
@@ -54,9 +56,12 @@ public class CvCandidateController {
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CvSummaryResponse> uploadCv(
-            @RequestParam("title") String title,
-            @RequestParam("file") MultipartFile file) {
-        Cv savedCv = cvService.createCv(authUtils.getCurrentUserId(), title, file);
+            @ModelAttribute @Valid CreateCvRequest request) {
+        Cv savedCv = cvService.createCv(
+                authUtils.getCurrentUserId(),
+                request.getTitle(),
+                request.getFile()
+        );
         return ResponseEntity.status(HttpStatus.CREATED).body(cvMapper.toSummaryResponse(savedCv));
     }
 

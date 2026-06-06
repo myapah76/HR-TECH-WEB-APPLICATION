@@ -1,4 +1,4 @@
-package sba301.hrtech.cv.services;
+package sba301.hrtech.cv.abstractions.services;
 
 import org.springframework.web.multipart.MultipartFile;
 import sba301.hrtech.cv.entities.Cv;
