@@ -38,6 +38,7 @@ public class ErrorCode {
     public static final String NOT_FOUND = "NOT_FOUND";
     public static final String VALIDATION_ERROR = "VALIDATION_ERROR";
     public static final String INTERNAL_ERROR = "INTERNAL_ERROR";
+    public static final String INVALID_INPUT = "INVALID_INPUT";
 
     //Skill
     public static final String SKILL_NOT_FOUND = "SKILL_NOT_FOUND";

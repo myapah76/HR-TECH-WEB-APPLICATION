@@ -16,6 +16,12 @@ public record CompanyResponse(
         String businessLicenseUrl,
         String status,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        Double graphWeight,
+        Double embeddingWeight,
+        Double synonymWeight,
+        Double relatedWeight,
+        Double childToParentWeight,
+        Double parentToChildWeight
 ) {}
 

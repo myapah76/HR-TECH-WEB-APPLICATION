@@ -2,6 +2,7 @@ package sba301.hrtech.skill.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import sba301.hrtech.shared.common.ErrorCode;
@@ -10,6 +11,7 @@ import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
 import sba301.hrtech.skill.abstractions.services.ISkillService;
 import sba301.hrtech.skill.dtos.request.CreateSkillRequest;
 import sba301.hrtech.skill.dtos.request.UpdateSkillRequest;
+import sba301.hrtech.skill.dtos.response.PendingRelationshipResponse;
 import sba301.hrtech.skill.dtos.response.SkillResponse;
 import sba301.hrtech.skill.dtos.response.SkillWithRelationsResponse;
 import sba301.hrtech.skill.entities.SkillNode;
@@ -129,6 +131,31 @@ public class SkillServiceImpl implements ISkillService {
         SkillNode skillNode = findSkillOrThrow(id);
         skillNodeRepository.delete(skillNode);
         log.info("Rejected and deleted skill: {}", skillNode.getName());
+    }
+
+    @Override
+    public List<PendingRelationshipResponse> getPendingRelationships() {
+        return skillNodeRepository.getPendingRelationships();
+    }
+
+    @Override
+    public void approvePendingRelationship(String sourceId, String targetId, String type) {
+        if (!type.equals("SYNONYM") && !type.equals("RELATED_TO")) {
+            throw new AppException(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_INPUT, "Invalid relationship type");
+        }
+
+        skillNodeRepository.approvePendingRelationship(sourceId, targetId, type);
+        log.info("Approved {} between {} and {}", type, sourceId, targetId);
+    }
+
+    @Override
+    public void rejectPendingRelationship(String sourceId, String targetId, String type) {
+        if (!type.equals("SYNONYM") && !type.equals("RELATED_TO")) {
+            throw new AppException(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_INPUT, "Invalid relationship type");
+        }
+
+        skillNodeRepository.rejectPendingRelationship(sourceId, targetId, type);
+        log.info("Rejected {} between {} and {}", type, sourceId, targetId);
     }
 
     // === Relationships ===

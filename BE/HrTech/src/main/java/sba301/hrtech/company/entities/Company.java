@@ -1,5 +1,6 @@
 package sba301.hrtech.company.entities;
 
+import sba301.hrtech.auth.entities.User;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
 import java.util.List;
 import java.util.ArrayList;
@@ -56,13 +57,25 @@ public class Company extends SoftDeleteEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
-    private sba301.hrtech.auth.entities.User owner;
+    private User owner;
 
     @Column(name = "graph_weight")
     private Double graphWeight;
 
     @Column(name = "embedding_weight")
     private Double embeddingWeight;
+
+    @Column(name = "synonym_weight")
+    private Double synonymWeight;
+
+    @Column(name = "related_weight")
+    private Double relatedWeight;
+
+    @Column(name = "child_to_parent_weight")
+    private Double childToParentWeight;
+
+    @Column(name = "parent_to_child_weight")
+    private Double parentToChildWeight;
 }
 
 

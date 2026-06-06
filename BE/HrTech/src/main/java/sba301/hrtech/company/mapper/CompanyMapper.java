@@ -26,6 +26,12 @@ public interface CompanyMapper {
     @Mapping(target = "subscriptions", ignore = true)
     @Mapping(target = "jobs", ignore = true)
     @Mapping(target = "size", ignore = true)
+    @Mapping(target = "graphWeight", ignore = true)
+    @Mapping(target = "embeddingWeight", ignore = true)
+    @Mapping(target = "synonymWeight", ignore = true)
+    @Mapping(target = "relatedWeight", ignore = true)
+    @Mapping(target = "childToParentWeight", ignore = true)
+    @Mapping(target = "parentToChildWeight", ignore = true)
     Company fromRegisterRequest(CompanyRegisterRequest request);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

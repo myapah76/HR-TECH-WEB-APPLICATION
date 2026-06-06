@@ -9,6 +9,7 @@ import sba301.hrtech.shared.common.ApiResponse;
 import sba301.hrtech.skill.abstractions.services.ISkillService;
 import sba301.hrtech.skill.dtos.request.CreateSkillRequest;
 import sba301.hrtech.skill.dtos.request.UpdateSkillRequest;
+import sba301.hrtech.skill.dtos.response.PendingRelationshipResponse;
 import sba301.hrtech.skill.dtos.response.SkillResponse;
 import sba301.hrtech.skill.dtos.response.SkillWithRelationsResponse;
 
@@ -72,6 +73,29 @@ public class SkillController {
     @DeleteMapping("/{id}/reject")
     public ResponseEntity<ApiResponse<Void>> rejectSkill(@PathVariable String id) {
         skillService.rejectSkill(id);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @GetMapping("/pending-relationships")
+    public ResponseEntity<ApiResponse<List<PendingRelationshipResponse>>> getPendingRelationships() {
+        return ResponseEntity.ok(ApiResponse.success(skillService.getPendingRelationships()));
+    }
+
+    @PutMapping("/{sourceId}/relationships/{targetId}/approve")
+    public ResponseEntity<ApiResponse<Void>> approvePendingRelationship(
+            @PathVariable String sourceId,
+            @PathVariable String targetId,
+            @RequestParam String type) {
+        skillService.approvePendingRelationship(sourceId, targetId, type);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @DeleteMapping("/{sourceId}/relationships/{targetId}/reject")
+    public ResponseEntity<ApiResponse<Void>> rejectPendingRelationship(
+            @PathVariable String sourceId,
+            @PathVariable String targetId,
+            @RequestParam String type) {
+        skillService.rejectPendingRelationship(sourceId, targetId, type);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

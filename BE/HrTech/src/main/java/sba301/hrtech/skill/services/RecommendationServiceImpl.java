@@ -31,9 +31,7 @@ import java.util.stream.Collectors;
 public class RecommendationServiceImpl implements IRecommendationService {
 
     private final CvRepository cvRepository;
-    private final CvSkillRepository cvSkillRepository;
     private final JobRepository jobRepository;
-    private final JobSkillRepository jobSkillRepository;
     private final SkillNodeRepository skillNodeRepository;
     private final ISkillExtractionService skillExtractionService;
 
@@ -54,7 +52,8 @@ public class RecommendationServiceImpl implements IRecommendationService {
     private static final double EXACT_MATCH = 1.0;
     private static final double SYNONYM_MATCH = 0.95;
     private static final double RELATED_MATCH = 0.7;
-    private static final double PARENT_MATCH = 0.6;
+    private static final double PARENT_TO_CHILD_MATCH = 0.4;
+    private static final double CHILD_TO_PARENT_MATCH = 0.8;
 
     @Override
     public RecommendationResultResponse analyzeCvAndRecommend(UUID cvId, int limit) {
@@ -73,32 +72,12 @@ public class RecommendationServiceImpl implements IRecommendationService {
 
     @Override
     public List<JobRecommendationResponse> recommendJobsForCv(UUID cvId, int limit) {
-        // 1. Validate CV exists
         Cv cv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND,
-                        ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
+                .orElseThrow(
+                        () -> new AppException(HttpStatus.NOT_FOUND, ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
 
-        // 2. Get CV skills from PostgreSQL
-        List<CvSkill> cvSkills = cv.getCvSkills();
-        if (cvSkills == null || cvSkills.isEmpty()) {
-            throw new AppException(HttpStatus.BAD_REQUEST,
-                    ErrorCode.CV_HAS_NO_SKILLS, "CV has no extracted skills");
-        }
-
-        // 3. Build CV skill map: neo4jId -> CvSkill
-        Map<String, CvSkill> cvSkillMap = cvSkills.stream()
-                .collect(Collectors.toMap(CvSkill::getSkillNeo4jId, s -> s, (a, b) -> a));
-
-        // 4. Expand CV skills via graph (SYNONYM, RELATED_TO)
-        Map<String, Double> expandedCvSkillWeights = expandSkillsThroughGraphWithWeights(cvSkillMap.keySet());
-
-        // 5. Get CV skill embeddings for embedding score
-        List<Double> cvCentroid = calculateCentroidEmbedding(cvSkillMap.keySet());
-
-        // 6. Get all jobs with their skills
+        CvSkillContext ctx = buildCvSkillContext(cv);
         List<Job> allJobs = jobRepository.findAll();
-
-        // 7. Score each job
         List<JobRecommendationResponse> recommendations = new ArrayList<>();
 
         for (Job job : allJobs) {
@@ -107,32 +86,16 @@ public class RecommendationServiceImpl implements IRecommendationService {
                 continue;
             }
 
-            // Calculate graph score
-            double graphScore = calculateGraphScore(cvSkillMap, expandedCvSkillWeights, jobSkills);
+            CompanyWeights weights = extractCompanyWeights(job);
 
-            // Calculate embedding score
-            double embScore = calculateEmbeddingScore(cvCentroid, jobSkills);
+            double graphScore = calculateGraphScore(ctx.cvSkillMap(), ctx.expandedCvSkillTypes(), jobSkills, weights);
+            double embScore = calculateEmbeddingScore(ctx.cvCentroid(), jobSkills);
+            double finalScore = weights.graphWeight() * graphScore + weights.embeddingWeight() * embScore;
 
-            // Company specific weights or fallback
-            double jobGraphWeight = graphWeight;
-            double jobEmbeddingWeight = embeddingWeight;
-            if (job.getCompany() != null) {
-                if (job.getCompany().getGraphWeight() != null) {
-                    jobGraphWeight = job.getCompany().getGraphWeight();
-                }
-                if (job.getCompany().getEmbeddingWeight() != null) {
-                    jobEmbeddingWeight = job.getCompany().getEmbeddingWeight();
-                }
-            }
-
-            // Hybrid score
-            double finalScore = jobGraphWeight * graphScore + jobEmbeddingWeight * embScore;
-
-            // Determine matched and missing skills
             List<String> matchedSkills = new ArrayList<>();
             List<String> missingSkills = new ArrayList<>();
-            categorizeSkills(cvSkillMap.keySet(), expandedCvSkillWeights, jobSkills,
-                    matchedSkills, missingSkills);
+            categorizeSkills(ctx.cvSkillMap().keySet(), ctx.expandedCvSkillTypes(), jobSkills, matchedSkills,
+                    missingSkills);
 
             recommendations.add(JobRecommendationResponse.builder()
                     .jobId(job.getId())
@@ -150,7 +113,6 @@ public class RecommendationServiceImpl implements IRecommendationService {
                     .build());
         }
 
-        // Sort by score descending, take top N
         return recommendations.stream()
                 .sorted(Comparator.comparingDouble(JobRecommendationResponse::getMatchScore).reversed())
                 .limit(limit)
@@ -159,46 +121,28 @@ public class RecommendationServiceImpl implements IRecommendationService {
 
     @Override
     public SkillMatchScoreResponse calculateMatchScore(UUID cvId, UUID jobId) {
-        // Get CV and Job
         Cv cv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND,
-                        ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
+                .orElseThrow(
+                        () -> new AppException(HttpStatus.NOT_FOUND, ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
 
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND,
-                        ErrorCode.JOB_NOT_FOUND, "Job not found: " + jobId));
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, ErrorCode.JOB_NOT_FOUND,
+                        "Job not found: " + jobId));
 
-        List<CvSkill> cvSkills = cv.getCvSkills();
+        CvSkillContext ctx = buildCvSkillContext(cv);
         List<JobSkill> jobSkills = job.getJobSkills();
+        CompanyWeights weights = extractCompanyWeights(job);
 
-        Map<String, CvSkill> cvSkillMap = cvSkills.stream()
-                .collect(Collectors.toMap(CvSkill::getSkillNeo4jId, s -> s, (a, b) -> a));
-
-        Set<String> cvSkillIds = cvSkillMap.keySet();
-        Map<String, Double> expandedCvSkillWeights = expandSkillsThroughGraphWithWeights(cvSkillIds);
-        List<Double> cvCentroid = calculateCentroidEmbedding(cvSkillIds);
-
-        double graphScore = calculateGraphScore(cvSkillMap, expandedCvSkillWeights, jobSkills);
-        double embScore = calculateEmbeddingScore(cvCentroid, jobSkills);
-
-        // Company specific weights or fallback
-        double jobGraphWeight = graphWeight;
-        double jobEmbeddingWeight = embeddingWeight;
-        if (job.getCompany() != null) {
-            if (job.getCompany().getGraphWeight() != null) {
-                jobGraphWeight = job.getCompany().getGraphWeight();
-            }
-            if (job.getCompany().getEmbeddingWeight() != null) {
-                jobEmbeddingWeight = job.getCompany().getEmbeddingWeight();
-            }
-        }
-
-        double finalScore = jobGraphWeight * graphScore + jobEmbeddingWeight * embScore;
+        double graphScore = calculateGraphScore(ctx.cvSkillMap(), ctx.expandedCvSkillTypes(), jobSkills, weights);
+        double embScore = calculateEmbeddingScore(ctx.cvCentroid(), jobSkills);
+        double finalScore = weights.graphWeight() * graphScore + weights.embeddingWeight() * embScore;
 
         List<String> matchedSkills = new ArrayList<>();
         List<String> missingSkills = new ArrayList<>();
-        categorizeSkills(cvSkillIds, expandedCvSkillWeights, jobSkills, matchedSkills, missingSkills);
-        List<SkillMatchDetail> details = buildSkillMatchDetails(cvSkillMap, expandedCvSkillWeights, jobSkills);
+        categorizeSkills(ctx.cvSkillMap().keySet(), ctx.expandedCvSkillTypes(), jobSkills, matchedSkills,
+                missingSkills);
+        List<SkillMatchDetail> details = buildSkillMatchDetails(ctx.cvSkillMap(), ctx.expandedCvSkillTypes(),
+                jobSkills);
 
         return SkillMatchScoreResponse.builder()
                 .overallScore(Math.round(finalScore * 100.0) / 100.0)
@@ -209,21 +153,81 @@ public class RecommendationServiceImpl implements IRecommendationService {
                 .build();
     }
 
-    // ========== PRIVATE HELPER METHODS ==========
+    // ========== PRIVATE HELPER METHODS & RECORDS ==========
+
+    private record CompanyWeights(
+            double graphWeight,
+            double embeddingWeight,
+            double synonymWeight,
+            double relatedWeight,
+            double childToParentWeight,
+            double parentToChildWeight) {
+    }
+
+    private record CvSkillContext(
+            Map<String, CvSkill> cvSkillMap,
+            Map<String, Set<String>> expandedCvSkillTypes,
+            List<Double> cvCentroid) {
+    }
+
+    private CvSkillContext buildCvSkillContext(Cv cv) {
+        List<CvSkill> cvSkills = cv.getCvSkills();
+        if (cvSkills == null || cvSkills.isEmpty()) {
+            throw new AppException(HttpStatus.BAD_REQUEST,
+                    ErrorCode.CV_HAS_NO_SKILLS, "CV has no extracted skills");
+        }
+
+        Map<String, CvSkill> cvSkillMap = cvSkills.stream()
+                .collect(Collectors.toMap(CvSkill::getSkillNeo4jId, s -> s, (a, b) -> a));
+
+        Set<String> cvSkillIds = cvSkillMap.keySet();
+        Map<String, Set<String>> expandedCvSkillTypes = expandSkillsThroughGraph(cvSkillIds);
+        List<Double> cvCentroid = calculateCentroidEmbedding(cvSkillIds);
+
+        return new CvSkillContext(cvSkillMap, expandedCvSkillTypes, cvCentroid);
+    }
+
+    private CompanyWeights extractCompanyWeights(Job job) {
+        double jobGraphWeight = this.graphWeight;
+        double jobEmbeddingWeight = this.embeddingWeight;
+        double jobSynonymWeight = SYNONYM_MATCH;
+        double jobRelatedWeight = RELATED_MATCH;
+        double jobChildToParentWeight = CHILD_TO_PARENT_MATCH;
+        double jobParentToChildWeight = PARENT_TO_CHILD_MATCH;
+
+        if (job.getCompany() != null) {
+            if (job.getCompany().getGraphWeight() != null)
+                jobGraphWeight = job.getCompany().getGraphWeight();
+            if (job.getCompany().getEmbeddingWeight() != null)
+                jobEmbeddingWeight = job.getCompany().getEmbeddingWeight();
+            if (job.getCompany().getSynonymWeight() != null)
+                jobSynonymWeight = job.getCompany().getSynonymWeight();
+            if (job.getCompany().getRelatedWeight() != null)
+                jobRelatedWeight = job.getCompany().getRelatedWeight();
+            if (job.getCompany().getChildToParentWeight() != null)
+                jobChildToParentWeight = job.getCompany().getChildToParentWeight();
+            if (job.getCompany().getParentToChildWeight() != null)
+                jobParentToChildWeight = job.getCompany().getParentToChildWeight();
+        }
+
+        return new CompanyWeights(jobGraphWeight, jobEmbeddingWeight, jobSynonymWeight, jobRelatedWeight,
+                jobChildToParentWeight, jobParentToChildWeight);
+    }
 
     /**
-     * Expand skill IDs through graph relationships and return their respective weights.
-     * Weights: SYNONYM (0.95), RELATED (0.7), PARENT/CHILD (0.6).
+     * Expand skill IDs through graph relationships and return their relationship
+     * types.
+     * Types: SYNONYM, RELATED, CHILD_TO_PARENT, PARENT_TO_CHILD
      */
-    private Map<String, Double> expandSkillsThroughGraphWithWeights(Set<String> originalSkillIds) {
-        Map<String, Double> expanded = new HashMap<>();
+    private Map<String, Set<String>> expandSkillsThroughGraph(Set<String> originalSkillIds) {
+        Map<String, Set<String>> expanded = new HashMap<>();
 
         for (String skillId : originalSkillIds) {
             // Synonyms
             try {
                 List<SkillNode> synonyms = skillNodeRepository.findSynonyms(skillId);
                 for (SkillNode s : synonyms) {
-                    expanded.merge(s.getId(), SYNONYM_MATCH, Math::max);
+                    expanded.computeIfAbsent(s.getId(), k -> new HashSet<>()).add("SYNONYM");
                 }
             } catch (Exception e) {
                 log.warn("Could not expand synonyms for skill {}: {}", skillId, e.getMessage());
@@ -233,20 +237,30 @@ public class RecommendationServiceImpl implements IRecommendationService {
             try {
                 List<SkillNode> related = skillNodeRepository.findRelatedSkills(skillId);
                 for (SkillNode r : related) {
-                    expanded.merge(r.getId(), RELATED_MATCH, Math::max);
+                    expanded.computeIfAbsent(r.getId(), k -> new HashSet<>()).add("RELATED");
                 }
             } catch (Exception e) {
                 log.warn("Could not expand related for skill {}: {}", skillId, e.getMessage());
             }
 
-            // Parents and Children
+            // Child to Parent (CV has child, Job needs parent -> find parents)
             try {
-                List<SkillNode> family = skillNodeRepository.findParentsAndChildren(skillId);
-                for (SkillNode f : family) {
-                    expanded.merge(f.getId(), PARENT_MATCH, Math::max);
+                List<SkillNode> parents = skillNodeRepository.findParents(skillId);
+                for (SkillNode p : parents) {
+                    expanded.computeIfAbsent(p.getId(), k -> new HashSet<>()).add("CHILD_TO_PARENT");
                 }
             } catch (Exception e) {
-                log.warn("Could not expand family for skill {}: {}", skillId, e.getMessage());
+                log.warn("Could not expand parents for skill {}: {}", skillId, e.getMessage());
+            }
+
+            // Parent to Child (CV has parent, Job needs child -> find children)
+            try {
+                List<SkillNode> children = skillNodeRepository.findChildren(skillId);
+                for (SkillNode c : children) {
+                    expanded.computeIfAbsent(c.getId(), k -> new HashSet<>()).add("PARENT_TO_CHILD");
+                }
+            } catch (Exception e) {
+                log.warn("Could not expand children for skill {}: {}", skillId, e.getMessage());
             }
         }
 
@@ -294,8 +308,9 @@ public class RecommendationServiceImpl implements IRecommendationService {
      * Score = Σ(matchWeight × levelScore) / Σ(totalWeight)
      */
     private double calculateGraphScore(Map<String, CvSkill> cvSkillMap,
-            Map<String, Double> expandedCvSkillWeights,
-            List<JobSkill> jobSkills) {
+            Map<String, Set<String>> expandedCvSkillTypes,
+            List<JobSkill> jobSkills,
+            CompanyWeights weights) {
         double totalWeight = 0.0;
         double matchedWeight = 0.0;
 
@@ -307,19 +322,32 @@ public class RecommendationServiceImpl implements IRecommendationService {
 
             if (cvSkillMap.containsKey(jobSkillNeo4jId)) {
                 // EXACT match
-                double levelScore = calculateLevelScore(
-                        cvSkillMap.get(jobSkillNeo4jId).getProficiencyLevel(),
-                        jobSkill.getRequiredLevel());
+                CvSkill cvSkill = cvSkillMap.get(jobSkillNeo4jId);
+                double levelScore = calculateLevelScore(cvSkill.getProficiencyLevel(), jobSkill.getRequiredLevel());
                 matchedWeight += weight * EXACT_MATCH * levelScore;
-            } else if (expandedCvSkillWeights.containsKey(jobSkillNeo4jId)) {
+            } else if (expandedCvSkillTypes.containsKey(jobSkillNeo4jId)) {
                 // RELATED/SYNONYM/PARENT match (from graph expansion)
-                double multiplier = expandedCvSkillWeights.get(jobSkillNeo4jId);
-                matchedWeight += weight * multiplier;
+                double maxMultiplier = 0.0;
+                for (String type : expandedCvSkillTypes.get(jobSkillNeo4jId)) {
+                    double multiplier = getWeightForType(type, weights);
+                    maxMultiplier = Math.max(maxMultiplier, multiplier);
+                }
+                matchedWeight += weight * maxMultiplier;
             }
             // else: MISSING → contributes 0
         }
 
         return totalWeight > 0 ? matchedWeight / totalWeight : 0.0;
+    }
+
+    private double getWeightForType(String type, CompanyWeights weights) {
+        return switch (type) {
+            case "SYNONYM" -> weights.synonymWeight();
+            case "RELATED" -> weights.relatedWeight();
+            case "CHILD_TO_PARENT" -> weights.childToParentWeight();
+            case "PARENT_TO_CHILD" -> weights.parentToChildWeight();
+            default -> 0.0;
+        };
     }
 
     /**
@@ -381,7 +409,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
     /**
      * Categorize job skills into matched and missing lists.
      */
-    private void categorizeSkills(Set<String> cvSkillIds, Map<String, Double> expandedCvSkillWeights,
+    private void categorizeSkills(Set<String> cvSkillIds, Map<String, Set<String>> expandedCvSkillTypes,
             List<JobSkill> jobSkills,
             List<String> matchedSkills, List<String> missingSkills) {
         for (JobSkill jobSkill : jobSkills) {
@@ -389,7 +417,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
             Optional<SkillNode> skillNode = skillNodeRepository.findById(neo4jId);
             String skillName = skillNode.map(SkillNode::getName).orElse(neo4jId);
 
-            if (cvSkillIds.contains(neo4jId) || expandedCvSkillWeights.containsKey(neo4jId)) {
+            if (cvSkillIds.contains(neo4jId) || expandedCvSkillTypes.containsKey(neo4jId)) {
                 matchedSkills.add(skillName);
             } else {
                 missingSkills.add(skillName);
@@ -401,7 +429,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
      * Build detailed skill match information for each job skill.
      */
     private List<SkillMatchDetail> buildSkillMatchDetails(Map<String, CvSkill> cvSkillMap,
-            Map<String, Double> expandedCvSkillWeights,
+            Map<String, Set<String>> expandedCvSkillTypes,
             List<JobSkill> jobSkills) {
         List<SkillMatchDetail> details = new ArrayList<>();
 
@@ -429,13 +457,8 @@ public class RecommendationServiceImpl implements IRecommendationService {
                 } else {
                     matchStatus = "PARTIAL";
                 }
-            } else if (expandedCvSkillWeights.containsKey(neo4jId)) {
-                double w = expandedCvSkillWeights.get(neo4jId);
-                if (w == SYNONYM_MATCH) matchType = "SYNONYM";
-                else if (w == RELATED_MATCH) matchType = "RELATED";
-                else if (w == PARENT_MATCH) matchType = "PARENT_CHILD";
-                else matchType = "EXPANDED";
-                
+            } else if (expandedCvSkillTypes.containsKey(neo4jId)) {
+                matchType = String.join(", ", expandedCvSkillTypes.get(neo4jId));
                 matchStatus = "MATCHED";
             } else {
                 matchType = "NONE";

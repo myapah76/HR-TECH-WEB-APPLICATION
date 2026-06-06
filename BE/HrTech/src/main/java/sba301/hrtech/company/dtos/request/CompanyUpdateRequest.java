@@ -16,6 +16,18 @@ public record CompanyUpdateRequest(
 
         String size,
 
-        String address
+        String address,
+
+        Double graphWeight,
+
+        Double embeddingWeight,
+
+        Double synonymWeight,
+
+        Double relatedWeight,
+
+        Double childToParentWeight,
+
+        Double parentToChildWeight
 ) {}
 
