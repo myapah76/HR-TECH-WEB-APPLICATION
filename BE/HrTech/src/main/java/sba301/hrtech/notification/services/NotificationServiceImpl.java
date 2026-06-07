@@ -9,6 +9,7 @@ import sba301.hrtech.notification.abstractions.cache.IRedisIdempotencyService;
 import sba301.hrtech.notification.abstractions.cache.IRedisOtpService;
 import sba301.hrtech.notification.abstractions.cache.IRedisRateLimitService;
 import sba301.hrtech.notification.abstractions.INotificationService;
+import sba301.hrtech.notification.abstractions.IEmailSender;
 import sba301.hrtech.notification.dtos.OtpNotificationRequest;
 
 @Service
@@ -19,7 +20,7 @@ public class NotificationServiceImpl implements INotificationService {
     private final IRedisOtpService otpService;
     private final IRedisRateLimitService rateLimitService;
     private final IRedisIdempotencyService idempotencyService;
-    private final EmailSenderImpl emailSender;
+    private final IEmailSender emailSender;
 
     @Override
     public void OtpNotificationHandler(OtpNotificationRequest request) {
