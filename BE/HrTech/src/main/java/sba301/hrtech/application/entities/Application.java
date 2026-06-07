@@ -40,4 +40,7 @@ public class Application extends SoftDeleteEntity {
 
     @Column(name = "applied_at")
     private Instant appliedAt;
+
+    @OneToOne(mappedBy = "application", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private ApplicationScore applicationScore;
 }

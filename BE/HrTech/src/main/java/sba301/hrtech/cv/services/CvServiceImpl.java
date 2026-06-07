@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import sba301.hrtech.auth.abstractions.repositories.UserRepository;
 import sba301.hrtech.auth.entities.User;
 import sba301.hrtech.cv.abstractions.repositories.CvRepository;
+import sba301.hrtech.cv.abstractions.services.CvService;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.shared.enums.ExtractionStatus;
 import sba301.hrtech.shared.exceptions.AppException;
@@ -30,7 +31,6 @@ public class CvServiceImpl implements CvService {
 
     @Override
     public Cv createCv(UUID userId, String title, MultipartFile file) {
-        // 1. Validate user tồn tại
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(
                         HttpStatus.NOT_FOUND,
@@ -38,7 +38,7 @@ public class CvServiceImpl implements CvService {
                         "Người dùng không tồn tại với ID: " + userId
                 ));
 
-        // 2. Validate loại file
+
         String contentType = file.getContentType();
         if (contentType == null ||
                 (!contentType.equals("application/pdf") &&
@@ -50,13 +50,13 @@ public class CvServiceImpl implements CvService {
             );
         }
 
-        // 3. Upload lên Cloudinary
+
         String fileUrl = cloudinaryService.uploadFile(file, "hrtech/cvs");
 
-        // 4. CV đầu tiên tự động là Primary
+
         boolean isFirstCv = cvRepository.findByUserId(userId).isEmpty();
 
-        // 5. Lưu vào DB
+
         Cv newCv = Cv.builder()
                 .user(user)
                 .title(title)
