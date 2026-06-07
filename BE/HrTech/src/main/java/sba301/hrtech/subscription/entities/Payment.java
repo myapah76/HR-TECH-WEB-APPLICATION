@@ -8,6 +8,8 @@ import sba301.hrtech.subscription.entities.enums.PaymentStatus;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
+
 import sba301.hrtech.auth.entities.User;
 
 @Entity
@@ -44,6 +46,14 @@ public class Payment extends BaseEntity {
 
     @Column(name = "paid_at")
     private Instant paidAt;
+
+    // VNPay
+    @Column(nullable = false, unique = true)
+    private String txnRef;
+    private String responseCode;  // vnp_ResponseCode
+    private String transactionNo; // vnp_TransactionNo
+    private String bankCode;      // vnp_BankCode
+    private LocalDateTime payDate;// vnp_PayDate
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
