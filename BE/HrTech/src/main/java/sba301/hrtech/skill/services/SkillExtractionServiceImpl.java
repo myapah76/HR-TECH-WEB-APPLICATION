@@ -23,6 +23,7 @@ import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
 import sba301.hrtech.skill.dtos.response.CvExtractionResponse;
 import sba301.hrtech.skill.dtos.response.ExtractedJobSkillDto;
 import sba301.hrtech.skill.dtos.response.ExtractedSkillDto;
+import sba301.hrtech.skill.dtos.response.ParseExtractResponseDto;
 import sba301.hrtech.skill.dtos.response.SkillProcessResult;
 import sba301.hrtech.skill.dtos.response.SkillResponse;
 import sba301.hrtech.skill.entities.SkillNode;
@@ -58,8 +59,8 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
         cvRepository.save(cv);
 
         try {
-            String cvText = cv.getParsedContent();
-            if (cvText == null || cvText.isBlank()) {
+            String fileUrl = cv.getFileUrl();
+            if (fileUrl == null || fileUrl.isBlank()) {
                 cv.setExtractionStatus(ExtractionStatus.COMPLETED);
                 cvRepository.save(cv);
                 return CompletableFuture.completedFuture(CvExtractionResponse.builder()
@@ -70,11 +71,28 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
                         .build());
             }
 
-            // 2. Call Gemini AI to extract skills
-            List<ExtractedSkillDto> aiExtracted = aiServiceClient.extractSkillsFromText(cvText);
-            log.info("Gemini extracted {} skills from CV {}", aiExtracted.size(), cvId);
+            // 2. Call Python AI to parse PDF and extract skills in one go
+            ParseExtractResponseDto parseResult = aiServiceClient.parseAndExtractCv(fileUrl);
 
-            if (aiExtracted.isEmpty()) {
+            if (parseResult == null) {
+                cv.setExtractionStatus(ExtractionStatus.COMPLETED);
+                cvRepository.save(cv);
+                return CompletableFuture.completedFuture(CvExtractionResponse.builder()
+                        .cvId(cvId)
+                        .extractedSkills(Collections.emptyList())
+                        .newSkillsCount(0)
+                        .matchedSkillsCount(0)
+                        .build());
+            }
+
+            // Update CV with raw parsed text
+            cv.setParsedContent(parseResult.getParsedContent());
+
+            List<ExtractedSkillDto> aiExtracted = parseResult.getSkills();
+            log.info("AI Service parsed and extracted {} skills from CV {}",
+                    aiExtracted != null ? aiExtracted.size() : 0, cvId);
+
+            if (aiExtracted == null || aiExtracted.isEmpty()) {
                 cv.setExtractionStatus(ExtractionStatus.COMPLETED);
                 cvRepository.save(cv);
                 return CompletableFuture.completedFuture(CvExtractionResponse.builder()

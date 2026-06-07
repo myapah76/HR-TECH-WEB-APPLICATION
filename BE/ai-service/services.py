@@ -7,10 +7,30 @@ from dotenv import load_dotenv
 
 import os
 from pathlib import Path
+import requests
+import fitz  # PyMuPDF
 
 # Load from root .env file
 root_env_path = Path(__file__).resolve().parent.parent.parent / '.env'
 load_dotenv(dotenv_path=root_env_path)
+
+def download_and_extract_pdf_text(file_url: str) -> str:
+    """Downloads a PDF from a URL and extracts its text via PyMuPDF.
+    """
+    try:
+        response = requests.get(file_url, timeout=15)
+        response.raise_for_status()
+        
+        pdf_document = fitz.open(stream=response.content, filetype="pdf")
+        text = ""
+        for page in pdf_document:
+            text += page.get_text()
+            
+        pdf_document.close()
+        return text
+    except Exception as e:
+        print(f"Error downloading or parsing PDF from {file_url}: {e}")
+        raise
 
 # --- Configuration ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -43,7 +63,7 @@ Rules:
 - Include both hard skills (programming, tools) and soft skills (leadership, communication)
 
 Return ONLY a valid JSON array with no extra text. Example:
-[{"name": "Java", "level": "ADVANCED"}, {"name": "React", "level": "INTERMEDIATE"}]
+[{{ "name": "Java", "level": "ADVANCED" }}, {{ "name": "React", "level": "INTERMEDIATE" }}]
 
 If no skills are found, return: []
 
@@ -61,10 +81,25 @@ def extract_skills(cv_text: str) -> list:
     response = llm.invoke(prompt_value)
     
     try:
-        # Since response_mime_type is application/json, it should be a raw JSON string
-        result_json = response.content
-        skills = json.loads(result_json)
-        return skills
+        result_content = response.content
+        if isinstance(result_content, list):
+            if len(result_content) > 0 and isinstance(result_content[0], dict) and "text" in result_content[0]:
+                result_content = "".join(b["text"] for b in result_content if "text" in b)
+            else:
+                return result_content # Already parsed JSON array
+
+        if isinstance(result_content, str):
+            result_content = result_content.strip()
+            if result_content.startswith("```json"):
+                result_content = result_content[7:]
+            elif result_content.startswith("```"):
+                result_content = result_content[3:]
+            if result_content.endswith("```"):
+                result_content = result_content[:-3]
+            
+            return json.loads(result_content.strip())
+            
+        return result_content
     except Exception as e:
         print(f"Error parsing Gemini response: {e}")
         return []
@@ -80,7 +115,7 @@ Rules:
 - The employer may have already explicitly defined some mandatory skills elsewhere, but your job here is to extract additional skills implied or listed in the text. However, if the text explicitly states a skill is an absolute "must-have" or "required", set is_mandatory to true. Otherwise, set is_mandatory to false.
 
 Return ONLY a valid JSON array with no extra text. Example:
-[{"name": "Java", "level": "ADVANCED", "is_mandatory": true}, {"name": "React", "level": "INTERMEDIATE", "is_mandatory": false}]
+[{{ "name": "Java", "level": "ADVANCED", "is_mandatory": true }}, {{ "name": "React", "level": "INTERMEDIATE", "is_mandatory": false }}]
 
 If no skills are found, return: []
 
@@ -102,9 +137,25 @@ def extract_job_skills(description: str, requirements: str = "") -> list:
     response = llm.invoke(prompt_value)
     
     try:
-        result_json = response.content
-        skills = json.loads(result_json)
-        return skills
+        result_content = response.content
+        if isinstance(result_content, list):
+            if len(result_content) > 0 and isinstance(result_content[0], dict) and "text" in result_content[0]:
+                result_content = "".join(b["text"] for b in result_content if "text" in b)
+            else:
+                return result_content
+
+        if isinstance(result_content, str):
+            result_content = result_content.strip()
+            if result_content.startswith("```json"):
+                result_content = result_content[7:]
+            elif result_content.startswith("```"):
+                result_content = result_content[3:]
+            if result_content.endswith("```"):
+                result_content = result_content[:-3]
+                
+            return json.loads(result_content.strip())
+            
+        return result_content
     except Exception as e:
         print(f"Error parsing Gemini response: {e}")
         return []

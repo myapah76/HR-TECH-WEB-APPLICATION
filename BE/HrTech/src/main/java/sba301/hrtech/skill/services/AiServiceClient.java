@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import sba301.hrtech.skill.dtos.response.ExtractedJobSkillDto;
-import sba301.hrtech.skill.dtos.response.ExtractedSkillDto;
+import sba301.hrtech.skill.dtos.response.ParseExtractResponseDto;
 
 import java.util.*;
 
@@ -23,43 +23,36 @@ public class AiServiceClient {
     private String aiServiceUrl;
 
     /**
-     * Calls Python AI service to extract skills from CV text.
+     * Calls Python AI service to download, parse, and extract skills from a CV URL.
      */
-    public List<ExtractedSkillDto> extractSkillsFromText(String text) {
-        if (text == null || text.trim().isEmpty()) {
-            return Collections.emptyList();
+    public ParseExtractResponseDto parseAndExtractCv(String fileUrl) {
+        if (fileUrl == null || fileUrl.trim().isEmpty()) {
+            return null;
         }
 
         try {
-            String url = aiServiceUrl + "/api/extract";
+            String url = aiServiceUrl + "/api/parse-and-extract";
 
             Map<String, String> requestBody = new HashMap<>();
-            requestBody.put("cv_text", text);
+            requestBody.put("file_url", fileUrl);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            log.info("Sending CV text (length: {}) to Python AI Service for skill extraction", text.length());
+            log.info("Sending CV fileUrl ({}) to Python AI Service for parsing and extraction", fileUrl);
             HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
-            ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
+            ResponseEntity<ParseExtractResponseDto> response = restTemplate.postForEntity(url, entity,
+                    ParseExtractResponseDto.class);
             log.info("Received response from Python AI Service with status: {}", response.getStatusCode());
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                List<Map<String, String>> skillsData = (List<Map<String, String>>) response.getBody().get("skills");
-                if (skillsData != null) {
-                    List<ExtractedSkillDto> result = new ArrayList<>();
-                    for (Map<String, String> s : skillsData) {
-                        result.add(new ExtractedSkillDto(s.get("name"), s.get("level")));
-                    }
-                    log.info("Successfully extracted {} skills from Python AI Service", result.size());
-                    return result;
-                }
+                return response.getBody();
             }
-            log.error("Failed to extract skills from AI service");
+            log.error("Failed to parse and extract skills from AI service");
         } catch (Exception e) {
-            log.error("AI service extraction error: {}", e.getMessage(), e);
+            log.error("AI service parse/extract error: {}", e.getMessage(), e);
         }
-        return Collections.emptyList();
+        return null;
     }
 
     /**

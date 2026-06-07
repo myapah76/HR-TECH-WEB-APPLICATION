@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from models import ExtractionRequest, ExtractionResponse, EmbedRequest, EmbedResponse, ExtractedSkill, JobExtractionRequest, JobExtractionResponse, ExtractedJobSkill
-from services import extract_skills, get_embeddings, extract_job_skills
+from models import EmbedRequest, EmbedResponse, ExtractedSkill, JobExtractionRequest, JobExtractionResponse, ExtractedJobSkill, ParseExtractRequest, ParseExtractResponse
+from services import extract_skills, get_embeddings, extract_job_skills, download_and_extract_pdf_text
 
 app = FastAPI(title="HrTech AI Microservice", version="1.0.0")
 
@@ -17,21 +17,6 @@ app.add_middleware(
 @app.get("/")
 def health_check():
     return {"status": "ok", "service": "HrTech AI Microservice"}
-
-@app.post("/api/extract", response_model=ExtractionResponse)
-def api_extract_skills(req: ExtractionRequest):
-    try:
-        skills_data = extract_skills(req.cv_text)
-        
-        # Parse into Pydantic models
-        parsed_skills = []
-        for s in skills_data:
-            if "name" in s and "level" in s:
-                parsed_skills.append(ExtractedSkill(name=s["name"], level=s["level"]))
-                
-        return ExtractionResponse(skills=parsed_skills)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/extract-job", response_model=JobExtractionResponse)
 def api_extract_job_skills(req: JobExtractionRequest):
@@ -55,7 +40,6 @@ def api_get_embeddings(req: EmbedRequest):
             texts_to_embed.append(req.text)
         if req.texts:
             texts_to_embed.extend(req.texts)
-            
         if not texts_to_embed:
             return EmbedResponse(embeddings=[])
             
@@ -64,6 +48,30 @@ def api_get_embeddings(req: EmbedRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/parse-and-extract", response_model=ParseExtractResponse)
+def api_parse_and_extract_cv(req: ParseExtractRequest):
+    try:
+        # 1. Download and parse text
+        text = download_and_extract_pdf_text(req.file_url)
+        
+        # 2. Extract skills via LLM
+        skills_data = extract_skills(text)
+        
+        # 3. Parse into Pydantic models
+        parsed_skills = []
+        for s in skills_data:
+            if "name" in s and "level" in s:
+                parsed_skills.append(ExtractedSkill(name=s["name"], level=s["level"]))
+                
+        return ParseExtractResponse(
+            parsed_content=text,
+            skills=parsed_skills
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

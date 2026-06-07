@@ -2,9 +2,6 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 # --- Requests ---
-class ExtractionRequest(BaseModel):
-    cv_text: str
-
 class JobExtractionRequest(BaseModel):
     description: str
     requirements: Optional[str] = ""
@@ -23,11 +20,15 @@ class ExtractedJobSkill(BaseModel):
     level: str
     is_mandatory: bool
 
-class ExtractionResponse(BaseModel):
-    skills: List[ExtractedSkill]
-
 class JobExtractionResponse(BaseModel):
     skills: List[ExtractedJobSkill]
 
 class EmbedResponse(BaseModel):
     embeddings: List[List[float]]
+
+class ParseExtractRequest(BaseModel):
+    file_url: str
+
+class ParseExtractResponse(BaseModel):
+    parsed_content: str
+    skills: List[ExtractedSkill]

@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.web.multipart.MultipartFile;
 import sba301.hrtech.auth.abstractions.repositories.UserRepository;
 import sba301.hrtech.auth.entities.User;
@@ -50,21 +52,37 @@ public class CvServiceImpl implements CvService {
             );
         }
 
-
         String fileUrl = cloudinaryService.uploadFile(file, "hrtech/cvs");
 
-
         boolean isFirstCv = cvRepository.findByUserId(userId).isEmpty();
-
 
         Cv newCv = Cv.builder()
                 .user(user)
                 .title(title)
                 .fileUrl(fileUrl)
+                .extractionStatus(ExtractionStatus.PENDING)
                 .isPrimary(isFirstCv)
                 .build();
 
-        return cvRepository.save(newCv);
+        Cv savedCv = cvRepository.save(newCv);
+
+        // Trigger background task ONLY after the current transaction commits
+        // to ensure the CV is actually present in the database when the background
+        // thread runs.
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        skillExtractionService.extractAndSaveSkills(savedCv.getId());
+                    }
+                }
+            );
+        } else {
+            skillExtractionService.extractAndSaveSkills(savedCv.getId());
+        }
+
+        return savedCv;
     }
 
     @Override
@@ -133,23 +151,5 @@ public class CvServiceImpl implements CvService {
         }
 
         cvRepository.delete(cv);
-    }
-
-    @Override
-    public Cv updateAiParsedContent(UUID cvId, String jsonContent) {
-        Cv cv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
-                        "CV_NOT_FOUND",
-                        "Không tìm thấy CV để cập nhật AI"
-                ));
-
-        cv.setParsedContent(jsonContent);
-        cv.setExtractionStatus(ExtractionStatus.PENDING);
-        Cv savedCv = cvRepository.save(cv);
-
-        skillExtractionService.extractAndSaveSkills(savedCv.getId());
-
-        return savedCv;
     }
 }

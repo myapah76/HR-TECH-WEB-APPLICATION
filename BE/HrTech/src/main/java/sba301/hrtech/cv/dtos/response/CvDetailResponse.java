@@ -31,7 +31,7 @@ public class CvDetailResponse {
         private UUID id;
         private String skillNeo4jId;
         private String proficiencyLevel;
-        private java.math.BigDecimal yearsOfExperience;
+
         private Boolean isAiExtracted;
     }
 }

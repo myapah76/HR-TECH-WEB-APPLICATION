@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import sba301.hrtech.auth.entities.User;
 import sba301.hrtech.auth.dtos.user.CustomUserDetails;
 import sba301.hrtech.company.abstractions.repositories.CompanyRepository;
@@ -258,7 +260,13 @@ public class JobServiceImpl implements IJobService {
         savedJob.setExtractionStatus(ExtractionStatus.PENDING);
         savedJob = jobRepository.save(savedJob);
 
-        skillExtractionService.extractAndSaveJobSkills(savedJob.getId());
+        final UUID finalJobId = savedJob.getId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                skillExtractionService.extractAndSaveJobSkills(finalJobId);
+            }
+        });
 
         log.info("HR {} created job '{}' for company {}", currentUser.getId(), savedJob.getTitle(), company.getId());
         return toResponse(savedJob);
@@ -290,7 +298,13 @@ public class JobServiceImpl implements IJobService {
         job.setExtractionStatus(ExtractionStatus.PENDING);
         Job updatedJob = jobRepository.save(job);
 
-        skillExtractionService.extractAndSaveJobSkills(updatedJob.getId());
+        final UUID finalUpdatedJobId = updatedJob.getId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                skillExtractionService.extractAndSaveJobSkills(finalUpdatedJobId);
+            }
+        });
         log.info("HR {} updated job {}", currentUser.getId(), jobId);
         return toResponse(updatedJob);
     }

@@ -30,8 +30,7 @@ public class Cv extends SoftDeleteEntity {
     @Column(name = "file_url")
     private String fileUrl;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "parsed_content", columnDefinition = "jsonb")
+    @Column(name = "parsed_content", columnDefinition = "text")
     private String parsedContent;
 
     @Column(name = "is_primary")

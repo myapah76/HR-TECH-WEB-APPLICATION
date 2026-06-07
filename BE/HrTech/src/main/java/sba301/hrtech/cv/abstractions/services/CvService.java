@@ -13,5 +13,4 @@ public interface CvService {
     Optional<Cv> getCvById(UUID cvId);
     Cv setPrimaryCv(UUID userId, UUID cvId);
     void deleteCv(UUID userId, UUID cvId);
-    Cv updateAiParsedContent(UUID cvId, String jsonContent);
 }

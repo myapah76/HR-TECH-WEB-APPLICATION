@@ -27,8 +27,6 @@ public class CvSkill extends BaseEntity {
     @Column(name = "proficiency_level")
     private SkillLevel proficiencyLevel;
 
-    @Column(name = "years_of_experience", precision = 5, scale = 2)
-    private BigDecimal yearsOfExperience;
 
     @Column(name = "is_ai_extracted")
     private Boolean isAiExtracted;
