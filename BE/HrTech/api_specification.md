@@ -136,3 +136,15 @@ Các endpoint này sẽ được đồng bộ lại (Refactor) code backend nh�
 | `/api/recommendations/cvs/{cvId}/analyze` | `POST` | Phân tích CV qua AI |
 | `/api/recommendations/jobs` | `GET` | Gợi ý việc làm cho Candidate |
 | `/api/recommendations/match-score` | `GET` | Chấm điểm độ phù hợp CV - JD |
+
+## 10. Application Management (`/api/applications`)
+*Chức năng: Ứng viên nộp CV cho Job, tự động tính điểm Match Score và HR quản lý hồ sơ ứng tuyển.*
+
+| Endpoint | Method | Mô tả (Description) |
+| :--- | :--- | :--- |
+| `/api/applications` | `POST` | Nộp đơn ứng tuyển (truyền `jobId`, `cvId`, gọi AI chấm điểm và lưu DB) |
+| `/api/applications` | `GET` | Lấy danh sách việc làm đã ứng tuyển của Candidate |
+| `/api/applications/{id}` | `GET` | Xem chi tiết 1 đơn ứng tuyển |
+| `/api/applications/{id}/withdraw` | `PUT` | Ứng viên rút hồ sơ |
+| `/api/applications/{id}/status` | `PUT` | HR cập nhật trạng thái đơn ứng tuyển (APPROVED, REJECTED...) |
+| `/api/applications/jobs/{jobId}` | `GET` | Lấy danh sách hồ sơ ứng tuyển cho 1 Job (HR dùng) |

@@ -6,7 +6,8 @@ public enum ApplicationStatus {
     SCORED,
     INTERVIEW,
     OFFER,
-    REJECTED
+    REJECTED,
+    WITHDRAWN
 }
 
 

@@ -6,14 +6,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import sba301.hrtech.cv.abstractions.repositories.CvRepository;
-import sba301.hrtech.cv.abstractions.repositories.CvSkillRepository;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.cv.entities.CvSkill;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
-import sba301.hrtech.job.abstractions.repositories.JobSkillRepository;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.job.entities.JobSkill;
 import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.enums.ScoreGrade;
 import sba301.hrtech.shared.enums.SkillLevel;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
@@ -149,6 +148,8 @@ public class RecommendationServiceImpl implements IRecommendationService {
                 .grade(getGrade(finalScore))
                 .graphScore(Math.round(graphScore * 100.0) / 100.0)
                 .embeddingScore(Math.round(embScore * 100.0) / 100.0)
+                .matchedSkills(matchedSkills)
+                .missingSkills(missingSkills)
                 .skillDetails(details)
                 .build();
     }
@@ -483,13 +484,13 @@ public class RecommendationServiceImpl implements IRecommendationService {
     /**
      * Determine match grade based on final score.
      */
-    private String getGrade(double score) {
+    private ScoreGrade getGrade(double score) {
         if (score >= 0.80)
-            return "EXCELLENT";
+            return ScoreGrade.EXCELLENT;
         if (score >= 0.60)
-            return "GOOD";
+            return ScoreGrade.GOOD;
         if (score >= 0.40)
-            return "FAIR";
-        return "POOR";
+            return ScoreGrade.FAIR;
+        return ScoreGrade.POOR;
     }
 }
