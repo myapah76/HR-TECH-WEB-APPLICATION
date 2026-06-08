@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/my-cvs")
+@RequestMapping("/api/cvs/me")
 @RequiredArgsConstructor
 public class CvCandidateController {
 
@@ -54,7 +54,7 @@ public class CvCandidateController {
         return ResponseEntity.ok(cvMapper.toDetailResponse(cv));
     }
 
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CvSummaryResponse> uploadCv(
             @ModelAttribute @Valid CreateCvRequest request) {
         Cv savedCv = cvService.createCv(
@@ -65,13 +65,13 @@ public class CvCandidateController {
         return ResponseEntity.status(HttpStatus.CREATED).body(cvMapper.toSummaryResponse(savedCv));
     }
 
-    @PutMapping("/{cvId}/set-primary")
+    @PutMapping("/{cvId}/primary")
     public ResponseEntity<CvSummaryResponse> setPrimary(@PathVariable UUID cvId) {
         Cv updatedCv = cvService.setPrimaryCv(authUtils.getCurrentUserId(), cvId);
         return ResponseEntity.ok(cvMapper.toSummaryResponse(updatedCv));
     }
 
-     @DeleteMapping("/{cvId}")
+    @DeleteMapping("/{cvId}")
     public ResponseEntity<String> deleteCv(@PathVariable UUID cvId) {
         cvService.deleteCv(authUtils.getCurrentUserId(), cvId);
         return ResponseEntity.ok("Xóa hồ sơ thành công!");

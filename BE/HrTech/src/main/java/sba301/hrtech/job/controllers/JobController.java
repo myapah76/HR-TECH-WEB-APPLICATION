@@ -70,9 +70,27 @@ public class JobController {
         return ResponseEntity.ok(ApiResponse.success(jobService.updateOwnJob(id, request)));
     }
 
-    @PatchMapping("/{id}/submit")
+    @PutMapping("/{id}/submit")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<JobResponse>> submitJob(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(jobService.submitJob(id)));
+    }
+
+    @PutMapping("/{id}/approve")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<JobResponse>> approveJob(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(jobService.approveJob(id)));
+    }
+
+    @PutMapping("/{id}/reject")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<JobResponse>> rejectJob(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(jobService.rejectJob(id)));
+    }
+
+    @PutMapping("/{id}/close")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<JobResponse>> closeJob(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(jobService.closeJob(id)));
     }
 }

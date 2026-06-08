@@ -76,7 +76,7 @@ public class SkillController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @GetMapping("/pending-relationships")
+    @GetMapping("/relationships/pending")
     public ResponseEntity<ApiResponse<List<PendingRelationshipResponse>>> getPendingRelationships() {
         return ResponseEntity.ok(ApiResponse.success(skillService.getPendingRelationships()));
     }

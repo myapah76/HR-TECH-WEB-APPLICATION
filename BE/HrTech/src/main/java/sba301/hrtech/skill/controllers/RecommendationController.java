@@ -22,7 +22,7 @@ public class RecommendationController {
     /**
      * Full flow: Extract skills from CV → Recommend matching jobs.
      */
-    @PostMapping("/analyze-cv/{cvId}")
+    @PostMapping("/cvs/{cvId}/analyze")
     public ResponseEntity<ApiResponse<RecommendationResultResponse>> analyzeCvAndRecommend(
             @PathVariable UUID cvId,
             @RequestParam(defaultValue = "10") int limit) {

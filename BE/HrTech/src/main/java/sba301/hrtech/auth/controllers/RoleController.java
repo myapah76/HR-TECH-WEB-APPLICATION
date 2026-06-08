@@ -1,6 +1,5 @@
 package sba301.hrtech.auth.controllers;
 
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -50,7 +49,7 @@ public class RoleController {
         return ResponseEntity.ok(ApiResponse.success(roleService.getByName(name), "Role retrieved successfully"));
     }
 
-    @PatchMapping("/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<RoleResponse>> update(
             @PathVariable UUID id,
             @RequestBody CommonRoleRequest request

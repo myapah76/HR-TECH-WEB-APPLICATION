@@ -46,14 +46,14 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(userService.getAll(), "Users retrieved successfully"));
     }
 
-    @PatchMapping
+    @PutMapping("/me")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @RequestBody UserCommonRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(userService.update(request), "User updated successfully"));
     }
 
-    @PatchMapping("/change-password")
+    @PutMapping("/me/password")
     public ResponseEntity<ApiResponse<UserResponse>> updatePassword(
             @RequestBody ChangePasswordRequest request
     ) {

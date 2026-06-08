@@ -35,23 +35,8 @@ public class CompanyJobController {
         return ResponseEntity.ok(ApiResponse.success(jobService.getCompanyJobs(companyId)));
     }
 
-    @GetMapping("/{companyId}/jobs/mine")
+    @GetMapping("/{companyId}/jobs/me")
     public ResponseEntity<ApiResponse<List<JobResponse>>> getMyJobs(@PathVariable UUID companyId) {
         return ResponseEntity.ok(ApiResponse.success(jobService.getMyJobs(companyId)));
-    }
-
-    @PatchMapping("/jobs/{jobId}/approve")
-    public ResponseEntity<ApiResponse<JobResponse>> approveJob(@PathVariable UUID jobId) {
-        return ResponseEntity.ok(ApiResponse.success(jobService.approveJob(jobId)));
-    }
-
-    @PatchMapping("/jobs/{jobId}/reject")
-    public ResponseEntity<ApiResponse<JobResponse>> rejectJob(@PathVariable UUID jobId) {
-        return ResponseEntity.ok(ApiResponse.success(jobService.rejectJob(jobId)));
-    }
-
-    @PatchMapping("/jobs/{jobId}/close")
-    public ResponseEntity<ApiResponse<JobResponse>> closeJob(@PathVariable UUID jobId) {
-        return ResponseEntity.ok(ApiResponse.success(jobService.closeJob(jobId)));
     }
 }
