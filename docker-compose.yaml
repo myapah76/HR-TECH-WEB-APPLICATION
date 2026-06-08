@@ -52,7 +52,7 @@ services:
     container_name: hrt_ai_service
     restart: no
     env_file:
-      - .env
+      - .env.docker
     ports:
       - "8000:8000"
     networks:
@@ -78,6 +78,26 @@ services:
       - hrt-network
     entrypoint: ["sh", "-c", "sleep 10 && OLLAMA_HOST=ollama:11434 ollama pull qwen3-embedding:0.6b"]
 
+  backend:
+    build:
+      context: ./BE/HrTech
+      dockerfile: Dockerfile
+    container_name: hrt_backend
+    restart: no
+    env_file:
+      - .env
+
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      neo4j:
+        condition: service_started
+    networks:
+      - hrt-network
 volumes:
   postgres_data:
   redis_data:

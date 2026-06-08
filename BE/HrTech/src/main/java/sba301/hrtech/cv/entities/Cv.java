@@ -1,6 +1,6 @@
 package sba301.hrtech.cv.entities;
 
-import sba301.hrtech.auth.entities.User;
+import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
 import sba301.hrtech.shared.enums.ExtractionStatus;
 import java.util.List;
@@ -9,8 +9,6 @@ import sba301.hrtech.application.entities.Application;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "cvs")
