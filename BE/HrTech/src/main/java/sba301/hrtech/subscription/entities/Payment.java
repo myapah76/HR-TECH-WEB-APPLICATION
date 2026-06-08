@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 
-import sba301.hrtech.auth.entities.User;
+import sba301.hrtech.identity.entities.User;
 
 @Entity
 @Table(name = "payments")

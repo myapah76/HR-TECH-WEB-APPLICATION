@@ -54,5 +54,5 @@ public interface CompanyMapper {
     @Mapping(target = "firstName", source = "firstName")
     @Mapping(target = "lastName", source = "lastName")
     @Mapping(target = "role", expression = "java(user.getRole() != null ? user.getRole().getName() : null)")
-    CompanyMemberResponse toMemberResponse(sba301.hrtech.auth.entities.User user);
+    CompanyMemberResponse toMemberResponse(sba301.hrtech.identity.entities.User user);
 }

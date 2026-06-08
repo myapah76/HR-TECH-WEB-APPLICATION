@@ -1,6 +1,6 @@
 package sba301.hrtech.company.entities;
 
-import sba301.hrtech.auth.entities.User;
+import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
 import java.util.List;
 import java.util.ArrayList;

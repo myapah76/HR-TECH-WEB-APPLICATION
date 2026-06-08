@@ -7,7 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import sba301.hrtech.auth.utils.AuthUtils;
+import sba301.hrtech.identity.utils.AuthUtils;
 import sba301.hrtech.cv.dtos.request.CreateCvRequest;
 import sba301.hrtech.cv.dtos.response.CvDetailResponse;
 import sba301.hrtech.cv.dtos.response.CvSummaryResponse;
