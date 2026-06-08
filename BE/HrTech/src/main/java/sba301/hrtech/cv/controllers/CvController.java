@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/cvs/me")
+@RequestMapping("/api/cvs")
 @RequiredArgsConstructor
-public class CvCandidateController {
+public class CvController {
 
     private final CvService cvService;
     private final CvMapper cvMapper;
