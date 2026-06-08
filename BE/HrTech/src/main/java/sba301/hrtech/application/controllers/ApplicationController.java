@@ -9,7 +9,7 @@ import sba301.hrtech.application.dtos.request.SubmitApplicationRequest;
 import sba301.hrtech.application.dtos.response.ApplicationDetailResponse;
 import sba301.hrtech.application.dtos.response.ApplicationSummaryResponse;
 import sba301.hrtech.application.entities.enums.ApplicationStatus;
-import sba301.hrtech.auth.utils.AuthUtils;
+import sba301.hrtech.identity.utils.AuthUtils;
 import sba301.hrtech.shared.common.ApiResponse;
 
 import jakarta.validation.Valid;
