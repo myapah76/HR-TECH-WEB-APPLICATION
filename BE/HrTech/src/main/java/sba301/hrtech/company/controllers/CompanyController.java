@@ -6,13 +6,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import sba301.hrtech.auth.dtos.user.CustomUserDetails;
 import sba301.hrtech.company.abstractions.services.ICompanyService;
 import sba301.hrtech.company.dtos.request.AddMemberRequest;
 import sba301.hrtech.company.dtos.request.CompanyRegisterRequest;
 import sba301.hrtech.company.dtos.request.CompanyUpdateRequest;
 import sba301.hrtech.company.dtos.response.CompanyMemberResponse;
 import sba301.hrtech.company.dtos.response.CompanyResponse;
+import sba301.hrtech.identity.dtos.user.CustomUserDetails;
 import sba301.hrtech.shared.common.ApiResponse;
 
 import java.net.URI;
