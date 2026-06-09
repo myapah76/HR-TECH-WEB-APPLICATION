@@ -2,7 +2,7 @@ package sba301.hrtech.application.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import sba301.hrtech.application.entities.enums.ScoreGrade;
+import sba301.hrtech.shared.enums.ScoreGrade;
 import sba301.hrtech.shared.common.BaseEntity;
 
 import java.math.BigDecimal;

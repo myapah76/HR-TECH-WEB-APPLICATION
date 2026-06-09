@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import sba301.hrtech.auth.entities.User;
+import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.company.entities.Company;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
 import sba301.hrtech.job.abstractions.services.IJobService;

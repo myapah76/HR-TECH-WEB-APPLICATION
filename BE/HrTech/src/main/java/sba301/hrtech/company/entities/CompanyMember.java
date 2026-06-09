@@ -2,9 +2,9 @@ package sba301.hrtech.company.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import sba301.hrtech.auth.entities.User;
 import sba301.hrtech.company.entities.enums.CompanyRole;
 import sba301.hrtech.company.entities.enums.MembershipStatus;
+import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
 import java.time.LocalDateTime;
 

@@ -1,5 +1,7 @@
 package sba301.hrtech.skill.dtos.response;
 
+import sba301.hrtech.shared.enums.ScoreGrade;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,7 +27,7 @@ public class JobRecommendationResponse {
     private double matchScore;       // Final hybrid score (0.0 - 1.0)
     private double graphScore;       // Graph-based score
     private double embeddingScore;   // Embedding similarity score
-    private String matchGrade;       // EXCELLENT, GOOD, FAIR, POOR
+    private ScoreGrade matchGrade;       // EXCELLENT, GOOD, FAIR, POOR
 
     private List<String> matchedSkills;
     private List<String> missingSkills;

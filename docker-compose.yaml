@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: hrt_postgres
-    restart: always
+    restart: no
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -23,7 +23,7 @@ services:
   redis:
     image: redis:alpine
     container_name: hrt_redis
-    restart: always
+    restart: no
     ports:
       - "${REDIS_PORT}:6379"
     volumes:
@@ -34,7 +34,7 @@ services:
   neo4j:
     image: neo4j:5.19
     container_name: hrt_neo4j
-    restart: always
+    restart: no
     environment:
       NEO4J_AUTH: ${NEO4J_USER}/${NEO4J_PASSWORD}
     ports:
@@ -50,9 +50,9 @@ services:
       context: ./BE/ai-service
       dockerfile: Dockerfile
     container_name: hrt_ai_service
-    restart: always
+    restart: no
     env_file:
-      - .env
+      - .env.docker
     ports:
       - "8000:8000"
     networks:
@@ -61,7 +61,7 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: hrt_ollama
-    restart: always
+    restart: no
     ports:
       - "11434:11434"
     volumes:
@@ -78,6 +78,26 @@ services:
       - hrt-network
     entrypoint: ["sh", "-c", "sleep 10 && OLLAMA_HOST=ollama:11434 ollama pull qwen3-embedding:0.6b"]
 
+  backend:
+    build:
+      context: ./BE/HrTech
+      dockerfile: Dockerfile
+    container_name: hrt_backend
+    restart: no
+    env_file:
+      - .env
+
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      neo4j:
+        condition: service_started
+    networks:
+      - hrt-network
 volumes:
   postgres_data:
   redis_data:

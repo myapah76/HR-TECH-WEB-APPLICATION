@@ -1,6 +1,6 @@
 package sba301.hrtech.application.entities;
 
-import sba301.hrtech.auth.entities.User;
+import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.shared.common.SoftDeleteEntity;

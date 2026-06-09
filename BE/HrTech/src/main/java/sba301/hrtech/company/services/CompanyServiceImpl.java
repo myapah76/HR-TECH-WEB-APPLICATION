@@ -5,11 +5,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sba301.hrtech.auth.abstractions.repositories.UserRepository;
-import sba301.hrtech.auth.abstractions.repositories.RoleRepository;
-import sba301.hrtech.auth.dtos.user.CustomUserDetails;
-import sba301.hrtech.auth.entities.User;
-import sba301.hrtech.auth.entities.Role;
 import sba301.hrtech.company.abstractions.repositories.CompanyRepository;
 import sba301.hrtech.company.abstractions.repositories.CompanyMemberRepository;
 import sba301.hrtech.company.abstractions.services.ICompanyService;
@@ -26,6 +21,11 @@ import sba301.hrtech.company.entities.enums.CompanySize;
 import sba301.hrtech.company.entities.enums.CompanyStatus;
 import sba301.hrtech.company.entities.enums.MembershipStatus;
 import sba301.hrtech.company.mapper.CompanyMapper;
+import sba301.hrtech.identity.abstractions.repositories.RoleRepository;
+import sba301.hrtech.identity.abstractions.repositories.UserRepository;
+import sba301.hrtech.identity.dtos.user.CustomUserDetails;
+import sba301.hrtech.identity.entities.Role;
+import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.shared.exceptions.AppException;
 
 import java.time.LocalDateTime;
@@ -150,7 +150,7 @@ public class CompanyServiceImpl implements ICompanyService {
     @Transactional
     public CompanyResponse updateCompany(UUID companyId, CompanyUpdateRequest request) {
         User currentUser = getCurrentUser();
-        
+
         // Use Permission service check
         if (!companyPermissionService.hasPermission(currentUser.getId(), companyId, CompanyPermission.UPDATE_COMPANY_PROFILE)) {
             throw new AppException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Access Denied");
@@ -213,7 +213,7 @@ public class CompanyServiceImpl implements ICompanyService {
     @Transactional
     public CompanyMemberResponse addMember(UUID companyId, AddMemberRequest request) {
         User currentUser = getCurrentUser();
-        
+
         if (!companyPermissionService.hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
             throw new AppException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Access Denied");
         }
@@ -279,7 +279,7 @@ public class CompanyServiceImpl implements ICompanyService {
     @Transactional
     public void removeMember(UUID companyId, UUID memberId) {
         User currentUser = getCurrentUser();
-        
+
         if (!companyPermissionService.hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
             throw new AppException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Access Denied");
         }

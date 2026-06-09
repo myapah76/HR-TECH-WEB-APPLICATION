@@ -18,12 +18,12 @@ public class AdminCompanyController {
 
     private final ICompanyService companyService;
 
-    @PatchMapping("/{id}/approve")
+    @PutMapping("/{id}/approve")
     public ResponseEntity<ApiResponse<CompanyResponse>> approveCompany(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(companyService.approveCompany(id)));
     }
 
-    @PatchMapping("/{id}/reject")
+    @PutMapping("/{id}/reject")
     public ResponseEntity<ApiResponse<CompanyResponse>> rejectCompany(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(companyService.rejectCompany(id)));
     }

@@ -1,5 +1,7 @@
 package sba301.hrtech.skill.dtos.response;
 
+import sba301.hrtech.shared.enums.ScoreGrade;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,8 +16,10 @@ import java.util.List;
 public class SkillMatchScoreResponse {
 
     private double overallScore;
-    private String grade;          // EXCELLENT, GOOD, FAIR, POOR
+    private ScoreGrade grade;
     private double graphScore;
     private double embeddingScore;
+    private List<String> matchedSkills;
+    private List<String> missingSkills;
     private List<SkillMatchDetail> skillDetails;
 }
