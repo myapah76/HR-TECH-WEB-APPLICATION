@@ -15,7 +15,6 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import sba301.hrtech.application.entities.Application;
-import sba301.hrtech.company.entities.Company;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
 import sba301.hrtech.subscription.entities.CandidateSubscription;
@@ -71,9 +70,7 @@ public class User extends SoftDeleteEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CandidateSubscription> subscriptions = new ArrayList<>();
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "company_id")
-    private Company company;
+
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Payment> payments = new ArrayList<>();

@@ -18,5 +18,7 @@ public record RegisterRequest(
         @NotNull(message = "Last name is required")
         String lastName,
         @NotNull(message = "Gender is required")
-        Integer gender
+        Integer gender,
+        
+        String role
 ) {}

@@ -5,13 +5,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 import sba301.hrtech.auth.abstractions.repositories.UserRepository;
 import sba301.hrtech.auth.abstractions.repositories.RoleRepository;
 import sba301.hrtech.auth.dtos.user.CustomUserDetails;
 import sba301.hrtech.auth.entities.User;
 import sba301.hrtech.auth.entities.Role;
 import sba301.hrtech.company.abstractions.repositories.CompanyRepository;
+import sba301.hrtech.company.abstractions.repositories.CompanyMemberRepository;
 import sba301.hrtech.company.abstractions.services.ICompanyService;
 import sba301.hrtech.company.dtos.request.AddMemberRequest;
 import sba301.hrtech.company.dtos.request.CompanyRegisterRequest;
@@ -19,12 +19,16 @@ import sba301.hrtech.company.dtos.request.CompanyUpdateRequest;
 import sba301.hrtech.company.dtos.response.CompanyMemberResponse;
 import sba301.hrtech.company.dtos.response.CompanyResponse;
 import sba301.hrtech.company.entities.Company;
+import sba301.hrtech.company.entities.CompanyMember;
+import sba301.hrtech.company.entities.enums.CompanyPermission;
+import sba301.hrtech.company.entities.enums.CompanyRole;
 import sba301.hrtech.company.entities.enums.CompanySize;
 import sba301.hrtech.company.entities.enums.CompanyStatus;
+import sba301.hrtech.company.entities.enums.MembershipStatus;
 import sba301.hrtech.company.mapper.CompanyMapper;
 import sba301.hrtech.shared.exceptions.AppException;
-import sba301.hrtech.shared.services.CloudinaryService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,10 +41,10 @@ public class CompanyServiceImpl implements ICompanyService {
     private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    private final OcrService ocrService;
     private final TaxVerificationService taxVerificationService;
     private final CompanyMapper companyMapper;
-    private final CloudinaryService cloudinaryService;
+    private final CompanyMemberRepository companyMemberRepository;
+    private final CompanyPermissionService companyPermissionService;
 
     private User getCurrentUser() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -51,31 +55,28 @@ public class CompanyServiceImpl implements ICompanyService {
     }
 
     private void validateOwner(UUID companyId, UUID userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found."));
-        if (user.getCompany() == null || !user.getCompany().getId().equals(companyId)) {
-            throw new AppException(HttpStatus.FORBIDDEN, "FORBIDDEN", "You are not a member of this company.");
-        }
-        if (user.getRole() == null || !"COMPANY_OWNER".equals(user.getRole().getName())) {
+        CompanyMember member = companyMemberRepository.findByCompanyIdAndUserIdAndDeletedFalse(companyId, userId)
+                .orElseThrow(() -> new AppException(HttpStatus.FORBIDDEN, "FORBIDDEN", "You are not a member of this company."));
+        if (member.getMembershipStatus() != MembershipStatus.ACTIVE || member.getCompanyRole() != CompanyRole.OWNER) {
             throw new AppException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Only company OWNER can perform this action.");
         }
     }
 
     @Override
     @Transactional
-    public CompanyResponse registerCompany(CompanyRegisterRequest request, MultipartFile businessLicenseFile) {
+    public CompanyResponse registerCompany(CompanyRegisterRequest request) {
         User currentUser = getCurrentUser();
 
-        // 1. Verify user does not already own/belong to a company, or have an active registration
-        if (currentUser.getCompany() != null || companyRepository.existsByOwnerIdAndDeletedFalse(currentUser.getId())) {
+        // 1. Verify user does not already belong to a company (Option A constraint)
+        if (companyMemberRepository.existsByUserIdAndDeletedFalse(currentUser.getId())) {
             throw new AppException(HttpStatus.BAD_REQUEST, "ALREADY_OWNS_COMPANY", "Each user can only register or belong to one company.");
         }
 
-        // 2. Perform OCR
-        String taxCode = ocrService.extractTaxCode(businessLicenseFile);
+        String taxCode = request.taxCode();
 
-        // 3. Check duplicate tax code
+        // 2. Check duplicate tax code
         Optional<Company> existingCompanyOpt = companyRepository.findByTaxCode(taxCode);
+        Company savedCompany;
         if (existingCompanyOpt.isPresent()) {
             Company existingCompany = existingCompanyOpt.get();
             if (!existingCompany.isDeleted()) {
@@ -97,37 +98,40 @@ public class CompanyServiceImpl implements ICompanyService {
             }
             existingCompany.setStatus(CompanyStatus.PENDING);
             
-            // Upload business license file to Cloudinary
-            String licenseUrl = cloudinaryService.uploadFile(businessLicenseFile, "company/licenses");
-            existingCompany.setBusinessLicenseUrl(licenseUrl);
-            existingCompany.setOwner(currentUser);
+            savedCompany = companyRepository.save(existingCompany);
+        } else {
+            // 3. Verify with VietQR API
+            taxVerificationService.verifyTaxCode(taxCode);
 
-            Company savedCompany = companyRepository.save(existingCompany);
-
-            return companyMapper.toResponse(savedCompany);
-        }
-
-        // 4. Verify with VietQR API
-        taxVerificationService.verifyTaxCode(taxCode);
-
-        // 5. Create Company
-        Company company = companyMapper.fromRegisterRequest(request);
-        company.setTaxCode(taxCode);
-        company.setStatus(CompanyStatus.PENDING);
-        if (request.size() != null) {
-            try {
-                company.setSize(CompanySize.valueOf(request.size()));
-            } catch (IllegalArgumentException e) {
-                company.setSize(CompanySize.SME);
+            // 4. Create Company
+            Company company = companyMapper.fromRegisterRequest(request);
+            company.setTaxCode(taxCode);
+            company.setStatus(CompanyStatus.PENDING);
+            if (request.size() != null) {
+                try {
+                    company.setSize(CompanySize.valueOf(request.size()));
+                } catch (IllegalArgumentException e) {
+                    company.setSize(CompanySize.SME);
+                }
             }
+            savedCompany = companyRepository.save(company);
         }
-        
-        // Upload business license file to Cloudinary
-        String licenseUrl = cloudinaryService.uploadFile(businessLicenseFile, "TaxCode");
-        company.setBusinessLicenseUrl(licenseUrl);
-        company.setOwner(currentUser);
 
-        Company savedCompany = companyRepository.save(company);
+        // 5. Update global role of owner to RECRUITER if it isn't already
+        Role recruiterRole = roleRepository.findByName("RECRUITER")
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "ROLE_NOT_FOUND", "RECRUITER role not found."));
+        currentUser.setRole(recruiterRole);
+        userRepository.save(currentUser);
+
+        // 6. Create CompanyMember record as OWNER immediately
+        CompanyMember ownerMember = CompanyMember.builder()
+                .company(savedCompany)
+                .user(currentUser)
+                .companyRole(CompanyRole.OWNER)
+                .joinedAt(LocalDateTime.now())
+                .membershipStatus(MembershipStatus.ACTIVE)
+                .build();
+        companyMemberRepository.save(ownerMember);
 
         return companyMapper.toResponse(savedCompany);
     }
@@ -146,7 +150,11 @@ public class CompanyServiceImpl implements ICompanyService {
     @Transactional
     public CompanyResponse updateCompany(UUID companyId, CompanyUpdateRequest request) {
         User currentUser = getCurrentUser();
-        validateOwner(companyId, currentUser.getId());
+        
+        // Use Permission service check
+        if (!companyPermissionService.hasPermission(currentUser.getId(), companyId, CompanyPermission.UPDATE_COMPANY_PROFILE)) {
+            throw new AppException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Access Denied");
+        }
 
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "COMPANY_NOT_FOUND", "Company not found."));
@@ -184,14 +192,20 @@ public class CompanyServiceImpl implements ICompanyService {
         company.setDeleted(true);
         companyRepository.save(company);
 
-        // Disassociate all members and reset their roles to CANDIDATE
-        List<User> members = userRepository.findByCompanyIdAndDeletedFalse(companyId);
-        for (User u : members) {
-            u.setCompany(null);
-            roleRepository.findByName("CANDIDATE").ifPresent(role -> {
-                u.setRole(role);
-            });
-            userRepository.save(u);
+        // Disassociate and soft delete all members
+        List<CompanyMember> members = companyMemberRepository.findByCompanyIdAndDeletedFalse(companyId);
+        Role candidateRole = roleRepository.findByName("CANDIDATE").orElse(null);
+        for (CompanyMember member : members) {
+            member.setMembershipStatus(MembershipStatus.REMOVED);
+            member.setDeleted(true);
+            companyMemberRepository.save(member);
+
+            // Revert global role to CANDIDATE
+            User user = member.getUser();
+            if (candidateRole != null) {
+                user.setRole(candidateRole);
+                userRepository.save(user);
+            }
         }
     }
 
@@ -199,36 +213,50 @@ public class CompanyServiceImpl implements ICompanyService {
     @Transactional
     public CompanyMemberResponse addMember(UUID companyId, AddMemberRequest request) {
         User currentUser = getCurrentUser();
-        validateOwner(companyId, currentUser.getId());
+        
+        if (!companyPermissionService.hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
+            throw new AppException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Access Denied");
+        }
 
         UUID targetUserId = UUID.fromString(request.userId());
         User targetUser = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "Target user not found."));
 
-        if (targetUser.getCompany() != null) {
+        if (companyMemberRepository.existsByUserIdAndDeletedFalse(targetUserId)) {
             throw new AppException(HttpStatus.BAD_REQUEST, "ALREADY_MEMBER", "User is already a member of a company.");
         }
 
         String requestedRole = request.role();
-        if ("COMPANY_OWNER".equals(requestedRole) || "OWNER".equals(requestedRole)) {
+        if ("OWNER".equalsIgnoreCase(requestedRole)) {
             throw new AppException(HttpStatus.BAD_REQUEST, "CANNOT_ASSIGN_OWNER", "Cannot assign OWNER role via member management.");
         }
 
-        if (!"HR".equals(requestedRole) && !"HR_MANAGER".equals(requestedRole)) {
+        CompanyRole companyRole;
+        try {
+            companyRole = CompanyRole.valueOf(requestedRole.toUpperCase());
+        } catch (IllegalArgumentException e) {
             throw new AppException(HttpStatus.BAD_REQUEST, "INVALID_ROLE", "Invalid company role. Must be HR or HR_MANAGER.");
         }
 
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "COMPANY_NOT_FOUND", "Company not found."));
 
-        Role role = roleRepository.findByName(requestedRole)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "ROLE_NOT_FOUND", "Role not found."));
+        // Update target user's system role to RECRUITER
+        Role recruiterRole = roleRepository.findByName("RECRUITER")
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "ROLE_NOT_FOUND", "RECRUITER role not found."));
+        targetUser.setRole(recruiterRole);
+        userRepository.save(targetUser);
 
-        targetUser.setCompany(company);
-        targetUser.setRole(role);
-        User savedUser = userRepository.save(targetUser);
+        CompanyMember companyMember = CompanyMember.builder()
+                .company(company)
+                .user(targetUser)
+                .companyRole(companyRole)
+                .joinedAt(LocalDateTime.now())
+                .membershipStatus(MembershipStatus.ACTIVE)
+                .build();
+        CompanyMember savedMember = companyMemberRepository.save(companyMember);
 
-        return companyMapper.toMemberResponse(savedUser);
+        return companyMapper.toMemberResponse(savedMember);
     }
 
     @Override
@@ -241,7 +269,7 @@ public class CompanyServiceImpl implements ICompanyService {
              throw new AppException(HttpStatus.NOT_FOUND, "COMPANY_NOT_FOUND", "Company not found.");
         }
 
-        return userRepository.findByCompanyIdAndDeletedFalse(companyId)
+        return companyMemberRepository.findByCompanyIdAndDeletedFalse(companyId)
                 .stream()
                 .map(companyMapper::toMemberResponse)
                 .collect(Collectors.toList());
@@ -251,25 +279,65 @@ public class CompanyServiceImpl implements ICompanyService {
     @Transactional
     public void removeMember(UUID companyId, UUID memberId) {
         User currentUser = getCurrentUser();
-        validateOwner(companyId, currentUser.getId());
+        
+        if (!companyPermissionService.hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
+            throw new AppException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Access Denied");
+        }
 
-        User targetUser = userRepository.findById(memberId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "MEMBER_NOT_FOUND", "Member user not found."));
+        CompanyMember targetMember = companyMemberRepository.findById(memberId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "MEMBER_NOT_FOUND", "Member not found."));
 
-        if (targetUser.getCompany() == null || !targetUser.getCompany().getId().equals(companyId)) {
+        if (!targetMember.getCompany().getId().equals(companyId)) {
             throw new AppException(HttpStatus.BAD_REQUEST, "INVALID_MEMBER_ASSOCIATION", "User does not belong to this company.");
         }
 
-        if (targetUser.getRole() != null && "COMPANY_OWNER".equals(targetUser.getRole().getName())) {
-            throw new AppException(HttpStatus.BAD_REQUEST, "CANNOT_REMOVE_OWNER", "Company OWNER cannot be removed.");
+        if (targetMember.getCompanyRole() == CompanyRole.OWNER) {
+            List<CompanyMember> owners = companyMemberRepository.findAllByCompanyIdAndCompanyRoleAndDeletedFalse(companyId, CompanyRole.OWNER);
+            if (owners.size() <= 1) {
+                throw new AppException(HttpStatus.BAD_REQUEST, "CANNOT_REMOVE_OWNER", "Company OWNER cannot be removed. Transfer ownership first.");
+            }
         }
 
-        // Revert global role to CANDIDATE and clear company
-        targetUser.setCompany(null);
-        roleRepository.findByName("CANDIDATE").ifPresent(role -> {
-            targetUser.setRole(role);
-        });
-        userRepository.save(targetUser);
+        targetMember.setMembershipStatus(MembershipStatus.REMOVED);
+        targetMember.setDeleted(true);
+        companyMemberRepository.save(targetMember);
+
+        // Revert global role to CANDIDATE
+        User targetUser = targetMember.getUser();
+        Role candidateRole = roleRepository.findByName("CANDIDATE").orElse(null);
+        if (candidateRole != null) {
+            targetUser.setRole(candidateRole);
+            userRepository.save(targetUser);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void transferOwnership(UUID companyId, UUID currentOwnerId, UUID targetMemberId) {
+        validateOwner(companyId, currentOwnerId);
+
+        CompanyMember oldOwnerMember = companyMemberRepository.findByCompanyIdAndUserIdAndDeletedFalse(companyId, currentOwnerId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "OWNER_NOT_FOUND", "Current owner not found."));
+
+        CompanyMember targetMember = companyMemberRepository.findById(targetMemberId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "MEMBER_NOT_FOUND", "Target member not found."));
+
+        if (!targetMember.getCompany().getId().equals(companyId) || targetMember.getMembershipStatus() != MembershipStatus.ACTIVE) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "INVALID_TARGET_MEMBER", "Target member must be an active member of the same company.");
+        }
+
+        // Transfer roles
+        oldOwnerMember.setCompanyRole(CompanyRole.HR_MANAGER);
+        targetMember.setCompanyRole(CompanyRole.OWNER);
+
+        companyMemberRepository.save(oldOwnerMember);
+        companyMemberRepository.save(targetMember);
+
+        // Assert exactly 1 owner exists
+        List<CompanyMember> owners = companyMemberRepository.findAllByCompanyIdAndCompanyRoleAndDeletedFalse(companyId, CompanyRole.OWNER);
+        if (owners.size() != 1) {
+            throw new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "INVALID_OWNER_COUNT", "Ownership transfer resulted in an invalid number of owners.");
+        }
     }
 
     @Override
@@ -283,17 +351,6 @@ public class CompanyServiceImpl implements ICompanyService {
 
         company.setStatus(CompanyStatus.APPROVED);
         Company savedCompany = companyRepository.save(company);
-
-        // Link company and update global role of owner to COMPANY_OWNER upon approval
-        if (savedCompany.getOwner() != null) {
-            User ownerUser = savedCompany.getOwner();
-            roleRepository.findByName("COMPANY_OWNER").ifPresent(role -> {
-                ownerUser.setRole(role);
-                ownerUser.setCompany(savedCompany);
-                userRepository.save(ownerUser);
-            });
-        }
-
         return companyMapper.toResponse(savedCompany);
     }
 

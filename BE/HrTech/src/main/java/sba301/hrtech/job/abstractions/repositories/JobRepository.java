@@ -24,7 +24,7 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
     @Query("""
         SELECT j FROM Job j
         WHERE j.deleted = false
-          AND j.status = sba301.hrtech.job.entities.enums.JobStatus.OPEN
+          AND j.status = sba301.hrtech.job.entities.enums.JobStatus.APPROVED
           AND (:keyword IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
                               OR LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
           AND (:location IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%')))

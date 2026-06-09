@@ -13,7 +13,6 @@ public record CompanyResponse(
         String size,
         String address,
         String taxCode,
-        String businessLicenseUrl,
         String status,
         Instant createdAt,
         Instant updatedAt,

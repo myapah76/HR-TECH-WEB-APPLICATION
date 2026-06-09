@@ -24,6 +24,4 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsById(UUID id);
 
     void deleteById(UUID id);
-
-    List<User> findByCompanyIdAndDeletedFalse(UUID companyId);
 }

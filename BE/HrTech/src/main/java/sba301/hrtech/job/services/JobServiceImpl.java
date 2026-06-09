@@ -48,8 +48,7 @@ public class JobServiceImpl implements IJobService {
     public JobResponse createJob(JobRequest request) {
         User currentUser = jobValidator.getCurrentUser();
         Company company = jobValidator.validateCompanyApproved(request.companyId());
-        jobValidator.validateCompanyAccess(currentUser, company.getId());
-        jobValidator.validateHrRole(currentUser);
+        jobValidator.validateCanPostJob(currentUser, company.getId());
 
         Job job = Job.builder()
                 .company(company)
@@ -75,7 +74,7 @@ public class JobServiceImpl implements IJobService {
             }
         });
 
-        log.info("HR {} created job '{}' for company {}", currentUser.getId(), savedJob.getTitle(), company.getId());
+        log.info("Recruiter {} created job '{}' for company {}", currentUser.getId(), savedJob.getTitle(), company.getId());
         return jobMapper.toResponse(savedJob);
     }
 
@@ -86,8 +85,7 @@ public class JobServiceImpl implements IJobService {
         Job job = jobValidator.getActiveJob(jobId);
 
         jobValidator.validateCompanyApproved(job.getCompany().getId());
-        jobValidator.validateCompanyAccess(currentUser, job.getCompany().getId());
-        jobValidator.validateJobOwnership(job, currentUser.getId());
+        jobValidator.validateCanEditJob(currentUser, job);
 
         if (job.getStatus() != JobStatus.DRAFT) {
             throw new AppException(HttpStatus.BAD_REQUEST,
@@ -112,7 +110,7 @@ public class JobServiceImpl implements IJobService {
                 skillExtractionService.extractAndSaveJobSkills(finalUpdatedJobId);
             }
         });
-        log.info("HR {} updated job {}", currentUser.getId(), jobId);
+        log.info("Recruiter {} updated job {}", currentUser.getId(), jobId);
         return jobMapper.toResponse(updatedJob);
     }
 
@@ -123,8 +121,7 @@ public class JobServiceImpl implements IJobService {
         Job job = jobValidator.getActiveJob(jobId);
 
         jobValidator.validateCompanyApproved(job.getCompany().getId());
-        jobValidator.validateCompanyAccess(currentUser, job.getCompany().getId());
-        jobValidator.validateJobOwnership(job, currentUser.getId());
+        jobValidator.validateCanEditJob(currentUser, job);
 
         if (job.getStatus() != JobStatus.DRAFT) {
             throw new AppException(HttpStatus.BAD_REQUEST,
@@ -132,9 +129,9 @@ public class JobServiceImpl implements IJobService {
                     "Only DRAFT jobs can be submitted. Current status: " + job.getStatus());
         }
 
-        job.setStatus(JobStatus.PENDING);
+        job.setStatus(JobStatus.PENDING_APPROVAL);
         Job savedJob = jobRepository.save(job);
-        log.info("HR {} submitted job {} for approval", currentUser.getId(), jobId);
+        log.info("Recruiter {} submitted job {} for approval", currentUser.getId(), jobId);
         return jobMapper.toResponse(savedJob);
     }
 
@@ -145,18 +142,17 @@ public class JobServiceImpl implements IJobService {
         Job job = jobValidator.getActiveJob(jobId);
 
         jobValidator.validateCompanyApproved(job.getCompany().getId());
-        jobValidator.validateCompanyAccess(currentUser, job.getCompany().getId());
-        jobValidator.validateManagerRole(currentUser);
+        jobValidator.validateCanApproveJob(currentUser, job.getCompany().getId());
 
-        if (job.getStatus() != JobStatus.PENDING) {
+        if (job.getStatus() != JobStatus.PENDING_APPROVAL) {
             throw new AppException(HttpStatus.BAD_REQUEST,
                     ErrorCode.JOB_INVALID_STATUS,
-                    "Only PENDING jobs can be approved. Current status: " + job.getStatus());
+                    "Only PENDING_APPROVAL jobs can be approved. Current status: " + job.getStatus());
         }
 
-        job.setStatus(JobStatus.OPEN);
+        job.setStatus(JobStatus.APPROVED);
         Job savedJob = jobRepository.save(job);
-        log.info("HR_MANAGER {} approved job {}", currentUser.getId(), jobId);
+        log.info("Approver {} approved job {}", currentUser.getId(), jobId);
         return jobMapper.toResponse(savedJob);
     }
 
@@ -167,19 +163,17 @@ public class JobServiceImpl implements IJobService {
         Job job = jobValidator.getActiveJob(jobId);
 
         jobValidator.validateCompanyApproved(job.getCompany().getId());
-        jobValidator.validateCompanyAccess(currentUser, job.getCompany().getId());
-        jobValidator.validateManagerRole(currentUser);
+        jobValidator.validateCanApproveJob(currentUser, job.getCompany().getId());
 
-        if (job.getStatus() != JobStatus.PENDING) {
+        if (job.getStatus() != JobStatus.PENDING_APPROVAL) {
             throw new AppException(HttpStatus.BAD_REQUEST,
                     ErrorCode.JOB_INVALID_STATUS,
-                    "Only PENDING jobs can be rejected. Current status: " + job.getStatus());
+                    "Only PENDING_APPROVAL jobs can be rejected. Current status: " + job.getStatus());
         }
 
-        // Return to DRAFT for corrections
-        job.setStatus(JobStatus.DRAFT);
+        job.setStatus(JobStatus.REJECTED);
         Job savedJob = jobRepository.save(job);
-        log.info("HR_MANAGER {} rejected job {} (returned to DRAFT)", currentUser.getId(), jobId);
+        log.info("Approver {} rejected job {}", currentUser.getId(), jobId);
         return jobMapper.toResponse(savedJob);
     }
 
@@ -190,18 +184,17 @@ public class JobServiceImpl implements IJobService {
         Job job = jobValidator.getActiveJob(jobId);
 
         jobValidator.validateCompanyApproved(job.getCompany().getId());
-        jobValidator.validateCompanyAccess(currentUser, job.getCompany().getId());
-        jobValidator.validateOwnerOrManagerRole(currentUser);
+        jobValidator.validateCanCloseJob(currentUser, job.getCompany().getId());
 
-        if (job.getStatus() != JobStatus.OPEN) {
+        if (job.getStatus() != JobStatus.APPROVED) {
             throw new AppException(HttpStatus.BAD_REQUEST,
                     ErrorCode.JOB_INVALID_STATUS,
-                    "Only OPEN jobs can be closed. Current status: " + job.getStatus());
+                    "Only APPROVED jobs can be closed. Current status: " + job.getStatus());
         }
 
         job.setStatus(JobStatus.CLOSED);
         Job savedJob = jobRepository.save(job);
-        log.info("User {} ({}) closed job {}", currentUser.getId(), currentUser.getRole().getName(), jobId);
+        log.info("User {} closed job {}", currentUser.getId(), jobId);
         return jobMapper.toResponse(savedJob);
     }
 
@@ -254,8 +247,7 @@ public class JobServiceImpl implements IJobService {
     public List<JobResponse> getCompanyJobs(UUID companyId) {
         User currentUser = jobValidator.getCurrentUser();
         jobValidator.validateCompanyApproved(companyId);
-        jobValidator.validateCompanyAccess(currentUser, companyId);
-        jobValidator.validateOwnerOrManagerRole(currentUser);
+        jobValidator.validateCanViewCompanyJobs(currentUser, companyId);
 
         return jobRepository.findByCompanyIdAndDeletedFalse(companyId)
                 .stream().map(jobMapper::toResponse).collect(Collectors.toList());
@@ -266,10 +258,9 @@ public class JobServiceImpl implements IJobService {
     public List<JobResponse> getPendingJobs(UUID companyId) {
         User currentUser = jobValidator.getCurrentUser();
         jobValidator.validateCompanyApproved(companyId);
-        jobValidator.validateCompanyAccess(currentUser, companyId);
-        jobValidator.validateManagerRole(currentUser);
+        jobValidator.validateCanApproveJob(currentUser, companyId);
 
-        return jobRepository.findByCompanyIdAndStatusAndDeletedFalse(companyId, JobStatus.PENDING)
+        return jobRepository.findByCompanyIdAndStatusAndDeletedFalse(companyId, JobStatus.PENDING_APPROVAL)
                 .stream().map(jobMapper::toResponse).collect(Collectors.toList());
     }
 
@@ -278,8 +269,7 @@ public class JobServiceImpl implements IJobService {
     public List<JobResponse> getMyJobs(UUID companyId) {
         User currentUser = jobValidator.getCurrentUser();
         jobValidator.validateCompanyApproved(companyId);
-        jobValidator.validateCompanyAccess(currentUser, companyId);
-        jobValidator.validateHrRole(currentUser);
+        jobValidator.validateCanPostJob(currentUser, companyId);
 
         return jobRepository.findByCompanyIdAndCreatedByIdAndDeletedFalse(companyId, currentUser.getId())
                 .stream().map(jobMapper::toResponse).collect(Collectors.toList());

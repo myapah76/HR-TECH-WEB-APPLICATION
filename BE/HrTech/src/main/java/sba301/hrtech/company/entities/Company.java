@@ -1,6 +1,5 @@
 package sba301.hrtech.company.entities;
 
-import sba301.hrtech.auth.entities.User;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
 import java.util.List;
 import java.util.ArrayList;
@@ -48,16 +47,10 @@ public class Company extends SoftDeleteEntity {
     @Column(name = "tax_code", unique = true)
     private String taxCode;
 
-    @Column(name = "business_license_url")
-    private String businessLicenseUrl;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private CompanyStatus status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id")
-    private User owner;
 
     @Column(name = "graph_weight")
     private Double graphWeight;

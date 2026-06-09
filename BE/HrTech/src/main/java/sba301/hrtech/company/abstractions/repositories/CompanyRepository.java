@@ -13,7 +13,5 @@ public interface CompanyRepository extends JpaRepository<Company, UUID> {
     Optional<Company> findByTaxCode(String taxCode);
 
     boolean existsByTaxCode(String taxCode);
-
-    boolean existsByOwnerIdAndDeletedFalse(UUID ownerId);
 }
 

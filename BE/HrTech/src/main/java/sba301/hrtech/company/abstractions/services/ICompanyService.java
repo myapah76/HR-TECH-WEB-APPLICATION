@@ -13,7 +13,7 @@ import java.util.UUID;
 public interface ICompanyService {
 
     // Registration
-    CompanyResponse registerCompany(CompanyRegisterRequest request, MultipartFile businessLicenseFile);
+    CompanyResponse registerCompany(CompanyRegisterRequest request);
 
     // CRUD
     CompanyResponse getCompanyById(UUID companyId);
@@ -28,6 +28,8 @@ public interface ICompanyService {
     List<CompanyMemberResponse> getMembers(UUID companyId);
 
     void removeMember(UUID companyId, UUID memberId);
+
+    void transferOwnership(UUID companyId, UUID currentOwnerId, UUID targetMemberId);
 
     // Admin Approval
     CompanyResponse approveCompany(UUID companyId);

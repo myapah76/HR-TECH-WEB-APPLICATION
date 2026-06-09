@@ -16,6 +16,9 @@ public record CompanyRegisterRequest(
 
         String size,
 
-        String address
+        String address,
+
+        @NotBlank(message = "Tax code is required")
+        String taxCode
 ) {}
 

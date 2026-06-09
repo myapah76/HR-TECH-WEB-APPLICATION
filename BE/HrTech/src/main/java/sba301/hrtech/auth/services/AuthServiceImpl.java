@@ -81,7 +81,8 @@ public class AuthServiceImpl implements IAuthService {
                 request.lastName(),
                 request.gender(),
                 null, // hashed otp is no longer stored in pending user
-                false);
+                false,
+                request.role());
         // 3. save to Redis
         saveToRedis(key, pendingUser,Duration.ofMinutes(5));
 
@@ -306,7 +307,11 @@ public class AuthServiceImpl implements IAuthService {
         user.setPassword(passwordEncoder.encode(pendingUser.password()));
         user.setGender(pendingUser.gender());
 
-        Role role = roleRepository.findByName("CANDIDATE")
+        String requestedRole = pendingUser.role();
+        if (requestedRole == null || (!requestedRole.equalsIgnoreCase("RECRUITER") && !requestedRole.equalsIgnoreCase("CANDIDATE"))) {
+            requestedRole = "CANDIDATE";
+        }
+        Role role = roleRepository.findByName(requestedRole.toUpperCase())
                 .orElseThrow(RoleNotFoundException::new);
 
         user.setRole(role);

@@ -8,5 +8,6 @@ public record PendingUser(
         String lastName,
         Integer gender,
         String otp,
-        boolean isExpired
+        boolean isExpired,
+        String role
 ) {}

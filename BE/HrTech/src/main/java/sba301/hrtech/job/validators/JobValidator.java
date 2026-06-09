@@ -7,8 +7,13 @@ import org.springframework.stereotype.Component;
 import sba301.hrtech.auth.dtos.user.CustomUserDetails;
 import sba301.hrtech.auth.entities.User;
 import sba301.hrtech.company.abstractions.repositories.CompanyRepository;
+import sba301.hrtech.company.abstractions.repositories.CompanyMemberRepository;
 import sba301.hrtech.company.entities.Company;
+import sba301.hrtech.company.entities.CompanyMember;
+import sba301.hrtech.company.entities.enums.CompanyPermission;
+import sba301.hrtech.company.entities.enums.CompanyRole;
 import sba301.hrtech.company.entities.enums.CompanyStatus;
+import sba301.hrtech.company.services.CompanyPermissionService;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.shared.common.ErrorCode;
@@ -22,6 +27,8 @@ public class JobValidator {
 
     private final JobRepository jobRepository;
     private final CompanyRepository companyRepository;
+    private final CompanyMemberRepository companyMemberRepository;
+    private final CompanyPermissionService permissionService;
 
     public User getCurrentUser() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -46,41 +53,59 @@ public class JobValidator {
         return company;
     }
 
-    public void validateCompanyAccess(User user, UUID companyId) {
-        if (user.getCompany() == null || !user.getCompany().getId().equals(companyId)) {
+    public void validateCanPostJob(User user, UUID companyId) {
+        if (!permissionService.hasPermission(user.getId(), companyId, CompanyPermission.CREATE_JOB)) {
             throw new AppException(HttpStatus.FORBIDDEN,
                     ErrorCode.JOB_PERMISSION_DENIED,
-                    "You do not belong to this company.");
+                    "You do not have permission to post jobs in this company.");
         }
     }
 
-    public void validateHrRole(User user) {
-        if (user.getRole() == null || !"HR".equals(user.getRole().getName())) {
+    public void validateCanEditJob(User user, Job job) {
+        UUID companyId = job.getCompany().getId();
+        CompanyMember member = companyMemberRepository.findByCompanyIdAndUserIdAndDeletedFalse(companyId, user.getId())
+                .orElseThrow(() -> new AppException(HttpStatus.FORBIDDEN,
+                        ErrorCode.JOB_PERMISSION_DENIED,
+                        "You do not belong to this company."));
+
+        // HR can only edit jobs they created
+        if (member.getCompanyRole() == CompanyRole.HR) {
+            if (job.getCreatedBy() == null || !job.getCreatedBy().getId().equals(user.getId())) {
+                throw new AppException(HttpStatus.FORBIDDEN,
+                        ErrorCode.JOB_PERMISSION_DENIED,
+                        "HR can only edit their own jobs.");
+            }
+        }
+
+        if (!permissionService.hasPermission(user.getId(), companyId, CompanyPermission.UPDATE_JOB)) {
             throw new AppException(HttpStatus.FORBIDDEN,
                     ErrorCode.JOB_PERMISSION_DENIED,
-                    "Only HR staff can perform this action.");
+                    "You do not have permission to update jobs in this company.");
         }
     }
 
-    public void validateManagerRole(User user) {
-        if (user.getRole() == null || !"HR_MANAGER".equals(user.getRole().getName())) {
+    public void validateCanApproveJob(User user, UUID companyId) {
+        if (!permissionService.hasPermission(user.getId(), companyId, CompanyPermission.APPROVE_JOB)) {
             throw new AppException(HttpStatus.FORBIDDEN,
                     ErrorCode.JOB_PERMISSION_DENIED,
-                    "Only HR Manager can perform this action.");
+                    "You do not have permission to approve/reject jobs in this company.");
         }
     }
 
-    public void validateOwnerOrManagerRole(User user) {
-        if (user.getRole() == null) {
+    public void validateCanCloseJob(User user, UUID companyId) {
+        // Close job permission requires DELETE_JOB or general managing privileges
+        if (!permissionService.hasPermission(user.getId(), companyId, CompanyPermission.DELETE_JOB)) {
             throw new AppException(HttpStatus.FORBIDDEN,
                     ErrorCode.JOB_PERMISSION_DENIED,
-                    "Only Owner or HR Manager can perform this action.");
+                    "You do not have permission to close jobs in this company.");
         }
-        String roleName = user.getRole().getName();
-        if (!"COMPANY_OWNER".equals(roleName) && !"HR_MANAGER".equals(roleName)) {
+    }
+
+    public void validateCanViewCompanyJobs(User user, UUID companyId) {
+        if (!permissionService.hasPermission(user.getId(), companyId, CompanyPermission.VIEW_APPLICANTS)) {
             throw new AppException(HttpStatus.FORBIDDEN,
                     ErrorCode.JOB_PERMISSION_DENIED,
-                    "Only Owner or HR Manager can perform this action.");
+                    "You do not have permission to view jobs in this company.");
         }
     }
 
