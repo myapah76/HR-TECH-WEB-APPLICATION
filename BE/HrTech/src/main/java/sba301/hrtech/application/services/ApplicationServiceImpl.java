@@ -56,8 +56,8 @@ public class ApplicationServiceImpl implements ApplicationService {
         Job job = jobRepository.findById(request.getJobId())
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, ErrorCode.JOB_NOT_FOUND_CODE, "Job not found"));
 
-        if (job.getStatus() != JobStatus.OPEN) {
-            throw new AppException(HttpStatus.BAD_REQUEST, ErrorCode.JOB_INVALID_STATUS, "Job is not OPEN for applications");
+        if (job.getStatus() != JobStatus.APPROVED) {
+            throw new AppException(HttpStatus.BAD_REQUEST, ErrorCode.JOB_INVALID_STATUS, "Job is not APPROVED for applications");
         }
 
         Cv cv = cvRepository.findById(request.getCvId())
