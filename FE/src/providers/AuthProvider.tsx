@@ -1,29 +1,32 @@
 'use client'
 import { useEffect } from 'react'
-import { useAuthStore } from '../stores/auth.store'
-import { apiRaw } from '../lib/axios'
+import { useAuthStore } from '@/src/stores/auth.store'
+import { refreshToken, logout } from '@/src/services/auth.service'
 
-export default function AuthProvider({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const setAuth = useAuthStore.getState().setAuth
-  const logout = useAuthStore.getState().logout
+  const clearAuth = useAuthStore.getState().logout
+  const setInitialized = useAuthStore.getState().setInitialized
 
   useEffect(() => {
+    console.log('vào Auth Provider')
     const initAuth = async () => {
+      console.log('vào Auth init hàm')
       try {
-        const res = await apiRaw.post('/auth/refresh')
+        const res = await refreshToken()
+        console.log('res', res)
         setAuth({
           user: res.data.userResponse,
           accessToken: res.data.accessToken,
         })
       } catch {
-        logout()
+        await logout()
+        clearAuth()
+      } finally {
+        setInitialized(true)
       }
     }
     initAuth()
-  }, [setAuth, logout])
+  }, [setAuth, clearAuth, setInitialized])
   return <>{children}</>
 }

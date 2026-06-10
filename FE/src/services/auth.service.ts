@@ -1,4 +1,4 @@
-import { api } from '../lib/axios'
+import { api, apiRaw } from '@/src/lib/axios'
 import {
   LoginRequest,
   LoginResponse,
@@ -47,5 +47,15 @@ export const forgotPassword = async (
 
 export const resetPassword = async (data: ResetPasswordRequest): Promise<ApiResponse<unknown>> => {
   const response = await api.post('/auth/reset-password', data)
+  return response.data
+}
+
+export const refreshToken = async (): Promise<ApiResponse<LoginResponse>> => {
+  const response = await apiRaw.post('/auth/refresh')
+  return response.data
+}
+
+export const logout = async (): Promise<ApiResponse<string>> => {
+  const response = await apiRaw.post('/auth/logout')
   return response.data
 }

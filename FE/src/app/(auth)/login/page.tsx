@@ -13,6 +13,8 @@ import { Card, CardContent } from '@/src/components/ui/card'
 import { Label } from '@/src/components/ui/label'
 import { useRouter } from 'next/navigation'
 import { useLogin } from '@/src/hooks/useLogin'
+import { getErrorMessage } from '@/src/utils/get-error-message'
+import { RoleUser } from '@/src/enums/role.enum'
 
 import { toast } from 'sonner'
 
@@ -33,11 +35,11 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     loginMutation.mutate(data, {
       onSuccess: () => {
-        toast.success('Đăng nhập thành công')
         router.push('/dashboard')
+        toast.success('Đăng nhập thành công')
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(getErrorMessage(error))
       },
     })
   }

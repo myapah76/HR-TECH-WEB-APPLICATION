@@ -11,6 +11,10 @@ export const api = axios.create({
 
 export const apiRaw = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
 })
 
 // Request Interceptor: Add token into headers
@@ -26,7 +30,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error)
-  },
+  }
 )
 
 // Response Interceptor: Handle refresh token with no race condition
@@ -93,5 +97,5 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error)
-  },
+  }
 )
