@@ -79,14 +79,14 @@ services:
     entrypoint: ["sh", "-c", "sleep 10 && OLLAMA_HOST=ollama:11434 ollama pull qwen3-embedding:0.6b"]
 
   backend:
+    image: myapah/hr-tech-web-application-backend:latest
     build:
       context: ./BE/HrTech
       dockerfile: Dockerfile
     container_name: hrt_backend
     restart: no
     env_file:
-      - .env
-
+      - .env.docker
     ports:
       - "8080:8080"
     depends_on:
