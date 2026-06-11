@@ -62,5 +62,13 @@ public class ErrorCode {
     public static final String JOB_COMPANY_NOT_APPROVED = "JOB_COMPANY_NOT_APPROVED";
     public static final String JOB_PERMISSION_DENIED = "JOB_PERMISSION_DENIED";
     public static final String JOB_SKILL_NOT_FOUND = "JOB_SKILL_NOT_FOUND";
+
+    //Subscription Plan
+    public static final String SUBSCRIPTION_PLAN_NOT_FOUND = "SUBSCRIPTION_PLAN_NOT_FOUND";
+
+    //Payment
+    public static final String HAS_ERROR = "HAS_ERROR";
+    public static final String ORDER_CODE_NOT_FOUND = "ORDER_CODE_NOT_FOUND";
+    public static final String WEBHOOK_NOT_FOUND = "WEBHOOK_NOT_FOUND";
 }
 

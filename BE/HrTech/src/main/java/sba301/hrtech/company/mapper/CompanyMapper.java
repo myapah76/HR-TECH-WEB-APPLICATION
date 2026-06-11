@@ -21,7 +21,6 @@ public interface CompanyMapper {
     @Mapping(target = "taxCode", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "logoUrl", ignore = true)
-    @Mapping(target = "subscriptions", ignore = true)
     @Mapping(target = "jobs", ignore = true)
     @Mapping(target = "size", ignore = true)
     @Mapping(target = "graphWeight", ignore = true)
@@ -39,7 +38,6 @@ public interface CompanyMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "taxCode", ignore = true)
     @Mapping(target = "status", ignore = true)
-    @Mapping(target = "subscriptions", ignore = true)
     @Mapping(target = "jobs", ignore = true)
     @Mapping(target = "size", ignore = true)
     void updateCompanyFromDto(CompanyUpdateRequest request, @MappingTarget Company company);

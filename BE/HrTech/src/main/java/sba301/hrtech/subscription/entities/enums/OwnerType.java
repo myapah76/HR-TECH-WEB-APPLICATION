@@ -1,8 +1,8 @@
 package sba301.hrtech.subscription.entities.enums;
 
-public enum PlanType {
-    B2C,
-    B2B
+public enum OwnerType {
+    COMPANY,
+    CANDIDATE
 }
 
 

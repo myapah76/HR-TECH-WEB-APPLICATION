@@ -96,7 +96,7 @@ class UserServiceImplTest {
         verify(userRepository, never()).save(any());
     }
     @Test
-    void getById_Success() {
+    void getUserResponseById_Success() {
 
         UUID id = UUID.randomUUID();
 
@@ -106,7 +106,7 @@ class UserServiceImplTest {
         when(userMapper.toResponse(user))
                 .thenReturn(response);
 
-        UserResponse result = userService.getById(id);
+        UserResponse result = userService.getUserResponseById(id);
 
         assertNotNull(result);
 

@@ -51,7 +51,7 @@ public class UserServiceImpl implements IUserService {
         return userMapper.toResponse(savedUser);
     }
     @Override
-    public UserResponse getById(UUID id) {
+    public UserResponse getUserResponseById(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(ErrorCode.User_Not_Found));
 
@@ -103,5 +103,11 @@ public class UserServiceImpl implements IUserService {
             throw new UserNotFoundException(ErrorCode.User_Not_Found);
         }
         userRepository.deleteById(id);
+    }
+
+    @Override
+    public User getUserEntityById(UUID id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(ErrorCode.User_Not_Found));
     }
 }

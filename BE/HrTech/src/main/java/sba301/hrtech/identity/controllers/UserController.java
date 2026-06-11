@@ -1,6 +1,5 @@
 package sba301.hrtech.identity.controllers;
 
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +37,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserResponse>> getById(
             @PathVariable UUID id
     ) {
-        return ResponseEntity.ok(ApiResponse.success(userService.getById(id), "User retrieved successfully"));
+        return ResponseEntity.ok(ApiResponse.success(userService.getUserResponseById(id), "User retrieved successfully"));
     }
 
     @GetMapping
