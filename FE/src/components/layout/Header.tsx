@@ -4,10 +4,11 @@ import { Bell, ChevronDown, Menu, LogOut, User as UserIcon } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { logout as logoutService } from '@/src/services/auth.service'
+import { useRouter } from 'next/navigation'
 
 export default function Header() {
   const { user, isInitialized, logout: clearAuth } = useAuthStore()
-
+  const router = useRouter()
   const handleLogout = async () => {
     try {
       await logoutService()
@@ -15,6 +16,7 @@ export default function Header() {
       console.error(e)
     } finally {
       clearAuth()
+      router.push('/')
     }
   }
 
@@ -255,7 +257,7 @@ export default function Header() {
                 id="mob-btn-logout"
               >
                 <LogOut className="h-5 w-5" />
-                <span>Sign out</span>
+                <span>Đăng xuất</span>
               </Button>
             </>
           ) : isInitialized && !user ? (

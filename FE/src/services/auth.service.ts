@@ -56,6 +56,6 @@ export const refreshToken = async (): Promise<ApiResponse<LoginResponse>> => {
 }
 
 export const logout = async (): Promise<ApiResponse<string>> => {
-  const response = await apiRaw.post('/auth/logout')
+  const response = await api.post('/auth/logout')
   return response.data
 }
