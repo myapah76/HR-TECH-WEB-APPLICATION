@@ -13,6 +13,8 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import sba301.hrtech.application.entities.Application;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
@@ -21,6 +23,9 @@ import sba301.hrtech.payment.entities.Payment;
 
 @Entity
 @Table(name = "users")
+@SQLDelete(sql = "UPDATE users SET is_deleted = true WHERE id = ?")
+// Tự động loại bỏ các bản ghi đã soft delete khỏi các query
+@SQLRestriction("is_deleted = false")
 @Getter
 @Setter
 public class User extends SoftDeleteEntity {
@@ -60,15 +65,39 @@ public class User extends SoftDeleteEntity {
     @JoinColumn(name = "role_id")
     private Role role;
 
+    //Sử dụng REMOVE và orphanRemoval xóa lịch sử ứng tuyển, đăng ký gói dịch vụ hoặc thanh toán.
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Cv> cvs = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    /*
+     * PERSIST: lưu các entity con khi tạo mới User.
+     * MERGE: cập nhật các entity con khi cập nhật User.
+     */
+    @OneToMany(
+            mappedBy = "user",
+            cascade = {
+                    CascadeType.PERSIST,
+                    CascadeType.MERGE
+            }
+    )
     private List<Application> applications = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(
+            mappedBy = "user",
+            cascade = {
+                    CascadeType.PERSIST,
+                    CascadeType.MERGE
+            }
+    )
     private List<Subscription> subscriptions = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(
+            mappedBy = "user",
+            cascade = {
+                    CascadeType.PERSIST,
+                    CascadeType.MERGE
+            }
+    )
     private List<Payment> payments = new ArrayList<>();
 }
