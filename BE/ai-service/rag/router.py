@@ -5,7 +5,7 @@ from sqlalchemy import select
 from rag.database import get_db
 from rag.chunk import DocumentChunk, ChunkEmbedding
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_community.embeddings import OllamaEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from rag.config import settings
 from rag.chunking import chunk_document
 from rag.embedding import process_and_store_chunks
@@ -86,7 +86,8 @@ def chat_with_rag(req: ChatRequest, db: Session = Depends(get_db)):
         citations.append({
             "chunk_index": doc_chunk.chunk_index,
             "distance": float(distance),
-            "metadata": doc_chunk.metadata_
+            "metadata": doc_chunk.metadata_,
+            "text": doc_chunk.content
         })
 
     context_block = "\n\n---\n\n".join(context_texts)

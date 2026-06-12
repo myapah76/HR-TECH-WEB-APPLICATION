@@ -1,7 +1,7 @@
 import os
 import json
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_community.embeddings import OllamaEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_core.prompts import PromptTemplate
 from dotenv import load_dotenv
 
@@ -43,7 +43,7 @@ llm = ChatGoogleGenerativeAI(
     model=GEMINI_MODEL, 
     temperature=0, 
     google_api_key=GEMINI_API_KEY,
-    model_kwargs={"response_mime_type": "application/json"}
+    response_mime_type="application/json"
 )
 
 # Initialize Embeddings

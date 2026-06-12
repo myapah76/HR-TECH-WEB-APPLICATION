@@ -8,7 +8,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.job.entities.enums.JobStatus;
+import sba301.hrtech.shared.enums.ExtractionStatus;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -42,4 +44,8 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
             @Param("salaryMax") java.math.BigDecimal salaryMax,
             Pageable pageable
     );
+
+    @Query("SELECT j FROM Job j WHERE j.deleted = false AND j.extractionStatus IN :statuses AND j.updatedAt < :threshold")
+    List<Job> findStuckJobs(@Param("statuses") List<ExtractionStatus> statuses, @Param("threshold") Instant threshold);
+
 }

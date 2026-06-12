@@ -88,6 +88,20 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
             // Update CV with raw parsed text
             cv.setParsedContent(parseResult.getParsedContent());
 
+            // --- RAG Indexing ---
+            if (parseResult.getParsedContent() != null && !parseResult.getParsedContent().isBlank()) {
+                Map<String, Object> metadata = new HashMap<>();
+                metadata.put("type", "CV");
+                metadata.put("cvId", cv.getId().toString());
+                if (cv.getUser() != null) {
+                    metadata.put("userId", cv.getUser().getId().toString());
+                    metadata.put("fullName", (cv.getUser().getFirstName() != null ? cv.getUser().getFirstName() : "") + " " + (cv.getUser().getLastName() != null ? cv.getUser().getLastName() : ""));
+                }
+                aiServiceClient.indexDocument(cv.getId().toString(), parseResult.getParsedContent(), metadata);
+                log.info("Triggered RAG indexing for CV {}", cvId);
+            }
+            // --------------------
+
             List<ExtractedSkillDto> aiExtracted = parseResult.getSkills();
             log.info("AI Service parsed and extracted {} skills from CV {}",
                     aiExtracted != null ? aiExtracted.size() : 0, cvId);
@@ -170,6 +184,30 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
         }
 
         try {
+            // --- RAG Indexing ---
+            StringBuilder fullJobText = new StringBuilder();
+            fullJobText.append("Title: ").append(job.getTitle() != null ? job.getTitle() : "").append("\n");
+            fullJobText.append("Location: ").append(job.getLocation() != null ? job.getLocation() : "").append("\n");
+            fullJobText.append("Salary: ").append(job.getSalaryMin()).append(" - ").append(job.getSalaryMax()).append("\n");
+            fullJobText.append("Job Type: ").append(job.getJobType() != null ? job.getJobType().name() : "").append("\n");
+            fullJobText.append("Experience Level: ").append(job.getExperienceLevel() != null ? job.getExperienceLevel().name() : "").append("\n\n");
+            fullJobText.append("Description:\n").append(description != null ? description : "").append("\n\n");
+            fullJobText.append("Requirements:\n").append(requirements != null ? requirements : "").append("\n");
+
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("type", "JOB");
+            metadata.put("jobId", job.getId().toString());
+            metadata.put("title", job.getTitle());
+            metadata.put("location", job.getLocation());
+            metadata.put("salaryMin", job.getSalaryMin());
+            metadata.put("salaryMax", job.getSalaryMax());
+            metadata.put("jobType", job.getJobType() != null ? job.getJobType().name() : null);
+            metadata.put("experienceLevel", job.getExperienceLevel() != null ? job.getExperienceLevel().name() : null);
+
+            aiServiceClient.indexDocument(job.getId().toString(), fullJobText.toString(), metadata);
+            log.info("Triggered RAG indexing for Job {}", jobId);
+            // --------------------
+
             // 2. Call Gemini AI to extract skills
             List<ExtractedJobSkillDto> aiExtracted = aiServiceClient.extractJobSkillsFromText(description,
                     requirements);

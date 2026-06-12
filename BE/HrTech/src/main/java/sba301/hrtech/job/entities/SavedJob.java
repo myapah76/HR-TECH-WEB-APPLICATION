@@ -1,0 +1,26 @@
+package sba301.hrtech.job.entities;
+
+import jakarta.persistence.*;
+import lombok.*;
+import sba301.hrtech.identity.entities.User;
+import sba301.hrtech.shared.common.BaseEntity;
+
+@Entity
+@Table(name = "saved_jobs", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "job_id"})
+})
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class SavedJob extends BaseEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "job_id", nullable = false)
+    private Job job;
+}

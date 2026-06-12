@@ -60,7 +60,7 @@ public class ApplicationController {
     }
 
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('HR', 'HR_MANAGER', 'EMPLOYER')")
+    @PreAuthorize("hasAnyRole('HR', 'HR_MANAGER')")
     public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> updateStatus(
             @PathVariable UUID id,
             @RequestParam ApplicationStatus status) {
@@ -68,7 +68,7 @@ public class ApplicationController {
     }
 
     @GetMapping("/jobs/{jobId}")
-    @PreAuthorize("hasAnyRole('HR', 'HR_MANAGER', 'EMPLOYER')")
+    @PreAuthorize("hasAnyRole('HR', 'HR_MANAGER')")
     public ResponseEntity<ApiResponse<List<ApplicationSummaryResponse>>> getApplicationsByJob(
             @PathVariable UUID jobId) {
         return ResponseEntity.ok(ApiResponse.success(applicationService.getApplicationsByJob(jobId)));

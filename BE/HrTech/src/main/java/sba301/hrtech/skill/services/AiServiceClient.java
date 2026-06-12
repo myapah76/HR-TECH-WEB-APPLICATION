@@ -7,6 +7,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import sba301.hrtech.chat.dtos.response.RagChatResponseDto;
 import sba301.hrtech.skill.dtos.response.ExtractedJobSkillDto;
 import sba301.hrtech.skill.dtos.response.ParseExtractResponseDto;
 
@@ -165,5 +166,74 @@ public class AiServiceClient {
             log.warn("AI Microservice is not available: {}", e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Calls Python AI service to index a document for RAG.
+     */
+    public boolean indexDocument(String documentId, String text, Map<String, Object> metadata) {
+        if (documentId == null || text == null || text.trim().isEmpty()) {
+            return false;
+        }
+
+        try {
+            String url = aiServiceUrl + "/api/rag/index";
+
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("document_id", documentId);
+            requestBody.put("text", text);
+            requestBody.put("metadata", metadata != null ? metadata : new HashMap<>());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            log.info("Sending document {} to Python AI Service for RAG indexing", documentId);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("Successfully indexed document {} in RAG", documentId);
+                return true;
+            }
+            log.error("Failed to index document in RAG, status: {}", response.getStatusCode());
+        } catch (Exception e) {
+            log.error("AI service RAG indexing error: {}", e.getMessage(), e);
+        }
+        return false;
+    }
+
+    /**
+     * Calls Python AI service to chat using RAG.
+     */
+    public RagChatResponseDto chatWithRag(String query, String documentId, int topK) {
+        if (query == null || query.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            String url = aiServiceUrl + "/api/rag/chat";
+
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("query", query);
+            if (documentId != null) {
+                requestBody.put("document_id", documentId);
+            }
+            requestBody.put("top_k", topK);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            log.info("Sending chat query to Python AI Service RAG");
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            ResponseEntity<RagChatResponseDto> response = restTemplate.postForEntity(url, entity, RagChatResponseDto.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody();
+            }
+            log.error("Failed to chat with RAG, status: {}", response.getStatusCode());
+        } catch (Exception e) {
+            log.error("AI service RAG chat error: {}", e.getMessage(), e);
+        }
+        return null;
     }
 }
