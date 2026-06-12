@@ -2,6 +2,16 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from models import EmbedRequest, EmbedResponse, ExtractedSkill, JobExtractionRequest, JobExtractionResponse, ExtractedJobSkill, ParseExtractRequest, ParseExtractResponse
 from services import extract_skills, get_embeddings, extract_job_skills, download_and_extract_pdf_text
+from sqlalchemy import text
+from rag.database import Base, engine
+from rag.router import router as rag_router
+
+# Create pgvector extension if it doesn't exist
+with engine.connect() as conn:
+    conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+    conn.commit()
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="HrTech AI Microservice", version="1.0.0")
 
@@ -13,6 +23,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(rag_router, prefix="/api/rag", tags=["rag"])
 
 @app.get("/")
 def health_check():
