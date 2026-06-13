@@ -38,21 +38,17 @@ public class SkillServiceImpl implements ISkillService {
                     "Skill already exists: " + request.getName());
         }
 
-        List<Double> embedding = aiServiceClient.generateEmbedding(request.getName());
-
         SkillNode skillNode = SkillNode.builder()
                 .id(UUID.randomUUID().toString())
                 .name(request.getName())
                 .description(request.getDescription())
                 .isVerified(true) // Admin-created skills are auto-verified
-                .embedding(embedding)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
 
         SkillNode saved = skillNodeRepository.save(skillNode);
-        log.info("Created skill: {} (embedding dim: {})", saved.getName(),
-                embedding != null ? embedding.size() : 0);
+        log.info("Created skill: {}", saved.getName());
         return skillMapper.toResponse(saved);
     }
 
@@ -67,12 +63,6 @@ public class SkillServiceImpl implements ISkillService {
         }
         if (request.getDescription() != null) {
             skillNode.setDescription(request.getDescription());
-        }
-
-        // Regenerate embedding if name changed
-        if (nameChanged) {
-            List<Double> newEmbedding = aiServiceClient.generateEmbedding(skillNode.getName());
-            skillNode.setEmbedding(newEmbedding);
         }
 
         skillNode.setUpdatedAt(Instant.now());
@@ -209,25 +199,6 @@ public class SkillServiceImpl implements ISkillService {
         return skillMapper.toResponseList(related);
     }
 
-    // === Embedding-based Search ===
-
-    @Override
-    public List<SkillResponse> findSimilarSkills(String skillId, int topK) {
-        SkillNode skill = findSkillOrThrow(skillId);
-
-        if (skill.getEmbedding() == null || skill.getEmbedding().isEmpty()) {
-            return List.of();
-        }
-
-        List<SkillNode> similar = skillNodeRepository.findSimilarByEmbedding(
-                skill.getEmbedding(), topK + 1); // +1 to exclude self
-
-        return similar.stream()
-                .filter(s -> !s.getId().equals(skillId))
-                .limit(topK)
-                .map(skillMapper::toResponse)
-                .toList();
-    }
 
     // === Helpers ===
 

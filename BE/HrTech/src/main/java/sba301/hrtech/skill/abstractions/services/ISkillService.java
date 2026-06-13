@@ -29,7 +29,4 @@ public interface ISkillService {
     void addRelatedSkill(String skillId, String relatedSkillId);
     void addParentChild(String parentId, String childId);
     List<SkillResponse> getRelatedSkills(String skillId);
-
-    // Embedding-based search
-    List<SkillResponse> findSimilarSkills(String skillId, int topK);
 }

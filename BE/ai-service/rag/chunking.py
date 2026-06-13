@@ -1,5 +1,5 @@
 from langchain_experimental.text_splitter import SemanticChunker
-from langchain_community.embeddings import OllamaEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_core.embeddings import Embeddings
 from rag.config import settings
 from typing import List

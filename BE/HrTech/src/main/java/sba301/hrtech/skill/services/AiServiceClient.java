@@ -10,6 +10,7 @@ import org.springframework.web.client.RestTemplate;
 import sba301.hrtech.chat.dtos.response.RagChatResponseDto;
 import sba301.hrtech.skill.dtos.response.ExtractedJobSkillDto;
 import sba301.hrtech.skill.dtos.response.ParseExtractResponseDto;
+import sba301.hrtech.skill.dtos.response.MapRelationshipsResponseDto;
 
 import java.util.*;
 
@@ -102,57 +103,39 @@ public class AiServiceClient {
         return Collections.emptyList();
     }
 
+
     /**
-     * Calls Python AI service to get embeddings for multiple texts.
+     * Calls Python AI service to map relationships between new skills and DB skills.
      */
-    public List<List<Double>> generateEmbeddings(List<String> texts) {
-        if (texts == null || texts.isEmpty()) {
-            return Collections.emptyList();
+    public MapRelationshipsResponseDto mapRelationships(List<String> newSkills, List<String> dbSkills) {
+        if (newSkills == null || newSkills.isEmpty() || dbSkills == null || dbSkills.isEmpty()) {
+            return null;
         }
 
         try {
-            String url = aiServiceUrl + "/api/embed";
+            String url = aiServiceUrl + "/api/map-relationships";
 
             Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("texts", texts);
+            requestBody.put("new_skills", newSkills);
+            requestBody.put("db_skills", dbSkills);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            log.info("Sending {} texts to Python AI Service for embedding generation", texts.size());
+            log.info("Sending {} new skills and {} db skills to AI Service for relationship mapping", 
+                newSkills.size(), dbSkills.size());
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-            ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
-            log.info("Received response from Python AI Service with status: {}", response.getStatusCode());
+            ResponseEntity<MapRelationshipsResponseDto> response = restTemplate.postForEntity(url, entity, MapRelationshipsResponseDto.class);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                List<List<Double>> embeddings = (List<List<Double>>) response.getBody().get("embeddings");
-                if (embeddings != null) {
-                    log.info("Successfully received {} embeddings from Python AI Service", embeddings.size());
-                    return embeddings;
-                }
+                log.info("Successfully mapped relationships");
+                return response.getBody();
             }
-            log.error("Failed to generate batch embeddings from AI service");
+            log.error("Failed to map relationships from AI service, status: {}", response.getStatusCode());
         } catch (Exception e) {
-            log.error("AI service batch embedding error: {}", e.getMessage(), e);
+            log.error("AI service map relationships error: {}", e.getMessage(), e);
         }
-        return Collections.nCopies(texts.size(), Collections.emptyList());
-    }
-
-    /**
-     * Calls Python AI service to get embedding for a single text.
-     */
-    public List<Double> generateEmbedding(String text) {
-        if (text == null || text.trim().isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<List<Double>> results = generateEmbeddings(List.of(text));
-        if (results != null && !results.isEmpty() && !results.get(0).isEmpty()) {
-            return results.get(0);
-        }
-
-        log.warn("Failed to generate single embedding for text: {}", text.substring(0, Math.min(50, text.length())));
-        return Collections.emptyList();
+        return null;
     }
 
     /**

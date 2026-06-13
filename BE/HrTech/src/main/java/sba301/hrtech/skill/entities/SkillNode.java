@@ -32,9 +32,6 @@ public class SkillNode {
     @Property("is_verified")
     private Boolean isVerified;
 
-    @Property("embedding")
-    private List<Double> embedding;
-
     @Property("created_at")
     private Instant createdAt;
 

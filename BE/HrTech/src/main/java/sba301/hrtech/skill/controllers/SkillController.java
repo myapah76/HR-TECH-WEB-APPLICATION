@@ -130,12 +130,4 @@ public class SkillController {
         return ResponseEntity.ok(ApiResponse.success(skillService.getRelatedSkills(id)));
     }
 
-    // === Embedding-based Search ===
-
-    @GetMapping("/{id}/similar")
-    public ResponseEntity<ApiResponse<List<SkillResponse>>> findSimilarSkills(
-            @PathVariable String id,
-            @RequestParam(defaultValue = "5") int topK) {
-        return ResponseEntity.ok(ApiResponse.success(skillService.findSimilarSkills(id, topK)));
-    }
 }

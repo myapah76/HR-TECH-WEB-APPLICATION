@@ -42,3 +42,7 @@ export interface JobCategory {
   nameEn?: string
   count: number
 }
+
+export * from './cv.type';
+export * from './job.type';
+export * from './recommendation.type';

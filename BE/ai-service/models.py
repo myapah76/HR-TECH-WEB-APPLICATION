@@ -32,3 +32,14 @@ class ParseExtractRequest(BaseModel):
 class ParseExtractResponse(BaseModel):
     parsed_content: str
     skills: List[ExtractedSkill]
+
+class MapRelationshipsRequest(BaseModel):
+    new_skills: List[str]
+    db_skills: List[str]
+
+class SkillRelationship(BaseModel):
+    new_skill: str
+    related_to: List[str]
+
+class MapRelationshipsResponse(BaseModel):
+    relationships: List[SkillRelationship]

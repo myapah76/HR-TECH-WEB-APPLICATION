@@ -80,7 +80,7 @@ api.interceptors.response.use(
       originalRequest._retry = true
       try {
         const res = await apiRaw.post('/auth/refresh')
-        const newAccess = res.data.accessToken
+        const newAccess = res.data.data.accessToken
         // update token
         useAuthStore.getState().updateTokens(newAccess)
         processQueue(null, newAccess)

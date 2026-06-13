@@ -46,43 +46,14 @@ public class Neo4jDataSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) {
         try {
-            createVectorIndex();
             seedSkills();
             seedRelationships();
         } catch (Exception e) {
-            log.warn("Neo4j seeding partially failed (Ollama may not be running): {}", e.getMessage());
+            log.warn("Neo4j seeding partially failed: {}", e.getMessage());
         }
     }
 
-    private void createVectorIndex() {
-        try {
-            // Check if Ollama is available to determine embedding dimension
-            if (!aiServiceClient.isAvailable()) {
-                log.warn("AI Service is not available. Skipping vector index creation. " +
-                        "Run the Python AI Microservice and restart the app.");
-                return;
-            }
 
-            // Generate a test embedding to detect dimension
-            List<Double> testEmbedding = aiServiceClient.generateEmbedding("test");
-            int dimension = testEmbedding.size();
-
-            if (dimension > 0) {
-                neo4jClient.query("""
-                            CREATE VECTOR INDEX skill_embedding_index IF NOT EXISTS
-                            FOR (s:Skill) ON (s.embedding)
-                            OPTIONS {indexConfig: {
-                                `vector.dimensions`: %d,
-                                `vector.similarity_function`: 'cosine'
-                            }}
-                        """.formatted(dimension)).run();
-
-                log.info("Created Neo4j vector index with dimension: {}", dimension);
-            }
-        } catch (Exception e) {
-            log.warn("Vector index creation skipped: {}", e.getMessage());
-        }
-    }
 
     private void seedSkills() {
         long existingCount = skillNodeRepository.count();
@@ -96,27 +67,14 @@ public class Neo4jDataSeeder implements CommandLineRunner {
             });
             log.info("Seeding {} skills into Neo4j from JSON file...", seedData.size());
 
-            boolean aiAvailable = aiServiceClient.isAvailable();
-            if (!aiAvailable) {
-                log.warn("AI Service not available — seeding skills WITHOUT embeddings");
-            }
-
-            // Extract all skill names for batch embedding
-            List<String> skillNames = seedData.stream().map(SkillSeedDto::getName).toList();
-            List<List<Double>> batchEmbeddings = aiAvailable
-                    ? aiServiceClient.generateEmbeddings(skillNames)
-                    : Collections.nCopies(skillNames.size(), Collections.emptyList());
-
             List<SkillNode> skillsToSave = new ArrayList<>();
             for (int i = 0; i < seedData.size(); i++) {
                 SkillSeedDto seedItem = seedData.get(i);
-                List<Double> embedding = batchEmbeddings.get(i);
 
                 SkillNode skill = SkillNode.builder()
                         .id(UUID.randomUUID().toString())
                         .name(seedItem.getName())
                         .isVerified(true)
-                        .embedding(embedding)
                         .createdAt(Instant.now())
                         .updatedAt(Instant.now())
                         .build();

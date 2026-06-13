@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from models import EmbedRequest, EmbedResponse, ExtractedSkill, JobExtractionRequest, JobExtractionResponse, ExtractedJobSkill, ParseExtractRequest, ParseExtractResponse
-from services import extract_skills, get_embeddings, extract_job_skills, download_and_extract_pdf_text
+from models import EmbedRequest, EmbedResponse, ExtractedSkill, JobExtractionRequest, JobExtractionResponse, ExtractedJobSkill, ParseExtractRequest, ParseExtractResponse, MapRelationshipsRequest, MapRelationshipsResponse, SkillRelationship
+from services import extract_skills, extract_job_skills, download_and_extract_pdf_text
 from sqlalchemy import text
 from rag.database import Base, engine
 from rag.router import router as rag_router
@@ -12,6 +12,7 @@ with engine.connect() as conn:
     conn.commit()
 
 Base.metadata.create_all(bind=engine)
+
 
 app = FastAPI(title="HrTech AI Microservice", version="1.0.0")
 
@@ -44,21 +45,6 @@ def api_extract_job_skills(req: JobExtractionRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/embed", response_model=EmbedResponse)
-def api_get_embeddings(req: EmbedRequest):
-    try:
-        texts_to_embed = []
-        if req.text:
-            texts_to_embed.append(req.text)
-        if req.texts:
-            texts_to_embed.extend(req.texts)
-        if not texts_to_embed:
-            return EmbedResponse(embeddings=[])
-            
-        embeddings = get_embeddings(texts_to_embed)
-        return EmbedResponse(embeddings=embeddings)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/parse-and-extract", response_model=ParseExtractResponse)
 def api_parse_and_extract_cv(req: ParseExtractRequest):
@@ -79,6 +65,23 @@ def api_parse_and_extract_cv(req: ParseExtractRequest):
             parsed_content=text,
             skills=parsed_skills
         )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/map-relationships", response_model=MapRelationshipsResponse)
+def api_map_relationships(req: MapRelationshipsRequest):
+    try:
+        from services import map_relationships_with_full_db
+        relationships_data = map_relationships_with_full_db(req.new_skills, req.db_skills)
+        
+        parsed_rels = []
+        for r in relationships_data:
+            if "new_skill" in r and "related_to" in r:
+                parsed_rels.append(SkillRelationship(new_skill=r["new_skill"], related_to=r["related_to"]))
+                
+        return MapRelationshipsResponse(relationships=parsed_rels)
     except Exception as e:
         import traceback
         traceback.print_exc()

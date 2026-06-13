@@ -54,16 +54,6 @@ public interface SkillNodeRepository extends Neo4jRepository<SkillNode, String> 
     """)
     List<SkillNode> findChildren(@Param("skillId") String skillId);
 
-    @Query("""
-        CALL db.index.vector.queryNodes('skill_embedding_index', $topK, $queryVector)
-        YIELD node AS skill, score
-        RETURN skill
-    """)
-    List<SkillNode> findSimilarByEmbedding(
-            @Param("queryVector") List<Double> queryVector,
-            @Param("topK") int topK
-    );
-
     boolean existsByNameIgnoreCase(String name);
 
     @Query("""
@@ -89,14 +79,29 @@ public interface SkillNodeRepository extends Neo4jRepository<SkillNode, String> 
     void rejectPendingRelationship(@Param("sourceId") String sourceId, @Param("targetId") String targetId, @Param("type") String type);
 
     @Query("""
-        MATCH (a:Skill {id: $sourceId}), (b:Skill {id: $targetId})
-        MERGE (a)-[r:SYNONYM {status: 'PENDING'}]->(b)
+        MATCH (a:Skill {id: $sourceId})
+        WITH a
+        MATCH (b:Skill {id: $targetId})
+        MERGE (a)-[r:SYNONYM {status: 'PENDING'}]-(b)
     """)
     void createPendingSynonym(@Param("sourceId") String sourceId, @Param("targetId") String targetId);
 
     @Query("""
-        MATCH (a:Skill {id: $sourceId}), (b:Skill {id: $targetId})
-        MERGE (a)-[r:RELATED_TO {status: 'PENDING'}]->(b)
+        MATCH (a:Skill {id: $sourceId})
+        WITH a
+        MATCH (b:Skill {id: $targetId})
+        MERGE (a)-[r:RELATED_TO {status: 'PENDING'}]-(b)
     """)
     void createPendingRelatedTo(@Param("sourceId") String sourceId, @Param("targetId") String targetId);
+
+    @Query("MATCH (s:Skill) RETURN s.name")
+    List<String> findAllNames();
+
+    @Query("""
+        MATCH (a:Skill {name: $sourceName})
+        WITH a
+        MATCH (b:Skill {name: $targetName})
+        MERGE (a)-[r:RELATED_TO {status: 'PENDING'}]-(b)
+    """)
+    void createPendingRelatedToByName(@Param("sourceName") String sourceName, @Param("targetName") String targetName);
 }

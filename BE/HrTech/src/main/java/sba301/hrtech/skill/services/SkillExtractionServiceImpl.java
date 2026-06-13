@@ -25,6 +25,8 @@ import sba301.hrtech.skill.dtos.response.ExtractedJobSkillDto;
 import sba301.hrtech.skill.dtos.response.ExtractedSkillDto;
 import sba301.hrtech.skill.dtos.response.ParseExtractResponseDto;
 import sba301.hrtech.skill.dtos.response.SkillProcessResult;
+import sba301.hrtech.skill.dtos.response.MapRelationshipsResponseDto;
+import sba301.hrtech.skill.dtos.response.SkillRelationshipDto;
 import sba301.hrtech.skill.dtos.response.SkillResponse;
 import sba301.hrtech.skill.entities.SkillNode;
 import sba301.hrtech.skill.mapper.SkillMapper;
@@ -120,6 +122,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
             int matchedCount = 0;
             int newCount = 0;
             List<SkillResponse> extractedSkills = new ArrayList<>();
+            List<String> newlyCreatedSkills = new ArrayList<>();
 
             for (ExtractedSkillDto extracted : aiExtracted) {
                 if (extracted.getName() == null || extracted.getName().isBlank()) {
@@ -131,6 +134,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
 
                 if (result.isNew()) {
                     newCount++;
+                    newlyCreatedSkills.add(skillNode.getName());
                 } else {
                     matchedCount++;
                 }
@@ -150,6 +154,10 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
             cv.setExtractionStatus(ExtractionStatus.COMPLETED);
             cvRepository.save(cv);
             log.info("CV {} extraction complete: {} matched, {} new", cvId, matchedCount, newCount);
+
+            if (!newlyCreatedSkills.isEmpty()) {
+                CompletableFuture.runAsync(() -> mapRelationshipsForNewSkills(newlyCreatedSkills));
+            }
 
             return CompletableFuture.completedFuture(CvExtractionResponse.builder()
                     .cvId(cvId)
@@ -213,11 +221,12 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
                     requirements);
             log.info("Gemini extracted {} skills from Job {}", aiExtracted.size(), jobId);
 
-            // Get existing job skill Neo4j IDs to prevent duplicates
             Set<String> existingSkillNeo4jIds = new HashSet<>();
             for (JobSkill js : job.getJobSkills()) {
                 existingSkillNeo4jIds.add(js.getSkillNeo4jId());
             }
+
+            List<String> newlyCreatedSkills = new ArrayList<>();
 
             for (ExtractedJobSkillDto extracted : aiExtracted) {
                 if (extracted.getName() == null || extracted.getName().isBlank()) {
@@ -226,6 +235,10 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
 
                 SkillProcessResult result = processAndGetSkillNode(extracted.getName());
                 SkillNode skillNode = result.skillNode();
+                
+                if (result.isNew()) {
+                    newlyCreatedSkills.add(skillNode.getName());
+                }
 
                 // If already manually added by employer, skip to avoid duplicates
                 if (!existingSkillNeo4jIds.contains(skillNode.getId())) {
@@ -244,6 +257,10 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
             job.setExtractionStatus(ExtractionStatus.COMPLETED);
             jobRepository.save(job);
             log.info("Job {} extraction complete", jobId);
+
+            if (!newlyCreatedSkills.isEmpty()) {
+                CompletableFuture.runAsync(() -> mapRelationshipsForNewSkills(newlyCreatedSkills));
+            }
         } catch (Exception e) {
             log.error("Job extraction failed for job {}", jobId, e);
             job.setExtractionStatus(ExtractionStatus.FAILED);
@@ -251,22 +268,30 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
         }
     }
 
-    private double calculateCosineSimilarity(List<Double> v1, List<Double> v2) {
-        if (v1.size() != v2.size()) return 0.0;
-        double dotProduct = 0.0;
-        double norm1 = 0.0;
-        double norm2 = 0.0;
-        for (int i = 0; i < v1.size(); i++) {
-            dotProduct += v1.get(i) * v2.get(i);
-            norm1 += Math.pow(v1.get(i), 2);
-            norm2 += Math.pow(v2.get(i), 2);
+    private void mapRelationshipsForNewSkills(List<String> newSkills) {
+        try {
+            log.info("Triggering background relationship mapping for {} new skills", newSkills.size());
+            List<String> allDbSkills = skillNodeRepository.findAllNames();
+            
+            MapRelationshipsResponseDto response = aiServiceClient.mapRelationships(newSkills, allDbSkills);
+            if (response != null && response.getRelationships() != null) {
+                for (SkillRelationshipDto rel : response.getRelationships()) {
+                    String newSkill = rel.getNewSkill();
+                    if (rel.getRelatedTo() != null) {
+                        for (String related : rel.getRelatedTo()) {
+                            skillNodeRepository.createPendingRelatedToByName(newSkill, related);
+                        }
+                    }
+                }
+                log.info("Successfully saved mapped relationships to Neo4j");
+            }
+        } catch (Exception e) {
+            log.error("Error in background relationship mapping: {}", e.getMessage(), e);
         }
-        if (norm1 == 0 || norm2 == 0) return 0.0;
-        return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
     }
 
     /**
-     * Reusable method to find or create a SkillNode with its embeddings and relationships.
+     * Reusable method to find or create a SkillNode without generating embeddings.
      */
     private SkillProcessResult processAndGetSkillNode(String skillName) {
         String name = skillName.trim();
@@ -276,42 +301,16 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
             return new SkillProcessResult(existing.get(), false);
         }
 
-        // Create new skill -> generate embedding, isVerified=false
-        List<Double> embedding = aiServiceClient.generateEmbedding(name);
-
         SkillNode skillNode = SkillNode.builder()
                 .id(UUID.randomUUID().toString())
                 .name(name)
                 .isVerified(false)
-                .embedding(embedding)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
 
         skillNode = skillNodeRepository.save(skillNode);
-        log.info("Created new unverified skill: {} (embedding dim: {})",
-                skillNode.getName(),
-                embedding != null ? embedding.size() : 0);
-
-        // --- AI Auto-Suggestion (Configurable Asymmetric Graph) ---
-        if (embedding != null && !embedding.isEmpty()) {
-            List<SkillNode> similarSkills = skillNodeRepository.findSimilarByEmbedding(embedding, 20);
-
-            for (SkillNode similar : similarSkills) {
-                if (similar.getId().equals(skillNode.getId()) || similar.getEmbedding() == null)
-                    continue;
-
-                double similarity = calculateCosineSimilarity(embedding, similar.getEmbedding());
-
-                if (similarity >= 0.95) {
-                    // Suggest SYNONYM
-                    skillNodeRepository.createPendingSynonym(skillNode.getId(), similar.getId());
-                } else if (similarity >= 0.85) {
-                    // Suggest RELATED_TO
-                    skillNodeRepository.createPendingRelatedTo(skillNode.getId(), similar.getId());
-                }
-            }
-        }
+        log.info("Created new unverified skill: {}", skillNode.getName());
 
         return new SkillProcessResult(skillNode, true);
     }

@@ -37,9 +37,6 @@ public class RecommendationServiceImpl implements IRecommendationService {
     @Value("${recommendation.graph-weight}")
     private double graphWeight;
 
-    @Value("${recommendation.embedding-weight}")
-    private double embeddingWeight;
-
     // === Skill level numeric values ===
     private static final Map<SkillLevel, Integer> LEVEL_VALUES = Map.of(
             SkillLevel.BEGINNER, 1,
@@ -88,8 +85,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
             CompanyWeights weights = extractCompanyWeights(job);
 
             double graphScore = calculateGraphScore(ctx.cvSkillMap(), ctx.expandedCvSkillTypes(), jobSkills, weights);
-            double embScore = calculateEmbeddingScore(ctx.cvCentroid(), jobSkills);
-            double finalScore = weights.graphWeight() * graphScore + weights.embeddingWeight() * embScore;
+            double finalScore = graphScore;
 
             List<String> matchedSkills = new ArrayList<>();
             List<String> missingSkills = new ArrayList<>();
@@ -105,7 +101,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
                     .salaryMax(job.getSalaryMax())
                     .matchScore(Math.round(finalScore * 100.0) / 100.0)
                     .graphScore(Math.round(graphScore * 100.0) / 100.0)
-                    .embeddingScore(Math.round(embScore * 100.0) / 100.0)
+                    .embeddingScore(0.0)
                     .matchGrade(getGrade(finalScore))
                     .matchedSkills(matchedSkills)
                     .missingSkills(missingSkills)
@@ -133,8 +129,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
         CompanyWeights weights = extractCompanyWeights(job);
 
         double graphScore = calculateGraphScore(ctx.cvSkillMap(), ctx.expandedCvSkillTypes(), jobSkills, weights);
-        double embScore = calculateEmbeddingScore(ctx.cvCentroid(), jobSkills);
-        double finalScore = weights.graphWeight() * graphScore + weights.embeddingWeight() * embScore;
+        double finalScore = graphScore;
 
         List<String> matchedSkills = new ArrayList<>();
         List<String> missingSkills = new ArrayList<>();
@@ -147,7 +142,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
                 .overallScore(Math.round(finalScore * 100.0) / 100.0)
                 .grade(getGrade(finalScore))
                 .graphScore(Math.round(graphScore * 100.0) / 100.0)
-                .embeddingScore(Math.round(embScore * 100.0) / 100.0)
+                .embeddingScore(0.0)
                 .matchedSkills(matchedSkills)
                 .missingSkills(missingSkills)
                 .skillDetails(details)
@@ -158,7 +153,6 @@ public class RecommendationServiceImpl implements IRecommendationService {
 
     private record CompanyWeights(
             double graphWeight,
-            double embeddingWeight,
             double synonymWeight,
             double relatedWeight,
             double childToParentWeight,
@@ -167,8 +161,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
 
     private record CvSkillContext(
             Map<String, CvSkill> cvSkillMap,
-            Map<String, Set<String>> expandedCvSkillTypes,
-            List<Double> cvCentroid) {
+            Map<String, Set<String>> expandedCvSkillTypes) {
     }
 
     private CvSkillContext buildCvSkillContext(Cv cv) {
@@ -183,14 +176,12 @@ public class RecommendationServiceImpl implements IRecommendationService {
 
         Set<String> cvSkillIds = cvSkillMap.keySet();
         Map<String, Set<String>> expandedCvSkillTypes = expandSkillsThroughGraph(cvSkillIds);
-        List<Double> cvCentroid = calculateCentroidEmbedding(cvSkillIds);
 
-        return new CvSkillContext(cvSkillMap, expandedCvSkillTypes, cvCentroid);
+        return new CvSkillContext(cvSkillMap, expandedCvSkillTypes);
     }
 
     private CompanyWeights extractCompanyWeights(Job job) {
         double jobGraphWeight = this.graphWeight;
-        double jobEmbeddingWeight = this.embeddingWeight;
         double jobSynonymWeight = SYNONYM_MATCH;
         double jobRelatedWeight = RELATED_MATCH;
         double jobChildToParentWeight = CHILD_TO_PARENT_MATCH;
@@ -199,8 +190,6 @@ public class RecommendationServiceImpl implements IRecommendationService {
         if (job.getCompany() != null) {
             if (job.getCompany().getGraphWeight() != null)
                 jobGraphWeight = job.getCompany().getGraphWeight();
-            if (job.getCompany().getEmbeddingWeight() != null)
-                jobEmbeddingWeight = job.getCompany().getEmbeddingWeight();
             if (job.getCompany().getSynonymWeight() != null)
                 jobSynonymWeight = job.getCompany().getSynonymWeight();
             if (job.getCompany().getRelatedWeight() != null)
@@ -211,7 +200,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
                 jobParentToChildWeight = job.getCompany().getParentToChildWeight();
         }
 
-        return new CompanyWeights(jobGraphWeight, jobEmbeddingWeight, jobSynonymWeight, jobRelatedWeight,
+        return new CompanyWeights(jobGraphWeight, jobSynonymWeight, jobRelatedWeight,
                 jobChildToParentWeight, jobParentToChildWeight);
     }
 
@@ -268,41 +257,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
         return expanded;
     }
 
-    /**
-     * Calculate centroid (average) embedding for a set of skill IDs.
-     */
-    private List<Double> calculateCentroidEmbedding(Set<String> skillIds) {
-        List<List<Double>> embeddings = new ArrayList<>();
 
-        List<SkillNode> skills = skillNodeRepository.findAllByIds(new ArrayList<>(skillIds));
-        for (SkillNode skill : skills) {
-            if (skill.getEmbedding() != null && !skill.getEmbedding().isEmpty()) {
-                embeddings.add(skill.getEmbedding());
-            }
-        }
-
-        if (embeddings.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // Average all embedding vectors
-        int dim = embeddings.getFirst().size();
-        List<Double> centroid = new ArrayList<>(Collections.nCopies(dim, 0.0));
-
-        for (List<Double> emb : embeddings) {
-            if (emb.size() != dim)
-                continue;
-            for (int i = 0; i < dim; i++) {
-                centroid.set(i, centroid.get(i) + emb.get(i));
-            }
-        }
-
-        for (int i = 0; i < dim; i++) {
-            centroid.set(i, centroid.get(i) / embeddings.size());
-        }
-
-        return centroid;
-    }
 
     /**
      * Calculate graph-based matching score.
@@ -351,48 +306,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
         };
     }
 
-    /**
-     * Calculate embedding-based similarity score using cosine similarity.
-     */
-    private double calculateEmbeddingScore(List<Double> cvCentroid, List<JobSkill> jobSkills) {
-        if (cvCentroid == null || cvCentroid.isEmpty()) {
-            return 0.0;
-        }
 
-        // Get job skill IDs and calculate job centroid
-        Set<String> jobSkillIds = jobSkills.stream()
-                .map(JobSkill::getSkillNeo4jId)
-                .collect(Collectors.toSet());
-
-        List<Double> jobCentroid = calculateCentroidEmbedding(jobSkillIds);
-
-        if (jobCentroid.isEmpty()) {
-            return 0.0;
-        }
-
-        return cosineSimilarity(cvCentroid, jobCentroid);
-    }
-
-    /**
-     * Cosine similarity between two vectors.
-     */
-    private double cosineSimilarity(List<Double> a, List<Double> b) {
-        if (a.size() != b.size() || a.isEmpty())
-            return 0.0;
-
-        double dotProduct = 0.0;
-        double normA = 0.0;
-        double normB = 0.0;
-
-        for (int i = 0; i < a.size(); i++) {
-            dotProduct += a.get(i) * b.get(i);
-            normA += a.get(i) * a.get(i);
-            normB += b.get(i) * b.get(i);
-        }
-
-        double denominator = Math.sqrt(normA) * Math.sqrt(normB);
-        return denominator > 0 ? dotProduct / denominator : 0.0;
-    }
 
     /**
      * Calculate level score: min(candidateLevel / requiredLevel, 1.0)
