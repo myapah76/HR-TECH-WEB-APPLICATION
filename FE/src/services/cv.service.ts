@@ -34,3 +34,8 @@ export const setPrimaryCv = async (cvId: string): Promise<CvSummaryResponse> => 
 export const deleteCv = async (cvId: string): Promise<void> => {
   await api.delete(`/cvs/${cvId}`);
 };
+
+export const updateCvTitle = async (id: string, title: string): Promise<CvSummaryResponse> => {
+  const response = await api.put(`/cvs/${id}/title`, { title })
+  return response.data
+};

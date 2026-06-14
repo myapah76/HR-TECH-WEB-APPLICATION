@@ -11,6 +11,7 @@ import {
   Settings,
   Brain,
   BellRing,
+  Star,
 } from 'lucide-react'
 
 const candidateNavItems = [
@@ -26,6 +27,7 @@ const candidateNavItems = [
     path: '/candidate/resume-builder',
   },
   { icon: FolderOpen, label: 'Quản lý CV', path: '/candidate/cv' },
+  { icon: Star, label: 'Gợi ý Việc làm', path: '/candidate/recommend-jobs' },
   {
     icon: Heart,
     label: 'Việc đã lưu',

@@ -5,16 +5,17 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/src
 import { Button } from '@/src/components/ui/button'
 import { Input } from '@/src/components/ui/input'
 import { Label } from '@/src/components/ui/label'
-import { getAllCvs, uploadCv, setPrimaryCv, deleteCv } from '@/src/services/cv.service'
+import { getAllCvs, uploadCv, setPrimaryCv, deleteCv, updateCvTitle, getCvDetail } from '@/src/services/cv.service'
 import { getSavedJobs } from '@/src/services/job.service'
 import { calculateMatchScore } from '@/src/services/recommendation.service'
-import { CvSummaryResponse } from '@/src/types/cv.type'
-import { SavedJobResponse } from '@/src/types/job.type'
+import { CvSummaryResponse, CvDetailResponse } from '@/src/types/cv.type'
+import { JobResponse } from '@/src/types/job.type'
 import { SkillMatchScoreResponse } from '@/src/types/recommendation.type'
+import { FileSearch, X, Loader2 } from 'lucide-react'
 
 export default function CandidateCvPage() {
   const [cvs, setCvs] = useState<CvSummaryResponse[]>([])
-  const [savedJobs, setSavedJobs] = useState<SavedJobResponse[]>([])
+  const [savedJobs, setSavedJobs] = useState<JobResponse[]>([])
   const [loading, setLoading] = useState(true)
 
   // Upload state
@@ -29,9 +30,15 @@ export default function CandidateCvPage() {
   const [matchScore, setMatchScore] = useState<SkillMatchScoreResponse | null>(null)
   const [isMatching, setIsMatching] = useState(false)
 
-  const fetchData = async () => {
+  // Edit & View state
+  const [editingCvId, setEditingCvId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [viewCv, setViewCv] = useState<CvDetailResponse | null>(null)
+  const [loadingDetail, setLoadingDetail] = useState(false)
+
+  const fetchData = async (silent = false) => {
     try {
-      setLoading(true)
+      if (!silent) setLoading(true)
       try {
         const cvData = await getAllCvs()
         setCvs(cvData)
@@ -47,7 +54,7 @@ export default function CandidateCvPage() {
     } catch (error) {
       console.error('Failed to fetch data:', error)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
@@ -72,7 +79,7 @@ export default function CandidateCvPage() {
       setSelectedFile(null)
       setCvTitle('')
       if (fileInputRef.current) fileInputRef.current.value = ''
-      await fetchData()
+      await fetchData(true)
     } catch (error) {
       console.error('Upload failed:', error)
     } finally {
@@ -83,7 +90,7 @@ export default function CandidateCvPage() {
   const handleSetPrimary = async (id: string) => {
     try {
       await setPrimaryCv(id)
-      await fetchData()
+      await fetchData(true)
     } catch (error) {
       console.error('Failed to set primary CV:', error)
     }
@@ -93,12 +100,39 @@ export default function CandidateCvPage() {
     try {
       if (confirm('Bạn có chắc chắn muốn xóa CV này không?')) {
         await deleteCv(id)
-        await fetchData()
+        await fetchData(true)
       }
     } catch (error: any) {
       console.error('Failed to delete CV:', error)
       const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi xóa CV!';
       alert(errorMessage);
+    }
+  }
+
+  const handleUpdateTitle = async (id: string, oldTitle: string) => {
+    if (!editTitle.trim() || editTitle.trim() === oldTitle) {
+      setEditingCvId(null)
+      return
+    }
+    try {
+      await updateCvTitle(id, editTitle)
+      setEditingCvId(null)
+      await fetchData(true)
+    } catch (error) {
+      console.error('Failed to update title', error)
+      alert('Lỗi cập nhật tên CV')
+    }
+  }
+
+  const handleViewCv = async (id: string) => {
+    try {
+      setLoadingDetail(true)
+      const detail = await getCvDetail(id)
+      setViewCv(detail)
+    } catch (error) {
+      console.error('Failed to load detail', error)
+    } finally {
+      setLoadingDetail(false)
     }
   }
 
@@ -206,8 +240,8 @@ export default function CandidateCvPage() {
                     onChange={(e) => setSelectedJobId(e.target.value)}
                   >
                     <option value="">-- Chọn Job --</option>
-                    {savedJobs.map(sj => (
-                      <option key={sj.job.id} value={sj.job.id}>{sj.job.title} - {sj.job.companyName}</option>
+                    {savedJobs.map(job => (
+                      <option key={job.id} value={job.id}>{job.title} - {job.companyName}</option>
                     ))}
                   </select>
                 </div>
@@ -234,10 +268,10 @@ export default function CandidateCvPage() {
                           className="stroke-blue-600 transition-all duration-1000 ease-out" 
                           strokeWidth="12" fill="none" 
                           strokeDasharray="351.86" 
-                          strokeDashoffset={351.86 - (351.86 * matchScore.matchScore) / 100} 
+                          strokeDashoffset={351.86 - (351.86 * (matchScore.overallScore * 100)) / 100} 
                         />
                       </svg>
-                      <span className="absolute text-3xl font-black text-blue-700">{matchScore.matchScore}%</span>
+                      <span className="absolute text-3xl font-black text-blue-700">{(matchScore.overallScore * 100).toFixed(0)}%</span>
                     </div>
                   </div>
 
@@ -245,7 +279,7 @@ export default function CandidateCvPage() {
                     <div>
                       <h4 className="font-bold text-emerald-700 mb-1 flex items-center gap-2">Kỹ năng trùng khớp</h4>
                       <div className="flex flex-wrap gap-1.5">
-                        {matchScore.matchingSkills.length > 0 ? matchScore.matchingSkills.map(skill => (
+                        {matchScore.matchedSkills?.length > 0 ? matchScore.matchedSkills.map(skill => (
                           <span key={skill} className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-md">{skill}</span>
                         )) : <span className="text-sm text-slate-500">Không có kỹ năng nào khớp.</span>}
                       </div>
@@ -253,17 +287,24 @@ export default function CandidateCvPage() {
                     <div>
                       <h4 className="font-bold text-rose-700 mb-1 flex items-center gap-2">Kỹ năng thiếu sót</h4>
                       <div className="flex flex-wrap gap-1.5">
-                        {matchScore.missingSkills.length > 0 ? matchScore.missingSkills.map(skill => (
+                        {matchScore.missingSkills?.length > 0 ? matchScore.missingSkills.map(skill => (
                           <span key={skill} className="px-2.5 py-1 bg-rose-100 text-rose-800 text-xs font-semibold rounded-md">{skill}</span>
                         )) : <span className="text-sm text-slate-500">Tuyệt vời, bạn đáp ứng mọi kỹ năng!</span>}
                       </div>
                     </div>
-                    {matchScore.recommendations.length > 0 && (
+                    {matchScore.skillDetails?.length > 0 && (
                       <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg">
-                        <h4 className="font-bold text-amber-800 mb-1">Gợi ý từ AI</h4>
+                        <h4 className="font-bold text-amber-800 mb-1">Chi tiết kỹ năng</h4>
                         <ul className="list-disc pl-5 space-y-1">
-                          {matchScore.recommendations.map((rec, idx) => (
-                            <li key={idx} className="text-sm text-amber-900 leading-snug">{rec}</li>
+                          {matchScore.skillDetails.map((detail, idx) => (
+                            <li key={idx} className="text-sm text-amber-900 leading-snug">
+                              <span className="font-semibold">{detail.skillName}</span>
+                              <span className="text-amber-700 mx-1">-</span>
+                              <span className="font-medium">{detail.matchStatus}</span>
+                              {detail.matchType && detail.matchType !== 'NONE' && (
+                                <span className="text-amber-700/80 ml-1">({detail.matchType})</span>
+                              )}
+                            </li>
                           ))}
                         </ul>
                       </div>
@@ -290,14 +331,34 @@ export default function CandidateCvPage() {
               <div className="divide-y divide-slate-100">
                 {cvs.map(cv => (
                   <div key={cv.id} className="p-5 hover:bg-slate-50/80 transition-colors flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-slate-800 text-lg">{cv.title}</h3>
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center gap-3">
+                        {editingCvId === cv.id ? (
+                          <Input 
+                            value={editTitle}
+                            onChange={e => setEditTitle(e.target.value)}
+                            onBlur={() => handleUpdateTitle(cv.id, cv.title)}
+                            onKeyDown={e => e.key === 'Enter' && handleUpdateTitle(cv.id, cv.title)}
+                            autoFocus
+                            className="h-8 max-w-[250px] font-bold"
+                          />
+                        ) : (
+                          <h3 
+                            className="font-bold text-slate-800 text-lg cursor-pointer hover:text-blue-600 transition-colors border-b border-dashed border-slate-300"
+                            onClick={() => { setEditingCvId(cv.id); setEditTitle(cv.title); }}
+                            title="Nhấn để đổi tên"
+                          >
+                            {cv.title}
+                          </h3>
+                        )}
+                        <Button variant="ghost" size="sm" className="h-6 text-slate-400 hover:text-blue-600 px-2 py-0" onClick={() => handleViewCv(cv.id)}>
+                          <FileSearch className="w-4 h-4 mr-1" /> Xem Nội Dung
+                        </Button>
                         {cv.isPrimary && (
                           <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase tracking-wider">Mặc định</span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-500">Tải lên: {new Date(cv.createdAt).toLocaleDateString('vi-VN')} lúc {new Date(cv.createdAt).toLocaleTimeString('vi-VN')}</p>
+                      <p className="text-xs text-slate-500 mt-1">Tải lên: {new Date(cv.createdAt).toLocaleDateString('vi-VN')} lúc {new Date(cv.createdAt).toLocaleTimeString('vi-VN')}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                       {!cv.isPrimary && (
@@ -314,8 +375,7 @@ export default function CandidateCvPage() {
                         variant="destructive" 
                         size="sm"
                         onClick={() => handleDelete(cv.id)}
-                        disabled={cv.isPrimary}
-                        className="bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-100 hover:text-rose-700 flex-1 sm:flex-none shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-100 hover:text-rose-700 flex-1 sm:flex-none shadow-none"
                       >
                         XÓA
                       </Button>
@@ -336,6 +396,43 @@ export default function CandidateCvPage() {
           100% { top: 100%; opacity: 0; }
         }
       `}} />
+
+      {/* CV Detail Modal */}
+      {viewCv && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setViewCv(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-[95vw] max-w-[1200px] h-[95vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div>
+                <h2 className="text-2xl font-black text-slate-800">{viewCv.title}</h2>
+                <p className="text-sm text-slate-500 font-medium mt-1">
+                  Trạng thái AI: {viewCv.extractionStatus === 'COMPLETED' ? <span className="text-emerald-600">Đã phân tích xong</span> : viewCv.extractionStatus === 'PROCESSING' ? <span className="text-blue-600">Đang phân tích</span> : <span className="text-amber-600">Chờ phân tích</span>}
+                </p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setViewCv(null)} className="hover:bg-slate-200 rounded-full h-10 w-10">
+                <X className="w-6 h-6 text-slate-500" />
+              </Button>
+            </div>
+            <div className="flex-1 bg-slate-100 p-4">
+                 {viewCv.fileUrl ? (
+                   <iframe src={viewCv.fileUrl} className="w-full h-full rounded-xl border border-slate-300 shadow-inner" title="CV PDF Viewer" />
+                 ) : (
+                   <div className="text-slate-500 bg-white p-8 rounded-xl border border-slate-200 text-center h-full flex items-center justify-center font-medium">
+                     Không có link file hiển thị
+                   </div>
+                 )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loadingDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-[2px]">
+          <div className="bg-white p-6 rounded-xl shadow-xl flex items-center gap-3">
+            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+            <span className="font-bold text-slate-700">Đang tải dữ liệu CV...</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

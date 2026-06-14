@@ -6,6 +6,7 @@ export interface CvSummaryResponse {
 }
 
 export interface CvDetailResponse extends CvSummaryResponse {
-  pdfUrl: string;
-  extractedSkills: string[];
+  fileUrl?: string;
+  parsedContent?: string;
+  extractionStatus?: string;
 }
