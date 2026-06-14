@@ -15,7 +15,6 @@ public interface SkillMapper {
 
     List<SkillResponse> toResponseList(List<SkillNode> skillNodes);
 
-    @Mapping(target = "synonyms", source = "synonyms")
     @Mapping(target = "relatedSkills", source = "relatedSkills")
     @Mapping(target = "children", source = "children")
     SkillWithRelationsResponse toRelationsResponse(SkillNode skillNode);

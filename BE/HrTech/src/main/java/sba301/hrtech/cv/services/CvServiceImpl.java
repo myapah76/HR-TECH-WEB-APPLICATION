@@ -126,6 +126,35 @@ public class CvServiceImpl implements CvService {
     }
 
     @Override
+    public Cv updateCvTitle(UUID userId, UUID cvId, String newTitle) {
+        Cv targetCv = cvRepository.findById(cvId)
+                .orElseThrow(() -> new AppException(
+                        HttpStatus.NOT_FOUND,
+                        "CV_NOT_FOUND",
+                        "Không tìm thấy CV với ID: " + cvId
+                ));
+
+        if (!targetCv.getUser().getId().equals(userId)) {
+            throw new AppException(
+                    HttpStatus.FORBIDDEN,
+                    "CV_ACCESS_DENIED",
+                    "CV này không thuộc quyền sở hữu của bạn!"
+            );
+        }
+
+        if (newTitle == null || newTitle.trim().isEmpty()) {
+            throw new AppException(
+                    HttpStatus.BAD_REQUEST,
+                    "INVALID_TITLE",
+                    "Tên CV không được để trống!"
+            );
+        }
+
+        targetCv.setTitle(newTitle.trim());
+        return cvRepository.save(targetCv);
+    }
+
+    @Override
     public void deleteCv(UUID userId, UUID cvId) {
         Cv cv = cvRepository.findById(cvId)
                 .orElseThrow(() -> new AppException(
@@ -142,14 +171,16 @@ public class CvServiceImpl implements CvService {
             );
         }
 
-        if (Boolean.TRUE.equals(cv.getIsPrimary())) {
-            throw new AppException(
-                    HttpStatus.BAD_REQUEST,
-                    "CV_IS_PRIMARY",
-                    "Không thể xóa CV mặc định. Vui lòng chọn CV khác làm mặc định trước!"
-            );
-        }
-
         cvRepository.delete(cv);
+
+        if (Boolean.TRUE.equals(cv.getIsPrimary())) {
+            cvRepository.findByUserId(userId).stream()
+                    .filter(c -> !c.getId().equals(cvId))
+                    .findFirst()
+                    .ifPresent(newPrimary -> {
+                        newPrimary.setIsPrimary(true);
+                        cvRepository.save(newPrimary);
+                    });
+        }
     }
 }

@@ -13,6 +13,6 @@ public class SkillRelationshipDto {
     @JsonProperty("new_skill")
     private String newSkill;
     
-    @JsonProperty("related_to")
-    private List<String> relatedTo;
+    @JsonProperty("relations")
+    private List<SkillRelationDetail> relations;
 }

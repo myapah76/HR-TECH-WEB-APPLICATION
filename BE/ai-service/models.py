@@ -37,9 +37,13 @@ class MapRelationshipsRequest(BaseModel):
     new_skills: List[str]
     db_skills: List[str]
 
+class SkillRelationDetail(BaseModel):
+    target: str
+    type: str
+
 class SkillRelationship(BaseModel):
     new_skill: str
-    related_to: List[str]
+    relations: List[SkillRelationDetail]
 
 class MapRelationshipsResponse(BaseModel):
     relationships: List[SkillRelationship]

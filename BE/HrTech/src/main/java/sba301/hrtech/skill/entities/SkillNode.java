@@ -40,10 +40,6 @@ public class SkillNode {
 
     // === Neo4j Relationships ===
 
-    @Relationship(type = "SYNONYM", direction = Relationship.Direction.OUTGOING)
-    @Builder.Default
-    private List<SkillNode> synonyms = new ArrayList<>();
-
     @Relationship(type = "RELATED_TO", direction = Relationship.Direction.OUTGOING)
     @Builder.Default
     private List<SkillNode> relatedSkills = new ArrayList<>();

@@ -15,7 +15,8 @@ import java.util.UUID;
 @Repository
 public interface CvRepository extends JpaRepository<Cv, UUID> {
 
-    List<Cv> findByUserId(UUID userId);
+    @Query("SELECT c FROM Cv c WHERE c.user.id = :userId ORDER BY c.isPrimary DESC, c.createdAt DESC")
+    List<Cv> findByUserId(@Param("userId") UUID userId);
     Optional<Cv> findByUserIdAndIsPrimaryTrue(UUID userId);
 
     @Query("SELECT c FROM Cv c WHERE c.extractionStatus IN :statuses AND c.updatedAt < :threshold")

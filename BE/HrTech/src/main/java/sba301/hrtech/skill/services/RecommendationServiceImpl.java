@@ -21,6 +21,8 @@ import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
 import sba301.hrtech.skill.dtos.response.*;
 import sba301.hrtech.skill.entities.SkillNode;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,8 +36,6 @@ public class RecommendationServiceImpl implements IRecommendationService {
     private final SkillNodeRepository skillNodeRepository;
     private final ISkillExtractionService skillExtractionService;
 
-    @Value("${recommendation.graph-weight}")
-    private double graphWeight;
 
     // === Skill level numeric values ===
     private static final Map<SkillLevel, Integer> LEVEL_VALUES = Map.of(
@@ -46,12 +46,12 @@ public class RecommendationServiceImpl implements IRecommendationService {
 
     // === Graph match multipliers ===
     private static final double EXACT_MATCH = 1.0;
-    private static final double SYNONYM_MATCH = 0.95;
     private static final double RELATED_MATCH = 0.7;
     private static final double PARENT_TO_CHILD_MATCH = 0.4;
     private static final double CHILD_TO_PARENT_MATCH = 0.8;
 
     @Override
+    @Transactional(readOnly = true)
     public RecommendationResultResponse analyzeCvAndRecommend(UUID cvId, int limit) {
         // 1. Extract skills from CV
         CvExtractionResponse extraction = skillExtractionService.extractAndSaveSkills(cvId).join();
@@ -67,6 +67,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<JobRecommendationResponse> recommendJobsForCv(UUID cvId, int limit) {
         Cv cv = cvRepository.findById(cvId)
                 .orElseThrow(
@@ -115,6 +116,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public SkillMatchScoreResponse calculateMatchScore(UUID cvId, UUID jobId) {
         Cv cv = cvRepository.findById(cvId)
                 .orElseThrow(
@@ -152,8 +154,6 @@ public class RecommendationServiceImpl implements IRecommendationService {
     // ========== PRIVATE HELPER METHODS & RECORDS ==========
 
     private record CompanyWeights(
-            double graphWeight,
-            double synonymWeight,
             double relatedWeight,
             double childToParentWeight,
             double parentToChildWeight) {
@@ -167,8 +167,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
     private CvSkillContext buildCvSkillContext(Cv cv) {
         List<CvSkill> cvSkills = cv.getCvSkills();
         if (cvSkills == null || cvSkills.isEmpty()) {
-            throw new AppException(HttpStatus.BAD_REQUEST,
-                    ErrorCode.CV_HAS_NO_SKILLS, "CV has no extracted skills");
+            return new CvSkillContext(Collections.emptyMap(), Collections.emptyMap());
         }
 
         Map<String, CvSkill> cvSkillMap = cvSkills.stream()
@@ -181,17 +180,11 @@ public class RecommendationServiceImpl implements IRecommendationService {
     }
 
     private CompanyWeights extractCompanyWeights(Job job) {
-        double jobGraphWeight = this.graphWeight;
-        double jobSynonymWeight = SYNONYM_MATCH;
         double jobRelatedWeight = RELATED_MATCH;
         double jobChildToParentWeight = CHILD_TO_PARENT_MATCH;
         double jobParentToChildWeight = PARENT_TO_CHILD_MATCH;
 
         if (job.getCompany() != null) {
-            if (job.getCompany().getGraphWeight() != null)
-                jobGraphWeight = job.getCompany().getGraphWeight();
-            if (job.getCompany().getSynonymWeight() != null)
-                jobSynonymWeight = job.getCompany().getSynonymWeight();
             if (job.getCompany().getRelatedWeight() != null)
                 jobRelatedWeight = job.getCompany().getRelatedWeight();
             if (job.getCompany().getChildToParentWeight() != null)
@@ -200,7 +193,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
                 jobParentToChildWeight = job.getCompany().getParentToChildWeight();
         }
 
-        return new CompanyWeights(jobGraphWeight, jobSynonymWeight, jobRelatedWeight,
+        return new CompanyWeights(jobRelatedWeight,
                 jobChildToParentWeight, jobParentToChildWeight);
     }
 
@@ -213,16 +206,6 @@ public class RecommendationServiceImpl implements IRecommendationService {
         Map<String, Set<String>> expanded = new HashMap<>();
 
         for (String skillId : originalSkillIds) {
-            // Synonyms
-            try {
-                List<SkillNode> synonyms = skillNodeRepository.findSynonyms(skillId);
-                for (SkillNode s : synonyms) {
-                    expanded.computeIfAbsent(s.getId(), k -> new HashSet<>()).add("SYNONYM");
-                }
-            } catch (Exception e) {
-                log.warn("Could not expand synonyms for skill {}: {}", skillId, e.getMessage());
-            }
-
             // Related
             try {
                 List<SkillNode> related = skillNodeRepository.findRelatedSkills(skillId);
@@ -298,7 +281,6 @@ public class RecommendationServiceImpl implements IRecommendationService {
 
     private double getWeightForType(String type, CompanyWeights weights) {
         return switch (type) {
-            case "SYNONYM" -> weights.synonymWeight();
             case "RELATED" -> weights.relatedWeight();
             case "CHILD_TO_PARENT" -> weights.childToParentWeight();
             case "PARENT_TO_CHILD" -> weights.parentToChildWeight();

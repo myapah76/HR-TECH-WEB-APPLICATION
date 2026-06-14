@@ -16,9 +16,6 @@ public record CompanyResponse(
         String status,
         Instant createdAt,
         Instant updatedAt,
-        Double graphWeight,
-        Double embeddingWeight,
-        Double synonymWeight,
         Double relatedWeight,
         Double childToParentWeight,
         Double parentToChildWeight

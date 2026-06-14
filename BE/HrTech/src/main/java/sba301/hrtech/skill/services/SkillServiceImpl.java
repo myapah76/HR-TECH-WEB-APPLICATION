@@ -28,7 +28,6 @@ import java.util.UUID;
 public class SkillServiceImpl implements ISkillService {
 
     private final SkillNodeRepository skillNodeRepository;
-    private final AiServiceClient aiServiceClient;
     private final SkillMapper skillMapper;
 
     @Override
@@ -130,7 +129,7 @@ public class SkillServiceImpl implements ISkillService {
 
     @Override
     public void approvePendingRelationship(String sourceId, String targetId, String type) {
-        if (!type.equals("SYNONYM") && !type.equals("RELATED_TO")) {
+        if (!type.equals("PARENT_OF") && !type.equals("RELATED_TO")) {
             throw new AppException(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_INPUT, "Invalid relationship type");
         }
 
@@ -140,7 +139,7 @@ public class SkillServiceImpl implements ISkillService {
 
     @Override
     public void rejectPendingRelationship(String sourceId, String targetId, String type) {
-        if (!type.equals("SYNONYM") && !type.equals("RELATED_TO")) {
+        if (!type.equals("PARENT_OF") && !type.equals("RELATED_TO")) {
             throw new AppException(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_INPUT, "Invalid relationship type");
         }
 
@@ -149,21 +148,6 @@ public class SkillServiceImpl implements ISkillService {
     }
 
     // === Relationships ===
-
-    @Override
-    public void addSynonym(String skillId, String synonymId) {
-        validateRelationship(skillId, synonymId);
-        SkillNode skill = findSkillOrThrow(skillId);
-        SkillNode synonym = findSkillOrThrow(synonymId);
-
-        if (skill.getSynonyms() == null) {
-            skill.setSynonyms(new ArrayList<>());
-        }
-        skill.getSynonyms().add(synonym);
-        skillNodeRepository.save(skill);
-        log.info("Added synonym: {} <-> {}", skill.getName(), synonym.getName());
-    }
-
     @Override
     public void addRelatedSkill(String skillId, String relatedSkillId) {
         validateRelationship(skillId, relatedSkillId);

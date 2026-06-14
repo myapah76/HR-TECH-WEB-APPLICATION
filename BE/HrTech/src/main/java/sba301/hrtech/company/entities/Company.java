@@ -41,22 +41,15 @@ public class Company extends SoftDeleteEntity {
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Job> jobs = new ArrayList<>();
 
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CompanyMember> members = new ArrayList<>();
+
     @Column(name = "tax_code", unique = true)
     private String taxCode;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private CompanyStatus status;
-
-
-    @Column(name = "graph_weight")
-    private Double graphWeight;
-
-    @Column(name = "embedding_weight")
-    private Double embeddingWeight;
-
-    @Column(name = "synonym_weight")
-    private Double synonymWeight;
 
     @Column(name = "related_weight")
     private Double relatedWeight;

@@ -71,6 +71,13 @@ public class CvController {
         return ResponseEntity.ok(cvMapper.toSummaryResponse(updatedCv));
     }
 
+    @PutMapping("/{cvId}/title")
+    public ResponseEntity<CvSummaryResponse> updateTitle(@PathVariable UUID cvId, @RequestBody java.util.Map<String, String> body) {
+        String newTitle = body.get("title");
+        Cv updatedCv = cvService.updateCvTitle(authUtils.getCurrentUserId(), cvId, newTitle);
+        return ResponseEntity.ok(cvMapper.toSummaryResponse(updatedCv));
+    }
+
     @DeleteMapping("/{cvId}")
     public ResponseEntity<String> deleteCv(@PathVariable UUID cvId) {
         cvService.deleteCv(authUtils.getCurrentUserId(), cvId);

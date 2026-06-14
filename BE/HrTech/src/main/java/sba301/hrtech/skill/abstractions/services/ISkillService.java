@@ -25,7 +25,6 @@ public interface ISkillService {
     List<PendingRelationshipResponse> getPendingRelationships();
     void approvePendingRelationship(String sourceId, String targetId, String type);
     void rejectPendingRelationship(String sourceId, String targetId, String type);
-    void addSynonym(String skillId, String synonymId);
     void addRelatedSkill(String skillId, String relatedSkillId);
     void addParentChild(String parentId, String childId);
     List<SkillResponse> getRelatedSkills(String skillId);

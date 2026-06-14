@@ -62,7 +62,11 @@ CRITICAL RULES FOR SKILL NAMES:
    - "C++" -> "c++" (Keep '+' or '#' for C++, C# as they are distinct IT entities, but remove spaces and dots)
    - "Amazon Web Services" -> "amazonwebservices"
    - "React Native" -> "reactnative"
-3. Determine proficiency level from context: BEGINNER, INTERMEDIATE, ADVANCED, EXPERT. If unclear, omit or assume INTERMEDIATE.
+3. Normalize well-known IT abbreviations to their full standard names before applying the formatting rule. Examples:
+   - "AWS" -> "amazonwebservices"
+   - "K8s" -> "kubernetes"
+   - "GCP" -> "googlecloudplatform"
+4. Determine proficiency level from context: BEGINNER, INTERMEDIATE, ADVANCED, EXPERT. If unclear, omit or assume INTERMEDIATE.
 
 Return ONLY a valid JSON array with no extra text. Example:
 [{{ "name": "java", "level": "ADVANCED" }}, {{ "name": "react", "level": "INTERMEDIATE" }}, {{ "name": "nodejs", "level": "EXPERT" }}]
@@ -120,8 +124,12 @@ CRITICAL RULES FOR SKILL NAMES:
    - "C++" -> "c++" (Keep '+' or '#' for C++, C# as they are distinct IT entities, but remove spaces and dots)
    - "Amazon Web Services" -> "amazonwebservices"
    - "React Native" -> "reactnative"
-3. Determine required proficiency level from context: BEGINNER, INTERMEDIATE, ADVANCED, EXPERT. If unspecified, assume INTERMEDIATE.
-4. If the text explicitly states a skill is an absolute "must-have", "required", or "mandatory", set is_mandatory to true. Otherwise, set is_mandatory to false.
+3. Normalize well-known IT abbreviations to their full standard names before applying the formatting rule. Examples:
+   - "AWS" -> "amazonwebservices"
+   - "K8s" -> "kubernetes"
+   - "GCP" -> "googlecloudplatform"
+4. Determine required proficiency level from context: BEGINNER, INTERMEDIATE, ADVANCED, EXPERT. If unspecified, assume INTERMEDIATE.
+5. If the text explicitly states a skill is an absolute "must-have", "required", or "mandatory", set is_mandatory to true. Otherwise, set is_mandatory to false.
 
 Return ONLY a valid JSON array with no extra text. Example:
 [{{ "name": "java", "level": "ADVANCED", "is_mandatory": true }}, {{ "name": "nodejs", "level": "INTERMEDIATE", "is_mandatory": false }}]
@@ -175,18 +183,31 @@ You are an expert IT Skill Taxonomy System.
 You are given a list of ALL existing IT skills in our database (`db_skills`) and a list of newly extracted skills (`new_skills`).
 Your task is to identify relationships between each new skill and the existing db_skills.
 
-Relationship Rule (RELATED_TO):
-- If a db_skill is a parent technology, framework, language, or strongly related foundation of a new_skill, or vice-versa, they are RELATED_TO.
+Relationship Rules:
+1. CHILD_TO_PARENT: If the `new_skill` is a child, subset, framework, or specific tool that belongs to a parent `db_skill` (e.g., spring is CHILD_TO_PARENT of java).
+2. PARENT_TO_CHILD: If the `new_skill` is a parent, category, or language that encompasses a specific child `db_skill` (e.g., java is PARENT_TO_CHILD of springboot).
+3. RELATED_TO: If the `new_skill` and `db_skill` are related siblings, alternatives, or often used together but don't have a strict parent-child hierarchy (e.g., react and nodejs).
 - Do NOT include synonyms. We assume skill names are already normalized.
 - Only output the exact skill names from the provided `db_skills` array. Do not invent new skills.
 
 Return ONLY a valid JSON array of objects. Example format:
 [
-  {{ "new_skill": "nextjs", "related_to": ["reactjs", "nodejs", "javascript"] }},
-  {{ "new_skill": "spring", "related_to": ["java", "springboot"] }}
+  {{
+    "new_skill": "nextjs",
+    "relations": [
+      {{ "target": "react", "type": "CHILD_TO_PARENT" }},
+      {{ "target": "nodejs", "type": "RELATED_TO" }}
+    ]
+  }},
+  {{
+    "new_skill": "java",
+    "relations": [
+      {{ "target": "springboot", "type": "PARENT_TO_CHILD" }}
+    ]
+  }}
 ]
 
-If no relations are found for a new skill, set its "related_to" to an empty array: [].
+If no relations are found for a new skill, set its "relations" to an empty array: [].
 Make sure the returned JSON is valid.
 
 New Skills:

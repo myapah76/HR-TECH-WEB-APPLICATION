@@ -16,6 +16,7 @@ import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import sba301.hrtech.application.entities.Application;
+import sba301.hrtech.company.entities.CompanyMember;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
 import sba301.hrtech.subscription.entities.Subscription;
@@ -100,4 +101,7 @@ public class User extends SoftDeleteEntity {
             }
     )
     private List<Payment> payments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CompanyMember> companyMembers = new ArrayList<>();
 }

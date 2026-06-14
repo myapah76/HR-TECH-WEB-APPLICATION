@@ -78,8 +78,10 @@ def api_map_relationships(req: MapRelationshipsRequest):
         
         parsed_rels = []
         for r in relationships_data:
-            if "new_skill" in r and "related_to" in r:
-                parsed_rels.append(SkillRelationship(new_skill=r["new_skill"], related_to=r["related_to"]))
+            if "new_skill" in r and "relations" in r:
+                from models import SkillRelationDetail
+                relations_details = [SkillRelationDetail(target=rel["target"], type=rel["type"]) for rel in r["relations"] if "target" in rel and "type" in rel]
+                parsed_rels.append(SkillRelationship(new_skill=r["new_skill"], relations=relations_details))
                 
         return MapRelationshipsResponse(relationships=parsed_rels)
     except Exception as e:

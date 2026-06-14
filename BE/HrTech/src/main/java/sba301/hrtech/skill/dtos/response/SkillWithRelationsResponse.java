@@ -19,8 +19,6 @@ public class SkillWithRelationsResponse {
     private String description;
     private Boolean isVerified;
     private Instant createdAt;
-
-    private List<SkillResponse> synonyms;
     private List<SkillResponse> relatedSkills;
     private List<SkillResponse> children;
 }

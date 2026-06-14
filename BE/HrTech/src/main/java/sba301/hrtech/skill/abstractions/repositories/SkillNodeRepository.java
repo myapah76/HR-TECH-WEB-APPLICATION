@@ -26,15 +26,8 @@ public interface SkillNodeRepository extends Neo4jRepository<SkillNode, String> 
     List<SkillNode> findAllByIds(@Param("ids") List<String> ids);
 
     @Query("""
-        MATCH (s:Skill {id: $skillId})-[r:SYNONYM]-(synonym:Skill)
-        WHERE r.status IS NULL OR r.status = 'APPROVED'
-        RETURN DISTINCT synonym
-    """)
-    List<SkillNode> findSynonyms(@Param("skillId") String skillId);
-
-    @Query("""
         MATCH (s:Skill {id: $skillId})-[r:RELATED_TO*1..2]-(related:Skill)
-        WHERE related.id <> $skillId AND NOT (s)-[:SYNONYM]-(related)
+        WHERE related.id <> $skillId
         AND all(rel IN r WHERE rel.status IS NULL OR rel.status = 'APPROVED')
         RETURN DISTINCT related
     """)
@@ -82,14 +75,6 @@ public interface SkillNodeRepository extends Neo4jRepository<SkillNode, String> 
         MATCH (a:Skill {id: $sourceId})
         WITH a
         MATCH (b:Skill {id: $targetId})
-        MERGE (a)-[r:SYNONYM {status: 'PENDING'}]-(b)
-    """)
-    void createPendingSynonym(@Param("sourceId") String sourceId, @Param("targetId") String targetId);
-
-    @Query("""
-        MATCH (a:Skill {id: $sourceId})
-        WITH a
-        MATCH (b:Skill {id: $targetId})
         MERGE (a)-[r:RELATED_TO {status: 'PENDING'}]-(b)
     """)
     void createPendingRelatedTo(@Param("sourceId") String sourceId, @Param("targetId") String targetId);
@@ -104,4 +89,12 @@ public interface SkillNodeRepository extends Neo4jRepository<SkillNode, String> 
         MERGE (a)-[r:RELATED_TO {status: 'PENDING'}]-(b)
     """)
     void createPendingRelatedToByName(@Param("sourceName") String sourceName, @Param("targetName") String targetName);
+
+    @Query("""
+        MATCH (parent:Skill {name: $parentName})
+        WITH parent
+        MATCH (child:Skill {name: $childName})
+        MERGE (parent)-[r:PARENT_OF {status: 'PENDING'}]->(child)
+    """)
+    void createPendingParentOfByName(@Param("parentName") String parentName, @Param("childName") String childName);
 }

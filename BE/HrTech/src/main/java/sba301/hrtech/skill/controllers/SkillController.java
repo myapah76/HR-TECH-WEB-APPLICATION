@@ -101,14 +101,6 @@ public class SkillController {
 
     // === Relationships ===
 
-    @PostMapping("/{id}/synonyms/{synonymId}")
-    public ResponseEntity<ApiResponse<Void>> addSynonym(
-            @PathVariable String id,
-            @PathVariable String synonymId) {
-        skillService.addSynonym(id, synonymId);
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
     @PostMapping("/{id}/related/{relatedId}")
     public ResponseEntity<ApiResponse<Void>> addRelatedSkill(
             @PathVariable String id,

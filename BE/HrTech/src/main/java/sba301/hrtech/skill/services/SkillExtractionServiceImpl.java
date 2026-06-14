@@ -27,6 +27,7 @@ import sba301.hrtech.skill.dtos.response.ParseExtractResponseDto;
 import sba301.hrtech.skill.dtos.response.SkillProcessResult;
 import sba301.hrtech.skill.dtos.response.MapRelationshipsResponseDto;
 import sba301.hrtech.skill.dtos.response.SkillRelationshipDto;
+import sba301.hrtech.skill.dtos.response.SkillRelationDetail;
 import sba301.hrtech.skill.dtos.response.SkillResponse;
 import sba301.hrtech.skill.entities.SkillNode;
 import sba301.hrtech.skill.mapper.SkillMapper;
@@ -277,9 +278,19 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
             if (response != null && response.getRelationships() != null) {
                 for (SkillRelationshipDto rel : response.getRelationships()) {
                     String newSkill = rel.getNewSkill();
-                    if (rel.getRelatedTo() != null) {
-                        for (String related : rel.getRelatedTo()) {
-                            skillNodeRepository.createPendingRelatedToByName(newSkill, related);
+                    if (rel.getRelations() != null) {
+                        for (SkillRelationDetail detail : rel.getRelations()) {
+                            String target = detail.getTarget();
+                            String type = detail.getType();
+                            if (target == null || type == null) continue;
+
+                            if ("CHILD_TO_PARENT".equals(type)) {
+                                skillNodeRepository.createPendingParentOfByName(target, newSkill);
+                            } else if ("PARENT_TO_CHILD".equals(type)) {
+                                skillNodeRepository.createPendingParentOfByName(newSkill, target);
+                            } else if ("RELATED_TO".equals(type)) {
+                                skillNodeRepository.createPendingRelatedToByName(newSkill, target);
+                            }
                         }
                     }
                 }
