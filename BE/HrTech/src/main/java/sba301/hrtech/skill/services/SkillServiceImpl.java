@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
 import sba301.hrtech.skill.abstractions.services.ISkillService;
@@ -33,8 +33,7 @@ public class SkillServiceImpl implements ISkillService {
     @Override
     public SkillResponse createSkill(CreateSkillRequest request) {
         if (skillNodeRepository.existsByNameIgnoreCase(request.getName())) {
-            throw new AppException(HttpStatus.CONFLICT, ErrorCode.SKILL_ALREADY_EXISTS,
-                    "Skill already exists: " + request.getName());
+            throw new AppException(ErrorCode.SKILL_ALREADY_EXISTS);
         }
 
         SkillNode skillNode = SkillNode.builder()
@@ -72,8 +71,7 @@ public class SkillServiceImpl implements ISkillService {
     @Override
     public void deleteSkill(String id) {
         if (!skillNodeRepository.existsById(id)) {
-            throw new AppException(HttpStatus.NOT_FOUND, ErrorCode.SKILL_NOT_FOUND,
-                    "Skill not found: " + id);
+            throw new AppException(ErrorCode.SKILL_NOT_FOUND);
         }
         skillNodeRepository.deleteById(id);
         log.info("Deleted skill: {}", id);
@@ -130,7 +128,7 @@ public class SkillServiceImpl implements ISkillService {
     @Override
     public void approvePendingRelationship(String sourceId, String targetId, String type) {
         if (!type.equals("PARENT_OF") && !type.equals("RELATED_TO")) {
-            throw new AppException(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_INPUT, "Invalid relationship type");
+            throw new AppException(ErrorCode.INVALID_INPUT);
         }
 
         skillNodeRepository.approvePendingRelationship(sourceId, targetId, type);
@@ -140,7 +138,7 @@ public class SkillServiceImpl implements ISkillService {
     @Override
     public void rejectPendingRelationship(String sourceId, String targetId, String type) {
         if (!type.equals("PARENT_OF") && !type.equals("RELATED_TO")) {
-            throw new AppException(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_INPUT, "Invalid relationship type");
+            throw new AppException(ErrorCode.INVALID_INPUT);
         }
 
         skillNodeRepository.rejectPendingRelationship(sourceId, targetId, type);
@@ -188,15 +186,12 @@ public class SkillServiceImpl implements ISkillService {
 
     private SkillNode findSkillOrThrow(String id) {
         return skillNodeRepository.findById(id)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND,
-                        ErrorCode.SKILL_NOT_FOUND, "Skill not found: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.SKILL_NOT_FOUND));
     }
 
     private void validateRelationship(String id1, String id2) {
         if (id1.equals(id2)) {
-            throw new AppException(HttpStatus.BAD_REQUEST,
-                    ErrorCode.SKILL_SELF_RELATIONSHIP,
-                    "Cannot create relationship between a skill and itself");
+            throw new AppException(ErrorCode.SKILL_SELF_RELATIONSHIP);
         }
     }
 }

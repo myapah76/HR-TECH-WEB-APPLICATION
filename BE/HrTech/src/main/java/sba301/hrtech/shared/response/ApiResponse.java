@@ -1,4 +1,4 @@
-package sba301.hrtech.shared.common;
+package sba301.hrtech.shared.response;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;

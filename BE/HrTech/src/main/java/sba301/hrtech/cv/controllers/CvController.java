@@ -15,10 +15,10 @@ import sba301.hrtech.cv.dtos.response.CvSummaryResponse;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.cv.mapper.CvMapper;
 import sba301.hrtech.cv.abstractions.services.CvService;
-import sba301.hrtech.shared.common.ApiResponse;
+import sba301.hrtech.shared.response.ApiResponse;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 
-import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,18 +41,10 @@ public class CvController {
     @GetMapping("/{cvId}")
     public ResponseEntity<ApiResponse<CvDetailResponse>> getCvDetail(@PathVariable UUID cvId) {
         Cv cv = cvService.getCvById(cvId)
-                .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
-                        "CV_NOT_FOUND",
-                        "CV không tồn tại hoặc đã bị xóa"
-                ));
+                .orElseThrow(() -> new AppException(ErrorCode.CV_NOT_FOUND));
 
         if (!cv.getUser().getId().equals(authUtils.getCurrentUserId())) {
-            throw new AppException(
-                    HttpStatus.FORBIDDEN,
-                    "CV_ACCESS_DENIED",
-                    "Bạn không có quyền xem CV này!"
-            );
+            throw new AppException(ErrorCode.CV_ACCESS_DENIED);
         }
 
         return ResponseEntity.ok(ApiResponse.success(cvMapper.toDetailResponse(cv), "CV retrieved successfully"));

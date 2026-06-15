@@ -16,17 +16,11 @@ import sba301.hrtech.identity.dtos.auth.request.*;
 import sba301.hrtech.identity.dtos.auth.response.ConfirmOtpResult;
 import sba301.hrtech.identity.dtos.auth.response.EmailActionResponse;
 import sba301.hrtech.identity.dtos.auth.response.ForgotPasswordResponse;
-import sba301.hrtech.identity.exceptions.RedisDataNotFoundException;
-import sba301.hrtech.identity.exceptions.auth.otp.OtpLockoutException;
-import sba301.hrtech.identity.exceptions.auth.WrongOtpCodeException;
-import sba301.hrtech.identity.exceptions.token.TokenExpiredException;
-import sba301.hrtech.identity.exceptions.user.UserExistException;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.identity.entities.RefreshToken;
 import sba301.hrtech.identity.entities.Role;
 import sba301.hrtech.identity.entities.User;
-import sba301.hrtech.identity.exceptions.auth.EmailNotFoundException;
-import sba301.hrtech.identity.exceptions.auth.WrongPasswordException;
 import sba301.hrtech.identity.dtos.auth.PendingUser;
 import sba301.hrtech.identity.dtos.user.CustomUserDetails;
 import sba301.hrtech.identity.dtos.auth.response.AuthResponse;
@@ -69,7 +63,7 @@ public class AuthServiceImpl implements IAuthService {
         String otp = generateOtp();
 
         if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new UserExistException(ErrorCode.Email_Already_Registered);
+            throw new AppException(ErrorCode.Email_Already_Registered);
         }
 
         // 2. create pending user object (staging in Redis)
@@ -101,7 +95,7 @@ public class AuthServiceImpl implements IAuthService {
     @Override
     public EmailActionResponse forgetPassword(ForgetPasswordRequest request) {
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new EmailNotFoundException(ErrorCode.Email_Not_Found));
+                .orElseThrow(() -> new AppException(ErrorCode.Email_Not_Found));
         if (user.getIsBlocked()) {
             throw new RuntimeException("User is blocked");
         }
@@ -146,11 +140,11 @@ public class AuthServiceImpl implements IAuthService {
         String email = (String) redisTemplate.opsForValue().get(key);
 
         if (email == null) {
-            throw new TokenExpiredException("Reset token expired");
+            throw new AppException(ErrorCode.TOKEN_EXPIRED);
         }
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new EmailNotFoundException(ErrorCode.Email_Not_Found));
+                .orElseThrow(() -> new AppException(ErrorCode.Email_Not_Found));
 
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
@@ -179,12 +173,12 @@ public class AuthServiceImpl implements IAuthService {
     public AuthResponse login(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new EmailNotFoundException(ErrorCode.Email_Not_Found));
+                .orElseThrow(() -> new AppException(ErrorCode.Email_Not_Found));
         if (user.getIsBlocked()) {
             throw new RuntimeException("User is blocked");
         }
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new WrongPasswordException(ErrorCode.Wrong_Password);
+            throw new AppException(ErrorCode.Wrong_Password);
         }
         UserDetails userDetails = new CustomUserDetails(user);
         String accessToken = jwtService.generateToken(userDetails);
@@ -250,7 +244,7 @@ public class AuthServiceImpl implements IAuthService {
         String json = (String) redisTemplate.opsForValue().get(key);
 
         if (json == null) {
-            throw new RedisDataNotFoundException(key);
+            throw new AppException(ErrorCode.REDIS_DATA_NOT_FOUND);
         }
 
         try {
@@ -265,10 +259,7 @@ public class AuthServiceImpl implements IAuthService {
         if (otpAttemptTracker.isLockedOut(email)) {
             long remainingTime = otpAttemptTracker.getLockoutRemainingTime(email);
 
-            throw new OtpLockoutException(
-                    "Too many failed OTP attempts. Please try again later.",
-                    remainingTime
-            );
+            throw new AppException(ErrorCode.Too_Many_Failed_Attempts);
         }
 
         boolean valid = otpService.validateOtp(type,email, otp);
@@ -277,17 +268,10 @@ public class AuthServiceImpl implements IAuthService {
             int remainingAttempts = otpAttemptTracker.recordFailedAttempt(email);
 
             if (remainingAttempts <= 0) {
-                long lockoutTime = otpAttemptTracker.getLockoutRemainingTime(email);
-
-                throw new OtpLockoutException(
-                        "Too many failed OTP attempts. Please try again later.",
-                        lockoutTime
-                );
+                throw new AppException(ErrorCode.Too_Many_Failed_Attempts);
             }
 
-            throw new WrongOtpCodeException(
-                    "Invalid OTP. " + remainingAttempts + " attempts remaining."
-            );
+            throw new AppException(ErrorCode.Wrong_Otp_Code);
         }
     }
 

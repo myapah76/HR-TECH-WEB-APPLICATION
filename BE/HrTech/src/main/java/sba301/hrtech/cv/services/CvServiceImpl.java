@@ -13,6 +13,7 @@ import sba301.hrtech.cv.abstractions.repositories.CvRepository;
 import sba301.hrtech.cv.abstractions.services.CvService;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.shared.enums.ExtractionStatus;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.shared.services.CloudinaryService;
 import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
@@ -34,22 +35,14 @@ public class CvServiceImpl implements CvService {
     @Override
     public Cv createCv(UUID userId, String title, MultipartFile file) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
-                        "USER_NOT_FOUND",
-                        "Người dùng không tồn tại với ID: " + userId
-                ));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
 
         String contentType = file.getContentType();
         if (contentType == null ||
                 (!contentType.equals("application/pdf") &&
                         !contentType.startsWith("image/"))) {
-            throw new AppException(
-                    HttpStatus.BAD_REQUEST,
-                    "INVALID_FILE_TYPE",
-                    "Chỉ chấp nhận file PDF hoặc ảnh!"
-            );
+            throw new AppException(ErrorCode.INVALID_FILE_TYPE);
         }
 
         String fileUrl = cloudinaryService.uploadFile(file, "hrtech/cvs");
@@ -100,18 +93,10 @@ public class CvServiceImpl implements CvService {
     @Override
     public Cv setPrimaryCv(UUID userId, UUID cvId) {
         Cv targetCv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
-                        "CV_NOT_FOUND",
-                        "Không tìm thấy CV với ID: " + cvId
-                ));
+                .orElseThrow(() -> new AppException(ErrorCode.CV_NOT_FOUND));
 
         if (!targetCv.getUser().getId().equals(userId)) {
-            throw new AppException(
-                    HttpStatus.FORBIDDEN,
-                    "CV_ACCESS_DENIED",
-                    "CV này không thuộc quyền sở hữu của bạn!"
-            );
+            throw new AppException(ErrorCode.CV_ACCESS_DENIED);
         }
 
         // Hạ primary CV cũ
@@ -128,26 +113,14 @@ public class CvServiceImpl implements CvService {
     @Override
     public Cv updateCvTitle(UUID userId, UUID cvId, String newTitle) {
         Cv targetCv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
-                        "CV_NOT_FOUND",
-                        "Không tìm thấy CV với ID: " + cvId
-                ));
+                .orElseThrow(() -> new AppException(ErrorCode.CV_NOT_FOUND));
 
         if (!targetCv.getUser().getId().equals(userId)) {
-            throw new AppException(
-                    HttpStatus.FORBIDDEN,
-                    "CV_ACCESS_DENIED",
-                    "CV này không thuộc quyền sở hữu của bạn!"
-            );
+            throw new AppException(ErrorCode.CV_ACCESS_DENIED);
         }
 
         if (newTitle == null || newTitle.trim().isEmpty()) {
-            throw new AppException(
-                    HttpStatus.BAD_REQUEST,
-                    "INVALID_TITLE",
-                    "Tên CV không được để trống!"
-            );
+            throw new AppException(ErrorCode.INVALID_TITLE);
         }
 
         targetCv.setTitle(newTitle.trim());
@@ -157,18 +130,10 @@ public class CvServiceImpl implements CvService {
     @Override
     public void deleteCv(UUID userId, UUID cvId) {
         Cv cv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
-                        "CV_NOT_FOUND",
-                        "Không tìm thấy CV để xóa"
-                ));
+                .orElseThrow(() -> new AppException(ErrorCode.CV_NOT_FOUND));
 
         if (!cv.getUser().getId().equals(userId)) {
-            throw new AppException(
-                    HttpStatus.FORBIDDEN,
-                    "CV_ACCESS_DENIED",
-                    "Bạn không có quyền xóa CV này!"
-            );
+            throw new AppException(ErrorCode.CV_ACCESS_DENIED);
         }
 
         cvRepository.delete(cv);

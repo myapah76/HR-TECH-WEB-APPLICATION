@@ -1,6 +1,7 @@
 package sba301.hrtech.identity.config;
 
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,6 +9,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +21,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.abstractions.services.IJwtService;
 import sba301.hrtech.identity.services.cache.RedisTokenServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletResponse;
+import sba301.hrtech.shared.response.ApiResponse;
+import sba301.hrtech.shared.error.ErrorCode;
 
 import java.util.List;
 
@@ -49,8 +55,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
@@ -62,20 +67,55 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
 
         http
+                // Cấu hình CORS để cho phép frontend (React) truy cập API
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
-
-                .formLogin(form -> form.disable())
-
-                .httpBasic(basic -> basic.disable())
-
+                // Vô hiệu hóa CSRF, form login và HTTP Basic auth vì chúng ta sẽ dùng JWT
+                .csrf(AbstractHttpConfigurer::disable)
+                // Vô hiệu hóa form login và HTTP Basic auth vì chúng ta sẽ dùng JWT
+                .formLogin(AbstractHttpConfigurer::disable)
+                // Vô hiệu hóa HTTP Basic auth vì chúng ta sẽ dùng JWT
+                .httpBasic(AbstractHttpConfigurer::disable)
+                // Cấu hình phân quyền: cho phép truy cập công khai với các endpoint trong PUBLIC_ENDPOINTS
+                // yêu cầu xác thực với các endpoint khác
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .anyRequest().authenticated()
                 )
+                // Xử lý lỗi 401 và 403 trả về JSON chuẩn ApiResponse
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
+                            ApiResponse<Void> apiResponse = ApiResponse.failed(
+                                    HttpServletResponse.SC_UNAUTHORIZED,
+                                    "Yêu cầu xác thực không hợp lệ hoặc thiếu token!",
+                                    ErrorCode.UNAUTHORIZED.name(),
+                                    request.getRequestURI()
+                            );
+
+                            response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+
+                            ApiResponse<Void> apiResponse = ApiResponse.failed(
+                                    HttpServletResponse.SC_FORBIDDEN,
+                                    "Bạn không có quyền truy cập tài nguyên này!",
+                                    ErrorCode.FORBIDDEN.name(),
+                                    request.getRequestURI()
+                            );
+
+                            response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+                        })
+                )
+                // Thêm JwtFilter vào trước UsernamePasswordAuthenticationFilter
+                // để xử lý JWT trước khi Spring Security thực hiện xác thực
                 .addFilterBefore(jwtFilter(),
                         UsernamePasswordAuthenticationFilter.class);
 

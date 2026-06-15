@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import sba301.hrtech.payment.abstractions.services.IPaymentService;
 import sba301.hrtech.payment.dtos.request.CreatePaymentRequest;
 import sba301.hrtech.payment.dtos.response.CreatePaymentResponse;
-import sba301.hrtech.shared.common.ApiResponse;
+import sba301.hrtech.shared.response.ApiResponse;
 import vn.payos.model.webhooks.Webhook;
 
 

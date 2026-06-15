@@ -1,18 +1,14 @@
 package sba301.hrtech.shared.exceptions;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.springframework.http.HttpStatus;
+import lombok.Setter;
+import sba301.hrtech.shared.error.ErrorCode;
 
 @Getter
-public class AppException extends RuntimeException {
-
-    private final HttpStatus status;
-    private final String code;
-
-    public AppException(HttpStatus status, String code, String message) {
-        super(message);
-        this.status = status;
-        this.code = code;
-    }
+@Setter
+@AllArgsConstructor
+public class AppException extends RuntimeException{
+    private final ErrorCode errorCode;
 }
 

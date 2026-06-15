@@ -3,7 +3,7 @@ package sba301.hrtech.skill.controllers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sba301.hrtech.shared.common.ApiResponse;
+import sba301.hrtech.shared.response.ApiResponse;
 import sba301.hrtech.skill.abstractions.services.IRecommendationService;
 import sba301.hrtech.skill.dtos.response.JobRecommendationResponse;
 import sba301.hrtech.skill.dtos.response.RecommendationResultResponse;

@@ -6,25 +6,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.*;
-import sba301.hrtech.shared.common.ApiResponse;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.response.ApiResponse;
+import sba301.hrtech.shared.error.ErrorCode;
 
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // Exception bắt bằng AppException
     @ExceptionHandler(AppException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAppException(
-            AppException ex,
-            HttpServletRequest request
-    ) {
-        return buildError(
-                ex.getStatus(),
-                ex.getMessage(),
-                ex.getCode(),
-                request.getRequestURI()
-        );
+    public ResponseEntity<ApiResponse<Void>> handlingAppException(AppException ex){
+        ErrorCode errorCode = ex.getErrorCode();
+        HttpStatus status = errorCode.getStatusCode();
+        return ResponseEntity
+                .status(status)
+                .body(ApiResponse.failed(
+                        status.value(),
+                        errorCode.getMessage())
+                );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -41,7 +41,7 @@ public class GlobalExceptionHandler {
         return buildError(
                 HttpStatus.BAD_REQUEST,
                 message,
-                ErrorCode.VALIDATION_ERROR,
+                ErrorCode.VALIDATION_ERROR.name(),
                 request.getRequestURI()
         );
     }
@@ -51,11 +51,38 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
-        ex.printStackTrace(); // Log lỗi ra console để debug
         return buildError(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Internal server error",
-                ErrorCode.INTERNAL_ERROR,
+                ErrorCode.INTERNAL_ERROR.name(),
+                request.getRequestURI()
+        );
+    }
+
+    // Bắt lỗi khi cookie bị thiếu (thường là token để xác thực)
+    @ExceptionHandler(MissingRequestCookieException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingCookie(
+            MissingRequestCookieException ex,
+            HttpServletRequest request
+    ) {
+        return buildError(
+                HttpStatus.UNAUTHORIZED, // 401
+                ex.getCookieName() + " is required",
+                ErrorCode.MISSING_COOKIE.name(),
+                request.getRequestURI()
+        );
+    }
+
+    // Bắt lỗi khi user đã authenticated nhưng không có quyền truy cập tài nguyên nào đó
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(
+            org.springframework.security.access.AccessDeniedException ex,
+            HttpServletRequest request
+    ) {
+        return buildError(
+                HttpStatus.FORBIDDEN,
+                "Bạn không có quyền truy cập tài nguyên này!",
+                ErrorCode.FORBIDDEN.name(),
                 request.getRequestURI()
         );
     }
@@ -73,19 +100,6 @@ public class GlobalExceptionHandler {
                 path
         );
         return new ResponseEntity<>(error, status);
-    }
-
-    @ExceptionHandler(MissingRequestCookieException.class)
-    public ResponseEntity<ApiResponse<Void>> handleMissingCookie(
-            MissingRequestCookieException ex,
-            HttpServletRequest request
-    ) {
-        return buildError(
-                HttpStatus.UNAUTHORIZED, // 401
-                ex.getCookieName() + " is required",
-                ErrorCode.MISSING_COOKIE,
-                request.getRequestURI()
-        );
     }
 }
 

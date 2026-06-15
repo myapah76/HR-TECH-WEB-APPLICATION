@@ -24,7 +24,7 @@ import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.identity.utils.AuthUtils;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
 import sba301.hrtech.job.entities.Job;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.services.AiServiceClient;
 
@@ -56,13 +56,13 @@ public class ChatServiceImpl implements IChatService {
 
         if (request.getJobId() != null) {
             job = jobRepository.findById(request.getJobId())
-                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, ErrorCode.JOB_NOT_FOUND_CODE, "Job not found"));
+                    .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE));
             title = "Chat về công việc: " + job.getTitle();
         }
 
         if (request.getCvId() != null) {
             cv = cvRepository.findById(request.getCvId())
-                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, ErrorCode.CV_NOT_FOUND, "CV not found"));
+                    .orElseThrow(() -> new AppException(ErrorCode.CV_NOT_FOUND));
             if (job == null) {
                 title = "Chat về CV của bạn";
             }
@@ -150,10 +150,10 @@ public class ChatServiceImpl implements IChatService {
     private ChatSession getSessionAndVerifyOwnership(UUID sessionId) {
         User currentUser = authUtils.getCurrentUser();
         ChatSession session = chatSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "SESSION_NOT_FOUND", "Chat session not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND));
 
         if (!session.getUser().getId().equals(currentUser.getId())) {
-            throw new AppException(HttpStatus.FORBIDDEN, "FORBIDDEN", "You don't have access to this chat session");
+            throw new AppException(ErrorCode.FORBIDDEN);
         }
         return session;
     }

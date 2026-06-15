@@ -15,7 +15,7 @@ import sba301.hrtech.job.dtos.response.JobResponse;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.job.entities.SavedJob;
 import sba301.hrtech.job.mapper.JobMapper;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 
 import java.util.Optional;
@@ -35,7 +35,7 @@ public class SavedJobServiceImpl implements ISavedJobService {
     public void saveJob(UUID jobId) {
         User currentUser = authUtils.getCurrentUser();
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, ErrorCode.JOB_NOT_FOUND_CODE, "Job not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE));
 
         if (!savedJobRepository.existsByUserAndJob(currentUser, job)) {
             SavedJob savedJob = SavedJob.builder()
@@ -51,7 +51,7 @@ public class SavedJobServiceImpl implements ISavedJobService {
     public void unsaveJob(UUID jobId) {
         User currentUser = authUtils.getCurrentUser();
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, ErrorCode.JOB_NOT_FOUND_CODE, "Job not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE));
 
         Optional<SavedJob> savedJob = savedJobRepository.findByUserAndJob(currentUser, job);
         savedJob.ifPresent(savedJobRepository::delete);

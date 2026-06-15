@@ -3,8 +3,8 @@ package sba301.hrtech.notification.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import sba301.hrtech.identity.exceptions.auth.otp.OtpRateLimitException;
-import sba301.hrtech.identity.exceptions.auth.otp.OtpSavedFailException;
+import sba301.hrtech.shared.exceptions.AppException;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.notification.abstractions.cache.IRedisIdempotencyService;
 import sba301.hrtech.notification.abstractions.cache.IRedisOtpService;
 import sba301.hrtech.notification.abstractions.cache.IRedisRateLimitService;
@@ -33,11 +33,11 @@ public class NotificationServiceImpl implements INotificationService {
         //RATE LIMIT CHECK
         if (!rateLimitService.isAllowed(request.getOtpType().toString(),request.getOtpRequest().email())) {
             log.warn("Rate limit hit for email {}", request.getOtpRequest().email());
-            throw new OtpRateLimitException("Rate limit exceeded for email: " + request.getOtpRequest().email()); // NOT throw
+            throw new AppException(ErrorCode.OTP_RATE_LIMIT_EXCEEDED);
         }
 
         if(!otpService.saveOtp(request.getOtpType().toString(),request.getOtpRequest().email(), request.getOtpRequest().otp())){
-            throw new OtpSavedFailException("Fail to save otp code with email: " + request.getOtpRequest().email());
+            throw new AppException(ErrorCode.OTP_SAVE_FAILED);
         }
 
         //SEND EMAIL

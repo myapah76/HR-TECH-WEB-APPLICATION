@@ -11,7 +11,7 @@ import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.job.entities.JobSkill;
 import sba301.hrtech.job.entities.enums.ExperienceLevel;
 import sba301.hrtech.job.entities.enums.JobType;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.enums.SkillLevel;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
@@ -61,16 +61,14 @@ public abstract class JobMapper {
             try {
                 job.setJobType(JobType.valueOf(request.jobType()));
             } catch (IllegalArgumentException e) {
-                throw new AppException(HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST,
-                        "Invalid job type: " + request.jobType());
+                throw new AppException(ErrorCode.BAD_REQUEST);
             }
         }
         if (request.experienceLevel() != null) {
             try {
                 job.setExperienceLevel(ExperienceLevel.valueOf(request.experienceLevel()));
             } catch (IllegalArgumentException e) {
-                throw new AppException(HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST,
-                        "Invalid experience level: " + request.experienceLevel());
+                throw new AppException(ErrorCode.BAD_REQUEST);
             }
         }
     }
@@ -83,18 +81,14 @@ public abstract class JobMapper {
         for (JobSkillRequest sr : skillRequests) {
             // Validate skill exists in Neo4j
             if (!skillNodeRepository.existsById(sr.skillNeo4jId())) {
-                throw new AppException(HttpStatus.BAD_REQUEST,
-                        ErrorCode.JOB_SKILL_NOT_FOUND,
-                        "Skill not found in skill graph: " + sr.skillNeo4jId());
+                throw new AppException(ErrorCode.JOB_SKILL_NOT_FOUND);
             }
             SkillLevel level = null;
             if (sr.requiredLevel() != null) {
                 try {
                     level = SkillLevel.valueOf(sr.requiredLevel());
                 } catch (IllegalArgumentException e) {
-                    throw new AppException(HttpStatus.BAD_REQUEST,
-                            ErrorCode.BAD_REQUEST,
-                            "Invalid skill level: " + sr.requiredLevel());
+                    throw new AppException(ErrorCode.BAD_REQUEST);
                 }
             }
             JobSkill js = JobSkill.builder()

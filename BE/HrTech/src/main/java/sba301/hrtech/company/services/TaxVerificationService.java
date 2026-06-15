@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 
 @Slf4j
@@ -22,11 +23,7 @@ public class TaxVerificationService {
         try {
             String response = restTemplate.getForObject(url, String.class);
             if (response == null) {
-                throw new AppException(
-                        HttpStatus.BAD_REQUEST,
-                        "TAX_VERIFICATION_FAILED",
-                        "No response from tax verification API."
-                );
+                throw new AppException(ErrorCode.TAX_VERIFICATION_FAILED);
             }
 
             JsonNode root = objectMapper.readTree(response);
@@ -35,20 +32,11 @@ public class TaxVerificationService {
                 JsonNode data = root.path("data");
                 String name = data.path("name").asText();
                 if (name == null || name.isBlank()) {
-                     throw new AppException(
-                            HttpStatus.BAD_REQUEST,
-                            "TAX_VERIFICATION_FAILED",
-                            "Tax code is valid but no company name was returned."
-                    );
+                     throw new AppException(ErrorCode.TAX_VERIFICATION_FAILED);
                 }
                 return name;
             } else {
-                String desc = root.path("desc").asText("Invalid tax code.");
-                throw new AppException(
-                        HttpStatus.BAD_REQUEST,
-                        "INVALID_TAX_CODE",
-                        "Tax verification failed: " + desc
-                );
+                throw new AppException(ErrorCode.INVALID_TAX_CODE);
             }
         } catch (AppException e) {
             throw e;
@@ -60,11 +48,7 @@ public class TaxVerificationService {
             log.warn("VietQR API connection timed out or is unavailable. Gracefully falling back to bypass tax code verification.");
             return "FALLBACK_COMPANY_NAME";
         } catch (Exception e) {
-            throw new AppException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "TAX_VERIFICATION_ERROR",
-                    "Error occurred during tax code verification: " + e.getMessage()
-            );
+            throw new AppException(ErrorCode.TAX_VERIFICATION_ERROR);
         }
     }
 }

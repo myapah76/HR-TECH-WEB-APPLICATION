@@ -10,7 +10,7 @@ import sba301.hrtech.application.dtos.response.ApplicationDetailResponse;
 import sba301.hrtech.application.dtos.response.ApplicationSummaryResponse;
 import sba301.hrtech.application.entities.enums.ApplicationStatus;
 import sba301.hrtech.identity.utils.AuthUtils;
-import sba301.hrtech.shared.common.ApiResponse;
+import sba301.hrtech.shared.response.ApiResponse;
 
 import jakarta.validation.Valid;
 import java.net.URI;

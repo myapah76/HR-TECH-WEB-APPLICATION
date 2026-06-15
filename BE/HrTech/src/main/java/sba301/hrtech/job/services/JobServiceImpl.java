@@ -23,7 +23,7 @@ import sba301.hrtech.job.entities.enums.JobStatus;
 import sba301.hrtech.job.entities.enums.JobType;
 import sba301.hrtech.job.mapper.JobMapper;
 import sba301.hrtech.job.validators.JobValidator;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.enums.ExtractionStatus;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
@@ -88,9 +88,7 @@ public class JobServiceImpl implements IJobService {
         jobValidator.validateCanEditJob(currentUser, job);
 
         if (job.getStatus() != JobStatus.DRAFT) {
-            throw new AppException(HttpStatus.BAD_REQUEST,
-                    ErrorCode.JOB_INVALID_STATUS,
-                    "Only DRAFT jobs can be edited. Current status: " + job.getStatus());
+            throw new AppException(ErrorCode.JOB_INVALID_STATUS);
         }
 
         jobMapper.applyJobFields(job, request);
@@ -124,9 +122,7 @@ public class JobServiceImpl implements IJobService {
         jobValidator.validateCanEditJob(currentUser, job);
 
         if (job.getStatus() != JobStatus.DRAFT) {
-            throw new AppException(HttpStatus.BAD_REQUEST,
-                    ErrorCode.JOB_INVALID_STATUS,
-                    "Only DRAFT jobs can be submitted. Current status: " + job.getStatus());
+            throw new AppException(ErrorCode.JOB_INVALID_STATUS);
         }
 
         job.setStatus(JobStatus.PENDING_APPROVAL);
@@ -145,9 +141,7 @@ public class JobServiceImpl implements IJobService {
         jobValidator.validateCanApproveJob(currentUser, job.getCompany().getId());
 
         if (job.getStatus() != JobStatus.PENDING_APPROVAL) {
-            throw new AppException(HttpStatus.BAD_REQUEST,
-                    ErrorCode.JOB_INVALID_STATUS,
-                    "Only PENDING_APPROVAL jobs can be approved. Current status: " + job.getStatus());
+            throw new AppException(ErrorCode.JOB_INVALID_STATUS);
         }
 
         job.setStatus(JobStatus.APPROVED);
@@ -166,9 +160,7 @@ public class JobServiceImpl implements IJobService {
         jobValidator.validateCanApproveJob(currentUser, job.getCompany().getId());
 
         if (job.getStatus() != JobStatus.PENDING_APPROVAL) {
-            throw new AppException(HttpStatus.BAD_REQUEST,
-                    ErrorCode.JOB_INVALID_STATUS,
-                    "Only PENDING_APPROVAL jobs can be rejected. Current status: " + job.getStatus());
+            throw new AppException(ErrorCode.JOB_INVALID_STATUS);
         }
 
         job.setStatus(JobStatus.REJECTED);
@@ -187,9 +179,7 @@ public class JobServiceImpl implements IJobService {
         jobValidator.validateCanCloseJob(currentUser, job.getCompany().getId());
 
         if (job.getStatus() != JobStatus.APPROVED) {
-            throw new AppException(HttpStatus.BAD_REQUEST,
-                    ErrorCode.JOB_INVALID_STATUS,
-                    "Only APPROVED jobs can be closed. Current status: " + job.getStatus());
+            throw new AppException(ErrorCode.JOB_INVALID_STATUS);
         }
 
         job.setStatus(JobStatus.CLOSED);
@@ -202,8 +192,7 @@ public class JobServiceImpl implements IJobService {
     @Transactional
     public void adminDeleteJob(UUID jobId) {
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND,
-                        ErrorCode.JOB_NOT_FOUND_CODE, "Job not found: " + jobId));
+                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE));
         job.setDeleted(true);
         jobRepository.save(job);
         log.warn("Admin soft-deleted job {}", jobId);

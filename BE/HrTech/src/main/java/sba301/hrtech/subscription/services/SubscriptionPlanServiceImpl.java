@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.subscription.abstractions.repositories.FeatureRepository;
 import sba301.hrtech.subscription.abstractions.repositories.PlanFeatureRepository;
@@ -57,10 +57,7 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
     @Override
     public SubscriptionPlan getById(UUID id) {
         return subscriptionPlanRepository.findById(id)
-                .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
-                        ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND,
-                        "Subscription plan not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND));
     }
 
     // =========================
@@ -84,10 +81,7 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
     public SubscriptionPlanResponse update(UUID id, SubscriptionPlanRequest request) {
 
         SubscriptionPlan plan = subscriptionPlanRepository.findById(id)
-                .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
-                        ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND,
-                        "Subscription plan not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND));
 
         subscriptionPlanMapper.updateEntity(request, plan);
 
@@ -102,20 +96,14 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
     public void delete(UUID id) {
 
         SubscriptionPlan plan = subscriptionPlanRepository.findById(id)
-                .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
-                        ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND,
-                        "Subscription plan not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND));
         subscriptionPlanRepository.delete(plan);
     }
 
     private void savePlanFeatures(SubscriptionPlan plan, List<PlanFeatureRequest> featureRequests) {
         for (PlanFeatureRequest featureRequest : featureRequests) {
             Feature feature = featureRepository.findById(featureRequest.id())
-                    .orElseThrow(() -> new AppException(
-                            HttpStatus.NOT_FOUND,
-                            ErrorCode.FEATURE_NOT_FOUND,
-                            "Feature not found"));
+                    .orElseThrow(() -> new AppException(ErrorCode.FEATURE_NOT_FOUND));
 
             PlanFeature planFeature = PlanFeature.builder()
                     .plan(plan)
