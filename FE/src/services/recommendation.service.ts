@@ -38,13 +38,13 @@ export const calculateMatchScore = async (
 }
 
 export const startJobMatching = async (cvId: string): Promise<{ taskId: string }> => {
-  const response = await api.post<ApiResponse<any>>(`/recommendations/start-job-matching/${cvId}`)
-  return response.data.data || response.data // Depending on how BE wraps it
+  const response = await api.post<ApiResponse<{ taskId: string }>>(`/recommendations/start-job-matching/${cvId}`)
+  return response.data.data
 }
 
 export const getJobMatchingStatus = async (taskId: string): Promise<JobMatchingTaskResponse> => {
-  const response = await api.get<JobMatchingTaskResponse>(
+  const response = await api.get<ApiResponse<JobMatchingTaskResponse>>(
     `/recommendations/job-matching-status/${taskId}`
   )
-  return response.data // Note: BE returns JobMatchingTaskResponse directly, not wrapped in ApiResponse
+  return response.data.data
 }

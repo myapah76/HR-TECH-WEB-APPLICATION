@@ -3,14 +3,13 @@ import { CvSummaryResponse, CvDetailResponse } from '../types/cv'
 import { ApiResponse } from '../types/api'
 
 export const getAllCvs = async (): Promise<CvSummaryResponse[]> => {
-  const response = await api.get('/cvs')
-  // CvController returns directly the list, not wrapped in ApiResponse
-  return response.data
+  const response = await api.get<ApiResponse<CvSummaryResponse[]>>('/cvs')
+  return response.data.data
 }
 
 export const getCvDetail = async (cvId: string): Promise<CvDetailResponse> => {
-  const response = await api.get(`/cvs/${cvId}`)
-  return response.data
+  const response = await api.get<ApiResponse<CvDetailResponse>>(`/cvs/${cvId}`)
+  return response.data.data
 }
 
 export const uploadCv = async (file: File, title: string): Promise<CvSummaryResponse> => {
@@ -18,24 +17,24 @@ export const uploadCv = async (file: File, title: string): Promise<CvSummaryResp
   formData.append('file', file)
   formData.append('title', title)
 
-  const response = await api.post('/cvs', formData, {
+  const response = await api.post<ApiResponse<CvSummaryResponse>>('/cvs', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   })
-  return response.data
+  return response.data.data
 }
 
 export const setPrimaryCv = async (cvId: string): Promise<CvSummaryResponse> => {
-  const response = await api.put(`/cvs/${cvId}/primary`)
-  return response.data
+  const response = await api.put<ApiResponse<CvSummaryResponse>>(`/cvs/${cvId}/primary`)
+  return response.data.data
 }
 
 export const deleteCv = async (cvId: string): Promise<void> => {
-  await api.delete(`/cvs/${cvId}`)
+  await api.delete<ApiResponse<void>>(`/cvs/${cvId}`)
 }
 
 export const updateCvTitle = async (id: string, title: string): Promise<CvSummaryResponse> => {
-  const response = await api.put(`/cvs/${id}/title`, { title })
-  return response.data
+  const response = await api.put<ApiResponse<CvSummaryResponse>>(`/cvs/${id}/title`, { title })
+  return response.data.data
 }
