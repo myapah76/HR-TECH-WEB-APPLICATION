@@ -1,6 +1,7 @@
 package sba301.hrtech.subscription.mapper;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
 import sba301.hrtech.identity.mapper.RoleMapper;
 import sba301.hrtech.subscription.dtos.request.SubscriptionPlanRequest;
 import sba301.hrtech.subscription.dtos.response.SubscriptionPlanResponse;
@@ -11,4 +12,9 @@ public interface SubscriptionPlanMapper {
     SubscriptionPlan toEntity(SubscriptionPlanRequest request);
 
     SubscriptionPlanResponse toResponse(SubscriptionPlan subscriptionPlan);
+
+    void updateEntity(
+            SubscriptionPlanRequest request,
+            @MappingTarget SubscriptionPlan subscriptionPlan
+    );
 }
