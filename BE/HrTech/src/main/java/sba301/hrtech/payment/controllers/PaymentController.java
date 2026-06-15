@@ -44,11 +44,7 @@ public class PaymentController {
             @RequestBody Webhook webhook
             ) {
 
-        log.info(
-                "PayOS webhook received. orderCode={}, success={}",
-                webhook.getData().getOrderCode(),
-                webhook.getSuccess()
-        );
+        log.info("Webhook payload: {}", webhook);
 
         paymentService.handleWebhook(webhook);
 

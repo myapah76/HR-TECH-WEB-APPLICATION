@@ -39,7 +39,7 @@ services:
       - xpack.security.enabled=false
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
-      - "9200:9200"
+      - "${ELASTICSEARCH_PORT}:9200"
     volumes:
       - elastic_data:/usr/share/elasticsearch/data
     networks:
@@ -59,7 +59,7 @@ services:
       - hrt-network
 
   ai_service:
-    build: 
+    build:
       context: ./BE/ai-service
       dockerfile: Dockerfile
     container_name: hrt_ai_service
@@ -89,17 +89,22 @@ services:
       - ollama
     networks:
       - hrt-network
-    entrypoint: ["sh", "-c", "sleep 10 && OLLAMA_HOST=ollama:11434 ollama pull qwen3-embedding:0.6b"]
-
+    entrypoint:
+      [
+        "sh",
+        "-c",
+        "sleep 10 && OLLAMA_HOST=ollama:11434 ollama pull qwen3-embedding:0.6b",
+      ]
   backend:
-    image: myapah/hr-tech-web-application-backend:latest
-    build:
-      context: ./BE/HrTech
-      dockerfile: Dockerfile
+    image: maven:3.9.9-eclipse-temurin-21
     container_name: hrt_backend
-    restart: no
+    working_dir: /app
+    volumes:
+      - ./BE/HrTech:/app
+      - maven-cache:/root/.m2
     env_file:
       - .env.docker
+    command: mvn spring-boot:run
     ports:
       - "8080:8080"
     depends_on:
@@ -111,11 +116,27 @@ services:
         condition: service_started
     networks:
       - hrt-network
+  ngrok:
+    image: ngrok/ngrok:latest
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    volumes:
+      - ./ngrok.yml:/etc/ngrok.yml
+    command:
+      - start
+      - --config
+      - /etc/ngrok.yml
+      - --all
+    depends_on:
+      - backend
+    networks:
+      - hrt-network
 volumes:
   postgres_data:
   redis_data:
   neo4j_data:
   ollama_data:
   elastic_data:
+  maven-cache:
 networks:
   hrt-network:

@@ -75,6 +75,7 @@ public class GlobalExceptionHandler {
         );
     }
 
+    // Bắt lỗi khi user đã authenticated nhưng không có quyền truy cập tài nguyên nào đó
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAccessDenied(
             org.springframework.security.access.AccessDeniedException ex,
