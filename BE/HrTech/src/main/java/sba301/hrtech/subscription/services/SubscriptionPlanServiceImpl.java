@@ -59,9 +59,7 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
     // =========================
     @Override
     public SubscriptionPlanResponse create(SubscriptionPlanRequest request) {
-
         SubscriptionPlan plan = subscriptionPlanMapper.toEntity(request);
-
         return subscriptionPlanMapper.toResponse(subscriptionPlanRepository.save(plan));
     }
 
@@ -77,14 +75,7 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
                         ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND,
                         "Subscription plan not found"));
 
-        plan.setName(request.name());
-        plan.setDescription(request.description());
-        plan.setPrice(request.price());
-        plan.setDurationDays(request.durationDays());
-        plan.setOwnerType(request.ownerType());
-        plan.setFeatures(request.features());
-        plan.setIsActive(request.isActive());
-
+        subscriptionPlanMapper.updateEntity(request, plan);
         return subscriptionPlanMapper.toResponse(subscriptionPlanRepository.save(plan));
     }
 
@@ -102,7 +93,6 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
 
         plan.setDeleted(true);
         plan.setIsActive(false);
-
         subscriptionPlanRepository.save(plan);
     }
 }

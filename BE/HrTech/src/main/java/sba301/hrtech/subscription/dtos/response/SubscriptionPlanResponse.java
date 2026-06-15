@@ -12,6 +12,10 @@ public record SubscriptionPlanResponse(
         Long price,
         Integer durationDays,
         OwnerType ownerType,
-        List<String> features,
+        Integer maxJobPosts,
+        Integer maxRecruiters,
+        Integer maxAiCvRatings,
+        Boolean candidatePoolAccess,
+        Boolean analyticsAccess,
         Boolean isActive
 ) {}

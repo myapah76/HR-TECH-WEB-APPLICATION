@@ -1,5 +1,6 @@
 package sba301.hrtech.subscription.dtos.request;
 
+import jakarta.persistence.Column;
 import sba301.hrtech.subscription.entities.enums.OwnerType;
 
 import java.util.List;
@@ -10,6 +11,10 @@ public record SubscriptionPlanRequest(
         Long price,
         Integer durationDays,
         OwnerType ownerType,
-        List<String> features,
+        Integer maxJobPosts,
+        Integer maxRecruiters,
+        Integer maxAiCvRatings,
+        Boolean candidatePoolAccess,
+        Boolean analyticsAccess,
         Boolean isActive
 ) {}

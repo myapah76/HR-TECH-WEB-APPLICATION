@@ -35,9 +35,22 @@ public class SubscriptionPlan extends SoftDeleteEntity {
     @Column(name = "plan_type")
     private OwnerType ownerType;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
-    private List<String> features;
+    // Quotas
+    @Column(name = "max_job_posts")
+    private Integer maxJobPosts;
+
+    @Column(name = "max_recruiters")
+    private Integer maxRecruiters;
+
+    @Column(name = "max_ai_cv_ratings")
+    private Integer maxAiCvRatings;
+
+    // Feature toggles
+    @Column(name = "candidate_pool_access")
+    private Boolean candidatePoolAccess;
+
+    @Column(name = "analytics_access")
+    private Boolean analyticsAccess;
 
     @Column(name = "is_active")
     private Boolean isActive;
