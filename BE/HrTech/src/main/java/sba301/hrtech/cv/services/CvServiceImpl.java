@@ -17,8 +17,13 @@ import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.shared.services.CloudinaryService;
 import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
 
+import sba301.hrtech.identity.utils.AuthUtils;
+import sba301.hrtech.cv.mapper.CvMapper;
+import sba301.hrtech.cv.dtos.response.CvDetailResponse;
+import sba301.hrtech.cv.dtos.response.CvSummaryResponse;
+import java.util.stream.Collectors;
+
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -30,9 +35,12 @@ public class CvServiceImpl implements CvService {
     private final UserRepository userRepository;
     private final CloudinaryService cloudinaryService;
     private final ISkillExtractionService skillExtractionService;
+    private final AuthUtils authUtils;
+    private final CvMapper cvMapper;
 
     @Override
-    public Cv createCv(UUID userId, String title, MultipartFile file) {
+    public CvSummaryResponse createCv(String title, MultipartFile file) {
+        UUID userId = authUtils.getCurrentUserId();
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(
                         HttpStatus.NOT_FOUND,
@@ -82,23 +90,43 @@ public class CvServiceImpl implements CvService {
             skillExtractionService.extractAndSaveSkills(savedCv.getId());
         }
 
-        return savedCv;
+        return cvMapper.toSummaryResponse(savedCv);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Cv> getCvsByUserId(UUID userId) {
-        return cvRepository.findByUserId(userId);
+    public List<CvSummaryResponse> getCvsByCurrentUser() {
+        UUID userId = authUtils.getCurrentUserId();
+        return cvRepository.findByUserId(userId).stream()
+                .map(cvMapper::toSummaryResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Cv> getCvById(UUID cvId) {
-        return cvRepository.findById(cvId);
+    public CvDetailResponse getCvById(UUID cvId) {
+        UUID userId = authUtils.getCurrentUserId();
+        Cv cv = cvRepository.findById(cvId)
+                .orElseThrow(() -> new AppException(
+                        HttpStatus.NOT_FOUND,
+                        "CV_NOT_FOUND",
+                        "CV không tồn tại hoặc đã bị xóa"
+                ));
+
+        if (!cv.getUser().getId().equals(userId)) {
+            throw new AppException(
+                    HttpStatus.FORBIDDEN,
+                    "CV_ACCESS_DENIED",
+                    "Bạn không có quyền xem CV này!"
+            );
+        }
+
+        return cvMapper.toDetailResponse(cv);
     }
 
     @Override
-    public Cv setPrimaryCv(UUID userId, UUID cvId) {
+    public CvSummaryResponse setPrimaryCv(UUID cvId) {
+        UUID userId = authUtils.getCurrentUserId();
         Cv targetCv = cvRepository.findById(cvId)
                 .orElseThrow(() -> new AppException(
                         HttpStatus.NOT_FOUND,
@@ -122,11 +150,12 @@ public class CvServiceImpl implements CvService {
                 });
 
         targetCv.setIsPrimary(true);
-        return cvRepository.save(targetCv);
+        return cvMapper.toSummaryResponse(cvRepository.save(targetCv));
     }
 
     @Override
-    public Cv updateCvTitle(UUID userId, UUID cvId, String newTitle) {
+    public CvSummaryResponse updateCvTitle(UUID cvId, String newTitle) {
+        UUID userId = authUtils.getCurrentUserId();
         Cv targetCv = cvRepository.findById(cvId)
                 .orElseThrow(() -> new AppException(
                         HttpStatus.NOT_FOUND,
@@ -151,11 +180,12 @@ public class CvServiceImpl implements CvService {
         }
 
         targetCv.setTitle(newTitle.trim());
-        return cvRepository.save(targetCv);
+        return cvMapper.toSummaryResponse(cvRepository.save(targetCv));
     }
 
     @Override
-    public void deleteCv(UUID userId, UUID cvId) {
+    public void deleteCv(UUID cvId) {
+        UUID userId = authUtils.getCurrentUserId();
         Cv cv = cvRepository.findById(cvId)
                 .orElseThrow(() -> new AppException(
                         HttpStatus.NOT_FOUND,
