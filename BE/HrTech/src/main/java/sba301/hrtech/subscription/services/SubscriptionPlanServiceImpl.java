@@ -81,7 +81,7 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
         plan.setDescription(request.description());
         plan.setPrice(request.price());
         plan.setDurationDays(request.durationDays());
-        plan.setOwnerType(request.ownerType());
+        plan.setPlanType(request.planType());
         plan.setFeatures(request.features());
         plan.setIsActive(request.isActive());
 

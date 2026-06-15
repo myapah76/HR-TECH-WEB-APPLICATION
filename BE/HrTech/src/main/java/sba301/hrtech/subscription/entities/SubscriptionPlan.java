@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import sba301.hrtech.subscription.entities.enums.OwnerType;
+import sba301.hrtech.subscription.entities.enums.PlanType;
 
 import java.util.List;
 
@@ -32,8 +32,8 @@ public class SubscriptionPlan extends SoftDeleteEntity {
     private Integer durationDays;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "plan_type")
-    private OwnerType ownerType;
+    @Column(nullable = false)
+    private PlanType planType;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")

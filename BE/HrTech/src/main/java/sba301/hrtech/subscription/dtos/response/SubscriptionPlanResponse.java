@@ -1,6 +1,6 @@
 package sba301.hrtech.subscription.dtos.response;
 
-import sba301.hrtech.subscription.entities.enums.OwnerType;
+import sba301.hrtech.subscription.entities.enums.PlanType;
 
 import java.util.List;
 import java.util.UUID;
@@ -11,7 +11,7 @@ public record SubscriptionPlanResponse(
         String description,
         Long price,
         Integer durationDays,
-        OwnerType ownerType,
+        PlanType planType,
         List<String> features,
         Boolean isActive
 ) {}

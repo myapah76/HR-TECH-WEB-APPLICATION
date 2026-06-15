@@ -31,7 +31,7 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
             subscription.setUser(user);
             subscription.setPlan(plan);
             subscription.setStatus(SubscriptionStatus.PENDING);
-            subscription.setOwnerType(plan.getOwnerType());
+            subscription.setPlanType(plan.getPlanType());
             subscriptionRepository.save(subscription);
         return subscription;
     }
