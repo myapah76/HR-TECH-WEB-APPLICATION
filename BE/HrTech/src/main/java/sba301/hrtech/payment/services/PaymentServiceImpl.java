@@ -82,7 +82,6 @@ public class PaymentServiceImpl implements IPaymentService {
                             .findByOrderCode(orderCode)
                             .orElseThrow(() ->
                                     new AppException(
-                                            HttpStatus.NOT_FOUND,
                                             ErrorCode.ORDER_CODE_NOT_FOUND,
                                             "Không tìm thấy payment với order code: " + orderCode)
                             );
@@ -119,7 +118,6 @@ public class PaymentServiceImpl implements IPaymentService {
             paymentRepository.save(payment);
         } catch (Exception e) {
             throw new AppException(
-                    HttpStatus.BAD_GATEWAY,
                     ErrorCode.WEBHOOK_NOT_FOUND,
                     "Invalid PayOS webhook signature");
         }

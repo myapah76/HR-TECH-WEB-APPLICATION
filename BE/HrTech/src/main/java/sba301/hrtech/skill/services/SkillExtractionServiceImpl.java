@@ -55,7 +55,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
     public CompletableFuture<CvExtractionResponse> extractAndSaveSkills(UUID cvId) {
         // 1. Get CV from PostgreSQL
         Cv cv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND,
+                .orElseThrow(() -> new AppException(
                         ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
 
         cv.setExtractionStatus(ExtractionStatus.PROCESSING);
@@ -180,7 +180,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
     public void extractAndSaveJobSkills(UUID jobId) {
         // 1. Get Job from PostgreSQL
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND,
+                .orElseThrow(() -> new AppException(
                         ErrorCode.JOB_NOT_FOUND_CODE, "Job not found: " + jobId));
 
         String description = job.getDescription();

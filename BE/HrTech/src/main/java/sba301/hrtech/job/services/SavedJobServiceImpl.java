@@ -35,7 +35,7 @@ public class SavedJobServiceImpl implements ISavedJobService {
     public void saveJob(UUID jobId) {
         User currentUser = authUtils.getCurrentUser();
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, ErrorCode.JOB_NOT_FOUND_CODE, "Job not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE, "Job not found"));
 
         if (!savedJobRepository.existsByUserAndJob(currentUser, job)) {
             SavedJob savedJob = SavedJob.builder()
@@ -51,7 +51,7 @@ public class SavedJobServiceImpl implements ISavedJobService {
     public void unsaveJob(UUID jobId) {
         User currentUser = authUtils.getCurrentUser();
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, ErrorCode.JOB_NOT_FOUND_CODE, "Job not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE, "Job not found"));
 
         Optional<SavedJob> savedJob = savedJobRepository.findByUserAndJob(currentUser, job);
         savedJob.ifPresent(savedJobRepository::delete);

@@ -81,7 +81,7 @@ public abstract class JobMapper {
             try {
                 job.setJobType(JobType.valueOf(request.jobType()));
             } catch (IllegalArgumentException e) {
-                throw new AppException(HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST,
+                throw new AppException(ErrorCode.BAD_REQUEST,
                         "Invalid job type: " + request.jobType());
             }
         }
@@ -89,7 +89,7 @@ public abstract class JobMapper {
             try {
                 job.setExperienceLevel(ExperienceLevel.valueOf(request.experienceLevel()));
             } catch (IllegalArgumentException e) {
-                throw new AppException(HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST,
+                throw new AppException(ErrorCode.BAD_REQUEST,
                         "Invalid experience level: " + request.experienceLevel());
             }
         }
@@ -103,7 +103,7 @@ public abstract class JobMapper {
         for (JobSkillRequest sr : skillRequests) {
             // Validate skill exists in Neo4j
             if (!skillNodeRepository.existsById(sr.skillNeo4jId())) {
-                throw new AppException(HttpStatus.BAD_REQUEST,
+                throw new AppException(
                         ErrorCode.JOB_SKILL_NOT_FOUND,
                         "Skill not found in skill graph: " + sr.skillNeo4jId());
             }
@@ -112,7 +112,7 @@ public abstract class JobMapper {
                 try {
                     level = SkillLevel.valueOf(sr.requiredLevel());
                 } catch (IllegalArgumentException e) {
-                    throw new AppException(HttpStatus.BAD_REQUEST,
+                    throw new AppException(
                             ErrorCode.BAD_REQUEST,
                             "Invalid skill level: " + sr.requiredLevel());
                 }

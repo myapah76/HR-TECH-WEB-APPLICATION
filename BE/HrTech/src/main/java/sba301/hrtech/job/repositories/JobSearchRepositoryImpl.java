@@ -59,8 +59,7 @@ public class JobSearchRepositoryImpl implements JobSearchCustomRepository {
             return new PageImpl<>(content, pageable, response.hits().total().value());
 
         } catch (Exception e) {
-            throw new RuntimeException(e);
-            //throw new AppException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.Elastic_Search_Failed, "Elasticsearch search failed");
+            throw new AppException(ErrorCode.ELASTIC_SEARCH_FAILED, "Elasticsearch search failed");
         }
     }
 }

@@ -47,7 +47,6 @@ public class PayOSServiceImpl implements IPayOSService {
             return new CreatePaymentResponse(response.getCheckoutUrl(), response.getPaymentLinkId());
         } catch (Exception e) {
             throw new AppException(
-                    HttpStatus.BAD_GATEWAY,
                     ErrorCode.HAS_ERROR,
                     "Lỗi khi tạo link thanh toán: " + e.getMessage());
         }

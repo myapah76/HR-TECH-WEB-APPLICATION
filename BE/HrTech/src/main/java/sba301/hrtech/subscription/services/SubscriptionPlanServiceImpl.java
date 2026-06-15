@@ -58,7 +58,6 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
     public SubscriptionPlan getById(UUID id) {
         return subscriptionPlanRepository.findById(id)
                 .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
                         ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND,
                         "Subscription plan not found"));
     }
@@ -85,7 +84,6 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
 
         SubscriptionPlan plan = subscriptionPlanRepository.findById(id)
                 .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
                         ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND,
                         "Subscription plan not found"));
 
@@ -103,7 +101,6 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
 
         SubscriptionPlan plan = subscriptionPlanRepository.findById(id)
                 .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
                         ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND,
                         "Subscription plan not found"));
         subscriptionPlanRepository.delete(plan);
@@ -113,7 +110,6 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
         for (PlanFeatureRequest featureRequest : featureRequests) {
             Feature feature = featureRepository.findById(featureRequest.id())
                     .orElseThrow(() -> new AppException(
-                            HttpStatus.NOT_FOUND,
                             ErrorCode.FEATURE_NOT_FOUND,
                             "Feature not found"));
 

@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.context.Context;
 import sba301.hrtech.notification.abstractions.IEmailSender;
+import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.exceptions.AppException;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
@@ -38,7 +40,7 @@ public class EmailSenderImpl implements IEmailSender {
             sendHtmlEmail(toEmail, "OTP Verification Code", html);
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to send OTP email", e);
+            throw new AppException(ErrorCode.EMAIL_SEND_FAILED, "Failed to send OTP email: " + e.getMessage());
         }
     }
 
@@ -76,7 +78,7 @@ public class EmailSenderImpl implements IEmailSender {
 
         } catch (Exception e) {
             log.error("Failed to send email to {}", to, e);
-            throw new RuntimeException(e);
+            throw new AppException(ErrorCode.EMAIL_SEND_FAILED, "Failed to send email to " + to + ": " + e.getMessage());
         }
     }
 }

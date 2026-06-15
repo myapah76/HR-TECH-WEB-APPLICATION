@@ -71,7 +71,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
     public List<JobRecommendationResponse> recommendJobsForCv(UUID cvId, int limit) {
         Cv cv = cvRepository.findById(cvId)
                 .orElseThrow(
-                        () -> new AppException(HttpStatus.NOT_FOUND, ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
+                        () -> new AppException(ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
 
         CvSkillContext ctx = buildCvSkillContext(cv);
         List<Job> allJobs = jobRepository.findAll();
@@ -120,10 +120,10 @@ public class RecommendationServiceImpl implements IRecommendationService {
     public SkillMatchScoreResponse calculateMatchScore(UUID cvId, UUID jobId) {
         Cv cv = cvRepository.findById(cvId)
                 .orElseThrow(
-                        () -> new AppException(HttpStatus.NOT_FOUND, ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
+                        () -> new AppException( ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
 
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, ErrorCode.JOB_NOT_FOUND,
+                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND,
                         "Job not found: " + jobId));
 
         CvSkillContext ctx = buildCvSkillContext(cv);

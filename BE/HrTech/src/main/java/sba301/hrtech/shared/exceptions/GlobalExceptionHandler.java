@@ -19,10 +19,11 @@ public class GlobalExceptionHandler {
             AppException ex,
             HttpServletRequest request
     ) {
+        ErrorCode errorCode = ex.getErrorCode();
         return buildError(
-                ex.getStatus(),
+                errorCode.getStatusCode(),
                 ex.getMessage(),
-                ex.getCode(),
+                errorCode,
                 request.getRequestURI()
         );
     }
@@ -63,13 +64,13 @@ public class GlobalExceptionHandler {
     private ResponseEntity<ApiResponse<Void>> buildError(
             HttpStatus status,
             String message,
-            String code,
+            ErrorCode code,
             String path
     ) {
         ApiResponse<Void> error = ApiResponse.failed(
                 status.value(),
                 message,
-                code,
+                code.name(),
                 path
         );
         return new ResponseEntity<>(error, status);
@@ -88,5 +89,4 @@ public class GlobalExceptionHandler {
         );
     }
 }
-
 

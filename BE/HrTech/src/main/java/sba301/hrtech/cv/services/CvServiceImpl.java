@@ -1,7 +1,6 @@
 package sba301.hrtech.cv.services;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -13,6 +12,7 @@ import sba301.hrtech.cv.abstractions.repositories.CvRepository;
 import sba301.hrtech.cv.abstractions.services.CvService;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.shared.enums.ExtractionStatus;
+import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.shared.services.CloudinaryService;
 import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
@@ -43,8 +43,7 @@ public class CvServiceImpl implements CvService {
         UUID userId = authUtils.getCurrentUserId();
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
-                        "USER_NOT_FOUND",
+                        ErrorCode.USER_NOT_FOUND,
                         "Người dùng không tồn tại với ID: " + userId
                 ));
 
@@ -54,8 +53,7 @@ public class CvServiceImpl implements CvService {
                 (!contentType.equals("application/pdf") &&
                         !contentType.startsWith("image/"))) {
             throw new AppException(
-                    HttpStatus.BAD_REQUEST,
-                    "INVALID_FILE_TYPE",
+                    ErrorCode.INVALID_FILE_TYPE,
                     "Chỉ chấp nhận file PDF hoặc ảnh!"
             );
         }
@@ -108,15 +106,13 @@ public class CvServiceImpl implements CvService {
         UUID userId = authUtils.getCurrentUserId();
         Cv cv = cvRepository.findById(cvId)
                 .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
-                        "CV_NOT_FOUND",
+                        ErrorCode.CV_NOT_FOUND,
                         "CV không tồn tại hoặc đã bị xóa"
                 ));
 
         if (!cv.getUser().getId().equals(userId)) {
             throw new AppException(
-                    HttpStatus.FORBIDDEN,
-                    "CV_ACCESS_DENIED",
+                    ErrorCode.CV_ACCESS_DENIED,
                     "Bạn không có quyền xem CV này!"
             );
         }
@@ -129,15 +125,13 @@ public class CvServiceImpl implements CvService {
         UUID userId = authUtils.getCurrentUserId();
         Cv targetCv = cvRepository.findById(cvId)
                 .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
-                        "CV_NOT_FOUND",
+                        ErrorCode.CV_NOT_FOUND,
                         "Không tìm thấy CV với ID: " + cvId
                 ));
 
         if (!targetCv.getUser().getId().equals(userId)) {
             throw new AppException(
-                    HttpStatus.FORBIDDEN,
-                    "CV_ACCESS_DENIED",
+                    ErrorCode.CV_ACCESS_DENIED,
                     "CV này không thuộc quyền sở hữu của bạn!"
             );
         }
@@ -158,23 +152,20 @@ public class CvServiceImpl implements CvService {
         UUID userId = authUtils.getCurrentUserId();
         Cv targetCv = cvRepository.findById(cvId)
                 .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
-                        "CV_NOT_FOUND",
+                        ErrorCode.CV_NOT_FOUND,
                         "Không tìm thấy CV với ID: " + cvId
                 ));
 
         if (!targetCv.getUser().getId().equals(userId)) {
             throw new AppException(
-                    HttpStatus.FORBIDDEN,
-                    "CV_ACCESS_DENIED",
+                    ErrorCode.CV_ACCESS_DENIED,
                     "CV này không thuộc quyền sở hữu của bạn!"
             );
         }
 
         if (newTitle == null || newTitle.trim().isEmpty()) {
             throw new AppException(
-                    HttpStatus.BAD_REQUEST,
-                    "INVALID_TITLE",
+                    ErrorCode.INVALID_INPUT,
                     "Tên CV không được để trống!"
             );
         }
@@ -188,15 +179,13 @@ public class CvServiceImpl implements CvService {
         UUID userId = authUtils.getCurrentUserId();
         Cv cv = cvRepository.findById(cvId)
                 .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
-                        "CV_NOT_FOUND",
+                        ErrorCode.CV_NOT_FOUND,
                         "Không tìm thấy CV để xóa"
                 ));
 
         if (!cv.getUser().getId().equals(userId)) {
             throw new AppException(
-                    HttpStatus.FORBIDDEN,
-                    "CV_ACCESS_DENIED",
+                    ErrorCode.CV_ACCESS_DENIED,
                     "Bạn không có quyền xóa CV này!"
             );
         }
