@@ -2,6 +2,7 @@ package sba301.hrtech.skill.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import sba301.hrtech.cv.abstractions.repositories.CvRepository;
@@ -10,7 +11,7 @@ import sba301.hrtech.cv.entities.CvSkill;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.job.entities.JobSkill;
-import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.shared.enums.ScoreGrade;
 import sba301.hrtech.shared.enums.SkillLevel;
 import sba301.hrtech.shared.exceptions.AppException;
@@ -69,7 +70,8 @@ public class RecommendationServiceImpl implements IRecommendationService {
     @Transactional(readOnly = true)
     public List<JobRecommendationResponse> recommendJobsForCv(UUID cvId, int limit) {
         Cv cv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new AppException(ErrorCode.CV_NOT_FOUND));
+                .orElseThrow(
+                        () -> new AppException(ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
 
         CvSkillContext ctx = buildCvSkillContext(cv);
         List<Job> allJobs = jobRepository.findAll();
@@ -117,10 +119,12 @@ public class RecommendationServiceImpl implements IRecommendationService {
     @Transactional(readOnly = true)
     public SkillMatchScoreResponse calculateMatchScore(UUID cvId, UUID jobId) {
         Cv cv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new AppException(ErrorCode.CV_NOT_FOUND));
+                .orElseThrow(
+                        () -> new AppException( ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
 
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND,
+                        "Job not found: " + jobId));
 
         CvSkillContext ctx = buildCvSkillContext(cv);
         List<JobSkill> jobSkills = job.getJobSkills();

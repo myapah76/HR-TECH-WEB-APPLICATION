@@ -1,5 +1,6 @@
 package sba301.hrtech.job.services;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -12,18 +13,20 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.company.entities.Company;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
+import sba301.hrtech.job.abstractions.repositories.JobSearchRepository;
 import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.job.dtos.request.JobRequest;
 import sba301.hrtech.job.dtos.request.JobSearchCriteria;
 import sba301.hrtech.job.dtos.response.JobResponse;
 import sba301.hrtech.job.entities.Job;
+import sba301.hrtech.job.entities.JobDocument;
 import sba301.hrtech.job.entities.JobSkill;
 import sba301.hrtech.job.entities.enums.ExperienceLevel;
 import sba301.hrtech.job.entities.enums.JobStatus;
 import sba301.hrtech.job.entities.enums.JobType;
 import sba301.hrtech.job.mapper.JobMapper;
 import sba301.hrtech.job.validators.JobValidator;
-import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.shared.enums.ExtractionStatus;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
@@ -39,6 +42,8 @@ import java.util.stream.Collectors;
 public class JobServiceImpl implements IJobService {
 
     private final JobRepository jobRepository;
+    private final ElasticsearchClient client;
+    private final JobSearchRepository jobSearchRepository;
     private final ISkillExtractionService skillExtractionService;
     private final JobMapper jobMapper;
     private final JobValidator jobValidator;
@@ -66,6 +71,11 @@ public class JobServiceImpl implements IJobService {
         savedJob.setExtractionStatus(ExtractionStatus.PENDING);
         savedJob = jobRepository.save(savedJob);
 
+        // ElasticSearch
+        JobDocument doc = jobMapper.toDocument(savedJob);
+        jobSearchRepository.save(doc);
+
+
         final UUID finalJobId = savedJob.getId();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
@@ -88,7 +98,9 @@ public class JobServiceImpl implements IJobService {
         jobValidator.validateCanEditJob(currentUser, job);
 
         if (job.getStatus() != JobStatus.DRAFT) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS);
+            throw new AppException(
+                    ErrorCode.JOB_INVALID_STATUS,
+                    "Only DRAFT jobs can be edited. Current status: " + job.getStatus());
         }
 
         jobMapper.applyJobFields(job, request);
@@ -122,7 +134,9 @@ public class JobServiceImpl implements IJobService {
         jobValidator.validateCanEditJob(currentUser, job);
 
         if (job.getStatus() != JobStatus.DRAFT) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS);
+            throw new AppException(
+                    ErrorCode.JOB_INVALID_STATUS,
+                    "Only DRAFT jobs can be submitted. Current status: " + job.getStatus());
         }
 
         job.setStatus(JobStatus.PENDING_APPROVAL);
@@ -141,7 +155,9 @@ public class JobServiceImpl implements IJobService {
         jobValidator.validateCanApproveJob(currentUser, job.getCompany().getId());
 
         if (job.getStatus() != JobStatus.PENDING_APPROVAL) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS);
+            throw new AppException(
+                    ErrorCode.JOB_INVALID_STATUS,
+                    "Only PENDING_APPROVAL jobs can be approved. Current status: " + job.getStatus());
         }
 
         job.setStatus(JobStatus.APPROVED);
@@ -160,7 +176,9 @@ public class JobServiceImpl implements IJobService {
         jobValidator.validateCanApproveJob(currentUser, job.getCompany().getId());
 
         if (job.getStatus() != JobStatus.PENDING_APPROVAL) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS);
+            throw new AppException(
+                    ErrorCode.JOB_INVALID_STATUS,
+                    "Only PENDING_APPROVAL jobs can be rejected. Current status: " + job.getStatus());
         }
 
         job.setStatus(JobStatus.REJECTED);
@@ -179,7 +197,9 @@ public class JobServiceImpl implements IJobService {
         jobValidator.validateCanCloseJob(currentUser, job.getCompany().getId());
 
         if (job.getStatus() != JobStatus.APPROVED) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS);
+            throw new AppException(
+                    ErrorCode.JOB_INVALID_STATUS,
+                    "Only APPROVED jobs can be closed. Current status: " + job.getStatus());
         }
 
         job.setStatus(JobStatus.CLOSED);
@@ -192,7 +212,8 @@ public class JobServiceImpl implements IJobService {
     @Transactional
     public void adminDeleteJob(UUID jobId) {
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE));
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.JOB_NOT_FOUND_CODE, "Job not found: " + jobId));
         job.setDeleted(true);
         jobRepository.save(job);
         log.warn("Admin soft-deleted job {}", jobId);
@@ -229,6 +250,11 @@ public class JobServiceImpl implements IJobService {
                 criteria.salaryMax(),
                 pageable
         ).map(jobMapper::toResponse);
+    }
+
+    @Override
+    public Page<JobDocument> searchJobsWithElasticsearch(String keyword, Pageable pageable) {
+        return jobSearchRepository.search(keyword, pageable);
     }
 
     @Override

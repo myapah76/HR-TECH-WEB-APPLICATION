@@ -7,10 +7,10 @@ import org.springframework.transaction.annotation.Transactional;
 import sba301.hrtech.identity.abstractions.repositories.RoleRepository;
 import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.abstractions.services.IUserService;
-import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.identity.entities.Role;
 import sba301.hrtech.identity.entities.User;
-import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.identity.dtos.user.request.ChangePasswordRequest;
 import sba301.hrtech.identity.dtos.user.request.CreateUserRequest;
 import sba301.hrtech.identity.dtos.user.request.UserCommonRequest;
@@ -36,13 +36,13 @@ public class UserServiceImpl implements IUserService {
         UserCommonRequest userCommonRequest = request.getUserCommonRequest();
         // 1. Check email exist
         if (userRepository.findByEmail(userCommonRequest.getEmail()).isPresent()){
-            throw new AppException(ErrorCode.Email_Already_Registered);
+            throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED);
         }
 
         User user = userMapper.fromCreateRequest(request);
         if (userCommonRequest.getRoleId() != null) {
             Role role = roleRepository.findById(UUID.fromString(userCommonRequest.getRoleId()))
-                    .orElseThrow(() -> new AppException(ErrorCode.Role_Not_Found));
+                    .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
             user.setRole(role);
         }
         User savedUser = userRepository.save(user);
@@ -51,7 +51,7 @@ public class UserServiceImpl implements IUserService {
     @Override
     public UserResponse getUserResponseById(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.User_Not_Found));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         return userMapper.toResponse(user);
     }
@@ -66,7 +66,7 @@ public class UserServiceImpl implements IUserService {
     @Transactional
     public UserResponse update(UserCommonRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new AppException(ErrorCode.User_Not_Found));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         // MapStruct handles simple field mapping
         userMapper.updateUserFromRequest(request, user);
@@ -74,7 +74,7 @@ public class UserServiceImpl implements IUserService {
         // Role set thủ công
         if (request.getRoleId() != null) {
             Role role = roleRepository.findById(UUID.fromString(request.getRoleId()))
-                    .orElseThrow(() -> new AppException(ErrorCode.Role_Not_Found));
+                    .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
             user.setRole(role);
         }
 
@@ -86,9 +86,9 @@ public class UserServiceImpl implements IUserService {
     @Transactional
     public UserResponse changePassword(ChangePasswordRequest request){
         User user = userRepository.findById(request.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.User_Not_Found));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
-            throw new AppException(ErrorCode.Wrong_Password);
+            throw new AppException(ErrorCode.WRONG_PASSWORD);
         }
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
@@ -98,7 +98,7 @@ public class UserServiceImpl implements IUserService {
     @Override
     public void deleteById(UUID id) {
         if (!userRepository.existsById(id)) {
-            throw new AppException(ErrorCode.User_Not_Found);
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
         userRepository.deleteById(id);
     }
@@ -106,6 +106,6 @@ public class UserServiceImpl implements IUserService {
     @Override
     public User getUserEntityById(UUID id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.User_Not_Found));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
     }
 }

@@ -23,7 +23,7 @@ import sba301.hrtech.cv.abstractions.repositories.CvRepository;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.job.entities.enums.JobStatus;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
-import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.abstractions.services.IRecommendationService;
 import sba301.hrtech.skill.dtos.response.SkillMatchScoreResponse;
@@ -51,24 +51,24 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     public ApplicationSummaryResponse submitApplication(UUID userId, SubmitApplicationRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.User_Not_Found));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found"));
 
         Job job = jobRepository.findById(request.getJobId())
-                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE));
+                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE, "Job not found"));
 
         if (job.getStatus() != JobStatus.APPROVED) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS);
+            throw new AppException(ErrorCode.JOB_INVALID_STATUS, "Job is not APPROVED for applications");
         }
 
         Cv cv = cvRepository.findById(request.getCvId())
-                .orElseThrow(() -> new AppException(ErrorCode.CV_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_INPUT, "CV not found"));
 
         if (!cv.getUser().getId().equals(userId)) {
-            throw new AppException(ErrorCode.JOB_PERMISSION_DENIED);
+            throw new AppException( ErrorCode.JOB_PERMISSION_DENIED, "CV does not belong to user");
         }
 
         if (applicationRepository.existsByUserIdAndJobId(userId, job.getId())) {
-            throw new AppException(ErrorCode.INVALID_INPUT);
+            throw new AppException(ErrorCode.INVALID_INPUT, "Already applied to this job");
         }
 
         // Create application
@@ -138,7 +138,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Transactional(readOnly = true)
     public ApplicationDetailResponse getApplicationDetail(UUID userId, UUID applicationId) {
         Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Application not found"));
 
         // Only applicant or HR can view. For now, just check if it belongs to user OR if user is HR (basic check)
         // A more robust check would involve JobValidator, but for now we allow if user == applicant
@@ -150,10 +150,10 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     public void withdrawApplication(UUID userId, UUID applicationId) {
         Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Application not found"));
 
         if (!application.getUser().getId().equals(userId)) {
-            throw new AppException(ErrorCode.JOB_PERMISSION_DENIED);
+            throw new AppException( ErrorCode.JOB_PERMISSION_DENIED, "Application does not belong to user");
         }
 
         application.setStatus(ApplicationStatus.WITHDRAWN);
@@ -163,7 +163,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     public ApplicationSummaryResponse updateStatus(UUID applicationId, ApplicationStatus newStatus) {
         Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Application not found"));
 
         application.setStatus(newStatus);
         application = applicationRepository.save(application);

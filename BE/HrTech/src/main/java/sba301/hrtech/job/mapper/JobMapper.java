@@ -8,10 +8,11 @@ import sba301.hrtech.job.dtos.request.JobSkillRequest;
 import sba301.hrtech.job.dtos.response.JobResponse;
 import sba301.hrtech.job.dtos.response.JobSkillResponse;
 import sba301.hrtech.job.entities.Job;
+import sba301.hrtech.job.entities.JobDocument;
 import sba301.hrtech.job.entities.JobSkill;
 import sba301.hrtech.job.entities.enums.ExperienceLevel;
 import sba301.hrtech.job.entities.enums.JobType;
-import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.shared.enums.SkillLevel;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
@@ -41,6 +42,25 @@ public abstract class JobMapper {
     @Mapping(target = "requiredLevel", expression = "java(jobSkill.getRequiredLevel() != null ? jobSkill.getRequiredLevel().name() : null)")
     public abstract JobSkillResponse toSkillResponse(JobSkill jobSkill);
 
+
+    public JobDocument toDocument(Job job) {
+
+        List<String> skills = job.getJobSkills()
+                .stream()
+                .map(js -> js.getSkillNeo4jId()) // or resolve name if needed
+                .toList();
+
+        return JobDocument.builder()
+                .id(job.getId())
+                .title(job.getTitle())
+                .description(job.getDescription())
+                .location(job.getLocation())
+                .jobType(job.getJobType() != null ? job.getJobType().name() : null)
+                .experienceLevel(job.getExperienceLevel() != null ? job.getExperienceLevel().name() : null)
+                .skills(skills)
+                .build();
+    }
+
     protected String resolveSkillName(String skillNeo4jId) {
         if (skillNeo4jId == null) return null;
         return skillNodeRepository.findById(skillNeo4jId)
@@ -61,14 +81,16 @@ public abstract class JobMapper {
             try {
                 job.setJobType(JobType.valueOf(request.jobType()));
             } catch (IllegalArgumentException e) {
-                throw new AppException(ErrorCode.BAD_REQUEST);
+                throw new AppException(ErrorCode.BAD_REQUEST,
+                        "Invalid job type: " + request.jobType());
             }
         }
         if (request.experienceLevel() != null) {
             try {
                 job.setExperienceLevel(ExperienceLevel.valueOf(request.experienceLevel()));
             } catch (IllegalArgumentException e) {
-                throw new AppException(ErrorCode.BAD_REQUEST);
+                throw new AppException(ErrorCode.BAD_REQUEST,
+                        "Invalid experience level: " + request.experienceLevel());
             }
         }
     }
@@ -81,14 +103,18 @@ public abstract class JobMapper {
         for (JobSkillRequest sr : skillRequests) {
             // Validate skill exists in Neo4j
             if (!skillNodeRepository.existsById(sr.skillNeo4jId())) {
-                throw new AppException(ErrorCode.JOB_SKILL_NOT_FOUND);
+                throw new AppException(
+                        ErrorCode.JOB_SKILL_NOT_FOUND,
+                        "Skill not found in skill graph: " + sr.skillNeo4jId());
             }
             SkillLevel level = null;
             if (sr.requiredLevel() != null) {
                 try {
                     level = SkillLevel.valueOf(sr.requiredLevel());
                 } catch (IllegalArgumentException e) {
-                    throw new AppException(ErrorCode.BAD_REQUEST);
+                    throw new AppException(
+                            ErrorCode.BAD_REQUEST,
+                            "Invalid skill level: " + sr.requiredLevel());
                 }
             }
             JobSkill js = JobSkill.builder()

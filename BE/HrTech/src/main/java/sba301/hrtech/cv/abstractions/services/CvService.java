@@ -1,17 +1,17 @@
 package sba301.hrtech.cv.abstractions.services;
 
 import org.springframework.web.multipart.MultipartFile;
-import sba301.hrtech.cv.entities.Cv;
+import sba301.hrtech.cv.dtos.response.CvDetailResponse;
+import sba301.hrtech.cv.dtos.response.CvSummaryResponse;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface CvService {
-    Cv createCv(UUID userId, String title, MultipartFile file);
-    List<Cv> getCvsByUserId(UUID userId);
-    Optional<Cv> getCvById(UUID cvId);
-    Cv setPrimaryCv(UUID userId, UUID cvId);
-    Cv updateCvTitle(UUID userId, UUID cvId, String newTitle);
-    void deleteCv(UUID userId, UUID cvId);
+    CvSummaryResponse createCv(String title, MultipartFile file);
+    List<CvSummaryResponse> getCvsByCurrentUser();
+    CvDetailResponse getCvById(UUID cvId);
+    CvSummaryResponse setPrimaryCv(UUID cvId);
+    CvSummaryResponse updateCvTitle(UUID cvId, String newTitle);
+    void deleteCv(UUID cvId);
 }

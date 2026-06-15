@@ -14,7 +14,7 @@ import sba301.hrtech.job.abstractions.repositories.JobRepository;
 import sba301.hrtech.job.abstractions.repositories.JobSkillRepository;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.job.entities.JobSkill;
-import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.shared.enums.ExtractionStatus;
 import sba301.hrtech.shared.enums.SkillLevel;
 import sba301.hrtech.shared.exceptions.AppException;
@@ -55,7 +55,8 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
     public CompletableFuture<CvExtractionResponse> extractAndSaveSkills(UUID cvId) {
         // 1. Get CV from PostgreSQL
         Cv cv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new AppException(ErrorCode.CV_NOT_FOUND));
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
 
         cv.setExtractionStatus(ExtractionStatus.PROCESSING);
         cvRepository.save(cv);
@@ -179,7 +180,8 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
     public void extractAndSaveJobSkills(UUID jobId) {
         // 1. Get Job from PostgreSQL
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE));
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.JOB_NOT_FOUND_CODE, "Job not found: " + jobId));
 
         String description = job.getDescription();
         String requirements = job.getRequirements();

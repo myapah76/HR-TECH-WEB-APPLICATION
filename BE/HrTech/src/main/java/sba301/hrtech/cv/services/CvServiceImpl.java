@@ -1,7 +1,6 @@
 package sba301.hrtech.cv.services;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -13,13 +12,18 @@ import sba301.hrtech.cv.abstractions.repositories.CvRepository;
 import sba301.hrtech.cv.abstractions.services.CvService;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.shared.enums.ExtractionStatus;
-import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.shared.services.CloudinaryService;
 import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
 
+import sba301.hrtech.identity.utils.AuthUtils;
+import sba301.hrtech.cv.mapper.CvMapper;
+import sba301.hrtech.cv.dtos.response.CvDetailResponse;
+import sba301.hrtech.cv.dtos.response.CvSummaryResponse;
+import java.util.stream.Collectors;
+
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -31,18 +35,27 @@ public class CvServiceImpl implements CvService {
     private final UserRepository userRepository;
     private final CloudinaryService cloudinaryService;
     private final ISkillExtractionService skillExtractionService;
+    private final AuthUtils authUtils;
+    private final CvMapper cvMapper;
 
     @Override
-    public Cv createCv(UUID userId, String title, MultipartFile file) {
+    public CvSummaryResponse createCv(String title, MultipartFile file) {
+        UUID userId = authUtils.getCurrentUserId();
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.USER_NOT_FOUND,
+                        "Người dùng không tồn tại với ID: " + userId
+                ));
 
 
         String contentType = file.getContentType();
         if (contentType == null ||
                 (!contentType.equals("application/pdf") &&
                         !contentType.startsWith("image/"))) {
-            throw new AppException(ErrorCode.INVALID_FILE_TYPE);
+            throw new AppException(
+                    ErrorCode.INVALID_FILE_TYPE,
+                    "Chỉ chấp nhận file PDF hoặc ảnh!"
+            );
         }
 
         String fileUrl = cloudinaryService.uploadFile(file, "hrtech/cvs");
@@ -75,28 +88,52 @@ public class CvServiceImpl implements CvService {
             skillExtractionService.extractAndSaveSkills(savedCv.getId());
         }
 
-        return savedCv;
+        return cvMapper.toSummaryResponse(savedCv);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Cv> getCvsByUserId(UUID userId) {
-        return cvRepository.findByUserId(userId);
+    public List<CvSummaryResponse> getCvsByCurrentUser() {
+        UUID userId = authUtils.getCurrentUserId();
+        return cvRepository.findByUserId(userId).stream()
+                .map(cvMapper::toSummaryResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Cv> getCvById(UUID cvId) {
-        return cvRepository.findById(cvId);
+    public CvDetailResponse getCvById(UUID cvId) {
+        UUID userId = authUtils.getCurrentUserId();
+        Cv cv = cvRepository.findById(cvId)
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.CV_NOT_FOUND,
+                        "CV không tồn tại hoặc đã bị xóa"
+                ));
+
+        if (!cv.getUser().getId().equals(userId)) {
+            throw new AppException(
+                    ErrorCode.CV_ACCESS_DENIED,
+                    "Bạn không có quyền xem CV này!"
+            );
+        }
+
+        return cvMapper.toDetailResponse(cv);
     }
 
     @Override
-    public Cv setPrimaryCv(UUID userId, UUID cvId) {
+    public CvSummaryResponse setPrimaryCv(UUID cvId) {
+        UUID userId = authUtils.getCurrentUserId();
         Cv targetCv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new AppException(ErrorCode.CV_NOT_FOUND));
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.CV_NOT_FOUND,
+                        "Không tìm thấy CV với ID: " + cvId
+                ));
 
         if (!targetCv.getUser().getId().equals(userId)) {
-            throw new AppException(ErrorCode.CV_ACCESS_DENIED);
+            throw new AppException(
+                    ErrorCode.CV_ACCESS_DENIED,
+                    "CV này không thuộc quyền sở hữu của bạn!"
+            );
         }
 
         // Hạ primary CV cũ
@@ -107,33 +144,50 @@ public class CvServiceImpl implements CvService {
                 });
 
         targetCv.setIsPrimary(true);
-        return cvRepository.save(targetCv);
+        return cvMapper.toSummaryResponse(cvRepository.save(targetCv));
     }
 
     @Override
-    public Cv updateCvTitle(UUID userId, UUID cvId, String newTitle) {
+    public CvSummaryResponse updateCvTitle(UUID cvId, String newTitle) {
+        UUID userId = authUtils.getCurrentUserId();
         Cv targetCv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new AppException(ErrorCode.CV_NOT_FOUND));
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.CV_NOT_FOUND,
+                        "Không tìm thấy CV với ID: " + cvId
+                ));
 
         if (!targetCv.getUser().getId().equals(userId)) {
-            throw new AppException(ErrorCode.CV_ACCESS_DENIED);
+            throw new AppException(
+                    ErrorCode.CV_ACCESS_DENIED,
+                    "CV này không thuộc quyền sở hữu của bạn!"
+            );
         }
 
         if (newTitle == null || newTitle.trim().isEmpty()) {
-            throw new AppException(ErrorCode.INVALID_TITLE);
+            throw new AppException(
+                    ErrorCode.INVALID_INPUT,
+                    "Tên CV không được để trống!"
+            );
         }
 
         targetCv.setTitle(newTitle.trim());
-        return cvRepository.save(targetCv);
+        return cvMapper.toSummaryResponse(cvRepository.save(targetCv));
     }
 
     @Override
-    public void deleteCv(UUID userId, UUID cvId) {
+    public void deleteCv(UUID cvId) {
+        UUID userId = authUtils.getCurrentUserId();
         Cv cv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new AppException(ErrorCode.CV_NOT_FOUND));
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.CV_NOT_FOUND,
+                        "Không tìm thấy CV để xóa"
+                ));
 
         if (!cv.getUser().getId().equals(userId)) {
-            throw new AppException(ErrorCode.CV_ACCESS_DENIED);
+            throw new AppException(
+                    ErrorCode.CV_ACCESS_DENIED,
+                    "Bạn không có quyền xóa CV này!"
+            );
         }
 
         cvRepository.delete(cv);

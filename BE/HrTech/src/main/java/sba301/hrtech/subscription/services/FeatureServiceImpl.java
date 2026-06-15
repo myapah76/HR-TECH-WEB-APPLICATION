@@ -2,10 +2,9 @@ package sba301.hrtech.subscription.services;
 
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.subscription.abstractions.repositories.FeatureRepository;
 import sba301.hrtech.subscription.abstractions.services.IFeatureService;
@@ -31,7 +30,10 @@ public class FeatureServiceImpl implements IFeatureService {
     public FeatureResponse create(CreateFeatureRequest request) {
 
         if (featureRepository.existsByCode(request.code())) {
-            throw new AppException(ErrorCode.FEATURE_ALREADY_EXISTS);
+            throw new AppException(
+                    ErrorCode.FEATURE_ALREADY_EXISTS,
+                    "Feature with code '" + request.code() + "' already exists"
+            );
         }
 
         Feature feature = featureMapper.toEntity(request);
@@ -44,7 +46,11 @@ public class FeatureServiceImpl implements IFeatureService {
     public FeatureResponse update(UUID id, UpdateFeatureRequest request) {
 
         Feature feature = featureRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.FEATURE_NOT_FOUND));
+                .orElseThrow(() ->
+                        new AppException(
+                                ErrorCode.FEATURE_NOT_FOUND,
+                                "Feature with id '" + id + "' not found"
+                        ));
 
         featureMapper.updateEntity(request, feature);
 
@@ -56,7 +62,11 @@ public class FeatureServiceImpl implements IFeatureService {
     public FeatureResponse getById(UUID id) {
 
         Feature feature = featureRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.FEATURE_NOT_FOUND));
+                .orElseThrow(() ->
+                        new AppException(
+                                ErrorCode.FEATURE_NOT_FOUND,
+                                "Feature with id '" + id + "' not found"
+                        ));
 
         return featureMapper.toResponse(feature);
     }
@@ -75,7 +85,11 @@ public class FeatureServiceImpl implements IFeatureService {
     public void delete(UUID id) {
 
         Feature feature = featureRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.FEATURE_NOT_FOUND));
+                .orElseThrow(() ->
+                        new AppException(
+                                ErrorCode.FEATURE_NOT_FOUND,
+                                "Feature with id '" + id + "' not found"
+                        ));
 
         featureRepository.delete(feature);
     }

@@ -1,14 +1,21 @@
 package sba301.hrtech.shared.exceptions;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
-import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.common.ErrorCode;
 
 @Getter
-@Setter
-@AllArgsConstructor
-public class AppException extends RuntimeException{
+public class AppException extends RuntimeException {
+
     private final ErrorCode errorCode;
+
+    public AppException(ErrorCode errorCode) {
+        super(errorCode.getMessage());
+        this.errorCode = errorCode;
+    }
+
+    public AppException(ErrorCode errorCode, String customMessage) {
+        super(customMessage != null ? customMessage : errorCode.getMessage());
+        this.errorCode = errorCode;
+    }
 }
 

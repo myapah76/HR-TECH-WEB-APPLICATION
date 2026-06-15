@@ -12,7 +12,7 @@ import sba301.hrtech.payment.dtos.request.CreatePaymentRequest;
 import sba301.hrtech.payment.dtos.response.CreatePaymentResponse;
 import sba301.hrtech.payment.entities.Payment;
 import sba301.hrtech.payment.entities.enums.PaymentStatus;
-import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionPlanService;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionService;
@@ -80,7 +80,11 @@ public class PaymentServiceImpl implements IPaymentService {
             Payment payment =
                     paymentRepository
                             .findByOrderCode(orderCode)
-                            .orElseThrow(() -> new AppException(ErrorCode.ORDER_CODE_NOT_FOUND));
+                            .orElseThrow(() ->
+                                    new AppException(
+                                            ErrorCode.ORDER_CODE_NOT_FOUND,
+                                            "Không tìm thấy payment với order code: " + orderCode)
+                            );
 
             // webhook có thể gửi nhiều lần
             if (payment.getStatus() == PaymentStatus.PAID) {
@@ -113,7 +117,9 @@ public class PaymentServiceImpl implements IPaymentService {
             );
             paymentRepository.save(payment);
         } catch (Exception e) {
-            throw new AppException(ErrorCode.WEBHOOK_NOT_FOUND);
+            throw new AppException(
+                    ErrorCode.WEBHOOK_NOT_FOUND,
+                    "Invalid PayOS webhook signature");
         }
     }
 }
