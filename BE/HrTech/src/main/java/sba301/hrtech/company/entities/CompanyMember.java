@@ -1,5 +1,8 @@
 package sba301.hrtech.company.entities;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 import jakarta.persistence.*;
 import lombok.*;
 import sba301.hrtech.company.entities.enums.CompanyRole;
@@ -17,6 +20,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE company_members SET is_deleted = true WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 public class CompanyMember extends SoftDeleteEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

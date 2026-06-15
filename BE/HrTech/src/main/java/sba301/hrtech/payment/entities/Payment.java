@@ -8,8 +8,6 @@ import sba301.hrtech.payment.entities.enums.PaymentStatus;
 
 import sba301.hrtech.identity.entities.User;
 
-import java.math.BigDecimal;
-
 @Entity
 @Table(name = "payments")
 @Getter

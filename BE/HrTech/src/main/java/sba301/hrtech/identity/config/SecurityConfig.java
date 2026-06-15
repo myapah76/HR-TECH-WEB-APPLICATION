@@ -26,6 +26,17 @@ import java.util.List;
 @RequiredArgsConstructor
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    /** Endpoint công khai, không cần JWT. */
+    private static final String[] PUBLIC_ENDPOINTS = {
+            "/api/auth/**",
+            "/api/payments/webhook",
+            "/api/subscription-plans/active",
+            // Swagger
+            "/swagger-ui/**",
+            "/v3/api-docs/**"
+    };
+
     private final IJwtService jwtService;
     private final RedisTokenServiceImpl redisTokenService;
     private final UserRepository userRepository;
@@ -61,12 +72,7 @@ public class SecurityConfig {
                 .httpBasic(basic -> basic.disable())
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/api/jobs/elastic",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
-                        ).permitAll()
+                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .anyRequest().authenticated()
                 )
 

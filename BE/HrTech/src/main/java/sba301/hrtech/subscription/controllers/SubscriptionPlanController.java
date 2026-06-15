@@ -6,8 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.shared.common.ApiResponse;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionPlanService;
-import sba301.hrtech.subscription.dtos.request.SubscriptionPlanRequest;
-import sba301.hrtech.subscription.dtos.response.SubscriptionPlanResponse;
+import sba301.hrtech.subscription.dtos.subscriptionPlan.request.SubscriptionPlanRequest;
+import sba301.hrtech.subscription.dtos.subscriptionPlan.response.SubscriptionPlanResponse;
 
 import java.net.URI;
 import java.util.List;

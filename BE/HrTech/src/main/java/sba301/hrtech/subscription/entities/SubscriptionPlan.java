@@ -1,12 +1,12 @@
 package sba301.hrtech.subscription.entities;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-import sba301.hrtech.subscription.entities.enums.OwnerType;
+import sba301.hrtech.subscription.entities.enums.PlanType;
 
 import java.util.List;
 
@@ -17,6 +17,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE subscription_plans SET is_deleted = true WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 public class SubscriptionPlan extends SoftDeleteEntity {
 
     @Column(nullable = false, unique = true)
@@ -32,26 +34,12 @@ public class SubscriptionPlan extends SoftDeleteEntity {
     private Integer durationDays;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "plan_type")
-    private OwnerType ownerType;
-
-    // Quotas
-    @Column(name = "max_job_posts")
-    private Integer maxJobPosts;
-
-    @Column(name = "max_recruiters")
-    private Integer maxRecruiters;
-
-    @Column(name = "max_ai_cv_ratings")
-    private Integer maxAiCvRatings;
-
-    // Feature toggles
-    @Column(name = "candidate_pool_access")
-    private Boolean candidatePoolAccess;
-
-    @Column(name = "analytics_access")
-    private Boolean analyticsAccess;
+    @Column(nullable = false)
+    private PlanType planType;
 
     @Column(name = "is_active")
     private Boolean isActive;
+
+    @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PlanFeature> planFeatures;
 }
