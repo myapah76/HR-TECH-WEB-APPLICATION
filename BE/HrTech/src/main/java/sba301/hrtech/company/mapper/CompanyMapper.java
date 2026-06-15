@@ -6,6 +6,7 @@ import sba301.hrtech.company.dtos.request.CompanyUpdateRequest;
 import sba301.hrtech.company.dtos.response.CompanyMemberResponse;
 import sba301.hrtech.company.dtos.response.CompanyResponse;
 import sba301.hrtech.company.entities.Company;
+import sba301.hrtech.company.entities.CompanyMember;
 
 @Mapper(componentModel = "spring", builder = @Builder(disableBuilder = true))
 public interface CompanyMapper {
@@ -51,5 +52,5 @@ public interface CompanyMapper {
     @Mapping(target = "firstName", source = "user.firstName")
     @Mapping(target = "lastName", source = "user.lastName")
     @Mapping(target = "role", expression = "java(member.getCompanyRole() != null ? member.getCompanyRole().name() : null)")
-    CompanyMemberResponse toMemberResponse(sba301.hrtech.company.entities.CompanyMember member);
+    CompanyMemberResponse toMemberResponse(CompanyMember member);
 }

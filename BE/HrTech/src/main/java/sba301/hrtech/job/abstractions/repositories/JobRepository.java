@@ -8,8 +8,11 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.job.entities.enums.JobStatus;
+import sba301.hrtech.job.entities.enums.ExperienceLevel;
+import sba301.hrtech.job.entities.enums.JobType;
 import sba301.hrtech.shared.enums.ExtractionStatus;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -38,10 +41,10 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
     Page<Job> searchOpenJobs(
             @Param("keyword") String keyword,
             @Param("location") String location,
-            @Param("experienceLevel") sba301.hrtech.job.entities.enums.ExperienceLevel experienceLevel,
-            @Param("jobType") sba301.hrtech.job.entities.enums.JobType jobType,
-            @Param("salaryMin") java.math.BigDecimal salaryMin,
-            @Param("salaryMax") java.math.BigDecimal salaryMax,
+            @Param("experienceLevel") ExperienceLevel experienceLevel,
+            @Param("jobType") JobType jobType,
+            @Param("salaryMin") BigDecimal salaryMin,
+            @Param("salaryMax") BigDecimal salaryMax,
             Pageable pageable
     );
 

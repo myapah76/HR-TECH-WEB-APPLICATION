@@ -28,6 +28,7 @@ import sba301.hrtech.shared.common.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.services.AiServiceClient;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -140,7 +141,7 @@ public class ChatServiceImpl implements IChatService {
         aiMessage = chatMessageRepository.save(aiMessage);
 
         // Cập nhật session updatedAt
-        session.setUpdatedAt(java.time.Instant.now());
+        session.setUpdatedAt(Instant.now());
         chatSessionRepository.save(session);
 
         return toMessageResponse(aiMessage);
