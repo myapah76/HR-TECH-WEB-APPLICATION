@@ -5,69 +5,48 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/src
 import { Button } from '@/src/components/ui/button'
 import { Input } from '@/src/components/ui/input'
 import { Label } from '@/src/components/ui/label'
-import {
-  getAllCvs,
-  uploadCv,
-  setPrimaryCv,
-  deleteCv,
-  updateCvTitle,
-  getCvDetail,
-} from '@/src/services/cv.service'
+import { useGetAllCvs, useUploadCv, useSetPrimaryCv, useDeleteCv, useUpdateCvTitle, useGetCvDetail } from '@/src/hooks/useCv'
+import { useQuery } from '@tanstack/react-query'
 import { getSavedJobs } from '@/src/services/job.service'
-import { calculateMatchScore } from '@/src/services/recommendation.service'
+import { useCalculateMatchScore } from '@/src/hooks/useRecommendation'
 import { CvSummaryResponse, CvDetailResponse } from '@/src/types/cv'
 import { JobResponse } from '@/src/types/job'
 import { SkillMatchScoreResponse } from '@/src/types/recommendation'
 import { FileSearch, X, Loader2 } from 'lucide-react'
 
 export default function CandidateCvPage() {
-  const [cvs, setCvs] = useState<CvSummaryResponse[]>([])
-  const [savedJobs, setSavedJobs] = useState<JobResponse[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: cvs = [], isLoading: loadingCvs } = useGetAllCvs()
+  const { data: savedJobs = [], isLoading: loadingJobs } = useQuery({
+    queryKey: ['savedJobs'],
+    queryFn: () => getSavedJobs(),
+  })
+
+  const loading = loadingCvs || loadingJobs
+
+  // Mutations
+  const uploadCvMutation = useUploadCv()
+  const setPrimaryCvMutation = useSetPrimaryCv()
+  const deleteCvMutation = useDeleteCv()
+  const updateCvTitleMutation = useUpdateCvTitle()
+  const calculateScoreMutation = useCalculateMatchScore()
 
   // Upload state
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [cvTitle, setCvTitle] = useState('')
-  const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Matching state
   const [selectedCvId, setSelectedCvId] = useState<string>('')
   const [selectedJobId, setSelectedJobId] = useState<string>('')
   const [matchScore, setMatchScore] = useState<SkillMatchScoreResponse | null>(null)
-  const [isMatching, setIsMatching] = useState(false)
 
   // Edit & View state
   const [editingCvId, setEditingCvId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
-  const [viewCv, setViewCv] = useState<CvDetailResponse | null>(null)
-  const [loadingDetail, setLoadingDetail] = useState(false)
+  const [viewCvId, setViewCvId] = useState<string | null>(null)
+  const { data: viewCv, isFetching: loadingDetail } = useGetCvDetail(viewCvId || '', !!viewCvId)
 
-  const fetchData = async (silent = false) => {
-    try {
-      if (!silent) setLoading(true)
-      try {
-        const cvData = await getAllCvs()
-        setCvs(cvData)
-      } catch (err) {
-        console.error('Failed to fetch CVs:', err)
-      }
-      try {
-        const jobData = await getSavedJobs()
-        setSavedJobs(jobData)
-      } catch (err) {
-        console.error('Failed to fetch saved jobs:', err)
-      }
-    } catch (error) {
-      console.error('Failed to fetch data:', error)
-    } finally {
-      if (!silent) setLoading(false)
-    }
-  }
 
-  useEffect(() => {
-    fetchData()
-  }, [])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -78,82 +57,69 @@ export default function CandidateCvPage() {
     }
   }
 
-  const handleUpload = async () => {
+  const handleUpload = () => {
     if (!selectedFile || !cvTitle) return
-    try {
-      setIsUploading(true)
-      await uploadCv(selectedFile, cvTitle)
-      setSelectedFile(null)
-      setCvTitle('')
-      if (fileInputRef.current) fileInputRef.current.value = ''
-      await fetchData(true)
-    } catch (error) {
-      console.error('Upload failed:', error)
-    } finally {
-      setIsUploading(false)
-    }
-  }
-
-  const handleSetPrimary = async (id: string) => {
-    try {
-      await setPrimaryCv(id)
-      await fetchData(true)
-    } catch (error) {
-      console.error('Failed to set primary CV:', error)
-    }
-  }
-
-  const handleDelete = async (id: string) => {
-    try {
-      if (confirm('Bạn có chắc chắn muốn xóa CV này không?')) {
-        await deleteCv(id)
-        await fetchData(true)
+    uploadCvMutation.mutate(
+      { file: selectedFile, title: cvTitle },
+      {
+        onSuccess: () => {
+          setSelectedFile(null)
+          setCvTitle('')
+          if (fileInputRef.current) fileInputRef.current.value = ''
+        },
+        onError: (error) => {
+          console.error('Upload failed:', error)
+        },
       }
-    } catch (error: any) {
-      console.error('Failed to delete CV:', error)
-      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi xóa CV!'
-      alert(errorMessage)
+    )
+  }
+
+  const handleSetPrimary = (id: string) => {
+    setPrimaryCvMutation.mutate(id)
+  }
+
+  const handleDelete = (id: string) => {
+    if (confirm('Bạn có chắc chắn muốn xóa CV này không?')) {
+      deleteCvMutation.mutate(id, {
+        onError: (error: any) => {
+          console.error('Failed to delete CV:', error)
+          const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi xóa CV!'
+          alert(errorMessage)
+        },
+      })
     }
   }
 
-  const handleUpdateTitle = async (id: string, oldTitle: string) => {
+  const handleUpdateTitle = (id: string, oldTitle: string) => {
     if (!editTitle.trim() || editTitle.trim() === oldTitle) {
       setEditingCvId(null)
       return
     }
-    try {
-      await updateCvTitle(id, editTitle)
-      setEditingCvId(null)
-      await fetchData(true)
-    } catch (error) {
-      console.error('Failed to update title', error)
-      alert('Lỗi cập nhật tên CV')
-    }
+    updateCvTitleMutation.mutate(
+      { id, title: editTitle },
+      {
+        onSuccess: () => setEditingCvId(null),
+        onError: (error) => {
+          console.error('Failed to update title', error)
+          alert('Lỗi cập nhật tên CV')
+        },
+      }
+    )
   }
 
-  const handleViewCv = async (id: string) => {
-    try {
-      setLoadingDetail(true)
-      const detail = await getCvDetail(id)
-      setViewCv(detail)
-    } catch (error) {
-      console.error('Failed to load detail', error)
-    } finally {
-      setLoadingDetail(false)
-    }
+  const handleViewCv = (id: string) => {
+    setViewCvId(id)
   }
 
-  const handleMatch = async () => {
+  const handleMatch = () => {
     if (!selectedCvId || !selectedJobId) return
-    try {
-      setIsMatching(true)
-      const score = await calculateMatchScore(selectedCvId, selectedJobId)
-      setMatchScore(score)
-    } catch (error) {
-      console.error('Failed to calculate match score:', error)
-    } finally {
-      setIsMatching(false)
-    }
+    calculateScoreMutation.mutate(
+      { cvId: selectedCvId, jobId: selectedJobId },
+      {
+        onSuccess: (score) => setMatchScore(score),
+        onError: (error) => console.error('Failed to calculate match score:', error),
+      }
+    )
   }
 
   if (loading) {
@@ -183,7 +149,7 @@ export default function CandidateCvPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6 relative">
-              {isUploading && (
+              {uploadCvMutation.isPending && (
                 <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden rounded-b-xl opacity-70">
                   <div className="absolute left-0 top-0 w-full h-[3px] bg-blue-500 shadow-[0_0_15px_5px_rgba(59,130,246,0.5)] z-20 animate-[scan_2s_ease-in-out_infinite]" />
                   <div className="absolute inset-0 bg-blue-50/30 backdrop-blur-[1px]" />
@@ -220,10 +186,10 @@ export default function CandidateCvPage() {
                 </div>
                 <Button
                   onClick={handleUpload}
-                  disabled={!selectedFile || !cvTitle || isUploading}
+                  disabled={!selectedFile || !cvTitle || uploadCvMutation.isPending}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-6 text-base transition-all shadow-md hover:shadow-lg disabled:opacity-50"
                 >
-                  {isUploading ? 'ĐANG PHÂN TÍCH...' : 'TẢI LÊN & PHÂN TÍCH'}
+                  {uploadCvMutation.isPending ? 'ĐANG PHÂN TÍCH...' : 'TẢI LÊN & PHÂN TÍCH'}
                 </Button>
               </div>
             </CardContent>
@@ -273,14 +239,14 @@ export default function CandidateCvPage() {
 
               <Button
                 onClick={handleMatch}
-                disabled={!selectedCvId || !selectedJobId || isMatching}
+                disabled={!selectedCvId || !selectedJobId || calculateScoreMutation.isPending}
                 className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-6 text-base transition-all"
               >
-                {isMatching ? 'ĐANG TÍNH TOÁN...' : 'CHẤM ĐIỂM NGAY'}
+                {calculateScoreMutation.isPending ? 'ĐANG TÍNH TOÁN...' : 'CHẤM ĐIỂM NGAY'}
               </Button>
 
               {/* Match Result */}
-              {matchScore && !isMatching && (
+              {matchScore && !calculateScoreMutation.isPending && (
                 <div className="mt-6 p-5 rounded-xl border border-blue-100 bg-blue-50/30 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <div className="flex flex-col items-center mb-6">
                     <span className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">
@@ -485,7 +451,7 @@ export default function CandidateCvPage() {
       {viewCv && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-300"
-          onClick={() => setViewCv(null)}
+          onClick={() => setViewCvId(null)}
         >
           <div
             className="bg-white rounded-2xl shadow-2xl w-[95vw] max-w-[1200px] h-[95vh] flex flex-col overflow-hidden"
@@ -508,7 +474,7 @@ export default function CandidateCvPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setViewCv(null)}
+                onClick={() => setViewCvId(null)}
                 className="hover:bg-slate-200 rounded-full h-10 w-10"
               >
                 <X className="w-6 h-6 text-slate-500" />

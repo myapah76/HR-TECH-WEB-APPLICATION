@@ -7,5 +7,5 @@ public record JobSkillResponse(
         String skillNeo4jId,
         String skillName,    // resolved from Neo4j
         String requiredLevel,
-        Boolean isMandatory
+        Boolean isAiExtracted
 ) {}

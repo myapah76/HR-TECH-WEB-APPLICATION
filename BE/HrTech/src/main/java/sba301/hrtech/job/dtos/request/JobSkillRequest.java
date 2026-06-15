@@ -8,8 +8,5 @@ public record JobSkillRequest(
         String skillNeo4jId,
 
         @NotNull(message = "Required level is required")
-        String requiredLevel,
-
-        @NotNull(message = "isMandatory is required")
-        Boolean isMandatory
+        String requiredLevel
 ) {}

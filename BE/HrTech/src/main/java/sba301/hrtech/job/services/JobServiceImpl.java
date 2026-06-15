@@ -75,13 +75,6 @@ public class JobServiceImpl implements IJobService {
         jobSearchRepository.save(doc);
 
 
-        final UUID finalJobId = savedJob.getId();
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                skillExtractionService.extractAndSaveJobSkills(finalJobId);
-            }
-        });
 
         log.info("Recruiter {} created job '{}' for company {}", currentUser.getId(), savedJob.getTitle(), company.getId());
         return jobMapper.toResponse(savedJob);
@@ -112,13 +105,6 @@ public class JobServiceImpl implements IJobService {
         job.setExtractionStatus(ExtractionStatus.PENDING);
         Job updatedJob = jobRepository.save(job);
 
-        final UUID finalUpdatedJobId = updatedJob.getId();
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                skillExtractionService.extractAndSaveJobSkills(finalUpdatedJobId);
-            }
-        });
         log.info("Recruiter {} updated job {}", currentUser.getId(), jobId);
         return jobMapper.toResponse(updatedJob);
     }
@@ -161,6 +147,15 @@ public class JobServiceImpl implements IJobService {
 
         job.setStatus(JobStatus.APPROVED);
         Job savedJob = jobRepository.save(job);
+        
+        final UUID finalApproveJobId = savedJob.getId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                skillExtractionService.extractAndSaveJobSkills(finalApproveJobId);
+            }
+        });
+        
         log.info("Approver {} approved job {}", currentUser.getId(), jobId);
         return jobMapper.toResponse(savedJob);
     }

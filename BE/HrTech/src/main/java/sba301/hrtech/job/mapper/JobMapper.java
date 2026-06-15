@@ -120,7 +120,7 @@ public abstract class JobMapper {
                     .job(job)
                     .skillNeo4jId(sr.skillNeo4jId())
                     .requiredLevel(level)
-                    .isMandatory(sr.isMandatory())
+                    .isAiExtracted(false)
                     .build();
             result.add(js);
         }

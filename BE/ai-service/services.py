@@ -129,10 +129,9 @@ CRITICAL RULES FOR SKILL NAMES:
    - "K8s" -> "kubernetes"
    - "GCP" -> "googlecloudplatform"
 4. Determine required proficiency level from context: BEGINNER, INTERMEDIATE, ADVANCED, EXPERT. If unspecified, assume INTERMEDIATE.
-5. If the text explicitly states a skill is an absolute "must-have", "required", or "mandatory", set is_mandatory to true. Otherwise, set is_mandatory to false.
 
 Return ONLY a valid JSON array with no extra text. Example:
-[{{ "name": "java", "level": "ADVANCED", "is_mandatory": true }}, {{ "name": "nodejs", "level": "INTERMEDIATE", "is_mandatory": false }}]
+[{{ "name": "java", "level": "ADVANCED" }}, {{ "name": "nodejs", "level": "INTERMEDIATE" }}]
 
 If no skills are found, return: []
 

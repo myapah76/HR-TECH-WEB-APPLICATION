@@ -15,13 +15,8 @@ class ExtractedSkill(BaseModel):
     name: str
     level: str  # BEGINNER, INTERMEDIATE, ADVANCED, EXPERT
 
-class ExtractedJobSkill(BaseModel):
-    name: str
-    level: str
-    is_mandatory: bool
-
 class JobExtractionResponse(BaseModel):
-    skills: List[ExtractedJobSkill]
+    skills: List[ExtractedSkill]
 
 class EmbedResponse(BaseModel):
     embeddings: List[List[float]]

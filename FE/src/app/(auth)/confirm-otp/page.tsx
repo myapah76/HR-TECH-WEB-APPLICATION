@@ -9,11 +9,36 @@ import { VerifyOtpForm } from '@/src/components/VerifyOtpForm'
 import { useSearchParams } from 'next/navigation'
 import { OtpType } from '@/src/enums/otp.enum'
 
-export default function VerifyOtpPage() {
+function OtpContent() {
   const searchParams = useSearchParams()
   const email = searchParams.get('email') || ''
   const expireIn = searchParams.get('expireIn') || ''
   const otpType = searchParams.get('otpType') || ''
+
+  return (
+    <>
+      <div className="flex flex-col items-center text-center space-y-4">
+        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center shadow-inner">
+          <MailCheck className="w-8 h-8 text-blue-600" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900 mb-2">
+            Xác thực Email
+          </h1>
+          <p className="text-sm text-slate-500 font-medium px-4">
+            Chúng tôi đã gửi một mã OTP gồm 6 chữ số đến email:
+            <span className="font-bold text-slate-900 ml-1">{email}</span>. Vui lòng nhập mã để
+            tiếp tục.
+          </p>
+        </div>
+      </div>
+
+      <VerifyOtpForm email={email} expireIn={Number(expireIn)} otpType={otpType as OtpType} />
+    </>
+  )
+}
+
+export default function VerifyOtpPage() {
   return (
     <div className="min-h-[calc(100vh-180px)] flex items-center justify-center px-4 py-12">
       <motion.div
@@ -33,22 +58,6 @@ export default function VerifyOtpPage() {
               Quay lại
             </Link>
 
-            <div className="flex flex-col items-center text-center space-y-4">
-              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center shadow-inner">
-                <MailCheck className="w-8 h-8 text-blue-600" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-black tracking-tight text-slate-900 mb-2">
-                  Xác thực Email
-                </h1>
-                <p className="text-sm text-slate-500 font-medium px-4">
-                  Chúng tôi đã gửi một mã OTP gồm 6 chữ số đến email:
-                  <span className="font-bold text-slate-900">{email}</span>. Vui lòng nhập mã để
-                  tiếp tục.
-                </p>
-              </div>
-            </div>
-
             <Suspense
               fallback={
                 <div className="h-48 flex items-center justify-center">
@@ -56,11 +65,7 @@ export default function VerifyOtpPage() {
                 </div>
               }
             >
-              <VerifyOtpForm
-                email={email}
-                expireIn={Number(expireIn)}
-                otpType={otpType as OtpType}
-              />
+              <OtpContent />
             </Suspense>
           </CardContent>
         </Card>

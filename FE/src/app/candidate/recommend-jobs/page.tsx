@@ -5,10 +5,9 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/src
 import { Button } from '@/src/components/ui/button'
 import { Input } from '@/src/components/ui/input'
 import { Label } from '@/src/components/ui/label'
-import { getAllCvs, uploadCv } from '@/src/services/cv.service'
-import { startJobMatching, getJobMatchingStatus } from '@/src/services/recommendation.service'
-import { CvSummaryResponse } from '@/src/types/cv'
-import { JobMatchingTaskResponse, JobRecommendationResponse } from '@/src/types/recommendation'
+import { useGetAllCvs, useUploadCv } from '@/src/hooks/useCv'
+import { useStartJobMatching, useGetJobMatchingStatus } from '@/src/hooks/useRecommendation'
+import { JobMatchingTaskResponse } from '@/src/types/recommendation'
 import {
   Star,
   UploadCloud,
@@ -24,8 +23,9 @@ import { Progress } from '@/src/components/ui/progress'
 import Link from 'next/link'
 
 export default function RecommendJobsPage() {
-  const [cvs, setCvs] = useState<CvSummaryResponse[]>([])
-  const [loadingCvs, setLoadingCvs] = useState(true)
+  const { data: cvs = [], isLoading: loadingCvs } = useGetAllCvs()
+  const uploadCvMutation = useUploadCv()
+  const startJobMatchingMutation = useStartJobMatching()
 
   // Input states
   const [cvMode, setCvMode] = useState<'existing' | 'new'>('existing')
@@ -40,25 +40,12 @@ export default function RecommendJobsPage() {
   const [taskStatus, setTaskStatus] = useState<JobMatchingTaskResponse | null>(null)
 
   useEffect(() => {
-    fetchCvs()
-  }, [])
-
-  const fetchCvs = async () => {
-    try {
-      setLoadingCvs(true)
-      const data = await getAllCvs()
-      setCvs(data)
-      if (data.length > 0) {
-        setSelectedCvId(data.find((c) => c.isPrimary)?.id || data[0].id)
-      } else {
-        setCvMode('new')
-      }
-    } catch (error) {
-      console.error('Failed to fetch CVs:', error)
-    } finally {
-      setLoadingCvs(false)
+    if (cvs.length > 0 && !selectedCvId) {
+      setSelectedCvId(cvs.find((c) => c.isPrimary)?.id || cvs[0].id)
+    } else if (cvs.length === 0 && !loadingCvs) {
+      setCvMode('new')
     }
-  }
+  }, [cvs, loadingCvs, selectedCvId])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -69,75 +56,70 @@ export default function RecommendJobsPage() {
     }
   }
 
-  const handleStartProcess = async () => {
-    try {
-      setIsStarting(true)
-      let targetCvId = selectedCvId
+  const { data: polledStatus } = useGetJobMatchingStatus(taskId, !!taskId)
 
-      if (cvMode === 'new') {
-        if (!selectedFile || !cvTitle) {
-          alert('Vui lòng chọn file và nhập tên CV')
-          setIsStarting(false)
-          return
-        }
-        const newCv = await uploadCv(selectedFile, cvTitle)
-        targetCvId = newCv.id
-        // Refresh CV list silently
-        fetchCvs()
-      }
+  useEffect(() => {
+    if (polledStatus) {
+      setTaskStatus(polledStatus)
+    }
+  }, [polledStatus])
 
-      if (!targetCvId) {
-        alert('Không tìm thấy ID CV hợp lệ')
-        setIsStarting(false)
+  const handleStartProcess = () => {
+    let targetCvId = selectedCvId
+
+    if (cvMode === 'new') {
+      if (!selectedFile || !cvTitle) {
+        alert('Vui lòng chọn file và nhập tên CV')
         return
       }
-
-      const { taskId: newTaskId } = await startJobMatching(targetCvId)
-      setTaskId(newTaskId)
-
-      // Initial status before polling kicks in
-      setTaskStatus({
-        taskId: newTaskId,
-        status: 'PENDING',
-        message: 'Đang khởi tạo tiến trình AI...',
-        progressPercentage: 5,
-        recommendedJobs: null,
-      })
-    } catch (error) {
-      console.error('Failed to start job matching:', error)
-      alert('Có lỗi xảy ra khi bắt đầu tiến trình AI')
-    } finally {
-      setIsStarting(false)
+      setIsStarting(true)
+      uploadCvMutation.mutate(
+        { file: selectedFile, title: cvTitle },
+        {
+          onSuccess: (newCv) => {
+            triggerJobMatching(newCv.id)
+            setSelectedFile(null)
+            setCvTitle('')
+            if (fileInputRef.current) fileInputRef.current.value = ''
+          },
+          onError: (error) => {
+            console.error('Failed to upload new CV', error)
+            alert('Lỗi khi tải lên CV mới')
+            setIsStarting(false)
+          },
+        }
+      )
+    } else {
+      if (!targetCvId) {
+        alert('Không tìm thấy ID CV hợp lệ')
+        return
+      }
+      triggerJobMatching(targetCvId)
     }
   }
 
-  // Polling Effect
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout
-
-    const checkStatus = async () => {
-      if (!taskId) return
-      try {
-        const status = await getJobMatchingStatus(taskId)
-        setTaskStatus(status)
-
-        if (status.status === 'DONE' || status.status === 'FAILED') {
-          clearInterval(intervalId)
-        }
-      } catch (error) {
-        console.error('Polling error:', error)
-      }
-    }
-
-    if (taskId) {
-      // Poll every 2 seconds
-      intervalId = setInterval(checkStatus, 2000)
-    }
-
-    return () => {
-      if (intervalId) clearInterval(intervalId)
-    }
-  }, [taskId])
+  const triggerJobMatching = (id: string) => {
+    setIsStarting(true)
+    startJobMatchingMutation.mutate(id, {
+      onSuccess: ({ taskId: newTaskId }) => {
+        setTaskId(newTaskId)
+        setTaskStatus({
+          taskId: newTaskId,
+          status: 'PENDING',
+          message: 'Đang khởi tạo tiến trình AI...',
+          progressPercentage: 5,
+          recommendedJobs: null,
+        })
+      },
+      onError: (error) => {
+        console.error('Failed to start job matching:', error)
+        alert('Có lỗi xảy ra khi bắt đầu tiến trình AI')
+      },
+      onSettled: () => {
+        setIsStarting(false)
+      },
+    })
+  }
 
   const getStatusIcon = (status: string | undefined) => {
     switch (status) {

@@ -4,11 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExtractedJobSkillDto {
-    private String name;
-    private String level;
-    private Boolean isMandatory;
+public class JobExtractResponseDto {
+    private List<ExtractedSkillDto> skills;
 }

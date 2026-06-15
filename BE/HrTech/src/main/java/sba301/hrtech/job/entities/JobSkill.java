@@ -25,7 +25,7 @@ public class JobSkill extends BaseEntity {
     @Column(name = "required_level")
     private SkillLevel requiredLevel;
 
-    @Column(name = "is_mandatory")
-    private Boolean isMandatory;
+    @Column(name = "is_ai_extracted")
+    private Boolean isAiExtracted;
 
 }
