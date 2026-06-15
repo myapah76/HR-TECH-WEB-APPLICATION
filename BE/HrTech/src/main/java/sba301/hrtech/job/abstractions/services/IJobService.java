@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import sba301.hrtech.job.dtos.request.JobRequest;
 import sba301.hrtech.job.dtos.request.JobSearchCriteria;
 import sba301.hrtech.job.dtos.response.JobResponse;
+import sba301.hrtech.job.entities.JobDocument;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,6 +29,8 @@ public interface IJobService {
     JobResponse getJobDetails(UUID jobId);
 
     Page<JobResponse> searchJobs(JobSearchCriteria criteria, Pageable pageable);
+
+    Page<JobDocument> searchJobsWithElasticsearch(String keyword, Pageable pageable);
 
     List<JobResponse> getCompanyJobs(UUID companyId);
 

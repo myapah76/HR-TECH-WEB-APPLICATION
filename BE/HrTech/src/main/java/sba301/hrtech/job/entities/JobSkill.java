@@ -27,4 +27,5 @@ public class JobSkill extends BaseEntity {
 
     @Column(name = "is_mandatory")
     private Boolean isMandatory;
+
 }

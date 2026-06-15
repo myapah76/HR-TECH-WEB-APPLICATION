@@ -43,6 +43,6 @@ export interface JobCategory {
   count: number
 }
 
-export * from './cv.type';
-export * from './job.type';
-export * from './recommendation.type';
+export * from './cv'
+export * from './job'
+export * from './recommendation'

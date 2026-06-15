@@ -62,6 +62,7 @@ public class ErrorCode {
     public static final String JOB_COMPANY_NOT_APPROVED = "JOB_COMPANY_NOT_APPROVED";
     public static final String JOB_PERMISSION_DENIED = "JOB_PERMISSION_DENIED";
     public static final String JOB_SKILL_NOT_FOUND = "JOB_SKILL_NOT_FOUND";
+    public static final String Elastic_Search_Failed = "Elastic_Search_Failed";
 
     //Subscription Plan
     public static final String SUBSCRIPTION_PLAN_NOT_FOUND = "SUBSCRIPTION_PLAN_NOT_FOUND";
@@ -70,5 +71,9 @@ public class ErrorCode {
     public static final String HAS_ERROR = "HAS_ERROR";
     public static final String ORDER_CODE_NOT_FOUND = "ORDER_CODE_NOT_FOUND";
     public static final String WEBHOOK_NOT_FOUND = "WEBHOOK_NOT_FOUND";
+
+    // Feature
+    public static final String FEATURE_ALREADY_EXISTS = "FEATURE_ALREADY_EXISTS";
+    public static final String FEATURE_NOT_FOUND = "FEATURE_NOT_FOUND";
 }
 

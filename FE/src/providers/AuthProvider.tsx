@@ -6,7 +6,6 @@ import { refreshToken, logout } from '@/src/services/auth.service'
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const setAuth = useAuthStore.getState().setAuth
   const clearAuth = useAuthStore.getState().logout
-  const setInitialized = useAuthStore.getState().setInitialized
 
   useEffect(() => {
     console.log('vào Auth Provider')
@@ -14,7 +13,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       console.log('vào Auth init hàm')
       try {
         const res = await refreshToken()
-        console.log('res', res)
         setAuth({
           user: res.data.userResponse,
           accessToken: res.data.accessToken,
@@ -22,11 +20,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       } catch {
         await logout()
         clearAuth()
-      } finally {
-        setInitialized(true)
       }
     }
     initAuth()
-  }, [setAuth, clearAuth, setInitialized])
+  }, [setAuth, clearAuth])
   return <>{children}</>
 }

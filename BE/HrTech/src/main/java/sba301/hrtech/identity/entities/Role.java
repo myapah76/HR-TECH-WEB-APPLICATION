@@ -16,7 +16,7 @@ import java.util.List;
 @Table(name = "roles")
 
 // Soft delete: thay vì DELETE sẽ update deleted = true
-@SQLDelete(sql = "UPDATE roles SET deleted = true WHERE id = ?")
+@SQLDelete(sql = "UPDATE roles SET is_deleted = true WHERE id = ?")
 
 // Tự động loại bỏ các bản ghi đã soft delete khỏi các query
 @SQLRestriction("is_deleted = false")

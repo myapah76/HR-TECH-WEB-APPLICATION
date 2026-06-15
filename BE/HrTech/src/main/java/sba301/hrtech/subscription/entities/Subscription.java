@@ -1,12 +1,14 @@
 package sba301.hrtech.subscription.entities;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.payment.entities.Payment;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import sba301.hrtech.subscription.entities.enums.OwnerType;
+import sba301.hrtech.subscription.entities.enums.PlanType;
 import sba301.hrtech.subscription.entities.enums.SubscriptionStatus;
 
 import java.time.LocalDate;
@@ -20,6 +22,8 @@ import java.util.ArrayList;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE subscriptions SET is_deleted = true WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 public class Subscription extends SoftDeleteEntity {
 
     @Column(name = "start_date")
@@ -29,7 +33,7 @@ public class Subscription extends SoftDeleteEntity {
     private LocalDate endDate;
 
     @Enumerated(EnumType.STRING)
-    private OwnerType ownerType;
+    private PlanType planType;
 
     @Enumerated(EnumType.STRING)
     private SubscriptionStatus status;

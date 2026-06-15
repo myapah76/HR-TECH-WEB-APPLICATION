@@ -4,11 +4,19 @@ import { Bell, ChevronDown, Menu, LogOut, User as UserIcon } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { logout as logoutService } from '@/src/services/auth.service'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
+
+const NAV_ITEMS = [
+  { label: 'Tìm việc', path: '/jobs', id: 'nav-jobs' },
+  { label: 'Công ty', path: '/companies', id: 'nav-companies' },
+  { label: 'Giá lương', path: '/salary-guide', id: 'nav-salary' },
+  { label: 'Bảng giá', path: '/pricing', id: 'nav-pricing' },
+]
 
 export default function Header() {
-  const { user, isInitialized, logout: clearAuth } = useAuthStore()
+  const { user, logout: clearAuth } = useAuthStore()
   const router = useRouter()
+  const pathname = usePathname()
   const handleLogout = async () => {
     try {
       await logoutService()
@@ -46,41 +54,23 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1.5 lg:gap-4.5" id="desktop-nav">
-            <Link
-              href="/"
-              className="text-sm font-bold transition-all duration-200 px-3 py-1.5 rounded-xl text-blue-650 bg-blue-50/70 border border-blue-100/40 shadow-xs"
-              id="nav-home"
-            >
-              Home
-            </Link>
-            <Link
-              href="/jobs"
-              className="text-sm font-bold transition-all duration-200 px-3 py-1.5 rounded-xl text-slate-650 hover:text-blue-600 hover:bg-slate-50"
-              id="nav-jobs"
-            >
-              Find Jobs
-            </Link>
-            <Link
-              href="/companies"
-              className="text-sm font-bold transition-all duration-200 px-3 py-1.5 rounded-xl text-slate-650 hover:text-blue-600 hover:bg-slate-50"
-              id="nav-companies"
-            >
-              Companies
-            </Link>
-            <Link
-              href="/salary-guide"
-              className="text-sm font-bold transition-all duration-200 px-3 py-1.5 rounded-xl text-slate-650 hover:text-blue-600 hover:bg-slate-50"
-              id="nav-salary"
-            >
-              Salary Insight
-            </Link>
-            <Link
-              href="/handbook"
-              className="text-sm font-bold transition-all duration-200 px-3 py-1.5 rounded-xl text-slate-650 hover:text-blue-600 hover:bg-slate-50"
-              id="nav-handbook"
-            >
-              Handbook
-            </Link>
+            {NAV_ITEMS.map((item) => {
+              const isActive = pathname === item.path
+              return (
+                <Link
+                  key={item.id}
+                  href={item.path}
+                  className={`text-sm font-bold transition-all duration-200 px-3 py-1.5 rounded-xl ${
+                    isActive
+                      ? 'text-blue-650 bg-blue-50/70 border border-blue-100/40 shadow-xs'
+                      : 'text-slate-650 hover:text-blue-600 hover:bg-slate-50'
+                  }`}
+                  id={item.id}
+                >
+                  {item.label}
+                </Link>
+              )
+            })}
           </nav>
 
           {/* User & Settings Panel */}
@@ -97,7 +87,7 @@ export default function Header() {
               </Button>
             </div>
 
-            {isInitialized && user ? (
+            {user ? (
               <div className="relative group animate-fade-in" id="user-dropdown">
                 <div className="flex items-center gap-2 cursor-pointer text-sm font-bold text-slate-700 hover:text-blue-600 transition-all bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
                   <div className="bg-blue-100 rounded-full p-1 text-blue-600 border border-blue-200">
@@ -134,7 +124,7 @@ export default function Header() {
                   </div>
                 </div>
               </div>
-            ) : isInitialized && !user ? (
+            ) : (
               <Link
                 href="/login"
                 className="flex items-center gap-2 text-sm font-bold text-slate-700 hover:text-blue-600 transition-all hover:scale-102"
@@ -145,8 +135,6 @@ export default function Header() {
                 </div>
                 <span>Đăng nhập</span>
               </Link>
-            ) : (
-              <div className="h-9 w-28 bg-slate-100 animate-pulse rounded-full"></div>
             )}
 
             {/* Recruiter Dropdown Menu */}
@@ -194,44 +182,24 @@ export default function Header() {
         id="mobile-navigation-panel"
       >
         <nav className="flex flex-col gap-2 mb-4">
-          <Link
-            href="/"
-            className="text-left text-base font-semibold py-2 px-3 rounded-lg text-blue-600 bg-blue-50"
-            id="mob-nav-home"
-          >
-            Home
-          </Link>
-          <Link
-            href="/jobs"
-            className="text-left text-base font-semibold py-2 px-3 rounded-lg text-gray-700 hover:bg-gray-50"
-            id="mob-nav-jobs"
-          >
-            Find Jobs
-          </Link>
-          <Link
-            href="/companies"
-            className="text-left text-base font-semibold py-2 px-3 rounded-lg text-gray-700 hover:bg-gray-50"
-            id="mob-nav-companies"
-          >
-            Companies
-          </Link>
-          <Link
-            href="/salary-guide"
-            className="text-left text-base font-semibold py-2 px-3 rounded-lg text-gray-700 hover:bg-gray-50"
-            id="mob-nav-salary"
-          >
-            Salary Insight
-          </Link>
-          <Link
-            href="/handbook"
-            className="text-left text-base font-semibold py-2 px-3 rounded-lg text-gray-700 hover:bg-gray-50"
-            id="mob-nav-handbook"
-          >
-            Handbook
-          </Link>
+          {NAV_ITEMS.map((item) => {
+            const isActive = pathname === item.path
+            return (
+              <Link
+                key={`mob-${item.id}`}
+                href={item.path}
+                className={`text-left text-base font-semibold py-2 px-3 rounded-lg ${
+                  isActive ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:bg-gray-50'
+                }`}
+                id={`mob-${item.id}`}
+              >
+                {item.label}
+              </Link>
+            )
+          })}
         </nav>
         <div className="flex flex-col gap-3 pt-3 border-t border-gray-100">
-          {isInitialized && user ? (
+          {user ? (
             <>
               <Link
                 href="/profile"
@@ -260,7 +228,7 @@ export default function Header() {
                 <span>Đăng xuất</span>
               </Button>
             </>
-          ) : isInitialized && !user ? (
+          ) : (
             <Link
               href="/login"
               className="flex items-center gap-2.5 text-base font-semibold text-blue-600 py-2 px-3 hover:bg-blue-50 rounded-lg text-left w-full"
@@ -271,16 +239,7 @@ export default function Header() {
               </div>
               <span>Đăng nhập</span>
             </Link>
-          ) : (
-            <div className="h-10 w-full bg-slate-100 animate-pulse rounded-lg"></div>
           )}
-          <div className="flex items-center justify-between py-2 px-3 border border-gray-150 rounded-lg text-sm text-gray-600">
-            <span className="font-semibold">Language:</span>
-            <select className="font-extrabold text-blue-600 bg-transparent cursor-pointer focus:outline-none">
-              <option value="en">English</option>
-              <option value="vi">Tiếng Việt</option>
-            </select>
-          </div>
         </div>
       </div>
     </header>

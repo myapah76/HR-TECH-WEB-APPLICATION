@@ -8,6 +8,7 @@ import sba301.hrtech.job.dtos.request.JobSkillRequest;
 import sba301.hrtech.job.dtos.response.JobResponse;
 import sba301.hrtech.job.dtos.response.JobSkillResponse;
 import sba301.hrtech.job.entities.Job;
+import sba301.hrtech.job.entities.JobDocument;
 import sba301.hrtech.job.entities.JobSkill;
 import sba301.hrtech.job.entities.enums.ExperienceLevel;
 import sba301.hrtech.job.entities.enums.JobType;
@@ -40,6 +41,25 @@ public abstract class JobMapper {
     @Mapping(target = "skillName", expression = "java(resolveSkillName(jobSkill.getSkillNeo4jId()))")
     @Mapping(target = "requiredLevel", expression = "java(jobSkill.getRequiredLevel() != null ? jobSkill.getRequiredLevel().name() : null)")
     public abstract JobSkillResponse toSkillResponse(JobSkill jobSkill);
+
+
+    public JobDocument toDocument(Job job) {
+
+        List<String> skills = job.getJobSkills()
+                .stream()
+                .map(js -> js.getSkillNeo4jId()) // or resolve name if needed
+                .toList();
+
+        return JobDocument.builder()
+                .id(job.getId())
+                .title(job.getTitle())
+                .description(job.getDescription())
+                .location(job.getLocation())
+                .jobType(job.getJobType() != null ? job.getJobType().name() : null)
+                .experienceLevel(job.getExperienceLevel() != null ? job.getExperienceLevel().name() : null)
+                .skills(skills)
+                .build();
+    }
 
     protected String resolveSkillName(String skillNeo4jId) {
         if (skillNeo4jId == null) return null;

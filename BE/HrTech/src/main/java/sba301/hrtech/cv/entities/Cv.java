@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.ArrayList;
 import sba301.hrtech.application.entities.Application;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,6 +20,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE cvs SET is_deleted = true WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 public class Cv extends SoftDeleteEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -1,7 +1,7 @@
 package sba301.hrtech.subscription.abstractions.services;
 
-import sba301.hrtech.subscription.dtos.request.SubscriptionPlanRequest;
-import sba301.hrtech.subscription.dtos.response.SubscriptionPlanResponse;
+import sba301.hrtech.subscription.dtos.subscriptionPlan.request.SubscriptionPlanRequest;
+import sba301.hrtech.subscription.dtos.subscriptionPlan.response.SubscriptionPlanResponse;
 import sba301.hrtech.subscription.entities.SubscriptionPlan;
 
 import java.util.List;
