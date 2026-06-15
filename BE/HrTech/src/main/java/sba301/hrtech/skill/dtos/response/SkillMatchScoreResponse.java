@@ -17,8 +17,6 @@ public class SkillMatchScoreResponse {
 
     private double overallScore;
     private ScoreGrade grade;
-    private double graphScore;
-    private double embeddingScore;
     private List<String> matchedSkills;
     private List<String> missingSkills;
     private List<SkillMatchDetail> skillDetails;

@@ -21,7 +21,9 @@ import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
 import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
 import sba301.hrtech.skill.dtos.response.CvExtractionResponse;
-import sba301.hrtech.skill.dtos.response.ExtractedJobSkillDto;
+
+import sba301.hrtech.skill.dtos.response.JobExtractResponseDto;
+import sba301.hrtech.skill.dtos.response.JobExtractionResponse;
 import sba301.hrtech.skill.dtos.response.ExtractedSkillDto;
 import sba301.hrtech.skill.dtos.response.ParseExtractResponseDto;
 import sba301.hrtech.skill.dtos.response.SkillProcessResult;
@@ -124,6 +126,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
             int newCount = 0;
             List<SkillResponse> extractedSkills = new ArrayList<>();
             List<String> newlyCreatedSkills = new ArrayList<>();
+            Set<String> existingSkillNeo4jIds = new HashSet<>();
 
             for (ExtractedSkillDto extracted : aiExtracted) {
                 if (extracted.getName() == null || extracted.getName().isBlank()) {
@@ -140,14 +143,17 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
                     matchedCount++;
                 }
 
-                // 5. Create CvSkill bridge record in PostgreSQL
-                CvSkill cvSkill = CvSkill.builder()
-                        .cv(cv)
-                        .skillNeo4jId(skillNode.getId())
-                        .proficiencyLevel(mapLevel(extracted.getLevel()))
-                        .isAiExtracted(true)
-                        .build();
-                cvSkillRepository.save(cvSkill);
+                if (!existingSkillNeo4jIds.contains(skillNode.getId())) {
+                    // 5. Create CvSkill bridge record in PostgreSQL
+                    CvSkill cvSkill = CvSkill.builder()
+                            .cv(cv)
+                            .skillNeo4jId(skillNode.getId())
+                            .proficiencyLevel(mapLevel(extracted.getLevel()))
+                            .isAiExtracted(true)
+                            .build();
+                    cvSkillRepository.save(cvSkill);
+                    existingSkillNeo4jIds.add(skillNode.getId());
+                }
 
                 extractedSkills.add(skillMapper.toResponse(skillNode));
             }
@@ -177,7 +183,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
     @Override
     @Async
     @Transactional
-    public void extractAndSaveJobSkills(UUID jobId) {
+    public CompletableFuture<JobExtractionResponse> extractAndSaveJobSkills(UUID jobId) {
         // 1. Get Job from PostgreSQL
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND,
@@ -189,7 +195,12 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
         if ((description == null || description.isBlank()) && (requirements == null || requirements.isBlank())) {
             job.setExtractionStatus(ExtractionStatus.COMPLETED);
             jobRepository.save(job);
-            return;
+            return CompletableFuture.completedFuture(JobExtractionResponse.builder()
+                    .jobId(jobId)
+                    .extractedSkills(Collections.emptyList())
+                    .newSkillsCount(0)
+                    .matchedSkillsCount(0)
+                    .build());
         }
 
         try {
@@ -218,18 +229,45 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
             // --------------------
 
             // 2. Call Gemini AI to extract skills
-            List<ExtractedJobSkillDto> aiExtracted = aiServiceClient.extractJobSkillsFromText(description,
+            JobExtractResponseDto extractResult = aiServiceClient.extractJobSkillsFromText(description,
                     requirements);
-            log.info("Gemini extracted {} skills from Job {}", aiExtracted.size(), jobId);
+
+            if (extractResult == null) {
+                job.setExtractionStatus(ExtractionStatus.COMPLETED);
+                jobRepository.save(job);
+                return CompletableFuture.completedFuture(JobExtractionResponse.builder()
+                        .jobId(jobId)
+                        .extractedSkills(Collections.emptyList())
+                        .newSkillsCount(0)
+                        .matchedSkillsCount(0)
+                        .build());
+            }
+
+            List<ExtractedSkillDto> aiExtracted = extractResult.getSkills();
+            log.info("Gemini extracted {} skills from Job {}", aiExtracted != null ? aiExtracted.size() : 0, jobId);
+
+            if (aiExtracted == null || aiExtracted.isEmpty()) {
+                job.setExtractionStatus(ExtractionStatus.COMPLETED);
+                jobRepository.save(job);
+                return CompletableFuture.completedFuture(JobExtractionResponse.builder()
+                        .jobId(jobId)
+                        .extractedSkills(Collections.emptyList())
+                        .newSkillsCount(0)
+                        .matchedSkillsCount(0)
+                        .build());
+            }
 
             Set<String> existingSkillNeo4jIds = new HashSet<>();
             for (JobSkill js : job.getJobSkills()) {
                 existingSkillNeo4jIds.add(js.getSkillNeo4jId());
             }
 
+            int matchedCount = 0;
+            int newCount = 0;
+            List<SkillResponse> extractedSkills = new ArrayList<>();
             List<String> newlyCreatedSkills = new ArrayList<>();
 
-            for (ExtractedJobSkillDto extracted : aiExtracted) {
+            for (ExtractedSkillDto extracted : aiExtracted) {
                 if (extracted.getName() == null || extracted.getName().isBlank()) {
                     continue;
                 }
@@ -238,7 +276,10 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
                 SkillNode skillNode = result.skillNode();
                 
                 if (result.isNew()) {
+                    newCount++;
                     newlyCreatedSkills.add(skillNode.getName());
+                } else {
+                    matchedCount++;
                 }
 
                 // If already manually added by employer, skip to avoid duplicates
@@ -248,11 +289,13 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
                             .job(job)
                             .skillNeo4jId(skillNode.getId())
                             .requiredLevel(mapLevel(extracted.getLevel()))
-                            .isMandatory(extracted.getIsMandatory() != null ? extracted.getIsMandatory() : false)
+                            .isAiExtracted(true)
                             .build();
                     jobSkillRepository.save(jobSkill);
                     existingSkillNeo4jIds.add(skillNode.getId()); // Prevent duplicates in the same extraction loop
                 }
+
+                extractedSkills.add(skillMapper.toResponse(skillNode));
             }
 
             job.setExtractionStatus(ExtractionStatus.COMPLETED);
@@ -262,10 +305,18 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
             if (!newlyCreatedSkills.isEmpty()) {
                 CompletableFuture.runAsync(() -> mapRelationshipsForNewSkills(newlyCreatedSkills));
             }
+
+            return CompletableFuture.completedFuture(JobExtractionResponse.builder()
+                    .jobId(jobId)
+                    .extractedSkills(extractedSkills)
+                    .newSkillsCount(newCount)
+                    .matchedSkillsCount(matchedCount)
+                    .build());
         } catch (Exception e) {
             log.error("Job extraction failed for job {}", jobId, e);
             job.setExtractionStatus(ExtractionStatus.FAILED);
             jobRepository.save(job);
+            throw e;
         }
     }
 

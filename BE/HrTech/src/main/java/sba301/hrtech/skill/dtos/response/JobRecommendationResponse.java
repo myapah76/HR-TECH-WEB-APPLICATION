@@ -24,9 +24,7 @@ public class JobRecommendationResponse {
     private BigDecimal salaryMin;
     private BigDecimal salaryMax;
 
-    private double matchScore;       // Final hybrid score (0.0 - 1.0)
-    private double graphScore;       // Graph-based score
-    private double embeddingScore;   // Embedding similarity score
+    private double matchScore;       // Final match score (0.0 - 1.0)
     private ScoreGrade matchGrade;       // EXCELLENT, GOOD, FAIR, POOR
 
     private List<String> matchedSkills;

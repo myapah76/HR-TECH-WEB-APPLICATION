@@ -3,7 +3,7 @@ package sba301.hrtech.skill.abstractions.services;
 import sba301.hrtech.skill.dtos.response.CvExtractionResponse;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-
+import sba301.hrtech.skill.dtos.response.JobExtractionResponse;
 public interface ISkillExtractionService {
 
     /**
@@ -16,5 +16,5 @@ public interface ISkillExtractionService {
      */
     CompletableFuture<CvExtractionResponse> extractAndSaveSkills(UUID cvId);
 
-    void extractAndSaveJobSkills(UUID jobId);
+    CompletableFuture<JobExtractionResponse> extractAndSaveJobSkills(UUID jobId);
 }

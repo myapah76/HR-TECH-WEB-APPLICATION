@@ -85,8 +85,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
 
             CompanyWeights weights = extractCompanyWeights(job);
 
-            double graphScore = calculateGraphScore(ctx.cvSkillMap(), ctx.expandedCvSkillTypes(), jobSkills, weights);
-            double finalScore = graphScore;
+            double matchScore = calculateGraphScore(ctx.cvSkillMap(), ctx.expandedCvSkillTypes(), jobSkills, weights);
 
             List<String> matchedSkills = new ArrayList<>();
             List<String> missingSkills = new ArrayList<>();
@@ -100,10 +99,8 @@ public class RecommendationServiceImpl implements IRecommendationService {
                     .location(job.getLocation())
                     .salaryMin(job.getSalaryMin())
                     .salaryMax(job.getSalaryMax())
-                    .matchScore(Math.round(finalScore * 100.0) / 100.0)
-                    .graphScore(Math.round(graphScore * 100.0) / 100.0)
-                    .embeddingScore(0.0)
-                    .matchGrade(getGrade(finalScore))
+                    .matchScore(Math.round(matchScore * 100.0) / 100.0)
+                    .matchGrade(getGrade(matchScore))
                     .matchedSkills(matchedSkills)
                     .missingSkills(missingSkills)
                     .build());
@@ -130,8 +127,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
         List<JobSkill> jobSkills = job.getJobSkills();
         CompanyWeights weights = extractCompanyWeights(job);
 
-        double graphScore = calculateGraphScore(ctx.cvSkillMap(), ctx.expandedCvSkillTypes(), jobSkills, weights);
-        double finalScore = graphScore;
+        double matchScore = calculateGraphScore(ctx.cvSkillMap(), ctx.expandedCvSkillTypes(), jobSkills, weights);
 
         List<String> matchedSkills = new ArrayList<>();
         List<String> missingSkills = new ArrayList<>();
@@ -141,10 +137,8 @@ public class RecommendationServiceImpl implements IRecommendationService {
                 jobSkills);
 
         return SkillMatchScoreResponse.builder()
-                .overallScore(Math.round(finalScore * 100.0) / 100.0)
-                .grade(getGrade(finalScore))
-                .graphScore(Math.round(graphScore * 100.0) / 100.0)
-                .embeddingScore(0.0)
+                .overallScore(Math.round(matchScore * 100.0) / 100.0)
+                .grade(getGrade(matchScore))
                 .matchedSkills(matchedSkills)
                 .missingSkills(missingSkills)
                 .skillDetails(details)
@@ -254,7 +248,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
         double matchedWeight = 0.0;
 
         for (JobSkill jobSkill : jobSkills) {
-            double weight = Boolean.TRUE.equals(jobSkill.getIsMandatory()) ? 1.0 : 0.5;
+            double weight = Boolean.FALSE.equals(jobSkill.getIsAiExtracted()) ? 1.0 : 0.5;
             totalWeight += weight;
 
             String jobSkillNeo4jId = jobSkill.getSkillNeo4jId();

@@ -38,8 +38,8 @@ def api_extract_job_skills(req: JobExtractionRequest):
         
         parsed_skills = []
         for s in skills_data:
-            if "name" in s and "level" in s and "is_mandatory" in s:
-                parsed_skills.append(ExtractedJobSkill(name=s["name"], level=s["level"], is_mandatory=s["is_mandatory"]))
+            if "name" in s and "level" in s:
+                parsed_skills.append(ExtractedSkill(name=s["name"], level=s["level"]))
                 
         return JobExtractionResponse(skills=parsed_skills)
     except Exception as e:
