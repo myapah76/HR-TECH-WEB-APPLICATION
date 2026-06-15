@@ -70,5 +70,9 @@ public class ErrorCode {
     public static final String HAS_ERROR = "HAS_ERROR";
     public static final String ORDER_CODE_NOT_FOUND = "ORDER_CODE_NOT_FOUND";
     public static final String WEBHOOK_NOT_FOUND = "WEBHOOK_NOT_FOUND";
+
+    // Feature
+    public static final String FEATURE_ALREADY_EXISTS = "FEATURE_ALREADY_EXISTS";
+    public static final String FEATURE_NOT_FOUND = "FEATURE_NOT_FOUND";
 }
 

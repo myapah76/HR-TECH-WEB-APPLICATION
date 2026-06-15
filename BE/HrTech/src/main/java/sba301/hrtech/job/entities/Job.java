@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.ArrayList;
 import sba301.hrtech.application.entities.Application;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 import jakarta.persistence.*;
 import lombok.*;
 import sba301.hrtech.job.entities.enums.ExperienceLevel;
@@ -24,6 +27,8 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE jobs SET is_deleted = true WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 public class Job extends SoftDeleteEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

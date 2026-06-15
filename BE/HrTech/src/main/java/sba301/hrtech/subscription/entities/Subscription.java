@@ -1,5 +1,7 @@
 package sba301.hrtech.subscription.entities;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.payment.entities.Payment;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
@@ -20,6 +22,8 @@ import java.util.ArrayList;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE subscriptions SET is_deleted = true WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 public class Subscription extends SoftDeleteEntity {
 
     @Column(name = "start_date")

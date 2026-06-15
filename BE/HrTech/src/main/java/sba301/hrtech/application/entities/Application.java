@@ -5,6 +5,9 @@ import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 import jakarta.persistence.*;
 import lombok.*;
 import sba301.hrtech.application.entities.enums.ApplicationStatus;
@@ -18,6 +21,8 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE applications SET is_deleted = true WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 public class Application extends SoftDeleteEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

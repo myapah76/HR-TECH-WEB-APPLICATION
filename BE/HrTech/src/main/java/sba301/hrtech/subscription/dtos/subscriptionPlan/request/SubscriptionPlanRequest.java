@@ -1,4 +1,4 @@
-package sba301.hrtech.subscription.dtos.request;
+package sba301.hrtech.subscription.dtos.subscriptionPlan.request;
 
 import sba301.hrtech.subscription.entities.enums.PlanType;
 
@@ -10,6 +10,6 @@ public record SubscriptionPlanRequest(
         Long price,
         Integer durationDays,
         PlanType planType,
-        List<String> features,
-        Boolean isActive
+        Boolean isActive,
+        List<PlanFeatureRequest> features
 ) {}

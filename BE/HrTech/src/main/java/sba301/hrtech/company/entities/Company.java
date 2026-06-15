@@ -6,6 +6,9 @@ import java.util.ArrayList;
 
 import sba301.hrtech.job.entities.Job;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 import jakarta.persistence.*;
 import lombok.*;
 import sba301.hrtech.company.entities.enums.CompanySize;
@@ -18,6 +21,8 @@ import sba301.hrtech.company.entities.enums.CompanyStatus;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE companies SET is_deleted = true WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 public class Company extends SoftDeleteEntity {
 
     @Column(nullable = false)
