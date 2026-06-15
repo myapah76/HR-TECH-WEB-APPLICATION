@@ -62,6 +62,7 @@ public class ErrorCode {
     public static final String JOB_COMPANY_NOT_APPROVED = "JOB_COMPANY_NOT_APPROVED";
     public static final String JOB_PERMISSION_DENIED = "JOB_PERMISSION_DENIED";
     public static final String JOB_SKILL_NOT_FOUND = "JOB_SKILL_NOT_FOUND";
+    public static final String Elastic_Search_Failed = "Elastic_Search_Failed";
 
     //Subscription Plan
     public static final String SUBSCRIPTION_PLAN_NOT_FOUND = "SUBSCRIPTION_PLAN_NOT_FOUND";

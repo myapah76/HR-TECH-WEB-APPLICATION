@@ -1,5 +1,6 @@
 package sba301.hrtech.job.services;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -12,11 +13,13 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.company.entities.Company;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
+import sba301.hrtech.job.abstractions.repositories.JobSearchRepository;
 import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.job.dtos.request.JobRequest;
 import sba301.hrtech.job.dtos.request.JobSearchCriteria;
 import sba301.hrtech.job.dtos.response.JobResponse;
 import sba301.hrtech.job.entities.Job;
+import sba301.hrtech.job.entities.JobDocument;
 import sba301.hrtech.job.entities.JobSkill;
 import sba301.hrtech.job.entities.enums.ExperienceLevel;
 import sba301.hrtech.job.entities.enums.JobStatus;
@@ -39,6 +42,8 @@ import java.util.stream.Collectors;
 public class JobServiceImpl implements IJobService {
 
     private final JobRepository jobRepository;
+    private final ElasticsearchClient client;
+    private final JobSearchRepository jobSearchRepository;
     private final ISkillExtractionService skillExtractionService;
     private final JobMapper jobMapper;
     private final JobValidator jobValidator;
@@ -65,6 +70,11 @@ public class JobServiceImpl implements IJobService {
         savedJob.getJobSkills().addAll(skills);
         savedJob.setExtractionStatus(ExtractionStatus.PENDING);
         savedJob = jobRepository.save(savedJob);
+
+        // ElasticSearch
+        JobDocument doc = jobMapper.toDocument(savedJob);
+        jobSearchRepository.save(doc);
+
 
         final UUID finalJobId = savedJob.getId();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -240,6 +250,11 @@ public class JobServiceImpl implements IJobService {
                 criteria.salaryMax(),
                 pageable
         ).map(jobMapper::toResponse);
+    }
+
+    @Override
+    public Page<JobDocument> searchJobsWithElasticsearch(String keyword, Pageable pageable) {
+        return jobSearchRepository.search(keyword, pageable);
     }
 
     @Override
