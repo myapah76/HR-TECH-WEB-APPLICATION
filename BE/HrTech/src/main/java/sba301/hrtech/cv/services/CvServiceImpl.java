@@ -12,7 +12,7 @@ import sba301.hrtech.cv.abstractions.repositories.CvRepository;
 import sba301.hrtech.cv.abstractions.services.CvService;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.shared.enums.ExtractionStatus;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.shared.services.CloudinaryService;
 import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;

@@ -10,7 +10,7 @@ import sba301.hrtech.identity.entities.RefreshToken;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.identity.dtos.user.CustomUserDetails;
 import sba301.hrtech.identity.services.JwtServiceImpl;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 
 import java.time.Instant;

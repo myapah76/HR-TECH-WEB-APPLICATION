@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sba301.hrtech.identity.abstractions.repositories.RoleRepository;
 import sba301.hrtech.identity.abstractions.services.IRoleService;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.identity.entities.Role;
 import sba301.hrtech.identity.dtos.role.request.CommonRoleRequest;

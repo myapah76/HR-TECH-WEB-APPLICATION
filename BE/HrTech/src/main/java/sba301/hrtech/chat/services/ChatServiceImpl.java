@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sba301.hrtech.chat.abstractions.repositories.ChatMessageRepository;
@@ -24,7 +23,7 @@ import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.identity.utils.AuthUtils;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
 import sba301.hrtech.job.entities.Job;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.services.AiServiceClient;
 

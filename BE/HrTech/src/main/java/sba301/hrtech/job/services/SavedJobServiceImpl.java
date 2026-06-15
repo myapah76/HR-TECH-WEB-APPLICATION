@@ -3,7 +3,6 @@ package sba301.hrtech.job.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sba301.hrtech.identity.entities.User;
@@ -15,7 +14,7 @@ import sba301.hrtech.job.dtos.response.JobResponse;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.job.entities.SavedJob;
 import sba301.hrtech.job.mapper.JobMapper;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 
 import java.util.Optional;

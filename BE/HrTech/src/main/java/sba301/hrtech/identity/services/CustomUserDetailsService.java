@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.identity.dtos.user.CustomUserDetails;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 
 @Service

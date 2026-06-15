@@ -16,7 +16,7 @@ import sba301.hrtech.identity.dtos.auth.request.*;
 import sba301.hrtech.identity.dtos.auth.response.ConfirmOtpResult;
 import sba301.hrtech.identity.dtos.auth.response.EmailActionResponse;
 import sba301.hrtech.identity.dtos.auth.response.ForgotPasswordResponse;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.identity.entities.RefreshToken;
 import sba301.hrtech.identity.entities.Role;

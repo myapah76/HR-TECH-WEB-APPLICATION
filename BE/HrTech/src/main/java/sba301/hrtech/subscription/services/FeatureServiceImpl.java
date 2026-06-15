@@ -4,7 +4,7 @@ package sba301.hrtech.subscription.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.subscription.abstractions.repositories.FeatureRepository;
 import sba301.hrtech.subscription.abstractions.services.IFeatureService;

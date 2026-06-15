@@ -1,7 +1,7 @@
 package sba301.hrtech.shared.exceptions;
 
 import lombok.Getter;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 
 @Getter
 public class AppException extends RuntimeException {

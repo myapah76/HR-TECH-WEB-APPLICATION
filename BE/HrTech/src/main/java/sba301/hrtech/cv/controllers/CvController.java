@@ -12,10 +12,8 @@ import sba301.hrtech.cv.dtos.request.UpdateCvTitleRequest;
 import sba301.hrtech.cv.dtos.response.CvDetailResponse;
 import sba301.hrtech.cv.dtos.response.CvSummaryResponse;
 import sba301.hrtech.cv.abstractions.services.CvService;
-import sba301.hrtech.shared.common.ApiResponse;
-import sba301.hrtech.shared.exceptions.AppException;
+import sba301.hrtech.shared.response.ApiResponse;
 
-import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 

@@ -2,7 +2,6 @@ package sba301.hrtech.payment.services;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import sba301.hrtech.identity.utils.AuthUtils;
 import sba301.hrtech.payment.abstractions.repositories.PaymentRepository;
@@ -12,7 +11,7 @@ import sba301.hrtech.payment.dtos.request.CreatePaymentRequest;
 import sba301.hrtech.payment.dtos.response.CreatePaymentResponse;
 import sba301.hrtech.payment.entities.Payment;
 import sba301.hrtech.payment.entities.enums.PaymentStatus;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionPlanService;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionService;

@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import sba301.hrtech.identity.abstractions.repositories.RoleRepository;
 import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.abstractions.services.IUserService;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.identity.entities.Role;
 import sba301.hrtech.identity.entities.User;

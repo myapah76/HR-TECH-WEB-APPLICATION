@@ -6,8 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.*;
-import sba301.hrtech.shared.common.ApiResponse;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.response.ApiResponse;
 
 import java.util.stream.Collectors;
 
@@ -52,11 +52,38 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
-        ex.printStackTrace(); // Log lỗi ra console để debug
         return buildError(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Internal server error",
                 ErrorCode.INTERNAL_ERROR,
+                request.getRequestURI()
+        );
+    }
+
+
+
+    @ExceptionHandler(MissingRequestCookieException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingCookie(
+            MissingRequestCookieException ex,
+            HttpServletRequest request
+    ) {
+        return buildError(
+                HttpStatus.UNAUTHORIZED, // 401
+                ex.getCookieName() + " is required",
+                ErrorCode.MISSING_COOKIE,
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(
+            org.springframework.security.access.AccessDeniedException ex,
+            HttpServletRequest request
+    ) {
+        return buildError(
+                HttpStatus.FORBIDDEN,
+                "Bạn không có quyền truy cập tài nguyên này!",
+                ErrorCode.FORBIDDEN,
                 request.getRequestURI()
         );
     }
@@ -74,19 +101,6 @@ public class GlobalExceptionHandler {
                 path
         );
         return new ResponseEntity<>(error, status);
-    }
-
-    @ExceptionHandler(MissingRequestCookieException.class)
-    public ResponseEntity<ApiResponse<Void>> handleMissingCookie(
-            MissingRequestCookieException ex,
-            HttpServletRequest request
-    ) {
-        return buildError(
-                HttpStatus.UNAUTHORIZED, // 401
-                ex.getCookieName() + " is required",
-                ErrorCode.MISSING_COOKIE,
-                request.getRequestURI()
-        );
     }
 }
 

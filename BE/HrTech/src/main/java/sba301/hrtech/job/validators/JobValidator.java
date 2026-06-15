@@ -15,7 +15,7 @@ import sba301.hrtech.company.entities.enums.CompanyStatus;
 import sba301.hrtech.company.services.CompanyPermissionService;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
 import sba301.hrtech.job.entities.Job;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 
 import java.util.UUID;

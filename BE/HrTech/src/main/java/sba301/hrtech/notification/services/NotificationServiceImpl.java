@@ -3,7 +3,7 @@ package sba301.hrtech.notification.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.notification.abstractions.cache.IRedisIdempotencyService;
 import sba301.hrtech.notification.abstractions.cache.IRedisOtpService;

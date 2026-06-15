@@ -1,11 +1,10 @@
 package sba301.hrtech.payment.services;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import sba301.hrtech.payment.abstractions.services.IPayOSService;
 import sba301.hrtech.payment.dtos.response.CreatePaymentResponse;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import vn.payos.PayOS;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
