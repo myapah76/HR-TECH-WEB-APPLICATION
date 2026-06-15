@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { CheckCircle2, Loader2 } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
-import { useConfirmRegisterOtp, useConfirmForgotPasswordOtp } from '@/src/hooks/useConfirmOtp'
 import { OtpType } from '@/src/enums/otp.enum'
+import { useConfirmForgotPasswordOtp, useConfirmRegisterOtp } from '@/src/hooks/useConfirmOtp'
 import { getErrorMessage } from '@/src/utils/get-error-message'
+import { CheckCircle2, Loader2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 
 import { toast } from 'sonner'
 
@@ -138,9 +138,7 @@ export function VerifyOtpForm({ email, expireIn, otpType }: VerifyOtpFormProps) 
         }
         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl transition-all duration-300 shadow-lg shadow-blue-600/20 hover:shadow-xl flex items-center justify-center gap-2 uppercase h-auto"
       >
-        {otpType === OtpType.REGISTER ? (
-          confirmRegisterOtpMutation.isPending
-        ) : confirmForgotPasswordOtpMutation.isPending ? (
+        {confirmRegisterOtpMutation.isPending || confirmForgotPasswordOtpMutation.isPending ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
             ĐANG XÁC THỰC...
