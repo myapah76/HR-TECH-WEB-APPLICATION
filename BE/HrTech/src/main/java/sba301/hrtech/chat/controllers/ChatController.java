@@ -9,7 +9,7 @@ import sba301.hrtech.chat.dtos.request.CreateChatSessionRequest;
 import sba301.hrtech.chat.dtos.request.SendChatMessageRequest;
 import sba301.hrtech.chat.dtos.response.ChatMessageResponse;
 import sba301.hrtech.chat.dtos.response.ChatSessionResponse;
-import sba301.hrtech.shared.common.ApiResponse;
+import sba301.hrtech.shared.response.ApiResponse;
 
 import java.util.List;
 import java.util.UUID;

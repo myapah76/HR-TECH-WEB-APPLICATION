@@ -8,11 +8,11 @@ import sba301.hrtech.identity.abstractions.repositories.RefreshTokenRepository;
 import sba301.hrtech.identity.abstractions.services.IRefreshTokenService;
 import sba301.hrtech.identity.entities.RefreshToken;
 import sba301.hrtech.identity.entities.User;
-import sba301.hrtech.identity.exceptions.token.InvalidTokenException;
-import sba301.hrtech.identity.exceptions.token.TokenExpiredException;
-import sba301.hrtech.identity.exceptions.token.TokenRevokedException;
 import sba301.hrtech.identity.dtos.user.CustomUserDetails;
 import sba301.hrtech.identity.services.JwtServiceImpl;
+import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.exceptions.AppException;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
@@ -44,14 +44,14 @@ public class RefreshTokenServiceImpl implements IRefreshTokenService {
     @Override
     public RefreshToken validateRefreshToken(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
-                .orElseThrow(() -> new InvalidTokenException("Invalid refresh token"));
+                .orElseThrow(() -> new AppException(ErrorCode.TOKEN_INVALID,"Invalid refresh token"));
 
         if (Boolean.TRUE.equals(refreshToken.getIsRevoked())) {
-            throw new TokenRevokedException("Refresh token revoked");
+            throw new AppException(ErrorCode.TOKEN_REVOKED,"Refresh token revoked");
         }
 
         if (refreshToken.getExpiresAt().isBefore(Instant.now())) {
-            throw new TokenExpiredException("Refresh token expired");
+            throw new AppException(ErrorCode.TOKEN_EXPIRED,"Refresh token expired");
         }
 
         return refreshToken;

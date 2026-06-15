@@ -3,9 +3,9 @@ package sba301.hrtech.shared.services;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 
 import java.io.IOException;
@@ -19,7 +19,7 @@ public class CloudinaryService {
 
     public String uploadFile(MultipartFile file, String folderName) {
         if (file == null || file.isEmpty()) {
-            throw new AppException(HttpStatus.BAD_REQUEST, "EMPTY_FILE", "Uploaded file is empty.");
+            throw new AppException(ErrorCode.EMPTY_FILE, "Uploaded file is empty.");
         }
 
         try {
@@ -31,8 +31,7 @@ public class CloudinaryService {
             return (String) uploadResult.get("secure_url");
         } catch (IOException e) {
             throw new AppException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "FILE_UPLOAD_FAILED",
+                    ErrorCode.FILE_UPLOAD_FAILED,
                     "Failed to upload file to Cloudinary: " + e.getMessage()
             );
         }

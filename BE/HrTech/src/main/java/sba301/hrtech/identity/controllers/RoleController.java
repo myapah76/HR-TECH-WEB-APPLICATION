@@ -7,7 +7,7 @@ import sba301.hrtech.identity.abstractions.services.IRoleService;
 import sba301.hrtech.identity.dtos.role.request.CommonRoleRequest;
 import sba301.hrtech.identity.dtos.role.request.CreateRoleRequest;
 import sba301.hrtech.identity.dtos.role.response.RoleResponse;
-import sba301.hrtech.shared.common.ApiResponse;
+import sba301.hrtech.shared.response.ApiResponse;
 
 import java.net.URI;
 import java.util.List;

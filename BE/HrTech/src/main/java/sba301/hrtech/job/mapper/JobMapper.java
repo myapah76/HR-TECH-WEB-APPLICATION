@@ -2,7 +2,6 @@ package sba301.hrtech.job.mapper;
 
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import sba301.hrtech.job.dtos.request.JobRequest;
 import sba301.hrtech.job.dtos.request.JobSkillRequest;
 import sba301.hrtech.job.dtos.response.JobResponse;
@@ -12,7 +11,7 @@ import sba301.hrtech.job.entities.JobDocument;
 import sba301.hrtech.job.entities.JobSkill;
 import sba301.hrtech.job.entities.enums.ExperienceLevel;
 import sba301.hrtech.job.entities.enums.JobType;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.enums.SkillLevel;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
@@ -81,7 +80,7 @@ public abstract class JobMapper {
             try {
                 job.setJobType(JobType.valueOf(request.jobType()));
             } catch (IllegalArgumentException e) {
-                throw new AppException(HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST,
+                throw new AppException(ErrorCode.BAD_REQUEST,
                         "Invalid job type: " + request.jobType());
             }
         }
@@ -89,7 +88,7 @@ public abstract class JobMapper {
             try {
                 job.setExperienceLevel(ExperienceLevel.valueOf(request.experienceLevel()));
             } catch (IllegalArgumentException e) {
-                throw new AppException(HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST,
+                throw new AppException(ErrorCode.BAD_REQUEST,
                         "Invalid experience level: " + request.experienceLevel());
             }
         }
@@ -103,7 +102,7 @@ public abstract class JobMapper {
         for (JobSkillRequest sr : skillRequests) {
             // Validate skill exists in Neo4j
             if (!skillNodeRepository.existsById(sr.skillNeo4jId())) {
-                throw new AppException(HttpStatus.BAD_REQUEST,
+                throw new AppException(
                         ErrorCode.JOB_SKILL_NOT_FOUND,
                         "Skill not found in skill graph: " + sr.skillNeo4jId());
             }
@@ -112,7 +111,7 @@ public abstract class JobMapper {
                 try {
                     level = SkillLevel.valueOf(sr.requiredLevel());
                 } catch (IllegalArgumentException e) {
-                    throw new AppException(HttpStatus.BAD_REQUEST,
+                    throw new AppException(
                             ErrorCode.BAD_REQUEST,
                             "Invalid skill level: " + sr.requiredLevel());
                 }

@@ -6,7 +6,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.company.abstractions.services.ICompanyService;
 import sba301.hrtech.company.dtos.response.CompanyResponse;
-import sba301.hrtech.shared.common.ApiResponse;
+import sba301.hrtech.shared.response.ApiResponse;
 
 import java.util.UUID;
 

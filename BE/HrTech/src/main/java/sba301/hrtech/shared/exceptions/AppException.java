@@ -1,18 +1,21 @@
 package sba301.hrtech.shared.exceptions;
 
 import lombok.Getter;
-import org.springframework.http.HttpStatus;
+import sba301.hrtech.shared.error.ErrorCode;
 
 @Getter
 public class AppException extends RuntimeException {
 
-    private final HttpStatus status;
-    private final String code;
+    private final ErrorCode errorCode;
 
-    public AppException(HttpStatus status, String code, String message) {
-        super(message);
-        this.status = status;
-        this.code = code;
+    public AppException(ErrorCode errorCode) {
+        super(errorCode.getMessage());
+        this.errorCode = errorCode;
+    }
+
+    public AppException(ErrorCode errorCode, String customMessage) {
+        super(customMessage != null ? customMessage : errorCode.getMessage());
+        this.errorCode = errorCode;
     }
 }
 

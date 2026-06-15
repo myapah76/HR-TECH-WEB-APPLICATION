@@ -14,7 +14,7 @@ import sba301.hrtech.job.dtos.request.JobRequest;
 import sba301.hrtech.job.dtos.request.JobSearchCriteria;
 import sba301.hrtech.job.dtos.response.JobResponse;
 import sba301.hrtech.job.entities.JobDocument;
-import sba301.hrtech.shared.common.ApiResponse;
+import sba301.hrtech.shared.response.ApiResponse;
 
 import java.math.BigDecimal;
 import java.net.URI;

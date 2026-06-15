@@ -13,7 +13,7 @@ import sba301.hrtech.identity.dtos.user.request.CreateUserRequest;
 import sba301.hrtech.identity.dtos.user.request.UserCommonRequest;
 import sba301.hrtech.identity.dtos.user.response.UserResponse;
 import sba301.hrtech.identity.entities.User;
-import sba301.hrtech.identity.exceptions.user.UserExistException;
+import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.identity.mapper.UserMapper;
 import sba301.hrtech.identity.services.UserServiceImpl;
 
@@ -89,7 +89,7 @@ class UserServiceImplTest {
                 .thenReturn(Optional.of(existedUser));
 
         assertThrows(
-                UserExistException.class,
+                AppException.class,
                 () -> userService.createUser(request)
         );
 

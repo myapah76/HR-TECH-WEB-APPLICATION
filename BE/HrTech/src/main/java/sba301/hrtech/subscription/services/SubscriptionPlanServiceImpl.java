@@ -1,10 +1,9 @@
 package sba301.hrtech.subscription.services;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.subscription.abstractions.repositories.FeatureRepository;
 import sba301.hrtech.subscription.abstractions.repositories.PlanFeatureRepository;
@@ -58,7 +57,6 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
     public SubscriptionPlan getById(UUID id) {
         return subscriptionPlanRepository.findById(id)
                 .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
                         ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND,
                         "Subscription plan not found"));
     }
@@ -85,7 +83,6 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
 
         SubscriptionPlan plan = subscriptionPlanRepository.findById(id)
                 .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
                         ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND,
                         "Subscription plan not found"));
 
@@ -103,7 +100,6 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
 
         SubscriptionPlan plan = subscriptionPlanRepository.findById(id)
                 .orElseThrow(() -> new AppException(
-                        HttpStatus.NOT_FOUND,
                         ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND,
                         "Subscription plan not found"));
         subscriptionPlanRepository.delete(plan);
@@ -113,7 +109,6 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
         for (PlanFeatureRequest featureRequest : featureRequests) {
             Feature feature = featureRepository.findById(featureRequest.id())
                     .orElseThrow(() -> new AppException(
-                            HttpStatus.NOT_FOUND,
                             ErrorCode.FEATURE_NOT_FOUND,
                             "Feature not found"));
 

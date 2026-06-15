@@ -14,8 +14,7 @@ import sba301.hrtech.identity.dtos.auth.request.LoginRequest;
 import sba301.hrtech.identity.dtos.auth.response.AuthResponse;
 import sba301.hrtech.identity.dtos.user.response.UserResponse;
 import sba301.hrtech.identity.entities.User;
-import sba301.hrtech.identity.exceptions.auth.EmailNotFoundException;
-import sba301.hrtech.identity.exceptions.auth.WrongPasswordException;
+import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.identity.mapper.UserMapper;
 import sba301.hrtech.identity.services.AuthServiceImpl;
 import sba301.hrtech.identity.services.JwtServiceImpl;
@@ -130,7 +129,7 @@ class AuthServiceImplTest {
                 .thenReturn(false);
 
         assertThrows(
-                WrongPasswordException.class,
+                AppException.class,
                 () -> authService.login(request)
         );
     }
@@ -145,7 +144,7 @@ class AuthServiceImplTest {
                 .thenReturn(Optional.empty());
 
         assertThrows(
-                EmailNotFoundException.class,
+                AppException.class,
                 () -> authService.login(request)
         );
     }

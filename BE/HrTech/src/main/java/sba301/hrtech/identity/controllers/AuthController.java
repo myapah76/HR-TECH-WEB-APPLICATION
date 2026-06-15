@@ -12,7 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import sba301.hrtech.identity.dtos.auth.response.ConfirmOtpResult;
 import sba301.hrtech.identity.dtos.auth.response.EmailActionResponse;
 import sba301.hrtech.identity.dtos.auth.response.AuthResponse;
-import sba301.hrtech.shared.common.ApiResponse;
+import sba301.hrtech.shared.response.ApiResponse;
 
 import javax.management.relation.RoleNotFoundException;
 

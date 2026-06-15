@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sba301.hrtech.identity.abstractions.repositories.RoleRepository;
 import sba301.hrtech.identity.abstractions.services.IRoleService;
+import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.identity.entities.Role;
 import sba301.hrtech.identity.dtos.role.request.CommonRoleRequest;
 import sba301.hrtech.identity.dtos.role.request.CreateRoleRequest;
@@ -25,7 +27,7 @@ public class RoleServiceImpl implements IRoleService {
     @Transactional
     public RoleResponse createRole(CreateRoleRequest request) {
         if (roleRepository.findByName(request.getCommonRoleRequest().getName()).isPresent()) {
-            throw new RuntimeException("Role name already exists");
+            throw new AppException(ErrorCode.ROLE_NOT_FOUND);
         }
         Role role = roleMapper.fromCreateRequest(request);
         roleRepository.save(role);
@@ -44,7 +46,7 @@ public class RoleServiceImpl implements IRoleService {
     @Override
     public RoleResponse getById(UUID id) {
         Role role = roleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
 
         return roleMapper.toResponse(role);
     }
@@ -52,14 +54,14 @@ public class RoleServiceImpl implements IRoleService {
     @Override
     public RoleResponse getByName(String name) {
         Role role = roleRepository.findByName(name)
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
         return roleMapper.toResponse(role);
     }
 
     @Override
     public RoleResponse update(UUID id, CommonRoleRequest request) {
         Role role = roleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
 
         roleMapper.updateRoleFromRequest(request, role);
         roleRepository.save(role);
@@ -69,7 +71,7 @@ public class RoleServiceImpl implements IRoleService {
     @Override
     public void deleteById(UUID id) {
         if (!roleRepository.existsById(id)) {
-            throw new RuntimeException("Role not found");
+            throw new AppException(ErrorCode.ROLE_NOT_FOUND);
         }
         roleRepository.deleteById(id);
     }

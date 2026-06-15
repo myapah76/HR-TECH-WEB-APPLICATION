@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sba301.hrtech.shared.common.ApiResponse;
+import sba301.hrtech.shared.response.ApiResponse;
 import sba301.hrtech.skill.abstractions.services.ISkillService;
 import sba301.hrtech.skill.dtos.request.CreateSkillRequest;
 import sba301.hrtech.skill.dtos.request.UpdateSkillRequest;

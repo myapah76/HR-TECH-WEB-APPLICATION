@@ -3,7 +3,7 @@ package sba301.hrtech.subscription.controllers;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import sba301.hrtech.shared.common.ApiResponse;
+import sba301.hrtech.shared.response.ApiResponse;
 import sba301.hrtech.subscription.abstractions.services.IFeatureService;
 import sba301.hrtech.subscription.dtos.feature.request.CreateFeatureRequest;
 import sba301.hrtech.subscription.dtos.feature.request.UpdateFeatureRequest;

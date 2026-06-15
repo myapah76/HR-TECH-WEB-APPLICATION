@@ -13,7 +13,7 @@ import sba301.hrtech.company.dtos.request.CompanyUpdateRequest;
 import sba301.hrtech.company.dtos.response.CompanyMemberResponse;
 import sba301.hrtech.company.dtos.response.CompanyResponse;
 import sba301.hrtech.identity.dtos.user.CustomUserDetails;
-import sba301.hrtech.shared.common.ApiResponse;
+import sba301.hrtech.shared.response.ApiResponse;
 
 import java.net.URI;
 import java.util.List;

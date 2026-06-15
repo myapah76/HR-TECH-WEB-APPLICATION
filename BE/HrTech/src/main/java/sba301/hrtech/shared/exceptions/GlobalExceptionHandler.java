@@ -6,8 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.*;
-import sba301.hrtech.shared.common.ApiResponse;
-import sba301.hrtech.shared.common.ErrorCode;
+import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.response.ApiResponse;
 
 import java.util.stream.Collectors;
 
@@ -19,10 +19,11 @@ public class GlobalExceptionHandler {
             AppException ex,
             HttpServletRequest request
     ) {
+        ErrorCode errorCode = ex.getErrorCode();
         return buildError(
-                ex.getStatus(),
+                errorCode.getStatusCode(),
                 ex.getMessage(),
-                ex.getCode(),
+                errorCode,
                 request.getRequestURI()
         );
     }
@@ -51,7 +52,6 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
-        ex.printStackTrace(); // Log lỗi ra console để debug
         return buildError(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Internal server error",
@@ -60,20 +60,7 @@ public class GlobalExceptionHandler {
         );
     }
 
-    private ResponseEntity<ApiResponse<Void>> buildError(
-            HttpStatus status,
-            String message,
-            String code,
-            String path
-    ) {
-        ApiResponse<Void> error = ApiResponse.failed(
-                status.value(),
-                message,
-                code,
-                path
-        );
-        return new ResponseEntity<>(error, status);
-    }
+
 
     @ExceptionHandler(MissingRequestCookieException.class)
     public ResponseEntity<ApiResponse<Void>> handleMissingCookie(
@@ -87,6 +74,33 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
     }
-}
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(
+            org.springframework.security.access.AccessDeniedException ex,
+            HttpServletRequest request
+    ) {
+        return buildError(
+                HttpStatus.FORBIDDEN,
+                "Bạn không có quyền truy cập tài nguyên này!",
+                ErrorCode.FORBIDDEN,
+                request.getRequestURI()
+        );
+    }
+
+    private ResponseEntity<ApiResponse<Void>> buildError(
+            HttpStatus status,
+            String message,
+            ErrorCode code,
+            String path
+    ) {
+        ApiResponse<Void> error = ApiResponse.failed(
+                status.value(),
+                message,
+                code.name(),
+                path
+        );
+        return new ResponseEntity<>(error, status);
+    }
+}
 
