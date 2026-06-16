@@ -5,8 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/src
 import { Button } from '@/src/components/ui/button'
 import { Input } from '@/src/components/ui/input'
 import { Label } from '@/src/components/ui/label'
-import { useGetAllCvs, useUploadCv } from '@/src/hooks/useCv'
-import { useStartJobMatching, useGetJobMatchingStatus } from '@/src/hooks/useRecommendation'
+import { useGetAllCvs, useUploadCv } from '@/src/hooks/cv/cv.hooks'
+import { useStartJobMatching, useGetJobMatchingStatus } from '@/src/hooks/recommendation/recommendation.hooks'
 import { JobMatchingTaskResponse } from '@/src/types/recommendation'
 import {
   Star,
@@ -317,7 +317,7 @@ export default function RecommendJobsPage() {
                     </select>
                   ) : (
                     <div className="text-sm text-amber-600 bg-amber-50 p-4 rounded-md border border-amber-200 font-medium">
-                      Bạn chưa có CV nào. Vui lòng chuyển sang tab "Tải lên CV Mới".
+                      {'Bạn chưa có CV nào. Vui lòng chuyển sang tab "Tải lên CV Mới".'}
                     </div>
                   )}
                 </div>
@@ -465,22 +465,3 @@ export default function RecommendJobsPage() {
   )
 }
 
-function Briefcase(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect width="20" height="14" x="2" y="7" rx="2" ry="2" />
-      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-    </svg>
-  )
-}

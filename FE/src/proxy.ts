@@ -24,9 +24,12 @@ export const config = {
     '/forgot-password',
     '/confirm-otp',
     '/reset-password',
-    '/dashboard/:path*',
+    '/dashboard', // <--- Khớp trang dashboard gốc
+    '/admin', // <--- Khớp trang admin gốc
     '/admin/:path*',
+    '/company', // <--- Khớp trang company gốc
     '/company/:path*',
+    '/candidate', // <--- Khớp trang candidate gốc
     '/candidate/:path*',
   ],
 }

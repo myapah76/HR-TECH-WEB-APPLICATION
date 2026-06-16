@@ -98,10 +98,23 @@ public class AuthController {
             HttpServletResponse response) {
 
         AuthResponse authResponse = authService.refresh(refreshToken);
+
+        Cookie refreshCookie = new Cookie(
+                "refreshToken",
+                authResponse.getRefreshToken()
+        );
+
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(60 * 60 * 24 * 7);
+
+        response.addCookie(refreshCookie);
+
         authResponse.setRefreshToken("");
 
         return ResponseEntity.ok(ApiResponse.success(authResponse, "Token refreshed successfully"));
     }
+
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(

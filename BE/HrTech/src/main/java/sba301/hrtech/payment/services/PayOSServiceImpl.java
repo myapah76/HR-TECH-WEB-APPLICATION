@@ -30,7 +30,7 @@ public class PayOSServiceImpl implements IPayOSService {
                             .amount(amount)
                             .description(planName)
                             .returnUrl("http://localhost:3000/pricing")
-                            .cancelUrl("http://localhost:3000")
+                            .cancelUrl("http://localhost:3000/pricing")
                             .item(
                                     PaymentLinkItem.builder()
                                             .name(planName)
