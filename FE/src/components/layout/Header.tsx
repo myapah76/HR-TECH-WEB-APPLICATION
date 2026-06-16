@@ -112,14 +112,14 @@ export default function Header() {
                       className="px-3 py-2 text-sm font-semibold text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-2"
                     >
                       <UserIcon className="h-4 w-4" />
-                      Profile
+                      Bảng điều khiển
                     </Link>
                     <button
                       onClick={handleLogout}
                       className="w-full px-3 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors text-left flex items-center gap-2 cursor-pointer"
                     >
                       <LogOut className="h-4 w-4" />
-                      Sign out
+                      Đăng xuất
                     </button>
                   </div>
                 </div>
