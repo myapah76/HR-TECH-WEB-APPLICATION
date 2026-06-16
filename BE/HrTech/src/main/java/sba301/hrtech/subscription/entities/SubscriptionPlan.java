@@ -30,7 +30,7 @@ public class SubscriptionPlan extends SoftDeleteEntity {
     @Column(nullable = false, precision = 19, scale = 4)
     private Long price;
 
-    @Column(name = "duration_days", nullable = false)
+    @Column(name = "duration_days")
     private Integer durationDays;
 
     @Enumerated(EnumType.STRING)

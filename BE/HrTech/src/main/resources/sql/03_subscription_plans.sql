@@ -6,9 +6,9 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO subscription_plans
-(id, name, description, price, duration_days, plan_type, is_active, created_at, updated_at, is_deleted)
+(id, name, description, price, plan_type, is_active, created_at, updated_at, is_deleted)
 VALUES
-    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Free', 'Basic plan for new employers', 0, 365, 'COMPANY', true, NOW(), NOW(), false)
+    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Free', 'Basic plan for new employers', 0, 'COMPANY', true, NOW(), NOW(), false)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO plan_features (id, plan_id, feature_id, quota, created_at, updated_at)

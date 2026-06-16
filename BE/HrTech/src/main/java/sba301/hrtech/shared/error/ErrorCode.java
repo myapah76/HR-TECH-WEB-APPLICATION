@@ -6,6 +6,7 @@ public enum ErrorCode {
 
     // Token
     TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "Token has expired"),
+    TOKEN_NOT_FOUND(HttpStatus.NOT_FOUND, "Token not found"),
     TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "Token is invalid"),
     TOKEN_REVOKED(HttpStatus.UNAUTHORIZED, "Token has been revoked"),
     MISSING_COOKIE(HttpStatus.BAD_REQUEST, "Missing authentication cookie"),

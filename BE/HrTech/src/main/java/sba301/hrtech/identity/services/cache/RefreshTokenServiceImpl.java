@@ -60,10 +60,6 @@ public class RefreshTokenServiceImpl implements IRefreshTokenService {
     @Override
     public String refreshAccessToken(String refreshTokenStr) {
         RefreshToken refreshToken = validateRefreshToken(refreshTokenStr);
-        // revoke token cũ
-        refreshToken.setIsRevoked(true);
-        refreshTokenRepository.save(refreshToken);
-
         User user = refreshToken.getUser();
         // tạo token mới
         UserDetails userDetails = new CustomUserDetails(user);
@@ -73,7 +69,7 @@ public class RefreshTokenServiceImpl implements IRefreshTokenService {
     @Override
     public void revokeToken(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Token not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.TOKEN_NOT_FOUND,"Invalid refresh token"));
         if (Boolean.TRUE.equals(refreshToken.getIsRevoked())) {
             return;
         }
