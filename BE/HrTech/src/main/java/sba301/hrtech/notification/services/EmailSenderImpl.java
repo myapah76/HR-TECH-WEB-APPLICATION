@@ -62,6 +62,27 @@ public class EmailSenderImpl implements IEmailSender {
         }
     }
 
+    @Override
+    @Async
+    public CompletableFuture<Void> sendWelcomeEmailAsync(String toEmail, String fullName, String password, String companyName) {
+        try {
+            Context context = new Context();
+            context.setVariable("email", toEmail);
+            context.setVariable("fullName", fullName);
+            context.setVariable("password", password);
+            context.setVariable("companyName", companyName);
+            context.setVariable("year", LocalDateTime.now().getYear());
+
+            String html = templateEngine.process("email/welcome", context);
+            sendHtmlEmail(toEmail, "Welcome to " + companyName, html);
+
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            log.error("Failed to send welcome email to {}", toEmail, e);
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
     private void sendHtmlEmail(String to, String subject, String html) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

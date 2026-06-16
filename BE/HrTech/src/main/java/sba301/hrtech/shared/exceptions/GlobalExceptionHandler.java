@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.response.ApiResponse;
 
+import java.nio.file.AccessDeniedException;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -76,9 +77,9 @@ public class GlobalExceptionHandler {
     }
 
     // Bắt lỗi khi user đã authenticated nhưng không có quyền truy cập tài nguyên nào đó
-    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAccessDenied(
-            org.springframework.security.access.AccessDeniedException ex,
+            AccessDeniedException ex,
             HttpServletRequest request
     ) {
         return buildError(

@@ -7,5 +7,6 @@ public interface IEmailSender {
     //async functions
     CompletableFuture<Void> sendOtpEmailAsync(String toEmail, String otp);
     CompletableFuture<Void> sendPasswordResetEmailAsync(String toEmail, String resetLink);
+    CompletableFuture<Void> sendWelcomeEmailAsync(String toEmail, String fullName, String password, String companyName);
 
 }

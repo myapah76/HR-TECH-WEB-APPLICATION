@@ -18,6 +18,8 @@ public interface ICompanyService {
     // CRUD
     CompanyResponse getCompanyById(UUID companyId);
 
+    CompanyResponse getMyCompany();
+
     CompanyResponse updateCompany(UUID companyId, CompanyUpdateRequest request);
 
     void deleteCompany(UUID companyId);

@@ -38,6 +38,7 @@ public class SecurityConfig {
     /** Endpoint công khai, không cần JWT. */
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/auth/**",
+            "/api/companies/register",
             "/api/payments/webhook",
             "/api/subscription-plans/active",
             // Swagger

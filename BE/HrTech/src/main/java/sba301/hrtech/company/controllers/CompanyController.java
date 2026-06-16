@@ -27,7 +27,7 @@ public class CompanyController {
     private final ICompanyService companyService;
 
     @PostMapping(value = "/register")
-    @PreAuthorize("hasAnyRole('CANDIDATE', 'RECRUITER')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<CompanyResponse>> registerCompany(
             @Valid @RequestBody CompanyRegisterRequest request
     ) {
@@ -42,8 +42,14 @@ public class CompanyController {
         return ResponseEntity.ok(ApiResponse.success(companyService.getCompanyById(id)));
     }
 
+    @GetMapping("/my-company")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<CompanyResponse>> getMyCompany() {
+        return ResponseEntity.ok(ApiResponse.success(companyService.getMyCompany()));
+    }
+
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('RECRUITER')")
+    @PreAuthorize("@companySecurity.isOwner(#id)")
     public ResponseEntity<ApiResponse<CompanyResponse>> updateCompany(
             @PathVariable UUID id,
             @Valid @RequestBody CompanyUpdateRequest request
@@ -52,14 +58,14 @@ public class CompanyController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN_SYSTEM', 'RECRUITER')")
+    @PreAuthorize("@companySecurity.isOwner(#id) or hasRole('ADMIN_SYSTEM')")
     public ResponseEntity<ApiResponse<Void>> deleteCompany(@PathVariable UUID id) {
         companyService.deleteCompany(id);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @PostMapping("/{id}/members")
-    @PreAuthorize("hasRole('RECRUITER')")
+    @PreAuthorize("@companySecurity.isOwnerOrManager(#id)")
     public ResponseEntity<ApiResponse<CompanyMemberResponse>> addMember(
             @PathVariable UUID id,
             @Valid @RequestBody AddMemberRequest request
@@ -68,13 +74,13 @@ public class CompanyController {
     }
 
     @GetMapping("/{id}/members")
-    @PreAuthorize("hasRole('RECRUITER')")
+    @PreAuthorize("@companySecurity.isMember(#id)")
     public ResponseEntity<ApiResponse<List<CompanyMemberResponse>>> getMembers(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(companyService.getMembers(id)));
     }
 
     @DeleteMapping("/{id}/members/{memberId}")
-    @PreAuthorize("hasRole('RECRUITER')")
+    @PreAuthorize("@companySecurity.isOwnerOrManager(#id)")
     public ResponseEntity<ApiResponse<Void>> removeMember(
             @PathVariable UUID id,
             @PathVariable UUID memberId
@@ -84,7 +90,7 @@ public class CompanyController {
     }
 
     @PostMapping("/{id}/transfer-ownership")
-    @PreAuthorize("hasRole('RECRUITER')")
+    @PreAuthorize("@companySecurity.isOwner(#id)")
     public ResponseEntity<ApiResponse<Void>> transferOwnership(
             @PathVariable("id") UUID companyId,
             @RequestParam("targetMemberId") UUID targetMemberId

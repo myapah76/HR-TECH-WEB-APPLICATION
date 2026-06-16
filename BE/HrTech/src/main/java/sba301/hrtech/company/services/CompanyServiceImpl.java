@@ -25,6 +25,22 @@ import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.dtos.user.CustomUserDetails;
 import sba301.hrtech.identity.entities.Role;
 import sba301.hrtech.identity.entities.User;
+import sba301.hrtech.notification.abstractions.IEmailSender;
+import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.exceptions.AppException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import sba301.hrtech.company.entities.CompanyMember;
+import sba301.hrtech.company.entities.enums.CompanyPermission;
+import sba301.hrtech.company.entities.enums.CompanyRole;
+import sba301.hrtech.company.entities.enums.CompanySize;
+import sba301.hrtech.company.entities.enums.CompanyStatus;
+import sba301.hrtech.company.entities.enums.MembershipStatus;
+import sba301.hrtech.company.mapper.CompanyMapper;
+import sba301.hrtech.identity.abstractions.repositories.RoleRepository;
+import sba301.hrtech.identity.abstractions.repositories.UserRepository;
+import sba301.hrtech.identity.dtos.user.CustomUserDetails;
+import sba301.hrtech.identity.entities.Role;
+import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 
@@ -45,6 +61,8 @@ public class CompanyServiceImpl implements ICompanyService {
     private final CompanyMapper companyMapper;
     private final CompanyMemberRepository companyMemberRepository;
     private final CompanyPermissionService companyPermissionService;
+    private final PasswordEncoder passwordEncoder;
+    private final IEmailSender emailSender;
 
     private User getCurrentUser() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -65,68 +83,66 @@ public class CompanyServiceImpl implements ICompanyService {
     @Override
     @Transactional
     public CompanyResponse registerCompany(CompanyRegisterRequest request) {
-        User currentUser = getCurrentUser();
-
-        // 1. Verify user does not already belong to a company (Option A constraint)
-        if (companyMemberRepository.existsByUserIdAndDeletedFalse(currentUser.getId())) {
-            throw new AppException(ErrorCode.USER_ALREADY_COMPANY_MEMBER, "Each user can only register or belong to one company.");
+        String email = request.email().toLowerCase();
+        
+        // 1. Check if email exists
+        if (userRepository.existsByEmail(email)) {
+            throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED, "Email is already registered. Please use a different email for business account.");
         }
 
+        // 2. Check Tax Code
         String taxCode = request.taxCode();
-
-        // 2. Check duplicate tax code
         Optional<Company> existingCompanyOpt = companyRepository.findByTaxCode(taxCode);
-        Company savedCompany;
         if (existingCompanyOpt.isPresent()) {
             Company existingCompany = existingCompanyOpt.get();
             if (!existingCompany.isDeleted()) {
                 throw new AppException(ErrorCode.DUPLICATE_TAX_CODE, "This tax code is already registered.");
+            } else {
+                throw new AppException(ErrorCode.DUPLICATE_TAX_CODE, "This tax code is banned or deactivated. Please contact support.");
             }
-            // Re-activate and update company info
-            existingCompany.setDeleted(false);
-            existingCompany.setName(request.name());
-            existingCompany.setDescription(request.description());
-            existingCompany.setWebsite(request.website());
-            existingCompany.setIndustry(request.industry());
-            existingCompany.setAddress(request.address());
-            if (request.size() != null) {
-                try {
-                    existingCompany.setSize(CompanySize.valueOf(request.size()));
-                } catch (IllegalArgumentException e) {
-                    existingCompany.setSize(CompanySize.SME);
-                }
-            }
-            existingCompany.setStatus(CompanyStatus.PENDING);
-            
-            savedCompany = companyRepository.save(existingCompany);
-        } else {
-            // 3. Verify with VietQR API
-            taxVerificationService.verifyTaxCode(taxCode);
-
-            // 4. Create Company
-            Company company = companyMapper.fromRegisterRequest(request);
-            company.setTaxCode(taxCode);
-            company.setStatus(CompanyStatus.PENDING);
-            if (request.size() != null) {
-                try {
-                    company.setSize(CompanySize.valueOf(request.size()));
-                } catch (IllegalArgumentException e) {
-                    company.setSize(CompanySize.SME);
-                }
-            }
-            savedCompany = companyRepository.save(company);
         }
 
-        // 5. Update global role of owner to RECRUITER if it isn't already
+        // 3. Verify with VietQR API
+        taxVerificationService.verifyTaxCode(taxCode);
+
+        // 4. Create User (RECRUITER)
         Role recruiterRole = roleRepository.findByName("RECRUITER")
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND, "RECRUITER role not found."));
-        currentUser.setRole(recruiterRole);
-        userRepository.save(currentUser);
+                
+        User newUser = new User();
+        newUser.setEmail(email);
+        newUser.setUsername(email);
+        newUser.setPassword(passwordEncoder.encode(request.password()));
+        newUser.setPhone(request.phone());
+        
+        String fullName = request.fullName();
+        if (fullName != null && !fullName.trim().isEmpty()) {
+            String[] parts = fullName.trim().split("\\s+", 2);
+            newUser.setFirstName(parts.length > 1 ? parts[1] : "");
+            newUser.setLastName(parts[0]);
+        }
 
-        // 6. Create CompanyMember record as OWNER immediately
+        newUser.setRole(recruiterRole);
+        newUser.setIsBlocked(false);
+        User savedUser = userRepository.save(newUser);
+
+        // 5. Create Company
+        Company company = companyMapper.fromRegisterRequest(request);
+        company.setTaxCode(taxCode);
+        company.setStatus(CompanyStatus.PENDING);
+        if (request.size() != null) {
+            try {
+                company.setSize(CompanySize.valueOf(request.size()));
+            } catch (IllegalArgumentException e) {
+                company.setSize(CompanySize.SME);
+            }
+        }
+        Company savedCompany = companyRepository.save(company);
+
+        // 6. Link User to Company as OWNER
         CompanyMember ownerMember = CompanyMember.builder()
                 .company(savedCompany)
-                .user(currentUser)
+                .user(savedUser)
                 .companyRole(CompanyRole.OWNER)
                 .joinedAt(LocalDateTime.now())
                 .membershipStatus(MembershipStatus.ACTIVE)
@@ -141,8 +157,21 @@ public class CompanyServiceImpl implements ICompanyService {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(ErrorCode.COMPANY_NOT_FOUND, "Company not found."));
         if (company.isDeleted()) {
-            throw new AppException(ErrorCode.COMPANY_NOT_FOUND, "Company not found.");
+            throw new AppException(ErrorCode.COMPANY_BANNED, "Company has been deactivated or banned.");
         }
+        return companyMapper.toResponse(company);
+    }
+
+    @Override
+    public CompanyResponse getMyCompany() {
+        User currentUser = getCurrentUser();
+        Company company = companyRepository.findCompanyByUserIdIncludingDeleted(currentUser.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.COMPANY_NOT_FOUND, "You are not a member of any company."));
+
+        if (company.isDeleted()) {
+            throw new AppException(ErrorCode.COMPANY_BANNED, "Company has been deactivated or banned.");
+        }
+        
         return companyMapper.toResponse(company);
     }
 
@@ -194,16 +223,15 @@ public class CompanyServiceImpl implements ICompanyService {
 
         // Disassociate and soft delete all members
         List<CompanyMember> members = companyMemberRepository.findByCompanyIdAndDeletedFalse(companyId);
-        Role candidateRole = roleRepository.findByName("CANDIDATE").orElse(null);
         for (CompanyMember member : members) {
             member.setMembershipStatus(MembershipStatus.REMOVED);
             member.setDeleted(true);
             companyMemberRepository.save(member);
-
-            // Revert global role to CANDIDATE
-            User user = member.getUser();
-            if (candidateRole != null) {
-                user.setRole(candidateRole);
+            
+            // Block non-owner accounts so they cannot login
+            if (member.getCompanyRole() != CompanyRole.OWNER) {
+                User user = member.getUser();
+                user.setIsBlocked(true);
                 userRepository.save(user);
             }
         }
@@ -218,12 +246,9 @@ public class CompanyServiceImpl implements ICompanyService {
             throw new AppException(ErrorCode.FORBIDDEN, "Access Denied");
         }
 
-        UUID targetUserId = UUID.fromString(request.userId());
-        User targetUser = userRepository.findById(targetUserId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "Target user not found."));
-
-        if (companyMemberRepository.existsByUserIdAndDeletedFalse(targetUserId)) {
-            throw new AppException(ErrorCode.USER_ALREADY_COMPANY_MEMBER, "User is already a member of a company.");
+        String email = request.email().toLowerCase();
+        if (userRepository.existsByEmail(email)) {
+            throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED, "Email is already registered. Please provide a new corporate email.");
         }
 
         String requestedRole = request.role();
@@ -241,20 +266,42 @@ public class CompanyServiceImpl implements ICompanyService {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(ErrorCode.COMPANY_NOT_FOUND, "Company not found."));
 
-        // Update target user's system role to RECRUITER
         Role recruiterRole = roleRepository.findByName("RECRUITER")
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND, "RECRUITER role not found."));
-        targetUser.setRole(recruiterRole);
-        userRepository.save(targetUser);
+
+        // Generate a random password (e.g. 8 chars alphanumeric)
+        String randomPassword = java.util.UUID.randomUUID().toString().substring(0, 8);
+
+        User newUser = new User();
+        newUser.setEmail(email);
+        newUser.setUsername(email);
+        newUser.setPassword(passwordEncoder.encode(randomPassword));
+        
+        // Extract firstName and lastName from fullName if needed
+        String fullName = request.fullName();
+        if (fullName != null && !fullName.trim().isEmpty()) {
+            String[] parts = fullName.trim().split("\\s+", 2);
+            newUser.setFirstName(parts.length > 1 ? parts[1] : "");
+            newUser.setLastName(parts[0]);
+        }
+        
+        newUser.setRole(recruiterRole);
+        newUser.setRequirePasswordChange(true);
+        newUser.setIsBlocked(false);
+
+        User savedUser = userRepository.save(newUser);
 
         CompanyMember companyMember = CompanyMember.builder()
                 .company(company)
-                .user(targetUser)
+                .user(savedUser)
                 .companyRole(companyRole)
                 .joinedAt(LocalDateTime.now())
                 .membershipStatus(MembershipStatus.ACTIVE)
                 .build();
         CompanyMember savedMember = companyMemberRepository.save(companyMember);
+
+        // Send welcome email asynchronously
+        emailSender.sendWelcomeEmailAsync(email, request.fullName(), randomPassword, company.getName());
 
         return companyMapper.toMemberResponse(savedMember);
     }

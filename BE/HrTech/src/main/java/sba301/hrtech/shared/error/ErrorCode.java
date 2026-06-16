@@ -79,6 +79,7 @@ public enum ErrorCode {
 
     // Company
     COMPANY_NOT_FOUND(HttpStatus.NOT_FOUND, "Company not found"),
+    COMPANY_BANNED(HttpStatus.FORBIDDEN, "Company has been deactivated or banned"),
     DUPLICATE_TAX_CODE(HttpStatus.BAD_REQUEST, "Tax code is already registered"),
     USER_ALREADY_COMPANY_MEMBER(HttpStatus.BAD_REQUEST, "User is already a member of a company"),
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "Member not found"),
@@ -111,7 +112,8 @@ public enum ErrorCode {
 
     // Generic
     FORBIDDEN_ACTION(HttpStatus.FORBIDDEN, "Access denied"),
-    INVALID_ROLE(HttpStatus.BAD_REQUEST, "Invalid role");
+    INVALID_ROLE(HttpStatus.BAD_REQUEST, "Invalid role"),
+    PASSWORD_CHANGE_REQUIRED(HttpStatus.FORBIDDEN, "Password change is required");
 
 
     private final HttpStatus statusCode;

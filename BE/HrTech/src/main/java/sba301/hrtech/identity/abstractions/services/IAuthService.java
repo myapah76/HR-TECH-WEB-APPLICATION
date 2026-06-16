@@ -12,6 +12,7 @@ public interface IAuthService {
     EmailActionResponse forgetPassword(ForgetPasswordRequest request);
     EmailActionResponse reSendOtp(ResendOtpRequest request);
     void resetPassword(ResetPasswordRequest request);
+    void changePassword(ChangePasswordRequest request);
 
     ConfirmOtpResult confirmOtp(ConfirmOtpRequest request) throws RoleNotFoundException;
 

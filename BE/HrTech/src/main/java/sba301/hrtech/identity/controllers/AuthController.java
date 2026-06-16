@@ -5,6 +5,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.identity.abstractions.services.IAuthService;
 import sba301.hrtech.identity.dtos.auth.request.*;
@@ -67,6 +68,16 @@ public class AuthController {
         authService.resetPassword(request);
 
         return ResponseEntity.ok(ApiResponse.success(null, "Password reset successfully"));
+    }
+
+    @PutMapping("/change-password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request) {
+
+        authService.changePassword(request);
+
+        return ResponseEntity.ok(ApiResponse.success(null, "Password changed successfully"));
     }
 
     @PostMapping("/login")

@@ -25,6 +25,8 @@ public class UserResponse {
     private Instant dateOfBirth;
 
     private Boolean isBlocked;
+    
+    private Boolean requirePasswordChange;
 
     private String avatarUrl;
 

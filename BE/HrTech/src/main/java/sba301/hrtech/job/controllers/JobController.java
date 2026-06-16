@@ -61,7 +61,7 @@ public class JobController {
     }
 
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("@companySecurity.hasRole(#request.companyId, 'OWNER', 'HR_MANAGER', 'HR')")
     public ResponseEntity<ApiResponse<JobResponse>> createJob(@Valid @RequestBody JobRequest request) {
         JobResponse response = jobService.createJob(request);
         return ResponseEntity
@@ -70,7 +70,7 @@ public class JobController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("@companySecurity.hasJobRole(#id, 'OWNER', 'HR_MANAGER', 'HR')")
     public ResponseEntity<ApiResponse<JobResponse>> updateOwnJob(
             @PathVariable UUID id,
             @Valid @RequestBody JobRequest request
@@ -79,25 +79,25 @@ public class JobController {
     }
 
     @PutMapping("/{id}/submit")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("@companySecurity.hasJobRole(#id, 'OWNER', 'HR_MANAGER', 'HR')")
     public ResponseEntity<ApiResponse<JobResponse>> submitJob(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(jobService.submitJob(id)));
     }
 
     @PutMapping("/{id}/approve")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("@companySecurity.isJobOwnerOrManager(#id)")
     public ResponseEntity<ApiResponse<JobResponse>> approveJob(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(jobService.approveJob(id)));
     }
 
     @PutMapping("/{id}/reject")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("@companySecurity.isJobOwnerOrManager(#id)")
     public ResponseEntity<ApiResponse<JobResponse>> rejectJob(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(jobService.rejectJob(id)));
     }
 
     @PutMapping("/{id}/close")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("@companySecurity.isJobOwnerOrManager(#id)")
     public ResponseEntity<ApiResponse<JobResponse>> closeJob(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(jobService.closeJob(id)));
     }

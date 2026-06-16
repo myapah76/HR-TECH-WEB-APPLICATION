@@ -12,4 +12,5 @@ public interface CompanyMemberRepository extends JpaRepository<CompanyMember, UU
     Optional<CompanyMember> findByCompanyIdAndUserIdAndDeletedFalse(UUID companyId, UUID userId);
     List<CompanyMember> findAllByCompanyIdAndCompanyRoleAndDeletedFalse(UUID companyId, CompanyRole role);
     boolean existsByUserIdAndDeletedFalse(UUID userId);
+    boolean existsByCompanyIdAndUserIdAndCompanyRoleInAndDeletedFalse(UUID companyId, UUID userId, List<CompanyRole> roles);
 }

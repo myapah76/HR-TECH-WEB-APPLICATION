@@ -19,6 +19,9 @@ import sba301.hrtech.identity.abstractions.services.IJwtService;
 import sba301.hrtech.identity.services.cache.RedisTokenServiceImpl;
 
 import java.io.IOException;
+import sba301.hrtech.shared.response.ApiResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
@@ -42,11 +45,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
 
-        if (path.startsWith("/api/auth/")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
         try {
 
             String jti = jwtService.extractJwtId(token);
@@ -67,6 +65,26 @@ public class JwtFilter extends OncePerRequestFilter {
                     );
                     usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+
+                    // Force Password Change Check
+                    if (Boolean.TRUE.equals(user.getRequirePasswordChange())) {
+                        if (!path.equals("/api/auth/change-password") && !path.equals("/api/auth/logout")) {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            
+                            ApiResponse<Void> apiResponse = ApiResponse.failed(
+                                    HttpServletResponse.SC_FORBIDDEN,
+                                    "Bạn bắt buộc phải đổi mật khẩu trước khi sử dụng hệ thống.",
+                                    "PASSWORD_CHANGE_REQUIRED",
+                                    request.getRequestURI()
+                            );
+                            
+                            ObjectMapper objectMapper = new ObjectMapper();
+                            objectMapper.registerModule(new JavaTimeModule());
+                            response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+                            return;
+                        }
+                    }
                 }else {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     return;
