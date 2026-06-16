@@ -219,6 +219,7 @@ public class AuthServiceImpl implements IAuthService {
             if (ttl > 0) {
                 redisTokenService.blacklistToken(jti, ttl);
             }
+            refreshTokenService.revokeToken(refreshToken);
         } catch (Exception e) {
         }
     }
