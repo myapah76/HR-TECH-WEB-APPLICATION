@@ -2,7 +2,7 @@
 
 import { Button } from '@/src/components/ui/button'
 import { OtpType } from '@/src/enums/otp.enum'
-import { useConfirmForgotPasswordOtp, useConfirmRegisterOtp } from '@/src/hooks/useConfirmOtp'
+import { useConfirmForgotPasswordOtp, useConfirmRegisterOtp } from '@/src/hooks/auth/auth.hooks'
 import { getErrorMessage } from '@/src/utils/get-error-message'
 import { CheckCircle2, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'

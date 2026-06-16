@@ -122,11 +122,7 @@ services:
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
     volumes:
       - ./ngrok.yml:/etc/ngrok.yml
-    command:
-      - start
-      - --config
-      - /etc/ngrok.yml
-      - --all
+    command: start --config /etc/ngrok.yml --all
     depends_on:
       - backend
     networks:

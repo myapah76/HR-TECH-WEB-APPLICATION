@@ -15,7 +15,7 @@ import { Controller } from 'react-hook-form'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema, RegisterFormData } from '@/src/schemas/auth.schema'
-import { useRegister } from '@/src/hooks/useRegister'
+import { useRegister } from '@/src/hooks/auth/auth.hooks'
 import { OtpType } from '@/src/enums/otp.enum'
 import { getErrorMessage } from '@/src/utils/get-error-message'
 

@@ -29,8 +29,8 @@ public class PayOSServiceImpl implements IPayOSService {
                             .orderCode(orderCode)
                             .amount(amount)
                             .description(planName)
-                            .returnUrl("http://localhost:3000/payment/success")
-                            .cancelUrl("http://localhost:3000/payment/cancel")
+                            .returnUrl("http://localhost:3000/pricing")
+                            .cancelUrl("http://localhost:3000")
                             .item(
                                     PaymentLinkItem.builder()
                                             .name(planName)

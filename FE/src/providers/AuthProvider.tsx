@@ -2,8 +2,10 @@
 import { useEffect } from 'react'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { refreshToken, logout } from '@/src/services/auth.service'
+import { useRouter } from 'next/navigation'
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
   const setAuth = useAuthStore.getState().setAuth
   const clearAuth = useAuthStore.getState().logout
 
@@ -23,6 +25,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       }
     }
     initAuth()
-  }, [setAuth, clearAuth])
+  }, [setAuth, clearAuth, router])
   return <>{children}</>
 }

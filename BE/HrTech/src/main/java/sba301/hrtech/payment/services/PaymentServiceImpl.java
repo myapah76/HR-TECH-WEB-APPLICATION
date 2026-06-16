@@ -3,6 +3,7 @@ package sba301.hrtech.payment.services;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.identity.utils.AuthUtils;
 import sba301.hrtech.payment.abstractions.repositories.PaymentRepository;
 import sba301.hrtech.payment.abstractions.services.IPayOSService;
@@ -43,16 +44,17 @@ public class PaymentServiceImpl implements IPaymentService {
     public CreatePaymentResponse createPayment(
             CreatePaymentRequest request
     ) {
-        UUID userId = authUtils.getCurrentUserId();
+        User user = authUtils.getCurrentUser();
         SubscriptionPlan plan = subscriptionPlanService.getById(request.subscriptionPlanId());
 
-        Subscription subscription = subscriptionService.createPendingSubscription(userId, plan.getId());
+        Subscription subscription = subscriptionService.createPendingSubscription(user.getId(), plan.getId());
 
         Payment payment = new Payment();
         payment.setOrderCode(System.currentTimeMillis());
         payment.setAmount(plan.getPrice());
         payment.setSubscription(subscription);
         payment.setStatus(PaymentStatus.PENDING);
+        payment.setUser(user);
         paymentRepository.save(payment);
 
         return payOSService.createPaymentLink(payment.getOrderCode(), payment.getAmount(), plan.getName());

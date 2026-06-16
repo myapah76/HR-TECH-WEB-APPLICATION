@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { label: 'Tìm việc', path: '/jobs', id: 'nav-jobs' },
   { label: 'Công ty', path: '/companies', id: 'nav-companies' },
   { label: 'Giá lương', path: '/salary-guide', id: 'nav-salary' },
-  { label: 'Bảng giá', path: '/pricing', id: 'nav-pricing' },
+  { label: 'Các gói', path: '/pricing', id: 'nav-pricing' },
 ]
 
 export default function Header() {
@@ -108,7 +108,7 @@ export default function Header() {
                   </div>
                   <div className="p-2 flex flex-col gap-1">
                     <Link
-                      href="/profile"
+                      href="/dashboard"
                       className="px-3 py-2 text-sm font-semibold text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-2"
                     >
                       <UserIcon className="h-4 w-4" />
