@@ -11,6 +11,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
+import sba301.hrtech.identity.abstractions.cache.IRedisTokenService;
 import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.identity.dtos.user.CustomUserDetails;
@@ -23,7 +24,7 @@ import java.io.IOException;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final IJwtService jwtService;
-    private final RedisTokenServiceImpl redisTokenService;
+    private final IRedisTokenService redisTokenService;
     private final UserRepository userRepository;
     @Override
     protected void doFilterInternal(HttpServletRequest request,

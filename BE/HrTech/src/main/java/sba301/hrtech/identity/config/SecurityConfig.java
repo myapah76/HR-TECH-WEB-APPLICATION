@@ -19,6 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import sba301.hrtech.identity.abstractions.cache.IRedisTokenService;
 import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.abstractions.services.IJwtService;
 import sba301.hrtech.identity.services.cache.RedisTokenServiceImpl;
@@ -45,7 +46,7 @@ public class SecurityConfig {
     };
 
     private final IJwtService jwtService;
-    private final RedisTokenServiceImpl redisTokenService;
+    private final IRedisTokenService redisTokenService;
     private final UserRepository userRepository;
     private final UserDetailsService userDetailsService;
 
