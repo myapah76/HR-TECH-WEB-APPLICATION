@@ -74,7 +74,7 @@ public class RefreshTokenServiceImpl implements IRefreshTokenService {
     public void revokeToken(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Token not found"));
-        if (refreshToken.getIsRevoked()) {
+        if (Boolean.TRUE.equals(refreshToken.getIsRevoked())) {
             return;
         }
         refreshToken.setIsRevoked(true);

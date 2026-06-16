@@ -12,6 +12,8 @@ import sba301.hrtech.identity.abstractions.cache.IRedisTokenService;
 import sba301.hrtech.identity.abstractions.repositories.RoleRepository;
 import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.abstractions.services.IAuthService;
+import sba301.hrtech.identity.abstractions.services.IJwtService;
+import sba301.hrtech.identity.abstractions.services.IRefreshTokenService;
 import sba301.hrtech.identity.dtos.auth.request.*;
 import sba301.hrtech.identity.dtos.auth.response.ConfirmOtpResult;
 import sba301.hrtech.identity.dtos.auth.response.EmailActionResponse;
@@ -46,9 +48,9 @@ public class AuthServiceImpl implements IAuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtServiceImpl jwtService;
+    private final IJwtService jwtService;
     private final RedisTemplate<String, Object> redisTemplate;
-    private final RefreshTokenServiceImpl refreshTokenService;
+    private final IRefreshTokenService refreshTokenService;
     private final IRedisTokenService redisTokenService;
     private final UserMapper userMapper;
     private final ObjectMapper objectMapper;
@@ -200,11 +202,13 @@ public class AuthServiceImpl implements IAuthService {
         RefreshToken refreshToken = refreshTokenService.validateRefreshToken(request);
         User user = refreshToken.getUser();
         String newAccessToken = refreshTokenService.refreshAccessToken(request);
+        String newRefreshToken = refreshTokenService.createRefreshToken(user);
         return new AuthResponse(
                 userMapper.toResponse(user),
                 newAccessToken,
-                request);
+                newRefreshToken);
     }
+
 
     @Override
     public void logout(String refreshToken) {

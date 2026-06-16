@@ -24,14 +24,18 @@ public class JwtServiceImpl implements IJwtService {
     private Key getSignInKey() {
         return Keys.hmacShaKeyFor(secretKey.getBytes());
     }
+
+    @Override
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
+    @Override
     public String extractJwtId(String token) {
         return extractClaim(token, Claims::getId);
     }
 
+    @Override
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
@@ -54,6 +58,7 @@ public class JwtServiceImpl implements IJwtService {
         return extractClaim(token, claims -> claims.get("roles", List.class));
     }
 
+    @Override
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> extraClaims = new HashMap<>();
 
@@ -67,7 +72,7 @@ public class JwtServiceImpl implements IJwtService {
         return generateToken(extraClaims, userDetails);
     }
 
-    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+    private String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
 
         long expirationMs = expirationMinutes * 60 * 1000;
 
@@ -81,6 +86,7 @@ public class JwtServiceImpl implements IJwtService {
                 .compact();
     }
 
+    @Override
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
