@@ -42,7 +42,7 @@ VALUES
 -- =============================================================================
 INSERT INTO job_skills (
     id, created_at, updated_at,
-    job_id, skill_neo4j_id, required_level, is_mandatory
+    job_id, skill_neo4j_id, required_level, is_ai_extracted
 )
 VALUES
 -- Job 1: Java Backend Developer

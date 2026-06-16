@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public interface ISubscriptionPlanService {
     List<SubscriptionPlanResponse> getActivePlans();
+    SubscriptionPlan findByName(String name);
     SubscriptionPlanResponse create(SubscriptionPlanRequest request);
     SubscriptionPlanResponse update(UUID id, SubscriptionPlanRequest request);
     void delete(UUID id);

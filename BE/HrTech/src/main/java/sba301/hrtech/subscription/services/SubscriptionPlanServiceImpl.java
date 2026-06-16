@@ -42,6 +42,14 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
                 .toList();
     }
 
+    @Override
+    public SubscriptionPlan findByName(String name) {
+        return subscriptionPlanRepository.findByNameAndIsActiveTrue(name)
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND,
+                        "Subscription plan not found"));
+    }
+
     // =========================
     // GET ALL (ADMIN)
     // =========================

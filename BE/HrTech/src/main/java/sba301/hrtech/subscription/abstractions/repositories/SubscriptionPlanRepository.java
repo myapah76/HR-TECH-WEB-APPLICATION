@@ -5,12 +5,13 @@ import org.springframework.stereotype.Repository;
 import sba301.hrtech.subscription.entities.SubscriptionPlan;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPlan, UUID> {
     List<SubscriptionPlan> findByIsActiveTrue();
-
+    Optional<SubscriptionPlan> findByNameAndIsActiveTrue(String name);
     List<SubscriptionPlan> findByDeletedIsFalse();
 }
 

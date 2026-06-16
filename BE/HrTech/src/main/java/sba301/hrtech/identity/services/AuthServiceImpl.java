@@ -32,6 +32,9 @@ import sba301.hrtech.notification.abstractions.cache.IRedisOtpService;
 import sba301.hrtech.shared.enums.OtpType;
 import sba301.hrtech.notification.dtos.OtpNotificationRequest;
 import sba301.hrtech.notification.dtos.OtpRequest;
+import sba301.hrtech.subscription.abstractions.services.ISubscriptionPlanService;
+import sba301.hrtech.subscription.abstractions.services.ISubscriptionService;
+import sba301.hrtech.subscription.entities.SubscriptionPlan;
 
 import javax.management.relation.RoleNotFoundException;
 import java.time.Duration;
@@ -53,6 +56,8 @@ public class AuthServiceImpl implements IAuthService {
     private final INotificationService notificationService;
     private final IRedisOtpService otpService;
     private final OtpAttemptTracker otpAttemptTracker;
+    private final ISubscriptionService subscriptionService;
+    private final ISubscriptionPlanService subscriptionPlanService;
 
     @Override
     @Transactional
@@ -288,7 +293,6 @@ public class AuthServiceImpl implements IAuthService {
                 getFromRedis(key, PendingUser.class);
 
         User user = new User();
-
         user.setEmail(pendingUser.email());
         user.setUsername(pendingUser.username());
         user.setFirstName(pendingUser.firstName());
@@ -304,9 +308,9 @@ public class AuthServiceImpl implements IAuthService {
                 .orElseThrow(RoleNotFoundException::new);
 
         user.setRole(role);
-
         userRepository.save(user);
-
+        SubscriptionPlan  subscriptionPlan = subscriptionPlanService.findByName("Free");
+        subscriptionService.createPendingSubscription(user.getId(),subscriptionPlan.getId());
         redisTemplate.delete(key);
         otpAttemptTracker.resetAttempts(email);
 
