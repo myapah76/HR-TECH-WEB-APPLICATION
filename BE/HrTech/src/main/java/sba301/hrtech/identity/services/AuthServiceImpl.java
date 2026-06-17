@@ -29,7 +29,6 @@ import sba301.hrtech.identity.dtos.user.CustomUserDetails;
 import sba301.hrtech.identity.dtos.auth.response.AuthResponse;
 import sba301.hrtech.identity.mapper.UserMapper;
 import sba301.hrtech.identity.services.cache.OtpAttemptTracker;
-import sba301.hrtech.identity.services.cache.RefreshTokenServiceImpl;
 import sba301.hrtech.notification.abstractions.INotificationService;
 import sba301.hrtech.notification.abstractions.cache.IRedisOtpService;
 import sba301.hrtech.shared.enums.OtpType;
@@ -38,6 +37,8 @@ import sba301.hrtech.notification.dtos.OtpRequest;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionPlanService;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionService;
 import sba301.hrtech.subscription.entities.SubscriptionPlan;
+import sba301.hrtech.company.abstractions.services.ICompanyService;
+import org.springframework.context.annotation.Lazy;
 
 import javax.management.relation.RoleNotFoundException;
 import java.time.Duration;
@@ -61,6 +62,7 @@ public class AuthServiceImpl implements IAuthService {
     private final OtpAttemptTracker otpAttemptTracker;
     private final ISubscriptionService subscriptionService;
     private final ISubscriptionPlanService subscriptionPlanService;
+    private final @Lazy ICompanyService companyService;
 
     @Override
     @Transactional
@@ -191,6 +193,8 @@ public class AuthServiceImpl implements IAuthService {
             case REGISTER -> confirmRegisterOtp(email);
 
             case FORGET_PASSWORD -> confirmForgotPasswordOtp(email);
+            
+            case REGISTER_COMPANY -> companyService.confirmRegisterOtp(email);
 
             default -> throw new IllegalStateException("Unexpected value: " + request.type());
         };

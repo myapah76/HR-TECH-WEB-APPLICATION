@@ -1,11 +1,12 @@
 package sba301.hrtech.company.abstractions.services;
 
-import org.springframework.web.multipart.MultipartFile;
 import sba301.hrtech.company.dtos.request.AddMemberRequest;
 import sba301.hrtech.company.dtos.request.CompanyRegisterRequest;
 import sba301.hrtech.company.dtos.request.CompanyUpdateRequest;
 import sba301.hrtech.company.dtos.response.CompanyMemberResponse;
 import sba301.hrtech.company.dtos.response.CompanyResponse;
+import sba301.hrtech.identity.dtos.auth.response.ConfirmOtpResult;
+import sba301.hrtech.identity.dtos.auth.response.EmailActionResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,7 +14,9 @@ import java.util.UUID;
 public interface ICompanyService {
 
     // Registration
-    CompanyResponse registerCompany(CompanyRegisterRequest request);
+    EmailActionResponse registerCompany(CompanyRegisterRequest request);
+
+    ConfirmOtpResult confirmRegisterOtp(String email);
 
     // CRUD
     CompanyResponse getCompanyById(UUID companyId);

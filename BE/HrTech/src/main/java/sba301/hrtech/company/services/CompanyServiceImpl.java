@@ -12,6 +12,18 @@ import sba301.hrtech.company.dtos.request.CompanyRegisterRequest;
 import sba301.hrtech.company.dtos.request.CompanyUpdateRequest;
 import sba301.hrtech.company.dtos.response.CompanyMemberResponse;
 import sba301.hrtech.company.dtos.response.CompanyResponse;
+import sba301.hrtech.identity.dtos.auth.response.ConfirmOtpResult;
+import sba301.hrtech.identity.dtos.auth.response.EmailActionResponse;
+import sba301.hrtech.identity.mapper.UserMapper;
+import sba301.hrtech.notification.abstractions.INotificationService;
+import sba301.hrtech.notification.dtos.OtpNotificationRequest;
+import sba301.hrtech.notification.dtos.OtpRequest;
+import sba301.hrtech.shared.enums.OtpType;
+import sba301.hrtech.identity.services.cache.OtpAttemptTracker;
+import org.springframework.data.redis.core.RedisTemplate;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.time.Duration;
 import sba301.hrtech.company.entities.Company;
 import sba301.hrtech.company.entities.CompanyMember;
 import sba301.hrtech.company.entities.enums.CompanyPermission;
@@ -29,21 +41,6 @@ import sba301.hrtech.notification.abstractions.IEmailSender;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import sba301.hrtech.company.entities.CompanyMember;
-import sba301.hrtech.company.entities.enums.CompanyPermission;
-import sba301.hrtech.company.entities.enums.CompanyRole;
-import sba301.hrtech.company.entities.enums.CompanySize;
-import sba301.hrtech.company.entities.enums.CompanyStatus;
-import sba301.hrtech.company.entities.enums.MembershipStatus;
-import sba301.hrtech.company.mapper.CompanyMapper;
-import sba301.hrtech.identity.abstractions.repositories.RoleRepository;
-import sba301.hrtech.identity.abstractions.repositories.UserRepository;
-import sba301.hrtech.identity.dtos.user.CustomUserDetails;
-import sba301.hrtech.identity.entities.Role;
-import sba301.hrtech.identity.entities.User;
-import sba301.hrtech.shared.error.ErrorCode;
-import sba301.hrtech.shared.exceptions.AppException;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -63,6 +60,10 @@ public class CompanyServiceImpl implements ICompanyService {
     private final CompanyPermissionService companyPermissionService;
     private final PasswordEncoder passwordEncoder;
     private final IEmailSender emailSender;
+    private final INotificationService notificationService;
+    private final OtpAttemptTracker otpAttemptTracker;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     private User getCurrentUser() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -82,7 +83,7 @@ public class CompanyServiceImpl implements ICompanyService {
 
     @Override
     @Transactional
-    public CompanyResponse registerCompany(CompanyRegisterRequest request) {
+    public EmailActionResponse registerCompany(CompanyRegisterRequest request) {
         String email = request.email().toLowerCase();
         
         // 1. Check if email exists
@@ -105,17 +106,67 @@ public class CompanyServiceImpl implements ICompanyService {
         // 3. Verify with VietQR API
         taxVerificationService.verifyTaxCode(taxCode);
 
-        // 4. Create User (RECRUITER)
+        // 4. Generate OTP
+        String otp = String.valueOf((int) (Math.random() * 900000) + 100000);
+        String key = OtpType.REGISTER_COMPANY + email;
+
+        // 5. Save to Redis
+        try {
+            if (redisTemplate.hasKey(key)) {
+                redisTemplate.delete(key);
+            }
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(request), Duration.ofMinutes(5));
+        } catch (JsonProcessingException e) {
+            throw new AppException(ErrorCode.INTERNAL_ERROR, "Failed to save data to Redis: " + e.getMessage());
+        }
+
+        // 6. Send OTP Notification
+        notificationService.OtpNotificationHandler(new OtpNotificationRequest(
+                new OtpRequest(email, otp),
+                email + otp,
+                OtpType.REGISTER_COMPANY
+        ));
+
+        return EmailActionResponse.builder()
+                .email(email)
+                .expireIn(5 * 60)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public ConfirmOtpResult confirmRegisterOtp(String email) {
+        
+        // 1. Retrieve payload from Redis
+        String key = OtpType.REGISTER_COMPANY + email;
+        String json = (String) redisTemplate.opsForValue().get(key);
+        if (json == null) {
+            throw new AppException(ErrorCode.REDIS_DATA_NOT_FOUND, "Redis data not found or expired for key: " + key);
+        }
+
+        CompanyRegisterRequest payload;
+        try {
+            payload = objectMapper.readValue(json, CompanyRegisterRequest.class);
+        } catch (JsonProcessingException e) {
+            throw new AppException(ErrorCode.INTERNAL_ERROR, "Failed to parse Redis data: " + e.getMessage());
+        }
+
+        // Double check email existence just in case
+        if (userRepository.existsByEmail(email)) {
+            throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED, "Email is already registered.");
+        }
+
+        // 2. Create User (RECRUITER)
         Role recruiterRole = roleRepository.findByName("RECRUITER")
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND, "RECRUITER role not found."));
                 
         User newUser = new User();
         newUser.setEmail(email);
         newUser.setUsername(email);
-        newUser.setPassword(passwordEncoder.encode(request.password()));
-        newUser.setPhone(request.phone());
+        newUser.setPassword(passwordEncoder.encode(payload.password()));
+        newUser.setPhone(payload.phone());
         
-        String fullName = request.fullName();
+        String fullName = payload.fullName();
         if (fullName != null && !fullName.trim().isEmpty()) {
             String[] parts = fullName.trim().split("\\s+", 2);
             newUser.setFirstName(parts.length > 1 ? parts[1] : "");
@@ -126,30 +177,36 @@ public class CompanyServiceImpl implements ICompanyService {
         newUser.setIsBlocked(false);
         User savedUser = userRepository.save(newUser);
 
-        // 5. Create Company
-        Company company = companyMapper.fromRegisterRequest(request);
-        company.setTaxCode(taxCode);
+        // 3. Create Company
+        Company company = companyMapper.fromRegisterRequest(payload);
+        company.setTaxCode(payload.taxCode());
         company.setStatus(CompanyStatus.PENDING);
-        if (request.size() != null) {
+        if (payload.size() != null) {
             try {
-                company.setSize(CompanySize.valueOf(request.size()));
+                company.setSize(CompanySize.valueOf(payload.size()));
             } catch (IllegalArgumentException e) {
                 company.setSize(CompanySize.SME);
             }
         }
         Company savedCompany = companyRepository.save(company);
 
-        // 6. Link User to Company as OWNER
+        // 4. Link User to Company as OWNER
         CompanyMember ownerMember = CompanyMember.builder()
                 .company(savedCompany)
                 .user(savedUser)
                 .companyRole(CompanyRole.OWNER)
-                .joinedAt(LocalDateTime.now())
                 .membershipStatus(MembershipStatus.ACTIVE)
                 .build();
         companyMemberRepository.save(ownerMember);
 
-        return companyMapper.toResponse(savedCompany);
+        // 5. Cleanup Redis and Reset Attempts
+        redisTemplate.delete(key);
+        otpAttemptTracker.resetAttempts(email);
+
+        return new ConfirmOtpResult(
+                OtpType.REGISTER_COMPANY.toString(),
+                companyMapper.toResponse(savedCompany)
+        );
     }
 
     @Override
