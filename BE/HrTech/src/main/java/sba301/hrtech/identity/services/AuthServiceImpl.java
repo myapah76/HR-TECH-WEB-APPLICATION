@@ -27,6 +27,7 @@ import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.identity.dtos.auth.PendingUser;
 import sba301.hrtech.identity.dtos.user.CustomUserDetails;
 import sba301.hrtech.identity.dtos.auth.response.AuthResponse;
+import sba301.hrtech.identity.dtos.auth.response.TokenPair;
 import sba301.hrtech.identity.mapper.UserMapper;
 import sba301.hrtech.identity.services.cache.OtpAttemptTracker;
 import sba301.hrtech.notification.abstractions.INotificationService;
@@ -201,7 +202,7 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     @Override
-    public AuthResponse login(LoginRequest request) {
+    public TokenPair login(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.EMAIL_NOT_FOUND));
@@ -213,24 +214,32 @@ public class AuthServiceImpl implements IAuthService {
         }
         UserDetails userDetails = new CustomUserDetails(user);
         String accessToken = jwtService.generateToken(userDetails);
+
         String refreshToken = refreshTokenService.createRefreshToken(user);
 
-        return new AuthResponse(
-                userMapper.toResponse(user),
-                accessToken,
-                refreshToken);
+        return new TokenPair(
+                new AuthResponse(userMapper.toResponse(user), accessToken),
+                refreshToken
+        );
     }
 
     @Override
-    public AuthResponse refresh(String request) {
-        RefreshToken refreshToken = refreshTokenService.validateRefreshToken(request);
-        User user = refreshToken.getUser();
-        String newAccessToken = refreshTokenService.refreshAccessToken(request);
+    public TokenPair refresh(String request) {
+        // 1. Validate
+        RefreshToken oldRefreshToken = refreshTokenService.validateRefreshToken(request);
+        
+        // 2. Revoke the old token (Token Rotation)
+        refreshTokenService.revokeToken(request);
+
+        // 3. Generate new tokens
+        User user = oldRefreshToken.getUser();
+        String newAccessToken = jwtService.generateToken(new CustomUserDetails(user));
         String newRefreshToken = refreshTokenService.createRefreshToken(user);
-        return new AuthResponse(
-                userMapper.toResponse(user),
-                newAccessToken,
-                newRefreshToken);
+        
+        return new TokenPair(
+                new AuthResponse(userMapper.toResponse(user), newAccessToken),
+                newRefreshToken
+        );
     }
 
 

@@ -2,17 +2,13 @@ package sba301.hrtech.identity.services.cache;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import sba301.hrtech.identity.abstractions.repositories.RefreshTokenRepository;
 import sba301.hrtech.identity.abstractions.services.IRefreshTokenService;
 import sba301.hrtech.identity.entities.RefreshToken;
 import sba301.hrtech.identity.entities.User;
-import sba301.hrtech.identity.dtos.user.CustomUserDetails;
-import sba301.hrtech.identity.services.JwtServiceImpl;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
-
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
@@ -22,7 +18,6 @@ import java.util.UUID;
 public class RefreshTokenServiceImpl implements IRefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
-    private final JwtServiceImpl jwtService;
 
     @Value("${jwt.refresh-expiration}")
     private long refreshTokenDays;
@@ -47,7 +42,10 @@ public class RefreshTokenServiceImpl implements IRefreshTokenService {
                 .orElseThrow(() -> new AppException(ErrorCode.TOKEN_INVALID,"Invalid refresh token"));
 
         if (Boolean.TRUE.equals(refreshToken.getIsRevoked())) {
-            throw new AppException(ErrorCode.TOKEN_REVOKED,"Refresh token revoked");
+            // REUSE DETECTION: Token is revoked but someone is trying to use it!
+            // Revoke all tokens for this user to protect the account
+            revokeAllUserTokens(refreshToken.getUser());
+            throw new AppException(ErrorCode.TOKEN_REVOKED,"Refresh token revoked (Reuse Detected! All tokens revoked)");
         }
 
         if (refreshToken.getExpiresAt().isBefore(Instant.now())) {
@@ -55,19 +53,6 @@ public class RefreshTokenServiceImpl implements IRefreshTokenService {
         }
 
         return refreshToken;
-    }
-
-    @Override
-    public String refreshAccessToken(String refreshTokenStr) {
-        RefreshToken refreshToken = validateRefreshToken(refreshTokenStr);
-        // revoke token cũ
-        refreshToken.setIsRevoked(true);
-        refreshTokenRepository.save(refreshToken);
-
-        User user = refreshToken.getUser();
-        // tạo token mới
-        UserDetails userDetails = new CustomUserDetails(user);
-        return jwtService.generateToken(userDetails);
     }
 
     @Override
@@ -79,5 +64,15 @@ public class RefreshTokenServiceImpl implements IRefreshTokenService {
         }
         refreshToken.setIsRevoked(true);
         refreshTokenRepository.save(refreshToken);
+    }
+
+    @Override
+    public void revokeAllUserTokens(User user) {
+        var validUserTokens = refreshTokenRepository.findByUserAndIsRevokedFalse(user);
+        if (validUserTokens.isEmpty()) {
+            return;
+        }
+        validUserTokens.forEach(token -> token.setIsRevoked(true));
+        refreshTokenRepository.saveAll(validUserTokens);
     }
 }

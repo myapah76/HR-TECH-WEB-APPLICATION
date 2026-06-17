@@ -1,7 +1,8 @@
 package sba301.hrtech.identity.controllers;
 
 
-import jakarta.servlet.http.Cookie;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.HttpHeaders;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import sba301.hrtech.identity.dtos.auth.response.ConfirmOtpResult;
 import sba301.hrtech.identity.dtos.auth.response.EmailActionResponse;
 import sba301.hrtech.identity.dtos.auth.response.AuthResponse;
+import sba301.hrtech.identity.dtos.auth.response.TokenPair;
 import sba301.hrtech.shared.response.ApiResponse;
 
 import javax.management.relation.RoleNotFoundException;
@@ -85,22 +87,10 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request,
             HttpServletResponse response) {
 
-        AuthResponse authResponse = authService.login(request);
+        TokenPair tokenPair = authService.login(request);
+        setRefreshTokenCookie(response, tokenPair.refreshToken());
 
-        Cookie refreshToken = new Cookie(
-                "refreshToken",
-                authResponse.getRefreshToken()
-        );
-
-        refreshToken.setHttpOnly(true);
-        refreshToken.setPath("/");
-        refreshToken.setMaxAge(60 * 60 * 24 * 7);
-
-        response.addCookie(refreshToken);
-
-        authResponse.setRefreshToken("");
-
-        return ResponseEntity.ok(ApiResponse.success(authResponse, "Login successfully"));
+        return ResponseEntity.ok(ApiResponse.success(tokenPair.authResponse(), "Login successfully"));
     }
 
     @PostMapping("/refresh")
@@ -108,24 +98,11 @@ public class AuthController {
             @CookieValue("refreshToken") String refreshToken,
             HttpServletResponse response) {
 
-        AuthResponse authResponse = authService.refresh(refreshToken);
+        TokenPair tokenPair = authService.refresh(refreshToken);
+        setRefreshTokenCookie(response, tokenPair.refreshToken());
 
-        Cookie refreshCookie = new Cookie(
-                "refreshToken",
-                authResponse.getRefreshToken()
-        );
-
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(60 * 60 * 24 * 7);
-
-        response.addCookie(refreshCookie);
-
-        authResponse.setRefreshToken("");
-
-        return ResponseEntity.ok(ApiResponse.success(authResponse, "Token refreshed successfully"));
+        return ResponseEntity.ok(ApiResponse.success(tokenPair.authResponse(), "Token refreshed successfully"));
     }
-
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(
@@ -136,14 +113,32 @@ public class AuthController {
             authService.logout(refreshToken);
         }
 
-        Cookie refreshCookie = new Cookie("refreshToken", null);
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(true);
-        refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(0);
-
-        response.addCookie(refreshCookie);
+        clearRefreshTokenCookie(response);
 
         return ResponseEntity.ok(ApiResponse.success(null, "Logout successfully"));
+    }
+
+    private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)
+                .secure(true) // Yêu cầu HTTPS
+                .path("/")
+                .maxAge(7 * 24 * 60 * 60) // 7 days
+                .sameSite("Strict") // Chống CSRF
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    private void clearRefreshTokenCookie(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(0) // Xóa cookie
+                .sameSite("Strict")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 }
