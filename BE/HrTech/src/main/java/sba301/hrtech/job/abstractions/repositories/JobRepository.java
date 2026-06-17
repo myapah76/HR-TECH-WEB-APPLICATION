@@ -34,13 +34,14 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
         SELECT j FROM Job j
         WHERE j.deleted = false
           AND j.status = sba301.hrtech.job.entities.enums.JobStatus.APPROVED
-          AND (:keyword IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                              OR LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
-          AND (:location IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%')))
+          AND (:keyword IS NULL OR LOWER(j.title) LIKE :keyword
+                              OR LOWER(j.description) LIKE :keyword)
+          AND (:location IS NULL OR LOWER(j.location) LIKE :location)
           AND (:experienceLevel IS NULL OR j.experienceLevel = :experienceLevel)
           AND (:jobType IS NULL OR j.jobType = :jobType)
           AND (:salaryMin IS NULL OR j.salaryMin >= :salaryMin)
           AND (:salaryMax IS NULL OR j.salaryMax <= :salaryMax)
+
     """)
     Page<Job> searchOpenJobs(
             @Param("keyword") String keyword,
