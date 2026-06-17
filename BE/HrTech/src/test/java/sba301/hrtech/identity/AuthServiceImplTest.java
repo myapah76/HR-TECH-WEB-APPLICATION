@@ -12,6 +12,7 @@ import sba301.hrtech.identity.abstractions.repositories.RoleRepository;
 import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.dtos.auth.request.LoginRequest;
 import sba301.hrtech.identity.dtos.auth.response.AuthResponse;
+import sba301.hrtech.identity.dtos.auth.response.TokenPair;
 import sba301.hrtech.identity.dtos.user.response.UserResponse;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.shared.exceptions.AppException;
@@ -100,12 +101,12 @@ class AuthServiceImplTest {
                 .thenReturn(userResponse);
 
         // Act
-        AuthResponse response = authService.login(request);
+        TokenPair response = authService.login(request);
 
         // Assert
         assertNotNull(response);
-        assertEquals("access-token", response.getAccessToken());
-        assertEquals("refresh-token", response.getRefreshToken());
+        assertEquals("access-token", response.authResponse().getAccessToken());
+        assertEquals("refresh-token", response.refreshToken());
 
         verify(userRepository).findByEmail("test@gmail.com");
     }
