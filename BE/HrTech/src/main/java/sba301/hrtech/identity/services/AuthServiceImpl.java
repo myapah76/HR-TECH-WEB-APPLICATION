@@ -27,9 +27,9 @@ import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.identity.dtos.auth.PendingUser;
 import sba301.hrtech.identity.dtos.user.CustomUserDetails;
 import sba301.hrtech.identity.dtos.auth.response.AuthResponse;
+import sba301.hrtech.identity.dtos.auth.response.TokenPair;
 import sba301.hrtech.identity.mapper.UserMapper;
 import sba301.hrtech.identity.services.cache.OtpAttemptTracker;
-import sba301.hrtech.identity.services.cache.RefreshTokenServiceImpl;
 import sba301.hrtech.notification.abstractions.INotificationService;
 import sba301.hrtech.notification.abstractions.cache.IRedisOtpService;
 import sba301.hrtech.shared.enums.OtpType;
@@ -38,6 +38,8 @@ import sba301.hrtech.notification.dtos.OtpRequest;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionPlanService;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionService;
 import sba301.hrtech.subscription.entities.SubscriptionPlan;
+import sba301.hrtech.company.abstractions.services.ICompanyService;
+import org.springframework.context.annotation.Lazy;
 
 import javax.management.relation.RoleNotFoundException;
 import java.time.Duration;
@@ -61,6 +63,7 @@ public class AuthServiceImpl implements IAuthService {
     private final OtpAttemptTracker otpAttemptTracker;
     private final ISubscriptionService subscriptionService;
     private final ISubscriptionPlanService subscriptionPlanService;
+    private final @Lazy ICompanyService companyService;
 
     @Override
     @Transactional
@@ -191,13 +194,15 @@ public class AuthServiceImpl implements IAuthService {
             case REGISTER -> confirmRegisterOtp(email);
 
             case FORGET_PASSWORD -> confirmForgotPasswordOtp(email);
+            
+            case REGISTER_COMPANY -> companyService.confirmRegisterOtp(email);
 
             default -> throw new IllegalStateException("Unexpected value: " + request.type());
         };
     }
 
     @Override
-    public AuthResponse login(LoginRequest request) {
+    public TokenPair login(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.EMAIL_NOT_FOUND));
@@ -209,23 +214,32 @@ public class AuthServiceImpl implements IAuthService {
         }
         UserDetails userDetails = new CustomUserDetails(user);
         String accessToken = jwtService.generateToken(userDetails);
+
         String refreshToken = refreshTokenService.createRefreshToken(user);
 
-        return new AuthResponse(
-                userMapper.toResponse(user),
-                accessToken,
-                refreshToken);
+        return new TokenPair(
+                new AuthResponse(userMapper.toResponse(user), accessToken),
+                refreshToken
+        );
     }
 
     @Override
-    public AuthResponse refresh(String request) {
-        RefreshToken refreshToken = refreshTokenService.validateRefreshToken(request);
-        User user = refreshToken.getUser();
-        String newAccessToken = refreshTokenService.refreshAccessToken(request);
-        return new AuthResponse(
-                userMapper.toResponse(user),
-                newAccessToken,
-                request);
+    public TokenPair refresh(String request) {
+        // 1. Validate
+        RefreshToken oldRefreshToken = refreshTokenService.validateRefreshToken(request);
+        
+        // 2. Revoke the old token (Token Rotation)
+        refreshTokenService.revokeToken(request);
+
+        // 3. Generate new tokens
+        User user = oldRefreshToken.getUser();
+        String newAccessToken = jwtService.generateToken(new CustomUserDetails(user));
+        String newRefreshToken = refreshTokenService.createRefreshToken(user);
+        
+        return new TokenPair(
+                new AuthResponse(userMapper.toResponse(user), newAccessToken),
+                newRefreshToken
+        );
     }
 
 

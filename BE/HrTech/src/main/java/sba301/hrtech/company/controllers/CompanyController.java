@@ -12,10 +12,9 @@ import sba301.hrtech.company.dtos.request.CompanyRegisterRequest;
 import sba301.hrtech.company.dtos.request.CompanyUpdateRequest;
 import sba301.hrtech.company.dtos.response.CompanyMemberResponse;
 import sba301.hrtech.company.dtos.response.CompanyResponse;
+import sba301.hrtech.identity.dtos.auth.response.EmailActionResponse;
 import sba301.hrtech.identity.dtos.user.CustomUserDetails;
 import sba301.hrtech.shared.response.ApiResponse;
-
-import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,14 +26,10 @@ public class CompanyController {
     private final ICompanyService companyService;
 
     @PostMapping(value = "/register")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<CompanyResponse>> registerCompany(
+    public ResponseEntity<ApiResponse<EmailActionResponse>> registerCompany(
             @Valid @RequestBody CompanyRegisterRequest request
     ) {
-        CompanyResponse response = companyService.registerCompany(request);
-        return ResponseEntity
-                .created(URI.create("/api/companies/" + response.id()))
-                .body(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(companyService.registerCompany(request)));
     }
 
     @GetMapping("/{id}")

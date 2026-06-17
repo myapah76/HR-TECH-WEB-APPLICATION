@@ -1,18 +1,25 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/src/components/ui/card'
 import { Button } from '@/src/components/ui/button'
 import { Input } from '@/src/components/ui/input'
 import { Label } from '@/src/components/ui/label'
-import { useGetAllCvs, useUploadCv, useSetPrimaryCv, useDeleteCv, useUpdateCvTitle, useGetCvDetail } from '@/src/hooks/cv/cv.hooks'
+import {
+  useGetAllCvs,
+  useUploadCv,
+  useSetPrimaryCv,
+  useDeleteCv,
+  useUpdateCvTitle,
+  useGetCvDetail,
+} from '@/src/hooks/cv/cv.hooks'
 import { useQuery } from '@tanstack/react-query'
 import { getSavedJobs } from '@/src/services/job.service'
 import { useCalculateMatchScore } from '@/src/hooks/recommendation/recommendation.hooks'
-import { CvSummaryResponse, CvDetailResponse } from '@/src/types/cv'
-import { JobResponse } from '@/src/types/job'
 import { SkillMatchScoreResponse } from '@/src/types/recommendation'
 import { FileSearch, X, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { getErrorMessage } from '@/src/utils/get-error-message'
 
 export default function CandidateCvPage() {
   const { data: cvs = [], isLoading: loadingCvs } = useGetAllCvs()
@@ -46,8 +53,6 @@ export default function CandidateCvPage() {
   const [viewCvId, setViewCvId] = useState<string | null>(null)
   const { data: viewCv, isFetching: loadingDetail } = useGetCvDetail(viewCvId || '', !!viewCvId)
 
-
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0])
@@ -68,7 +73,7 @@ export default function CandidateCvPage() {
           if (fileInputRef.current) fileInputRef.current.value = ''
         },
         onError: (error) => {
-          console.error('Upload failed:', error)
+          toast.error(getErrorMessage(error))
         },
       }
     )
@@ -81,10 +86,8 @@ export default function CandidateCvPage() {
   const handleDelete = (id: string) => {
     if (confirm('Bạn có chắc chắn muốn xóa CV này không?')) {
       deleteCvMutation.mutate(id, {
-        onError: (error: any) => {
-          console.error('Failed to delete CV:', error)
-          const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi xóa CV!'
-          alert(errorMessage)
+        onError: (error) => {
+          toast.error(getErrorMessage(error))
         },
       })
     }

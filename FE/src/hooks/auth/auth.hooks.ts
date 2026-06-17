@@ -5,6 +5,7 @@ import {
   forgotPassword,
   login,
   registerUser,
+  registerCompany,
   resetPassword,
 } from '@/src/services/auth.service'
 import { useAuthStore } from '@/src/stores/auth.store'
@@ -43,6 +44,12 @@ export const useLogin = () => {
 export const useRegister = () => {
   return useMutation({
     mutationFn: registerUser,
+  })
+}
+
+export const useRegisterCompany = () => {
+  return useMutation({
+    mutationFn: registerCompany,
   })
 }
 

@@ -30,6 +30,9 @@ public interface IJobService {
 
     Page<JobResponse> searchJobs(JobSearchCriteria criteria, Pageable pageable);
 
+    Page<JobResponse> listJobs(Pageable pageable);
+
+
     Page<JobDocument> searchJobsWithElasticsearch(String keyword, Pageable pageable);
 
     List<JobResponse> getCompanyJobs(UUID companyId);

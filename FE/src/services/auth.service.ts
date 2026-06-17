@@ -9,6 +9,7 @@ import {
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   ResetPasswordRequest,
+  CompanyRegisterRequest,
 } from '@/src/types/auth'
 import { ApiResponse } from '@/src/types/api'
 
@@ -21,6 +22,13 @@ export const registerUser = async (
   data: RegisterRequest
 ): Promise<ApiResponse<RegisterResponse>> => {
   const response = await api.post('/auth/register', data)
+  return response.data
+}
+
+export const registerCompany = async (
+  data: CompanyRegisterRequest
+): Promise<ApiResponse<RegisterResponse>> => {
+  const response = await api.post('/companies/register', data)
   return response.data
 }
 

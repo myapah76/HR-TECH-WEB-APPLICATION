@@ -48,6 +48,14 @@ public class JobController {
         return ResponseEntity.ok(ApiResponse.success(jobService.searchJobs(criteria, pageable)));
     }
 
+    @GetMapping("/list")
+    public ResponseEntity<ApiResponse<Page<JobResponse>>> listJobs(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(jobService.listJobs(pageable)));
+    }
+
+
 
     @GetMapping("/elastic")
     public ResponseEntity<ApiResponse<Page<JobDocument>>> searchJobs(@RequestParam String keyword, Pageable pageable)

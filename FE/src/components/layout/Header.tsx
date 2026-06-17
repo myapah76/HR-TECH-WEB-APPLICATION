@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { Bell, ChevronDown, Menu, LogOut, User as UserIcon } from 'lucide-react'
+import { Bell, ChevronDown, LogOut, User as UserIcon } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { logout as logoutService } from '@/src/services/auth.service'
@@ -47,7 +47,7 @@ export default function Header() {
               </span>
             </div>
             <div className="hidden lg:block h-6 w-px bg-slate-200"></div>
-            <span className="hidden lg:block text-[9px] text-slate-400 font-semibold tracking-wider uppercase leading-none max-w-[120px]">
+            <span className="hidden lg:block text-[9px] text-slate-400 font-semibold tracking-wider uppercase leading-none max-w-30">
               LEADING THE HUMAN RESOURCES INDUSTRY
             </span>
           </Link>
@@ -136,42 +136,6 @@ export default function Header() {
                 <span>Đăng nhập</span>
               </Link>
             )}
-
-            {/* Recruiter Dropdown Menu */}
-            <div className="relative" id="cta-recruiter-dropdown">
-              <Button
-                className="bg-gradient-to-r from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-750 border border-slate-700/50 text-white font-bold text-xs py-2.5 px-4.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer h-auto"
-                id="btn-recruiter-trigger"
-              >
-                <div className="text-left">
-                  <p className="font-extrabold text-[10px] text-zinc-300 uppercase tracking-wider flex items-center gap-1">
-                    For Employers
-                    <ChevronDown className="h-3 w-3 shrink-0" />
-                  </p>
-                  <p className="text-[11px] font-medium leading-tight text-slate-450">
-                    Post job, Search resume
-                  </p>
-                </div>
-              </Button>
-            </div>
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="flex md:hidden items-center gap-3" id="mobile-menu-actions">
-            <Link
-              href="/login?role=recruiter"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-1.5 px-3 rounded-lg"
-              id="cta-recruiter-mob"
-            >
-              Post jobs
-            </Link>
-            <Button
-              variant="ghost"
-              className="text-gray-500 hover:text-blue-600 p-1.5 h-auto"
-              id="btn-mobile-menu"
-            >
-              <Menu className="h-6 w-6" />
-            </Button>
           </div>
         </div>
       </div>

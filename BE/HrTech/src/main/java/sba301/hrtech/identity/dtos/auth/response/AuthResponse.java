@@ -11,5 +11,4 @@ import sba301.hrtech.identity.dtos.user.response.UserResponse;
 public class AuthResponse {
     private UserResponse userResponse;
     private String accessToken;
-    private String refreshToken;
 }

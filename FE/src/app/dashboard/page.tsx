@@ -17,7 +17,7 @@ export default function DashboardPage() {
         router.replace('/admin')
         break
 
-      case RoleUser.HR:
+      case RoleUser.RECRUITER:
         router.replace('/company')
         break
 

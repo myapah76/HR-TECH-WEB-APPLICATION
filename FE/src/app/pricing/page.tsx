@@ -30,8 +30,8 @@ function PricingContent() {
   const { user, setAuth } = useAuthStore()
   const searchParams = useSearchParams()
 
-  const [activeTab, setActiveTab] = useState<'hr' | 'candidate'>(
-    user?.roleResponse?.name === RoleUser.HR ? 'hr' : 'candidate'
+  const [activeTab, setActiveTab] = useState<'company' | 'candidate'>(
+    user?.roleResponse?.name === RoleUser.RECRUITER ? 'company' : 'candidate'
   )
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const router = useRouter()
@@ -97,7 +97,7 @@ function PricingContent() {
     })
   }
 
-  const hrPackages = plans.filter((p) => p.planType === PlanType.HR)
+  const hrPackages = plans.filter((p) => p.planType === PlanType.COMPANY)
   const candidatePackages = plans.filter((p) => p.planType === PlanType.CANDIDATE)
 
   const rawPackages = activeTab === 'candidate' ? candidatePackages : hrPackages
@@ -166,8 +166,8 @@ function PricingContent() {
   return (
     <div className="min-h-screen bg-slate-50/50 relative overflow-hidden pb-24 font-sans">
       {/* Premium background patterns */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-30 pointer-events-none z-0" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-gradient-to-b from-indigo-50/50 via-slate-50/20 to-transparent pointer-events-none z-0" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-30 pointer-events-none z-0" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-150 bg-linear-to-b from-indigo-50/50 via-slate-50/20 to-transparent pointer-events-none z-0" />
 
       <div className="relative z-10 pt-20 px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -178,7 +178,7 @@ function PricingContent() {
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 tracking-tight leading-tight">
             Gói dịch vụ linh hoạt cho <br className="hidden sm:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600">
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-600 via-blue-600 to-indigo-600">
               mọi nhu cầu của bạn
             </span>
           </h1>
@@ -204,9 +204,9 @@ function PricingContent() {
                 Dành cho Ứng Viên
               </button>
               <button
-                onClick={() => setActiveTab('hr')}
+                onClick={() => setActiveTab('company')}
                 className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all duration-300 cursor-pointer ${
-                  activeTab === 'hr'
+                  activeTab === 'company'
                     ? 'text-slate-900 font-extrabold'
                     : 'text-slate-500 hover:text-slate-950'
                 }`}
@@ -262,7 +262,7 @@ function PricingContent() {
               >
                 {pkg.isPopular && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                    <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-extrabold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md">
+                    <span className="inline-flex items-center gap-1.5 bg-linear-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-extrabold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md">
                       <Star className="w-3 h-3 fill-yellow-300 text-yellow-300 animate-pulse" />
                       Phổ biến nhất
                     </span>
@@ -279,7 +279,7 @@ function PricingContent() {
                         {pkg.name}
                       </h3>
                       <p
-                        className={`text-sm mt-3 font-medium leading-relaxed min-h-[48px] ${
+                        className={`text-sm mt-3 font-medium leading-relaxed min-h-12 ${
                           pkg.isPopular ? 'text-slate-400' : 'text-slate-500'
                         }`}
                       >
@@ -353,7 +353,7 @@ function PricingContent() {
                         {pkg.features.map((feature, i) => (
                           <li key={i} className="flex items-start gap-3 group/item">
                             <span
-                              className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 transition-colors ${
+                              className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 transition-colors ${
                                 pkg.isPopular
                                   ? 'bg-blue-500/15 text-blue-400 group-hover/item:bg-blue-500/25'
                                   : 'bg-indigo-55 bg-indigo-50 text-indigo-650 flex items-center justify-center text-center'

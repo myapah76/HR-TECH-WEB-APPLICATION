@@ -1,7 +1,7 @@
 package sba301.hrtech.identity.abstractions.services;
 
 import sba301.hrtech.identity.dtos.auth.request.*;
-import sba301.hrtech.identity.dtos.auth.response.AuthResponse;
+import sba301.hrtech.identity.dtos.auth.response.TokenPair;
 import sba301.hrtech.identity.dtos.auth.response.ConfirmOtpResult;
 import sba301.hrtech.identity.dtos.auth.response.EmailActionResponse;
 
@@ -13,12 +13,8 @@ public interface IAuthService {
     EmailActionResponse reSendOtp(ResendOtpRequest request);
     void resetPassword(ResetPasswordRequest request);
     void changePassword(ChangePasswordRequest request);
-
     ConfirmOtpResult confirmOtp(ConfirmOtpRequest request) throws RoleNotFoundException;
-
-
-
-    AuthResponse login(LoginRequest request);
-    AuthResponse refresh(String request);
+    TokenPair login(LoginRequest request);
+    TokenPair refresh(String request);
     void logout(String refreshToken);
 }

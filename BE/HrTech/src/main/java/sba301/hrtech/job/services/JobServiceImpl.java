@@ -235,9 +235,12 @@ public class JobServiceImpl implements IJobService {
             catch (IllegalArgumentException ignored) {}
         }
 
+        String keywordParam = criteria.keyword() != null ? "%" + criteria.keyword().toLowerCase() + "%" : null;
+        String locationParam = criteria.location() != null ? "%" + criteria.location().toLowerCase() + "%" : null;
+
         return jobRepository.searchOpenJobs(
-                criteria.keyword(),
-                criteria.location(),
+                keywordParam,
+                locationParam,
                 expLevel,
                 jobType,
                 criteria.salaryMin(),
@@ -245,6 +248,15 @@ public class JobServiceImpl implements IJobService {
                 pageable
         ).map(jobMapper::toResponse);
     }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<JobResponse> listJobs(Pageable pageable) {
+        return jobRepository.findByStatus(JobStatus.APPROVED, pageable)
+                .map(jobMapper::toResponse);
+    }
+
 
     @Override
     public Page<JobDocument> searchJobsWithElasticsearch(String keyword, Pageable pageable) {
