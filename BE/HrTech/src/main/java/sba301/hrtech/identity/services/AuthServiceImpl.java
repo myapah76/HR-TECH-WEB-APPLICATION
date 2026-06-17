@@ -222,11 +222,10 @@ public class AuthServiceImpl implements IAuthService {
         RefreshToken refreshToken = refreshTokenService.validateRefreshToken(request);
         User user = refreshToken.getUser();
         String newAccessToken = refreshTokenService.refreshAccessToken(request);
-        String newRefreshToken = refreshTokenService.createRefreshToken(user);
         return new AuthResponse(
                 userMapper.toResponse(user),
                 newAccessToken,
-                newRefreshToken);
+                request);
     }
 
 
