@@ -27,6 +27,9 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
 
     List<Job> findByCompanyIdAndCreatedByIdAndDeletedFalse(UUID companyId, UUID createdById);
 
+    Page<Job> findByStatus(JobStatus status, Pageable pageable);
+
+
     @Query("""
         SELECT j FROM Job j
         WHERE j.deleted = false

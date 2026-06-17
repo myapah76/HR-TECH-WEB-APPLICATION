@@ -247,6 +247,14 @@ public class JobServiceImpl implements IJobService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<JobResponse> listJobs(Pageable pageable) {
+        return jobRepository.findByStatus(JobStatus.APPROVED, pageable)
+                .map(jobMapper::toResponse);
+    }
+
+
+    @Override
     public Page<JobDocument> searchJobsWithElasticsearch(String keyword, Pageable pageable) {
         return jobSearchRepository.search(keyword, pageable);
     }

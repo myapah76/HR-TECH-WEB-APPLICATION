@@ -43,7 +43,8 @@ public class SecurityConfig {
             "/api/subscription-plans/active",
             // Swagger
             "/swagger-ui/**",
-            "/v3/api-docs/**"
+            "/v3/api-docs/**",
+            "/api/jobs/**"
     };
 
     private final IJwtService jwtService;
@@ -88,6 +89,7 @@ public class SecurityConfig {
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .anyRequest().authenticated()
                 )
+
 
                 // Xử lý lỗi 401 và 403 trả về JSON chuẩn ApiResponse
                 .exceptionHandling(exceptions -> exceptions
