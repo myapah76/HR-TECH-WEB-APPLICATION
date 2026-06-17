@@ -1,16 +1,41 @@
-export interface JobResponse {
+export interface JobSkill {
   id: string;
-  title: string;
-  companyName: string;
-  location: string;
-  salaryMin?: number;
-  salaryMax?: number;
-  currency?: string;
-  createdAt: string;
+  skillNeo4jId: string;
+  skillName: string;
+  requiredLevel: string;
+  isAiExtracted: boolean;
 }
 
-export interface SavedJobResponse {
-  id: string; // The saved job ID mapping
-  job: JobResponse;
-  savedAt: string;
+export interface Job {
+  id: string;
+
+  companyId: string;
+  companyName: string;
+  companyLogoUrl: string;
+
+  createdById: string;
+  createdByName: string;
+
+  title: string;
+  description: string;
+
+  location: string;
+
+  salaryMin: number;
+  salaryMax: number;
+
+  jobType: string;
+  experienceLevel: string;
+  status: string;
+
+  deadline: string;
+
+  requirements: string;
+
+  extractionStatus: string;
+
+  skills: JobSkill[];
+
+  createdAt: string;
+  updatedAt: string;
 }
