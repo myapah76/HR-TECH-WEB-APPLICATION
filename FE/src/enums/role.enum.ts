@@ -1,5 +1,5 @@
 export enum RoleUser {
   CANDIDATE = 'CANDIDATE',
-  HR = 'HR',
+  RECRUITER = 'RECRUITER',
   ADMIN_SYSTEM = 'ADMIN_SYSTEM',
 }

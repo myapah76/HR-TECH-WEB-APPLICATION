@@ -33,9 +33,10 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     loginMutation.mutate(data, {
-      onSuccess: () => {
+      onSuccess: (response) => {
         router.push('/')
         toast.success('Đăng nhập thành công')
+        console.log(response)
       },
       onError: (error) => {
         toast.error(getErrorMessage(error))

@@ -75,7 +75,7 @@ export function VerifyOtpForm({ email, expireIn, otpType }: VerifyOtpFormProps) 
     e.preventDefault()
     const otpValue = otp.join('')
 
-    if (otpType === OtpType.REGISTER) {
+    if (otpType === OtpType.REGISTER || otpType === OtpType.REGISTER_COMPANY) {
       confirmRegisterOtpMutation.mutate(
         { email, otp: otpValue, type: otpType },
         {
@@ -94,7 +94,6 @@ export function VerifyOtpForm({ email, expireIn, otpType }: VerifyOtpFormProps) 
         {
           onSuccess: (response) => {
             toast.success('Xác thực OTP thành công! Bây giờ bạn có thể reset mật khẩu.')
-            console.log('res', response)
             router.push(
               `/reset-password?reset-token=${encodeURIComponent(response.data.resetToken)}`
             )

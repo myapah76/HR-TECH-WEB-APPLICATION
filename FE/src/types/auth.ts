@@ -48,3 +48,18 @@ export interface ResetPasswordRequest {
   resetToken: string
   newPassword: string
 }
+
+export interface CompanyRegisterRequest {
+  email: string
+  password: string
+  fullName: string
+  phone?: string
+  name: string
+  description?: string
+  website?: string
+  industry?: string
+  size?: string
+  address?: string
+  taxCode: string
+}
+

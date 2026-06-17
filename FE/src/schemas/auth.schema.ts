@@ -49,3 +49,29 @@ export const resetPasswordSchema = z
 
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>
+
+export const companyRegisterSchema = z
+  .object({
+    email: z.email('Email không hợp lệ'),
+    password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+    confirmPassword: z.string(),
+    fullName: z.string().min(1, 'Họ và tên không được để trống'),
+    phone: z.string().optional(),
+    name: z.string().min(3, 'Tên công ty phải từ 3 đến 255 ký tự').max(255, 'Tên công ty không quá 255 ký tự'),
+    description: z.string().optional(),
+    website: z.string().optional(),
+    industry: z.string().optional(),
+    size: z.string().optional(),
+    address: z.string().optional(),
+    taxCode: z.string().min(1, 'Mã số thuế không được để trống'),
+    acceptTerms: z.boolean().refine((value) => value === true, {
+      message: 'Bạn phải đồng ý với Điều khoản sử dụng',
+    }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Mật khẩu không khớp',
+    path: ['confirmPassword'],
+  })
+
+export type CompanyRegisterFormData = z.infer<typeof companyRegisterSchema>
+

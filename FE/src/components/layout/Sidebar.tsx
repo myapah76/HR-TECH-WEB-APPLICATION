@@ -1,11 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { LucideIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '@/src/stores/auth.store'
-import { logout as logoutService } from '@/src/services/auth.service'
 
 export interface SidebarItem {
   icon: LucideIcon
@@ -22,8 +21,7 @@ interface SidebarProps {
 
 export default function Sidebar({ items, title, accentColor = 'blue' }: SidebarProps) {
   const pathname = usePathname()
-  const { user, logout: clearAuth } = useAuthStore()
-  const router = useRouter()
+  const { user } = useAuthStore()
   const [collapsed, setCollapsed] = useState(false)
 
   const colorMap: Record<
@@ -72,17 +70,6 @@ export default function Sidebar({ items, title, accentColor = 'blue' }: SidebarP
   }
 
   const colors = colorMap[accentColor] || colorMap.blue
-
-  const handleLogout = async () => {
-    try {
-      await logoutService()
-    } catch (e) {
-      console.error(e)
-    } finally {
-      clearAuth()
-      router.push('/')
-    }
-  }
 
   return (
     <aside
