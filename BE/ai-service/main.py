@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from models import EmbedRequest, EmbedResponse, ExtractedSkill, JobExtractionRequest, JobExtractionResponse, ExtractedJobSkill, ParseExtractRequest, ParseExtractResponse, MapRelationshipsRequest, MapRelationshipsResponse, SkillRelationship
+from models import EmbedRequest, EmbedResponse, ExtractedSkill, JobExtractionRequest, JobExtractionResponse, ParseExtractRequest, ParseExtractResponse, MapRelationshipsRequest, MapRelationshipsResponse, SkillRelationship
 from services import extract_skills, extract_job_skills, download_and_extract_pdf_text
 from sqlalchemy import text
 from rag.database import Base, engine
