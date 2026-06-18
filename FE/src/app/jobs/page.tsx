@@ -46,9 +46,18 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="bg-white border-b border-slate-200"></header>
+      <section className="relative bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 py-16 overflow-hidden">
+        {/* Decorative Background Elements */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <section className="bg-[#3333FF] py-10 h-50" style={{ backgroundColor: '#3333FF' }}>
+        <div className="relative z-10 max-w-5xl mx-auto text-center px-4 mb-8">
+          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-tight">
+            Khám phá cơ hội việc làm IT hàng đầu
+          </h1>
+        </div>
+
         <JobSearch
           keyword={keyword}
           onKeywordChange={setKeyword}
@@ -75,12 +84,15 @@ export default function Home() {
           </aside>
 
           <div className="flex-1">
-            <div className="flex justify-between items-center mb-5">
-              <p className="text-sm text-slate-600">{totalResults} jobs found</p>
+            <div className="flex justify-between items-center mb-6">
+              <p className="text-sm font-bold text-slate-800">
+                Tìm thấy <span className="text-blue-600 font-extrabold">{totalResults}</span> việc
+                làm phù hợp
+              </p>
 
-              <button className="flex items-center gap-1 text-sm">
-                Newest
-                <ChevronDown size={16} />
+              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-[0_2px_4px_rgba(0,0,0,0.02)] cursor-pointer">
+                <span>Mới nhất</span>
+                <ChevronDown size={14} className="text-slate-400" />
               </button>
             </div>
 

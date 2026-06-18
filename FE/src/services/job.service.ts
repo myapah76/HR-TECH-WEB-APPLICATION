@@ -24,3 +24,9 @@ export const getJobs = async (page = 0, size = 10): Promise<PageResponse<Job>> =
 
   return response.data.data
 }
+
+export const getJobById = async (id: string): Promise<Job> => {
+  const response = await api.get<ApiResponse<Job>>(`/jobs/${id}`)
+  return response.data.data
+}
+
