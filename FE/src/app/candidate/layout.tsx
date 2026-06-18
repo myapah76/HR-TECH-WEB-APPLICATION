@@ -13,6 +13,8 @@ import {
   Star,
 } from 'lucide-react'
 
+import { getMyApplications } from '@/src/services/application.service'
+
 const candidateNavItems = [
   {
     icon: LayoutDashboard,
@@ -32,7 +34,7 @@ const candidateNavItems = [
     icon: Send,
     label: 'Việc đã ứng tuyển',
     path: '/candidate/applied-jobs',
-    badge: 3,
+    badge: 0,
   },
   {
     icon: Brain,
@@ -48,9 +50,17 @@ export default function CandidateLayout({ children }: { children: React.ReactNod
     queryFn: () => getSavedJobs(),
   })
 
+  const { data: appliedJobs = [] } = useQuery({
+    queryKey: ['appliedJobs'],
+    queryFn: () => getMyApplications(),
+  })
+
   const navItems = candidateNavItems.map((item) => {
     if (item.path === '/candidate/saved-jobs') {
       return { ...item, badge: savedJobs.length }
+    }
+    if (item.path === '/candidate/applied-jobs') {
+      return { ...item, badge: appliedJobs.length }
     }
     return item
   })

@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   MapPin,
   Briefcase,
@@ -18,12 +18,16 @@ import {
   ShieldCheck,
   Award,
   Clock,
+  Send,
+  Loader2,
 } from 'lucide-react'
 import { useGetJobById, useGetJobs } from '@/src/hooks/job/job.hooks'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getSavedJobs, saveJob, unsaveJob } from '@/src/services/job.service'
 import { useAuthStore } from '@/src/stores/auth.store'
+import { getAllCvs } from '@/src/services/cv.service'
+import { submitApplication, getMyApplications } from '@/src/services/application.service'
 
 /** Generates a deterministic gradient from a company name */
 function getAvatarGradient(name: string): string {
@@ -101,13 +105,35 @@ export default function JobDetailPage() {
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
 
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
+  const [selectedCvId, setSelectedCvId] = useState('')
+  const [coverLetter, setCoverLetter] = useState('')
+
   const { data: savedJobs = [] } = useQuery({
     queryKey: ['savedJobs'],
     queryFn: () => getSavedJobs(),
     enabled: !!user,
   })
 
+  const { data: cvs = [], isLoading: loadingCvs } = useQuery({
+    queryKey: ['cvs'],
+    queryFn: () => getAllCvs(),
+    enabled: isApplyModalOpen && !!user,
+  })
+
+  const { data: appliedJobs = [] } = useQuery({
+    queryKey: ['appliedJobs'],
+    queryFn: () => getMyApplications(),
+    enabled: !!user,
+  })
+
   const isSaved = savedJobs.some((j) => j.id === jobId)
+  const hasApplied = appliedJobs.some((app) => app.jobId === jobId)
+
+  // Pre-select primary CV at render time
+  const primaryCv = cvs.find((c) => c.isPrimary)
+  const defaultCvId = primaryCv ? primaryCv.id : (cvs[0]?.id || '')
+  const activeCvId = selectedCvId || defaultCvId
 
   const saveMutation = useMutation({
     mutationFn: saveJob,
@@ -131,6 +157,19 @@ export default function JobDetailPage() {
     },
   })
 
+  const applyMutation = useMutation({
+    mutationFn: submitApplication,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appliedJobs'] })
+      toast.success('Nộp đơn ứng tuyển thành công!')
+      setIsApplyModalOpen(false)
+      setCoverLetter('')
+    },
+    onError: () => {
+      toast.error('Có lỗi xảy ra khi nộp đơn ứng tuyển')
+    },
+  })
+
   const handleSaveToggle = () => {
     if (!user) {
       toast.error('Vui lòng đăng nhập để lưu công việc')
@@ -141,6 +180,19 @@ export default function JobDetailPage() {
     } else {
       saveMutation.mutate(jobId)
     }
+  }
+
+  const handleApplySubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!activeCvId) {
+      toast.error('Vui lòng chọn CV để ứng tuyển')
+      return
+    }
+    applyMutation.mutate({
+      jobId,
+      cvId: activeCvId,
+      coverLetter,
+    })
   }
 
   const handleShare = () => {
@@ -294,12 +346,26 @@ export default function JobDetailPage() {
               {/* Action Buttons Row */}
               <div className="flex flex-wrap items-center gap-3 mt-8 pt-6 border-t border-slate-100">
                 <button
-                  onClick={() => toast.info('Tính năng nộp đơn ứng tuyển tạm thời đóng!')}
-                  disabled={job.status !== 'OPEN'}
-                  className="flex-1 min-w-[200px] bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:opacity-50 text-white font-black text-sm py-4 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 shadow-md shadow-blue-600/10 hover:shadow-lg hover:shadow-blue-600/20 active:scale-98 cursor-pointer uppercase tracking-wider flex items-center justify-center gap-2"
+                  onClick={() => {
+                    if (!user) {
+                      toast.error('Vui lòng đăng nhập để ứng tuyển')
+                      return
+                    }
+                    if (hasApplied) {
+                      toast.info('Bạn đã ứng tuyển công việc này rồi!')
+                      return
+                    }
+                    setIsApplyModalOpen(true)
+                  }}
+                  disabled={job.status !== 'APPROVED' && job.status !== 'OPEN'}
+                  className={`flex-1 min-w-[200px] font-black text-sm py-4 rounded-2xl transition-all duration-300 shadow-md active:scale-98 cursor-pointer uppercase tracking-wider flex items-center justify-center gap-2 ${
+                    hasApplied
+                      ? 'bg-slate-100 border border-slate-200 text-slate-400 hover:scale-100 hover:shadow-md'
+                      : 'bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] hover:-translate-y-0.5 text-white shadow-blue-600/10 hover:shadow-lg hover:shadow-blue-600/20'
+                  }`}
                 >
-                  <PlusCircle className="w-5 h-5" />
-                  <span>Ứng tuyển ngay</span>
+                  {hasApplied ? <Check className="w-5 h-5" /> : <PlusCircle className="w-5 h-5" />}
+                  <span>{hasApplied ? 'Đã ứng tuyển' : 'Ứng tuyển ngay'}</span>
                 </button>
 
                 <button
@@ -503,6 +569,97 @@ export default function JobDetailPage() {
           </div>
         </div>
       </main>
+
+      {/* Apply Modal */}
+      {isApplyModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xl max-w-md w-full p-6 relative animate-scale-in">
+            <button
+              onClick={() => setIsApplyModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center gap-2">
+              <Send className="w-5 h-5 text-blue-600" />
+              Nộp đơn ứng tuyển
+            </h3>
+
+            {loadingCvs ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+              </div>
+            ) : cvs.length === 0 ? (
+              <div className="space-y-4 py-2">
+                <p className="text-sm text-slate-500 font-semibold leading-relaxed">
+                  Bạn chưa có hồ sơ CV nào trong hệ thống. Vui lòng tải lên CV trước khi nộp đơn.
+                </p>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setIsApplyModalOpen(false)}
+                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3 rounded-xl transition-all cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <Link
+                    href="/candidate/cv"
+                    className="flex-1 text-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-3 rounded-xl transition-all"
+                  >
+                    Quản lý CV
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleApplySubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Chọn CV ứng tuyển</label>
+                  <select
+                    className="w-full h-11 border border-slate-200 bg-white rounded-xl px-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-xs"
+                    value={activeCvId}
+                    onChange={(e) => setSelectedCvId(e.target.value)}
+                  >
+                    {cvs.map((cv) => (
+                      <option key={cv.id} value={cv.id}>
+                        {cv.title} {cv.isPrimary ? '(Mặc định)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Thư giới thiệu (Không bắt buộc)</label>
+                  <textarea
+                    className="w-full border border-slate-200 rounded-xl p-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs resize-none"
+                    placeholder="Viết một đoạn ngắn giới thiệu bản thân hoặc lý do bạn phù hợp với công việc..."
+                    rows={4}
+                    value={coverLetter}
+                    onChange={(e) => setCoverLetter(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2 border-t border-slate-100 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsApplyModalOpen(false)}
+                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3 rounded-xl transition-all cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={applyMutation.isPending}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:opacity-50 text-white font-bold text-xs py-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-blue-600/10 hover:shadow-md hover:shadow-blue-600/20"
+                  >
+                    {applyMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    <span>Xác nhận nộp</span>
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

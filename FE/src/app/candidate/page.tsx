@@ -6,12 +6,19 @@ import { Briefcase, Eye, Heart, Send, FileText, Brain, Clock, ArrowRight } from 
 import { useAuthStore } from '@/src/stores/auth.store';
 import { useQuery } from '@tanstack/react-query';
 import { getSavedJobs } from '@/src/services/job.service';
+import { getMyApplications } from '@/src/services/application.service';
 
 export default function CandidateDashboardPage() {
   const { user } = useAuthStore();
+  
   const { data: savedJobs = [] } = useQuery({
     queryKey: ['savedJobs'],
     queryFn: () => getSavedJobs(),
+  });
+
+  const { data: appliedJobs = [] } = useQuery({
+    queryKey: ['appliedJobs'],
+    queryFn: () => getMyApplications(),
   });
 
   const recentActivity = [
@@ -33,7 +40,7 @@ export default function CandidateDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard icon={Send} label="Đã ứng tuyển" value={3} change={50} color="blue" />
+        <StatCard icon={Send} label="Đã ứng tuyển" value={appliedJobs.length} change={50} color="blue" />
         <StatCard icon={Eye} label="Lượt xem hồ sơ" value={28} change={12} color="emerald" />
         <StatCard icon={Heart} label="Việc đã lưu" value={savedJobs.length} color="rose" />
         <StatCard icon={Briefcase} label="Việc phù hợp A.I" value={14} change={8} color="violet" />
