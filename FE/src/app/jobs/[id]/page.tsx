@@ -8,7 +8,6 @@ import {
   Briefcase,
   Heart,
   DollarSign,
-  Calendar,
   ArrowLeft,
   Sparkles,
   Building2,
@@ -66,7 +65,9 @@ function CompanyLogo({
         <div
           className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}
         >
-          <span className={`text-white font-black ${textClassName} tracking-tight select-none drop-shadow`}>
+          <span
+            className={`text-white font-black ${textClassName} tracking-tight select-none drop-shadow`}
+          >
             {initial}
           </span>
         </div>
@@ -118,7 +119,9 @@ export default function JobDetailPage() {
           <div className="absolute inset-0 rounded-full border-4 border-blue-100 animate-pulse"></div>
           <div className="absolute inset-0 rounded-full border-4 border-t-blue-600 animate-spin"></div>
         </div>
-        <p className="text-sm font-bold text-slate-550 animate-pulse">Đang tải chi tiết công việc...</p>
+        <p className="text-sm font-bold text-slate-550 animate-pulse">
+          Đang tải chi tiết công việc...
+        </p>
       </div>
     )
   }
@@ -182,9 +185,14 @@ export default function JobDetailPage() {
             <div className="bg-white rounded-3xl border border-slate-200/60 p-6 sm:p-8 shadow-[0_5px_25px_rgba(0,0,0,0.015)] relative overflow-hidden group">
               {/* Decorative gradient border on top */}
               <div className="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500" />
-              
+
               <div className="flex flex-col sm:flex-row items-start gap-5">
-                <CompanyLogo url={job.companyLogoUrl} name={job.companyName} sizeClassName="w-16 h-16 rounded-2xl" textClassName="text-2xl" />
+                <CompanyLogo
+                  url={job.companyLogoUrl}
+                  name={job.companyName}
+                  sizeClassName="w-16 h-16 rounded-2xl"
+                  textClassName="text-2xl"
+                />
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs font-black px-2.5 py-0.75 bg-slate-100 text-slate-600 rounded-lg uppercase tracking-wide">
@@ -227,7 +235,12 @@ export default function JobDetailPage() {
                     </span>
                     <span className="flex items-center gap-1.5 bg-slate-50 text-slate-600 px-3 py-1.5 rounded-xl border border-slate-200/50">
                       <Clock className="h-4 w-4" />
-                      <span>Hạn nộp: {job.deadline ? new Date(job.deadline).toLocaleDateString('vi-VN') : 'Không thời hạn'}</span>
+                      <span>
+                        Hạn nộp:{' '}
+                        {job.deadline
+                          ? new Date(job.deadline).toLocaleDateString('vi-VN')
+                          : 'Không thời hạn'}
+                      </span>
                     </span>
                   </div>
                 </div>
@@ -243,7 +256,7 @@ export default function JobDetailPage() {
                   <PlusCircle className="w-5 h-5" />
                   <span>Ứng tuyển ngay</span>
                 </button>
-                
+
                 <button
                   onClick={() => {
                     setIsSaved(!isSaved)
@@ -256,7 +269,9 @@ export default function JobDetailPage() {
                   }`}
                   title="Lưu công việc"
                 >
-                  <Heart className={`w-5 h-5 transition-transform duration-200 ${isSaved ? 'fill-rose-500 scale-110' : 'hover:scale-105'}`} />
+                  <Heart
+                    className={`w-5 h-5 transition-transform duration-200 ${isSaved ? 'fill-rose-500 scale-110' : 'hover:scale-105'}`}
+                  />
                 </button>
 
                 <button
@@ -283,7 +298,9 @@ export default function JobDetailPage() {
                     </p>
                   ))
                 ) : (
-                  <p className="text-sm text-slate-400 font-semibold italic">Không có mô tả chi tiết.</p>
+                  <p className="text-sm text-slate-400 font-semibold italic">
+                    Không có mô tả chi tiết.
+                  </p>
                 )}
               </div>
             </div>
@@ -297,7 +314,10 @@ export default function JobDetailPage() {
               <ul className="space-y-3.5">
                 {requirementsList.length > 0 ? (
                   requirementsList.map((req, index) => (
-                    <li key={index} className="flex items-start gap-3 text-sm font-semibold text-slate-655 leading-relaxed">
+                    <li
+                      key={index}
+                      className="flex items-start gap-3 text-sm font-semibold text-slate-655 leading-relaxed"
+                    >
                       <span className="w-5 h-5 rounded-full bg-blue-50 text-blue-655 flex items-center justify-center shrink-0 mt-0.5 border border-blue-100/40">
                         <Check className="w-3.5 h-3.5" strokeWidth={3} />
                       </span>
@@ -305,7 +325,9 @@ export default function JobDetailPage() {
                     </li>
                   ))
                 ) : (
-                  <p className="text-sm text-slate-400 font-semibold italic">Không có yêu cầu chi tiết.</p>
+                  <p className="text-sm text-slate-400 font-semibold italic">
+                    Không có yêu cầu chi tiết.
+                  </p>
                 )}
               </ul>
             </div>
@@ -318,7 +340,10 @@ export default function JobDetailPage() {
               </h2>
               <ul className="space-y-3.5">
                 {mockBenefits.map((ben, index) => (
-                  <li key={index} className="flex items-start gap-3 text-sm font-semibold text-slate-655 leading-relaxed">
+                  <li
+                    key={index}
+                    className="flex items-start gap-3 text-sm font-semibold text-slate-655 leading-relaxed"
+                  >
                     <span className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-650 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-100/40">
                       <Check className="w-3.5 h-3.5 text-emerald-600" strokeWidth={3} />
                     </span>
@@ -344,7 +369,9 @@ export default function JobDetailPage() {
                     </span>
                   ))
                 ) : (
-                  <span className="text-sm text-slate-450 font-bold italic">Không có kỹ năng cụ thể</span>
+                  <span className="text-sm text-slate-450 font-bold italic">
+                    Không có kỹ năng cụ thể
+                  </span>
                 )}
               </div>
             </div>
@@ -355,7 +382,12 @@ export default function JobDetailPage() {
             {/* Company Info Widget */}
             <div className="bg-white rounded-3xl border border-slate-200/60 p-6 shadow-[0_5px_25px_rgba(0,0,0,0.015)] space-y-4">
               <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
-                <CompanyLogo url={job.companyLogoUrl} name={job.companyName} sizeClassName="w-12 h-12 rounded-xl" textClassName="text-lg" />
+                <CompanyLogo
+                  url={job.companyLogoUrl}
+                  name={job.companyName}
+                  sizeClassName="w-12 h-12 rounded-xl"
+                  textClassName="text-lg"
+                />
                 <div>
                   <h3 className="font-extrabold text-slate-850 text-sm leading-snug">
                     {job.companyName}
@@ -367,7 +399,8 @@ export default function JobDetailPage() {
                 </div>
               </div>
               <p className="text-slate-500 font-semibold leading-relaxed text-xs">
-                Nhà tuyển dụng công nghệ uy tín hàng đầu, mang tới môi trường làm việc sáng tạo cùng nhiều quyền lợi bứt phá sự nghiệp.
+                Nhà tuyển dụng công nghệ uy tín hàng đầu, mang tới môi trường làm việc sáng tạo cùng
+                nhiều quyền lợi bứt phá sự nghiệp.
               </p>
               <div className="pt-2 text-xs font-semibold text-slate-600 space-y-2">
                 <div className="flex items-start gap-2">
@@ -396,17 +429,28 @@ export default function JobDetailPage() {
                       className="block p-3.5 rounded-2xl border border-slate-100 hover:border-blue-500/20 hover:bg-slate-50/50 transition-all duration-300 group"
                     >
                       <div className="flex items-center gap-3">
-                        <CompanyLogo url={rj.companyLogoUrl} name={rj.companyName} sizeClassName="w-10 h-10 rounded-xl" textClassName="text-sm" />
+                        <CompanyLogo
+                          url={rj.companyLogoUrl}
+                          name={rj.companyName}
+                          sizeClassName="w-10 h-10 rounded-xl"
+                          textClassName="text-sm"
+                        />
                         <div className="min-w-0 flex-1">
                           <h4 className="text-xs font-extrabold text-slate-800 group-hover:text-blue-600 transition-colors line-clamp-1">
                             {rj.title}
                           </h4>
-                          <p className="text-[10px] font-bold text-slate-450 line-clamp-1">{rj.companyName}</p>
+                          <p className="text-[10px] font-bold text-slate-450 line-clamp-1">
+                            {rj.companyName}
+                          </p>
                         </div>
                       </div>
                       <div className="flex justify-between items-center mt-2.5 pt-2 border-t border-slate-50/60">
-                        <span className="text-[10px] font-bold text-emerald-600">{formatSalary(rj.salaryMin, rj.salaryMax)}</span>
-                        <span className="text-[9px] font-semibold text-slate-400">{rj.location}</span>
+                        <span className="text-[10px] font-bold text-emerald-600">
+                          {formatSalary(rj.salaryMin, rj.salaryMax)}
+                        </span>
+                        <span className="text-[9px] font-semibold text-slate-400">
+                          {rj.location}
+                        </span>
                       </div>
                     </Link>
                   ))}
