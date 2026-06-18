@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useAuthStore } from '../stores/auth.store'
+import { checkCookiesEnabled } from './utils'
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -79,10 +80,20 @@ api.interceptors.response.use(
       isRefreshing = true
       originalRequest._retry = true
       try {
-        const res = await apiRaw.post('/auth/refresh')
+        const { refreshToken } = useAuthStore.getState()
+        const cookiesEnabled = checkCookiesEnabled();
+        
+        if (!cookiesEnabled && !refreshToken) {
+          throw new Error('No refresh token available')
+        }
+
+        const refreshReqData = (!cookiesEnabled && refreshToken) ? { refreshToken } : undefined
+        const headers = { 'X-Cookies-Enabled': cookiesEnabled ? 'true' : 'false' }
+        const res = await apiRaw.post('/auth/refresh', refreshReqData, { headers })
         const newAccess = res.data.data.accessToken
+        const newRefresh = res.data.data.refreshToken
         // update token
-        useAuthStore.getState().updateTokens(newAccess)
+        useAuthStore.getState().updateTokens(newAccess, newRefresh)
         processQueue(null, newAccess)
         // update header
         error.config.headers.Authorization = `Bearer ${newAccess}`

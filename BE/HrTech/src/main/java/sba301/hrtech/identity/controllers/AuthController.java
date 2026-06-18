@@ -15,6 +15,8 @@ import sba301.hrtech.identity.dtos.auth.response.ConfirmOtpResult;
 import sba301.hrtech.identity.dtos.auth.response.EmailActionResponse;
 import sba301.hrtech.identity.dtos.auth.response.AuthResponse;
 import sba301.hrtech.identity.dtos.auth.response.TokenPair;
+import sba301.hrtech.shared.error.ErrorCode;
+import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.shared.response.ApiResponse;
 
 import javax.management.relation.RoleNotFoundException;
@@ -85,29 +87,50 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(
             @Valid @RequestBody LoginRequest request,
+            @RequestHeader(value = "X-Cookies-Enabled", defaultValue = "true") String cookiesEnabled,
             HttpServletResponse response) {
 
         TokenPair tokenPair = authService.login(request);
         setRefreshTokenCookie(response, tokenPair.refreshToken());
 
-        return ResponseEntity.ok(ApiResponse.success(tokenPair.authResponse(), "Login successfully"));
+        AuthResponse authResponse = tokenPair.authResponse();
+        if ("true".equalsIgnoreCase(cookiesEnabled)) {
+            authResponse.setRefreshToken(null);
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(authResponse, "Login successfully"));
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<AuthResponse>> refresh(
-            @CookieValue("refreshToken") String refreshToken,
+            @CookieValue(value = "refreshToken", required = false) String cookieRefreshToken,
+            @RequestBody(required = false) RefreshRequest request,
+            @RequestHeader(value = "X-Cookies-Enabled", defaultValue = "true") String cookiesEnabled,
             HttpServletResponse response) {
+
+        String refreshToken = cookieRefreshToken != null ? cookieRefreshToken : (request != null ? request.getRefreshToken() : null);
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "Refresh token is required");
+        }
 
         TokenPair tokenPair = authService.refresh(refreshToken);
         setRefreshTokenCookie(response, tokenPair.refreshToken());
 
-        return ResponseEntity.ok(ApiResponse.success(tokenPair.authResponse(), "Token refreshed successfully"));
+        AuthResponse authResponse = tokenPair.authResponse();
+        if ("true".equalsIgnoreCase(cookiesEnabled)) {
+            authResponse.setRefreshToken(null);
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(authResponse, "Token refreshed successfully"));
     }
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(
-            @CookieValue(value = "refreshToken", required = false) String refreshToken,
+            @CookieValue(value = "refreshToken", required = false) String cookieRefreshToken,
+            @RequestBody(required = false) RefreshRequest request,
             HttpServletResponse response) {
+
+        String refreshToken = cookieRefreshToken != null ? cookieRefreshToken : (request != null ? request.getRefreshToken() : null);
 
         if (refreshToken != null) {
             authService.logout(refreshToken);

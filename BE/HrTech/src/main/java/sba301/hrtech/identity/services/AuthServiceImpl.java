@@ -218,7 +218,7 @@ public class AuthServiceImpl implements IAuthService {
         String refreshToken = refreshTokenService.createRefreshToken(user);
 
         return new TokenPair(
-                new AuthResponse(userMapper.toResponse(user), accessToken),
+                new AuthResponse(userMapper.toResponse(user), accessToken, refreshToken),
                 refreshToken
         );
     }
@@ -237,7 +237,7 @@ public class AuthServiceImpl implements IAuthService {
         String newRefreshToken = refreshTokenService.createRefreshToken(user);
         
         return new TokenPair(
-                new AuthResponse(userMapper.toResponse(user), newAccessToken),
+                new AuthResponse(userMapper.toResponse(user), newAccessToken, newRefreshToken),
                 newRefreshToken
         );
     }
