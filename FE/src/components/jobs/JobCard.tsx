@@ -1,9 +1,10 @@
 'use client'
 
-import { MapPin, Briefcase, Heart, DollarSign, Calendar, Sparkles } from 'lucide-react'
+import { MapPin, Heart, DollarSign, Calendar, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Job } from '@/src/types/job'
+import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 
 interface JobCardProps {
   job: Job
@@ -11,61 +12,7 @@ interface JobCardProps {
   onToggleFavorite?: (id: string) => void
 }
 
-/** Generates a deterministic gradient from a company name */
-function getAvatarGradient(name: string): string {
-  const gradients = [
-    'from-blue-500 to-indigo-600',
-    'from-violet-500 to-purple-600',
-    'from-rose-500 to-pink-600',
-    'from-amber-500 to-orange-600',
-    'from-teal-500 to-cyan-600',
-    'from-emerald-500 to-green-600',
-    'from-sky-500 to-blue-600',
-    'from-fuchsia-500 to-violet-600',
-  ]
-  const index = (name?.charCodeAt(0) ?? 0) % gradients.length
-  return gradients[index]
-}
-
-interface CompanyLogoProps {
-  url?: string | null
-  name: string
-}
-
-function CompanyLogo({ url, name }: CompanyLogoProps) {
-  const [imgError, setImgError] = useState(false)
-  const initial = name?.charAt(0)?.toUpperCase() ?? '?'
-  const gradient = getAvatarGradient(name)
-
-  const showFallback = !url || imgError
-
-  return (
-    <div className="relative shrink-0 w-16 h-16 rounded-2xl overflow-hidden shadow-inner border border-slate-100 bg-white flex items-center justify-center">
-      {showFallback ? (
-        <div
-          className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center group-hover:scale-105 transition-transform duration-300`}
-        >
-          <span className="text-white font-black text-2xl tracking-tight select-none drop-shadow">
-            {initial}
-          </span>
-        </div>
-      ) : (
-        <img
-          src={url!}
-          alt={name}
-          onError={() => setImgError(true)}
-          className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
-        />
-      )}
-    </div>
-  )
-}
-
-export default function JobCard({
-  job,
-  isFavorite = false,
-  onToggleFavorite,
-}: JobCardProps) {
+export default function JobCard({ job, isFavorite = false, onToggleFavorite }: JobCardProps) {
   const router = useRouter()
   const [favorite, setFavorite] = useState(isFavorite)
 
@@ -86,7 +33,7 @@ export default function JobCard({
       className="bg-white rounded-3xl border border-slate-200/70 p-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_16px_35px_rgba(0,0,0,0.06)] hover:border-blue-500/40 hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col md:flex-row justify-between items-start gap-6 group relative overflow-hidden"
     >
       {/* Decorative gradient border on top on hover */}
-      <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute top-0 left-0 w-full h-0.75 bg-linear-to-r from-blue-500 via-indigo-500 to-violet-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
       <div className="flex gap-5 flex-1 min-w-0 items-start">
         {/* Company Logo */}

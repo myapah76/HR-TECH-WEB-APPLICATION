@@ -20,68 +20,8 @@ import {
   Clock,
 } from 'lucide-react'
 import { useGetJobById, useGetJobs } from '@/src/hooks/job/job.hooks'
+import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import { toast } from 'sonner'
-
-/** Generates a deterministic gradient from a company name */
-function getAvatarGradient(name: string): string {
-  const gradients = [
-    'from-blue-500 to-indigo-600',
-    'from-violet-500 to-purple-600',
-    'from-rose-500 to-pink-600',
-    'from-amber-500 to-orange-600',
-    'from-teal-500 to-cyan-600',
-    'from-emerald-500 to-green-600',
-    'from-sky-500 to-blue-600',
-    'from-fuchsia-500 to-violet-600',
-  ]
-  const index = (name?.charCodeAt(0) ?? 0) % gradients.length
-  return gradients[index]
-}
-
-interface CompanyLogoProps {
-  url?: string | null
-  name: string
-  sizeClassName?: string
-  textClassName?: string
-}
-
-function CompanyLogo({
-  url,
-  name,
-  sizeClassName = 'w-16 h-16 rounded-2xl',
-  textClassName = 'text-2xl',
-}: CompanyLogoProps) {
-  const [imgError, setImgError] = useState(false)
-  const initial = name?.charAt(0)?.toUpperCase() ?? '?'
-  const gradient = getAvatarGradient(name)
-
-  const showFallback = !url || imgError
-
-  return (
-    <div
-      className={`relative shrink-0 ${sizeClassName} overflow-hidden shadow-inner border border-slate-100 bg-white flex items-center justify-center`}
-    >
-      {showFallback ? (
-        <div
-          className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}
-        >
-          <span
-            className={`text-white font-black ${textClassName} tracking-tight select-none drop-shadow`}
-          >
-            {initial}
-          </span>
-        </div>
-      ) : (
-        <img
-          src={url!}
-          alt={name}
-          onError={() => setImgError(true)}
-          className="w-full h-full object-contain p-2"
-        />
-      )}
-    </div>
-  )
-}
 
 export default function JobDetailPage() {
   const params = useParams()
@@ -184,15 +124,10 @@ export default function JobDetailPage() {
             {/* Job Header Card */}
             <div className="bg-white rounded-3xl border border-slate-200/60 p-6 sm:p-8 shadow-[0_5px_25px_rgba(0,0,0,0.015)] relative overflow-hidden group">
               {/* Decorative gradient border on top */}
-              <div className="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500" />
+              <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-blue-500 via-indigo-500 to-violet-500" />
 
               <div className="flex flex-col sm:flex-row items-start gap-5">
-                <CompanyLogo
-                  url={job.companyLogoUrl}
-                  name={job.companyName}
-                  sizeClassName="w-16 h-16 rounded-2xl"
-                  textClassName="text-2xl"
-                />
+                <CompanyLogo url={job.companyLogoUrl} name={job.companyName} />
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs font-black px-2.5 py-0.75 bg-slate-100 text-slate-600 rounded-lg uppercase tracking-wide">
@@ -251,7 +186,7 @@ export default function JobDetailPage() {
                 <button
                   onClick={() => toast.info('Tính năng nộp đơn ứng tuyển tạm thời đóng!')}
                   disabled={job.status !== 'OPEN'}
-                  className="flex-1 min-w-[200px] bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:opacity-50 text-white font-black text-sm py-4 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 shadow-md shadow-blue-600/10 hover:shadow-lg hover:shadow-blue-600/20 active:scale-98 cursor-pointer uppercase tracking-wider flex items-center justify-center gap-2"
+                  className="flex-1 min-w-50 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:opacity-50 text-white font-black text-sm py-4 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 shadow-md shadow-blue-600/10 hover:shadow-lg hover:shadow-blue-600/20 active:scale-98 cursor-pointer uppercase tracking-wider flex items-center justify-center gap-2"
                 >
                   <PlusCircle className="w-5 h-5" />
                   <span>Ứng tuyển ngay</span>
@@ -382,12 +317,7 @@ export default function JobDetailPage() {
             {/* Company Info Widget */}
             <div className="bg-white rounded-3xl border border-slate-200/60 p-6 shadow-[0_5px_25px_rgba(0,0,0,0.015)] space-y-4">
               <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
-                <CompanyLogo
-                  url={job.companyLogoUrl}
-                  name={job.companyName}
-                  sizeClassName="w-12 h-12 rounded-xl"
-                  textClassName="text-lg"
-                />
+                <CompanyLogo url={job.companyLogoUrl} name={job.companyName} />
                 <div>
                   <h3 className="font-extrabold text-slate-850 text-sm leading-snug">
                     {job.companyName}
@@ -429,12 +359,7 @@ export default function JobDetailPage() {
                       className="block p-3.5 rounded-2xl border border-slate-100 hover:border-blue-500/20 hover:bg-slate-50/50 transition-all duration-300 group"
                     >
                       <div className="flex items-center gap-3">
-                        <CompanyLogo
-                          url={rj.companyLogoUrl}
-                          name={rj.companyName}
-                          sizeClassName="w-10 h-10 rounded-xl"
-                          textClassName="text-sm"
-                        />
+                        <CompanyLogo url={rj.companyLogoUrl} name={rj.companyName} />
                         <div className="min-w-0 flex-1">
                           <h4 className="text-xs font-extrabold text-slate-800 group-hover:text-blue-600 transition-colors line-clamp-1">
                             {rj.title}
