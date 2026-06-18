@@ -91,9 +91,6 @@ function PricingContent() {
           toast.error('Không tìm thấy liên kết thanh toán!')
         }
       },
-      onError: (error) => {
-        toast.error(getErrorMessage(error))
-      },
     })
   }
 

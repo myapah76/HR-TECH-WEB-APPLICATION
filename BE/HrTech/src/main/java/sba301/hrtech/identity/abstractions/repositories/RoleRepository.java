@@ -18,8 +18,6 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
 
     List<Role> findAll();
 
-    Role save(Role role);
-
     boolean existsById(UUID id);
 
     void deleteById(UUID id);

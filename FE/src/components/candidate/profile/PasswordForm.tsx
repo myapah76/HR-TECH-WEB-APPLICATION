@@ -7,7 +7,6 @@ import { useAuthStore } from '@/src/stores/auth.store'
 import { logout } from '@/src/services/auth.service'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { getErrorMessage } from '@/src/utils/get-error-message'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card'
 import { Label } from '@/src/components/ui/label'
 import { Input } from '@/src/components/ui/input'
@@ -49,9 +48,6 @@ export function PasswordForm({ user }: PasswordFormProps) {
           await logout()
           clearAuth()
           router.push('/login')
-        },
-        onError: (err) => {
-          toast.error(getErrorMessage(err))
         },
       }
     )

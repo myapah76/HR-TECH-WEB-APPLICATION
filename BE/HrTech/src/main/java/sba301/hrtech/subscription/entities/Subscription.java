@@ -13,7 +13,6 @@ import sba301.hrtech.subscription.entities.enums.SubscriptionStatus;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.ArrayList;
 
 @Entity
 @Table(name = "subscriptions")
@@ -39,7 +38,7 @@ public class Subscription extends SoftDeleteEntity {
     private SubscriptionStatus status;
 
     @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Payment> payments = new ArrayList<>();
+    private List<Payment> payments;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -49,9 +48,3 @@ public class Subscription extends SoftDeleteEntity {
     @JoinColumn(name = "plan_id", nullable = false)
     private SubscriptionPlan plan;
 }
-
-
-
-
-
-

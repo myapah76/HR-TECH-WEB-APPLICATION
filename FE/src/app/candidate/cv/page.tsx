@@ -154,7 +154,7 @@ export default function CandidateCvPage() {
             <CardContent className="pt-6 relative">
               {uploadCvMutation.isPending && (
                 <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden rounded-b-xl opacity-70">
-                  <div className="absolute left-0 top-0 w-full h-[3px] bg-blue-500 shadow-[0_0_15px_5px_rgba(59,130,246,0.5)] z-20 animate-[scan_2s_ease-in-out_infinite]" />
+                  <div className="absolute left-0 top-0 w-full h-0.75 bg-blue-500 shadow-[0_0_15px_5px_rgba(59,130,246,0.5)] z-20 animate-[scan_2s_ease-in-out_infinite]" />
                   <div className="absolute inset-0 bg-blue-50/30 backdrop-blur-[1px]" />
                 </div>
               )}
@@ -376,7 +376,7 @@ export default function CandidateCvPage() {
                               e.key === 'Enter' && handleUpdateTitle(cv.id, cv.title)
                             }
                             autoFocus
-                            className="h-8 max-w-[250px] font-bold"
+                            className="h-8 max-w-62.5 font-bold"
                           />
                         ) : (
                           <h3
@@ -457,7 +457,7 @@ export default function CandidateCvPage() {
           onClick={() => setViewCvId(null)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl w-[95vw] max-w-[1200px] h-[95vh] flex flex-col overflow-hidden"
+            className="bg-white rounded-2xl shadow-2xl w-[95vw] max-w-300 h-[95vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">

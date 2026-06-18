@@ -6,11 +6,13 @@ import { Button } from '@/src/components/ui/button'
 import { Input } from '@/src/components/ui/input'
 import { Label } from '@/src/components/ui/label'
 import { useGetAllCvs, useUploadCv } from '@/src/hooks/cv/cv.hooks'
-import { useStartJobMatching, useGetJobMatchingStatus } from '@/src/hooks/recommendation/recommendation.hooks'
+import {
+  useStartJobMatching,
+  useGetJobMatchingStatus,
+} from '@/src/hooks/recommendation/recommendation.hooks'
 import { JobMatchingTaskResponse } from '@/src/types/recommendation'
 import {
   Star,
-  UploadCloud,
   FileText,
   Loader2,
   CheckCircle2,
@@ -24,6 +26,7 @@ import Link from 'next/link'
 
 export default function RecommendJobsPage() {
   const { data: cvs = [], isLoading: loadingCvs } = useGetAllCvs()
+
   const uploadCvMutation = useUploadCv()
   const startJobMatchingMutation = useStartJobMatching()
 
@@ -37,7 +40,12 @@ export default function RecommendJobsPage() {
   // Process states
   const [isStarting, setIsStarting] = useState(false)
   const [taskId, setTaskId] = useState<string | null>(null)
-  const [taskStatus, setTaskStatus] = useState<JobMatchingTaskResponse | null>(null)
+
+  const { data: polledStatus } = useGetJobMatchingStatus(taskId, !!taskId)
+
+  const [taskStatus, setTaskStatus] = useState<JobMatchingTaskResponse | null>(
+    polledStatus ? polledStatus : null
+  )
 
   useEffect(() => {
     if (cvs.length > 0 && !selectedCvId) {
@@ -56,17 +64,7 @@ export default function RecommendJobsPage() {
     }
   }
 
-  const { data: polledStatus } = useGetJobMatchingStatus(taskId, !!taskId)
-
-  useEffect(() => {
-    if (polledStatus) {
-      setTaskStatus(polledStatus)
-    }
-  }, [polledStatus])
-
   const handleStartProcess = () => {
-    let targetCvId = selectedCvId
-
     if (cvMode === 'new') {
       if (!selectedFile || !cvTitle) {
         alert('Vui lòng chọn file và nhập tên CV')
@@ -90,11 +88,11 @@ export default function RecommendJobsPage() {
         }
       )
     } else {
-      if (!targetCvId) {
+      if (!selectedCvId) {
         alert('Không tìm thấy ID CV hợp lệ')
         return
       }
-      triggerJobMatching(targetCvId)
+      triggerJobMatching(selectedCvId)
     }
   }
 
@@ -377,7 +375,7 @@ export default function RecommendJobsPage() {
 
           {/* Right: Visual Mockup */}
           {isProcessActive && (
-            <div className="relative flex flex-col items-center justify-center p-8 bg-slate-100/50 rounded-2xl border border-slate-200 shadow-inner min-h-[500px] overflow-hidden animate-in fade-in slide-in-from-right-8 duration-500">
+            <div className="relative flex flex-col items-center justify-center p-8 bg-slate-100/50 rounded-2xl border border-slate-200 shadow-inner min-h-125 overflow-hidden animate-in fade-in slide-in-from-right-8 duration-500">
               {/* The CV Mockup Image */}
               <div className="relative w-full max-w-sm aspect-[1/1.4] rounded-lg shadow-2xl overflow-hidden border border-slate-300 bg-white">
                 <img
@@ -389,7 +387,7 @@ export default function RecommendJobsPage() {
                 {/* Scanner overlay */}
                 {isProcessActive && (
                   <>
-                    <div className="absolute left-0 w-full h-[3px] bg-blue-500 shadow-[0_0_25px_8px_rgba(59,130,246,0.8)] z-20 animate-scanner" />
+                    <div className="absolute left-0 w-full h-0.75 bg-blue-500 shadow-[0_0_25px_8px_rgba(59,130,246,0.8)] z-20 animate-scanner" />
                     <div className="absolute inset-0 bg-blue-500/10 mix-blend-overlay animate-pulse z-10" />
                   </>
                 )}
@@ -464,4 +462,3 @@ export default function RecommendJobsPage() {
     </div>
   )
 }
-

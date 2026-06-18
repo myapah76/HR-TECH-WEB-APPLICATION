@@ -23,7 +23,6 @@ import vn.payos.PayOS;
 import vn.payos.model.webhooks.Webhook;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -42,8 +41,7 @@ public class PaymentServiceImpl implements IPaymentService {
     @Override
     @Transactional
     public CreatePaymentResponse createPayment(
-            CreatePaymentRequest request
-    ) {
+            CreatePaymentRequest request) {
         User user = authUtils.getCurrentUser();
         SubscriptionPlan plan = subscriptionPlanService.getById(request.subscriptionPlanId());
 
@@ -63,9 +61,8 @@ public class PaymentServiceImpl implements IPaymentService {
     @Transactional
     @Override
     public void handleWebhook(
-            Webhook webhook
-    ) {
-        try{
+            Webhook webhook) {
+        try {
             var data = payOS.webhooks().verify(webhook);
 
             if (!Boolean.TRUE.equals(webhook.getSuccess())) {
@@ -78,14 +75,11 @@ public class PaymentServiceImpl implements IPaymentService {
 
             Long orderCode = data.getOrderCode();
 
-            Payment payment =
-                    paymentRepository
-                            .findByOrderCode(orderCode)
-                            .orElseThrow(() ->
-                                    new AppException(
-                                            ErrorCode.ORDER_CODE_NOT_FOUND,
-                                            "Không tìm thấy payment với order code: " + orderCode)
-                            );
+            Payment payment = paymentRepository
+                    .findByOrderCode(orderCode)
+                    .orElseThrow(() -> new AppException(
+                            ErrorCode.ORDER_CODE_NOT_FOUND,
+                            "Không tìm thấy payment với order code: " + orderCode));
 
             // webhook có thể gửi nhiều lần
             if (payment.getStatus() == PaymentStatus.PAID) {
@@ -98,13 +92,10 @@ public class PaymentServiceImpl implements IPaymentService {
             Subscription subscription = payment.getSubscription();
             LocalDate now = LocalDate.now();
             subscription.setStatus(
-                    SubscriptionStatus.ACTIVE
-            );
+                    SubscriptionStatus.ACTIVE);
             LocalDate startDate;
-            if (
-                    subscription.getEndDate() != null &&
-                            subscription.getEndDate().isAfter(now)
-            ) {
+            if (subscription.getEndDate() != null &&
+                    subscription.getEndDate().isAfter(now)) {
                 startDate = subscription.getEndDate();
             } else {
                 startDate = now;
@@ -113,9 +104,7 @@ public class PaymentServiceImpl implements IPaymentService {
             subscription.setEndDate(
                     startDate.plusDays(
                             subscription.getPlan()
-                                    .getDurationDays()
-                    )
-            );
+                                    .getDurationDays()));
             paymentRepository.save(payment);
         } catch (Exception e) {
             throw new AppException(

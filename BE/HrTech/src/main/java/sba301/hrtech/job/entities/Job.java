@@ -5,7 +5,6 @@ import sba301.hrtech.company.entities.Company;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
 import sba301.hrtech.shared.enums.ExtractionStatus;
 import java.util.List;
-import java.util.ArrayList;
 import sba301.hrtech.application.entities.Application;
 
 import org.hibernate.annotations.SQLDelete;
@@ -74,8 +73,8 @@ public class Job extends SoftDeleteEntity {
     private ExtractionStatus extractionStatus;
 
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Application> applications = new ArrayList<>();
+    private List<Application> applications;
 
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<JobSkill> jobSkills = new ArrayList<>();
+    private List<JobSkill> jobSkills;
 }

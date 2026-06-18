@@ -13,7 +13,6 @@ import { Card, CardContent } from '@/src/components/ui/card'
 import { Label } from '@/src/components/ui/label'
 import { useRouter } from 'next/navigation'
 import { useLogin } from '@/src/hooks/auth/auth.hooks'
-import { getErrorMessage } from '@/src/utils/get-error-message'
 
 import { toast } from 'sonner'
 
@@ -37,9 +36,6 @@ export default function LoginPage() {
         router.push('/')
         toast.success('Đăng nhập thành công')
         console.log(response)
-      },
-      onError: (error) => {
-        toast.error(getErrorMessage(error))
       },
     })
   }

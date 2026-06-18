@@ -3,7 +3,6 @@
 import { Button } from '@/src/components/ui/button'
 import { OtpType } from '@/src/enums/otp.enum'
 import { useConfirmForgotPasswordOtp, useConfirmRegisterOtp } from '@/src/hooks/auth/auth.hooks'
-import { getErrorMessage } from '@/src/utils/get-error-message'
 import { CheckCircle2, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
@@ -75,20 +74,7 @@ export function VerifyOtpForm({ email, expireIn, otpType }: VerifyOtpFormProps) 
     e.preventDefault()
     const otpValue = otp.join('')
 
-    if (otpType === OtpType.REGISTER || otpType === OtpType.REGISTER_COMPANY) {
-      confirmRegisterOtpMutation.mutate(
-        { email, otp: otpValue, type: otpType },
-        {
-          onSuccess: () => {
-            toast.success('Xác thực OTP thành công! Bây giờ bạn có thể đăng nhập vào tài khoản.')
-            router.push('/login')
-          },
-          onError: (error) => {
-            toast.error(getErrorMessage(error))
-          },
-        }
-      )
-    } else {
+    if (otpType === OtpType.FORGET_PASSWORD) {
       confirmForgotPasswordOtpMutation.mutate(
         { email, otp: otpValue, type: otpType },
         {
@@ -98,8 +84,15 @@ export function VerifyOtpForm({ email, expireIn, otpType }: VerifyOtpFormProps) 
               `/reset-password?reset-token=${encodeURIComponent(response.data.resetToken)}`
             )
           },
-          onError: (error) => {
-            toast.error(getErrorMessage(error))
+        }
+      )
+    } else {
+      confirmRegisterOtpMutation.mutate(
+        { email, otp: otpValue, type: otpType },
+        {
+          onSuccess: () => {
+            toast.success('Xác thực OTP thành công! Bây giờ bạn có thể đăng nhập vào tài khoản.')
+            router.push('/login')
           },
         }
       )
@@ -131,9 +124,9 @@ export function VerifyOtpForm({ email, expireIn, otpType }: VerifyOtpFormProps) 
       <Button
         type="submit"
         disabled={
-          (otpType === OtpType.REGISTER
-            ? confirmRegisterOtpMutation.isPending
-            : confirmForgotPasswordOtpMutation.isPending) || otp.join('').length < 6
+          confirmRegisterOtpMutation.isPending ||
+          confirmForgotPasswordOtpMutation.isPending ||
+          otp.join('').length < 6
         }
         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl transition-all duration-300 shadow-lg shadow-blue-600/20 hover:shadow-xl flex items-center justify-center gap-2 uppercase h-auto"
       >

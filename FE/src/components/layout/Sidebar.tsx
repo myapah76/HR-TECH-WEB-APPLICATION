@@ -73,7 +73,7 @@ export default function Sidebar({ items, title, accentColor = 'blue' }: SidebarP
 
   return (
     <aside
-      className={`${collapsed ? 'w-[72px]' : 'w-64'} bg-white border-r border-slate-200/60 min-h-[calc(100vh-64px)] flex flex-col transition-all duration-300 shrink-0 sticky top-16 self-start`}
+      className={`${collapsed ? 'w-18' : 'w-64'} bg-white border-r border-slate-200/60 min-h-[calc(100vh-64px)] flex flex-col transition-all duration-300 shrink-0 sticky top-16 self-start`}
     >
       {/* Header */}
       <div className="p-4 border-b border-slate-100 flex items-center justify-between">
@@ -126,7 +126,7 @@ export default function Sidebar({ items, title, accentColor = 'blue' }: SidebarP
                   <span className="truncate">{item.label}</span>
                   {item.badge !== undefined && item.badge > 0 && (
                     <span
-                      className={`ml-auto ${colors.bg} ${colors.text} text-[10px] font-black px-1.5 py-0.5 rounded-md min-w-[20px] text-center`}
+                      className={`ml-auto ${colors.bg} ${colors.text} text-[10px] font-black px-1.5 py-0.5 rounded-md min-w-5 text-center`}
                     >
                       {item.badge > 99 ? '99+' : item.badge}
                     </span>
