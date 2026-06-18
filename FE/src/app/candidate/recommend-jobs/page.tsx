@@ -82,9 +82,7 @@ export default function RecommendJobsPage() {
             setCvTitle('')
             if (fileInputRef.current) fileInputRef.current.value = ''
           },
-          onError: (error) => {
-            console.error('Failed to upload new CV', error)
-            alert('Lỗi khi tải lên CV mới')
+          onError: () => {
             setIsStarting(false)
           },
         }
@@ -110,10 +108,6 @@ export default function RecommendJobsPage() {
           progressPercentage: 5,
           recommendedJobs: null,
         })
-      },
-      onError: (error) => {
-        console.error('Failed to start job matching:', error)
-        alert('Có lỗi xảy ra khi bắt đầu tiến trình AI')
       },
       onSettled: () => {
         setIsStarting(false)

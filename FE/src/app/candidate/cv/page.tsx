@@ -19,7 +19,6 @@ import { useCalculateMatchScore } from '@/src/hooks/recommendation/recommendatio
 import { SkillMatchScoreResponse } from '@/src/types/recommendation'
 import { FileSearch, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { getErrorMessage } from '@/src/utils/get-error-message'
 
 export default function CandidateCvPage() {
   const { data: cvs = [], isLoading: loadingCvs } = useGetAllCvs()
@@ -72,9 +71,6 @@ export default function CandidateCvPage() {
           setCvTitle('')
           if (fileInputRef.current) fileInputRef.current.value = ''
         },
-        onError: (error) => {
-          toast.error(getErrorMessage(error))
-        },
       }
     )
   }
@@ -85,11 +81,7 @@ export default function CandidateCvPage() {
 
   const handleDelete = (id: string) => {
     if (confirm('Bạn có chắc chắn muốn xóa CV này không?')) {
-      deleteCvMutation.mutate(id, {
-        onError: (error) => {
-          toast.error(getErrorMessage(error))
-        },
-      })
+      deleteCvMutation.mutate(id)
     }
   }
 
@@ -102,10 +94,6 @@ export default function CandidateCvPage() {
       { id, title: editTitle },
       {
         onSuccess: () => setEditingCvId(null),
-        onError: (error) => {
-          console.error('Failed to update title', error)
-          alert('Lỗi cập nhật tên CV')
-        },
       }
     )
   }
@@ -120,7 +108,6 @@ export default function CandidateCvPage() {
       { cvId: selectedCvId, jobId: selectedJobId },
       {
         onSuccess: (score) => setMatchScore(score),
-        onError: (error) => console.error('Failed to calculate match score:', error),
       }
     )
   }
