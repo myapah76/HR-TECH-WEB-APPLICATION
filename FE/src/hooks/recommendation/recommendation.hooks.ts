@@ -41,7 +41,7 @@ export const useGetJobMatchingStatus = (taskId: string | null, enabled = false) 
     queryFn: () => (taskId ? getJobMatchingStatus(taskId) : Promise.reject('No task ID')),
     enabled: enabled && !!taskId,
     refetchInterval: (query) => {
-      const data = query?.state?.data as any
+      const data = query?.state?.data
       if (data?.status === 'DONE' || data?.status === 'FAILED') {
         return false
       }

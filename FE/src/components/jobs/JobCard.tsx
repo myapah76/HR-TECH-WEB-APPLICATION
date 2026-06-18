@@ -1,7 +1,6 @@
 'use client'
 
 import { MapPin, Heart, DollarSign, Calendar, Sparkles } from 'lucide-react'
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Job } from '@/src/types/job'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'

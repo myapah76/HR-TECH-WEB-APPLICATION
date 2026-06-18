@@ -9,15 +9,8 @@ import JobSearch from '@/src/components/jobs/JobSearch'
 import Pagination from '@/src/components/jobs/Pagination'
 import Loading from '@/src/app/loading'
 import { useGetJobs } from '@/src/hooks/job/job.hooks'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getSavedJobs, saveJob, unsaveJob } from '@/src/services/job.service'
-import { useAuthStore } from '@/src/stores/auth.store'
-import { toast } from 'sonner'
 
 export default function Home() {
-  const queryClient = useQueryClient()
-  const { user } = useAuthStore()
-
   const [keyword, setKeyword] = useState('Senior Software Engineer')
   const [location, setLocation] = useState('')
 
@@ -49,53 +42,13 @@ export default function Home() {
     setCurrentPage(1)
   }
 
-  const { data: savedJobs = [] } = useQuery({
-    queryKey: ['savedJobs'],
-    queryFn: () => getSavedJobs(),
-    enabled: !!user,
-  })
-
-  const favoriteIds = useMemo(() => new Set(savedJobs.map((j) => j.id)), [savedJobs])
-
-  const saveMutation = useMutation({
-    mutationFn: saveJob,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['savedJobs'] })
-      toast.success('Lưu công việc thành công!')
-    },
-    onError: () => {
-      toast.error('Có lỗi xảy ra khi lưu công việc')
-    },
-  })
-
-  const unsaveMutation = useMutation({
-    mutationFn: unsaveJob,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['savedJobs'] })
-      toast.success('Đã bỏ lưu công việc thành công')
-    },
-    onError: () => {
-      toast.error('Có lỗi xảy ra khi bỏ lưu công việc')
-    },
-  })
-
-  const handleToggleFavorite = (jobId: string) => {
-    if (!user) {
-      toast.error('Vui lòng đăng nhập để lưu công việc')
-      return
-    }
-    if (favoriteIds.has(jobId)) {
-      unsaveMutation.mutate(jobId)
-    } else {
-      saveMutation.mutate(jobId)
-    }
-  }
+  const favoriteIds = useMemo(() => new Set<string>(), [])
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <section className="relative bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 py-16 overflow-hidden">
+      <section className="relative bg-linear-to-r from-blue-900 via-indigo-950 to-slate-900 py-16 overflow-hidden">
         {/* Decorative Background Elements */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-size-[4rem_4rem]" />
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -137,7 +90,7 @@ export default function Home() {
                 làm phù hợp
               </p>
 
-              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-350 transition-all shadow-[0_2px_4px_rgba(0,0,0,0.02)] cursor-pointer">
+              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-[0_2px_4px_rgba(0,0,0,0.02)] cursor-pointer">
                 <span>Mới nhất</span>
                 <ChevronDown size={14} className="text-slate-400" />
               </button>
@@ -148,12 +101,7 @@ export default function Home() {
                 <Loading />
               ) : jobs.length > 0 ? (
                 jobs.map((job) => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    isFavorite={favoriteIds.has(job.id)}
-                    onToggleFavorite={handleToggleFavorite}
-                  />
+                  <JobCard key={job.id} job={job} isFavorite={favoriteIds.has(job.id)} />
                 ))
               ) : (
                 <div className="text-center py-10 text-gray-500">No jobs found</div>
