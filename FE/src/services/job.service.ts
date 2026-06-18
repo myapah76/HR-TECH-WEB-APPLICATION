@@ -41,3 +41,9 @@ export const saveJob = async (jobId: string): Promise<void> => {
 export const unsaveJob = async (jobId: string): Promise<void> => {
   await api.delete<ApiResponse<void>>(`/saved-jobs/${jobId}`);
 };
+
+export const getJobById = async (id: string): Promise<Job> => {
+  const response = await axios.get(`${API_URL}/jobs/${id}`);
+  return response.data.data;
+};
+

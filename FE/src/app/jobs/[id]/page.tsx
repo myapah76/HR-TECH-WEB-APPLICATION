@@ -21,6 +21,9 @@ import {
 } from 'lucide-react'
 import { useGetJobById, useGetJobs } from '@/src/hooks/job/job.hooks'
 import { toast } from 'sonner'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getSavedJobs, saveJob, unsaveJob } from '@/src/services/job.service'
+import { useAuthStore } from '@/src/stores/auth.store'
 
 /** Generates a deterministic gradient from a company name */
 function getAvatarGradient(name: string): string {
@@ -95,8 +98,50 @@ export default function JobDetailPage() {
   const allJobs = jobsData?.content ?? []
   const similarJobs = allJobs.filter((j) => j.id !== jobId).slice(0, 3)
 
-  // Interaction states
-  const [isSaved, setIsSaved] = useState(false)
+  const queryClient = useQueryClient()
+  const { user } = useAuthStore()
+
+  const { data: savedJobs = [] } = useQuery({
+    queryKey: ['savedJobs'],
+    queryFn: () => getSavedJobs(),
+    enabled: !!user,
+  })
+
+  const isSaved = savedJobs.some((j) => j.id === jobId)
+
+  const saveMutation = useMutation({
+    mutationFn: saveJob,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['savedJobs'] })
+      toast.success('Lưu công việc thành công!')
+    },
+    onError: () => {
+      toast.error('Có lỗi xảy ra khi lưu công việc')
+    },
+  })
+
+  const unsaveMutation = useMutation({
+    mutationFn: unsaveJob,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['savedJobs'] })
+      toast.success('Đã hủy lưu công việc!')
+    },
+    onError: () => {
+      toast.error('Có lỗi xảy ra khi bỏ lưu công việc')
+    },
+  })
+
+  const handleSaveToggle = () => {
+    if (!user) {
+      toast.error('Vui lòng đăng nhập để lưu công việc')
+      return
+    }
+    if (isSaved) {
+      unsaveMutation.mutate(jobId)
+    } else {
+      saveMutation.mutate(jobId)
+    }
+  }
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href)
@@ -258,10 +303,8 @@ export default function JobDetailPage() {
                 </button>
 
                 <button
-                  onClick={() => {
-                    setIsSaved(!isSaved)
-                    toast.success(isSaved ? 'Đã hủy lưu công việc!' : 'Lưu công việc thành công!')
-                  }}
+                  onClick={handleSaveToggle}
+                  disabled={saveMutation.isPending || unsaveMutation.isPending}
                   className={`p-4 border rounded-2xl transition-all duration-200 cursor-pointer flex justify-center items-center ${
                     isSaved
                       ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-sm'
