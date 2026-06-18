@@ -1,32 +1,29 @@
 'use client'
 
 import Link from 'next/link'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Heart, Trash2, MapPin, DollarSign, Briefcase, Award, ArrowRight } from 'lucide-react'
-import { getSavedJobs, unsaveJob } from '@/src/services/job.service'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import { toast } from 'sonner'
+import { useGetSavedJobs, useUnsaveJob } from '@/src/hooks/job/job.hooks'
+import Loading from '@/src/app/loading'
 
 export default function SavedJobsPage() {
-  const queryClient = useQueryClient()
-
   // Lấy danh sách công việc đã lưu từ Backend
-  const { data: savedJobs = [], isLoading } = useQuery({
-    queryKey: ['savedJobs'],
-    queryFn: () => getSavedJobs(),
-  })
+  const { data: savedJobs = [], isLoading } = useGetSavedJobs()
 
   // Mutation để bỏ lưu công việc
-  const unsaveMutation = useMutation({
-    mutationFn: unsaveJob,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['savedJobs'] })
-      toast.success('Đã bỏ lưu công việc thành công')
-    },
-  })
+  const unsaveMutation = useUnsaveJob()
 
   const handleUnsave = (jobId: string) => {
-    unsaveMutation.mutate(jobId)
+    unsaveMutation.mutate(jobId, {
+      onSuccess: () => {
+        toast.success('Đã bỏ lưu công việc thành công')
+      },
+    })
+  }
+
+  if (isLoading) {
+    return <Loading />
   }
 
   return (

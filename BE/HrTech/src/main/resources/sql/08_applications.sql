@@ -1,0 +1,11 @@
+-- Seed Applications (idempotent via ON CONFLICT)
+INSERT INTO applications (id, created_at, updated_at, is_deleted, user_id, job_id, cv_id, status, cover_letter, applied_at)
+VALUES
+    -- Candidate 1 ('b0000000-0000-0000-0000-000000000009') applies to Job 1, 2
+    ('f0000000-0000-0000-0000-000000000001', NOW(), NOW(), false, 'b0000000-0000-0000-0000-000000000009', '10000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001', 'SUBMITTED', 'Tôi rất mong muốn được ứng tuyển vào vị trí này.', NOW()),
+    ('f0000000-0000-0000-0000-000000000002', NOW(), NOW(), false, 'b0000000-0000-0000-0000-000000000009', '10000000-0000-0000-0000-000000000002', 'd0000000-0000-0000-0000-000000000001', 'SUBMITTED', 'Hy vọng sớm nhận được phản hồi từ quý công ty.', NOW()),
+
+    -- Candidate 2 ('b0000000-0000-0000-0000-000000000010') applies to Job 2, 3
+    ('f0000000-0000-0000-0000-000000000003', NOW(), NOW(), false, 'b0000000-0000-0000-0000-000000000010', '10000000-0000-0000-0000-000000000002', 'd0000000-0000-0000-0000-000000000003', 'SUBMITTED', 'Thư ứng tuyển vị trí React Native.', NOW()),
+    ('f0000000-0000-0000-0000-000000000004', NOW(), NOW(), false, 'b0000000-0000-0000-0000-000000000010', '10000000-0000-0000-0000-000000000003', 'd0000000-0000-0000-0000-000000000003', 'SUBMITTED', 'Tôi muốn tìm hiểu thêm về văn hóa công ty.', NOW())
+ON CONFLICT (id) DO NOTHING;

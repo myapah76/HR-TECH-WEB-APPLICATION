@@ -9,7 +9,6 @@ import { useRouter, usePathname } from 'next/navigation'
 const NAV_ITEMS = [
   { label: 'Tìm việc', path: '/jobs', id: 'nav-jobs' },
   { label: 'Công ty', path: '/companies', id: 'nav-companies' },
-  { label: 'Giá lương', path: '/salary-guide', id: 'nav-salary' },
   { label: 'Các gói', path: '/pricing', id: 'nav-pricing' },
 ]
 

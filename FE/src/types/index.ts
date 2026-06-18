@@ -46,3 +46,5 @@ export interface JobCategory {
 export * from './cv'
 export * from './job'
 export * from './recommendation'
+export * from './application'
+
