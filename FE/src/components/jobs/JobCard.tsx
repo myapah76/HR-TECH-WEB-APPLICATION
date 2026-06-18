@@ -14,11 +14,9 @@ interface JobCardProps {
 
 export default function JobCard({ job, isFavorite = false, onToggleFavorite }: JobCardProps) {
   const router = useRouter()
-  const [favorite, setFavorite] = useState(isFavorite)
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setFavorite(!favorite)
     onToggleFavorite?.(job.id)
   }
 
@@ -118,14 +116,14 @@ export default function JobCard({ job, isFavorite = false, onToggleFavorite }: J
           <button
             onClick={handleFavoriteClick}
             className={`p-2 rounded-xl border transition-all duration-200 cursor-pointer ${
-              favorite
+              isFavorite
                 ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-sm'
                 : 'bg-white border-slate-200 text-slate-400 hover:border-slate-350 hover:bg-slate-50'
             }`}
           >
             <Heart
               className={`h-4 w-4 transition-transform duration-200 ${
-                favorite ? 'fill-rose-500 scale-110' : 'hover:scale-105'
+                isFavorite ? 'fill-rose-500 scale-110' : 'hover:scale-105'
               }`}
             />
           </button>

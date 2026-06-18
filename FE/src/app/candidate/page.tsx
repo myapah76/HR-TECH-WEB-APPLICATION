@@ -4,9 +4,16 @@ import Link from 'next/link';
 import StatCard from '@/src/components/ui/StatCard';
 import { Briefcase, Eye, Heart, Send, FileText, Brain, Clock, ArrowRight } from 'lucide-react';
 import { useAuthStore } from '@/src/stores/auth.store';
+import { useQuery } from '@tanstack/react-query';
+import { getSavedJobs } from '@/src/services/job.service';
 
 export default function CandidateDashboardPage() {
   const { user } = useAuthStore();
+  const { data: savedJobs = [] } = useQuery({
+    queryKey: ['savedJobs'],
+    queryFn: () => getSavedJobs(),
+  });
+
   const recentActivity = [
     { action: 'Ứng tuyển vị trí Senior Golang Dev', time: '2h', status: 'submitted' },
     { action: 'Nhà tuyển dụng FPT xem hồ sơ', time: '5h', status: 'viewed' },
@@ -28,7 +35,7 @@ export default function CandidateDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard icon={Send} label="Đã ứng tuyển" value={3} change={50} color="blue" />
         <StatCard icon={Eye} label="Lượt xem hồ sơ" value={28} change={12} color="emerald" />
-        <StatCard icon={Heart} label="Việc đã lưu" value={5} color="rose" />
+        <StatCard icon={Heart} label="Việc đã lưu" value={savedJobs.length} color="rose" />
         <StatCard icon={Briefcase} label="Việc phù hợp A.I" value={14} change={8} color="violet" />
       </div>
 
