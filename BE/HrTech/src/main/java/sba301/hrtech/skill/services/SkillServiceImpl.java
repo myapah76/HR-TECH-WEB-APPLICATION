@@ -54,10 +54,8 @@ public class SkillServiceImpl implements ISkillService {
     public SkillResponse updateSkill(String id, UpdateSkillRequest request) {
         SkillNode skillNode = findSkillOrThrow(id);
 
-        boolean nameChanged = false;
         if (request.getName() != null && !request.getName().isBlank()) {
             skillNode.setName(request.getName());
-            nameChanged = true;
         }
         if (request.getDescription() != null) {
             skillNode.setDescription(request.getDescription());
@@ -181,7 +179,6 @@ public class SkillServiceImpl implements ISkillService {
         List<SkillNode> related = skillNodeRepository.findRelatedSkills(skillId);
         return skillMapper.toResponseList(related);
     }
-
 
     // === Helpers ===
 

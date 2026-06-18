@@ -2,7 +2,6 @@ package sba301.hrtech.company.entities;
 
 import sba301.hrtech.shared.common.SoftDeleteEntity;
 import java.util.List;
-import java.util.ArrayList;
 
 import sba301.hrtech.job.entities.Job;
 
@@ -44,10 +43,10 @@ public class Company extends SoftDeleteEntity {
     private String address;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Job> jobs = new ArrayList<>();
+    private List<Job> jobs;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CompanyMember> members = new ArrayList<>();
+    private List<CompanyMember> members;
 
     @Column(name = "tax_code", unique = true)
     private String taxCode;
@@ -65,9 +64,3 @@ public class Company extends SoftDeleteEntity {
     @Column(name = "parent_to_child_weight")
     private Double parentToChildWeight;
 }
-
-
-
-
-
-

@@ -1,6 +1,5 @@
 package sba301.hrtech.job.services;
 
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -41,7 +40,6 @@ import java.util.stream.Collectors;
 public class JobServiceImpl implements IJobService {
 
     private final JobRepository jobRepository;
-    private final ElasticsearchClient client;
     private final JobSearchRepository jobSearchRepository;
     private final ISkillExtractionService skillExtractionService;
     private final JobMapper jobMapper;
@@ -74,9 +72,8 @@ public class JobServiceImpl implements IJobService {
         JobDocument doc = jobMapper.toDocument(savedJob);
         jobSearchRepository.save(doc);
 
-
-
-        log.info("Recruiter {} created job '{}' for company {}", currentUser.getId(), savedJob.getTitle(), company.getId());
+        log.info("Recruiter {} created job '{}' for company {}", currentUser.getId(), savedJob.getTitle(),
+                company.getId());
         return jobMapper.toResponse(savedJob);
     }
 
@@ -147,7 +144,7 @@ public class JobServiceImpl implements IJobService {
 
         job.setStatus(JobStatus.APPROVED);
         Job savedJob = jobRepository.save(job);
-        
+
         final UUID finalApproveJobId = savedJob.getId();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
@@ -155,7 +152,7 @@ public class JobServiceImpl implements IJobService {
                 skillExtractionService.extractAndSaveJobSkills(finalApproveJobId);
             }
         });
-        
+
         log.info("Approver {} approved job {}", currentUser.getId(), jobId);
         return jobMapper.toResponse(savedJob);
     }
@@ -227,12 +224,16 @@ public class JobServiceImpl implements IJobService {
         JobType jobType = null;
 
         if (criteria.experienceLevel() != null) {
-            try { expLevel = ExperienceLevel.valueOf(criteria.experienceLevel()); }
-            catch (IllegalArgumentException ignored) {}
+            try {
+                expLevel = ExperienceLevel.valueOf(criteria.experienceLevel());
+            } catch (IllegalArgumentException ignored) {
+            }
         }
         if (criteria.jobType() != null) {
-            try { jobType = JobType.valueOf(criteria.jobType()); }
-            catch (IllegalArgumentException ignored) {}
+            try {
+                jobType = JobType.valueOf(criteria.jobType());
+            } catch (IllegalArgumentException ignored) {
+            }
         }
 
         String keywordParam = criteria.keyword() != null ? "%" + criteria.keyword().toLowerCase() + "%" : null;
@@ -245,10 +246,8 @@ public class JobServiceImpl implements IJobService {
                 jobType,
                 criteria.salaryMin(),
                 criteria.salaryMax(),
-                pageable
-        ).map(jobMapper::toResponse);
+                pageable).map(jobMapper::toResponse);
     }
-
 
     @Override
     @Transactional(readOnly = true)
@@ -256,7 +255,6 @@ public class JobServiceImpl implements IJobService {
         return jobRepository.findByStatus(JobStatus.APPROVED, pageable)
                 .map(jobMapper::toResponse);
     }
-
 
     @Override
     public Page<JobDocument> searchJobsWithElasticsearch(String keyword, Pageable pageable) {

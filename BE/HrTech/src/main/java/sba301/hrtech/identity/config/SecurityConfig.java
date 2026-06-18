@@ -1,11 +1,9 @@
 package sba301.hrtech.identity.config;
 
-
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -22,7 +20,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import sba301.hrtech.identity.abstractions.cache.IRedisTokenService;
 import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.abstractions.services.IJwtService;
-import sba301.hrtech.identity.services.cache.RedisTokenServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import sba301.hrtech.shared.error.ErrorCode;
@@ -83,13 +80,12 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 // Vô hiệu hóa HTTP Basic auth vì chúng ta sẽ dùng JWT
                 .httpBasic(AbstractHttpConfigurer::disable)
-                // Cấu hình phân quyền: cho phép truy cập công khai với các endpoint trong PUBLIC_ENDPOINTS
+                // Cấu hình phân quyền: cho phép truy cập công khai với các endpoint trong
+                // PUBLIC_ENDPOINTS
                 // yêu cầu xác thực với các endpoint khác
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .anyRequest().authenticated()
-                )
-
+                        .anyRequest().authenticated())
 
                 // Xử lý lỗi 401 và 403 trả về JSON chuẩn ApiResponse
                 .exceptionHandling(exceptions -> exceptions
@@ -101,8 +97,7 @@ public class SecurityConfig {
                                     HttpServletResponse.SC_UNAUTHORIZED,
                                     "Yêu cầu xác thực không hợp lệ hoặc thiếu token!",
                                     ErrorCode.UNAUTHORIZED.name(),
-                                    request.getRequestURI()
-                            );
+                                    request.getRequestURI());
 
                             response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
                         })
@@ -114,12 +109,10 @@ public class SecurityConfig {
                                     HttpServletResponse.SC_FORBIDDEN,
                                     "Bạn không có quyền truy cập tài nguyên này!",
                                     ErrorCode.FORBIDDEN.name(),
-                                    request.getRequestURI()
-                            );
+                                    request.getRequestURI());
 
                             response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
-                        })
-                )
+                        }))
                 // Thêm JwtFilter vào trước UsernamePasswordAuthenticationFilter
                 // để xử lý JWT trước khi Spring Security thực hiện xác thực
                 .addFilterBefore(jwtFilter(),
@@ -132,7 +125,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:3000"));
-        configuration.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 

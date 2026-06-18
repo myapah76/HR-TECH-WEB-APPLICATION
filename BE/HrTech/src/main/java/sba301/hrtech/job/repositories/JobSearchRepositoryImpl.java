@@ -18,46 +18,41 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JobSearchRepositoryImpl implements JobSearchCustomRepository {
 
-    private final ElasticsearchClient client;
+        private final ElasticsearchClient client;
 
-    @Override
-    public Page<JobDocument> search(String keyword, Pageable pageable) {
+        @Override
+        public Page<JobDocument> search(String keyword, Pageable pageable) {
 
-        return getJobDocuments(keyword, pageable, client);
-    }
-
-    @NotNull
-    public static Page<JobDocument> getJobDocuments(String keyword, Pageable pageable, ElasticsearchClient client) {
-        try {
-            Query query = Query.of(q -> q
-                    .multiMatch(m -> m
-                            .query(keyword)
-                            .fields("title^3", "skills^2", "description", "location", "jobType", "experienceLevel")
-                    )
-            );
-
-            SearchResponse<JobDocument> response = client.search(s -> s
-                            .index("jobs")
-                            .query(query)
-                            .from((int) pageable.getOffset())
-                            .size(pageable.getPageSize())
-                            .sort(so -> so
-                                    .field(f -> f
-                                            .field("createdAt")
-                                            .order(co.elastic.clients.elasticsearch._types.SortOrder.Desc)
-                                    )
-                            ),
-                    JobDocument.class
-                    );
-            List<JobDocument> content =
-                    response.hits().hits().stream()
-                            .map(hit -> hit.source())
-                            .toList();
-
-            return new PageImpl<>(content, pageable, response.hits().total().value());
-
-        } catch (Exception e) {
-            throw new AppException(ErrorCode.ELASTIC_SEARCH_FAILED, "Elasticsearch search failed");
+                return getJobDocuments(keyword, pageable, client);
         }
-    }
+
+        @NotNull
+        public static Page<JobDocument> getJobDocuments(String keyword, Pageable pageable, ElasticsearchClient client) {
+                try {
+                        Query query = Query.of(q -> q
+                                        .multiMatch(m -> m
+                                                        .query(keyword)
+                                                        .fields("title^3", "skills^2", "description", "location",
+                                                                        "jobType", "experienceLevel")));
+
+                        SearchResponse<JobDocument> response = client.search(s -> s
+                                        .index("jobs")
+                                        .query(query)
+                                        .from((int) pageable.getOffset())
+                                        .size(pageable.getPageSize())
+                                        .sort(so -> so
+                                                        .field(f -> f
+                                                                        .field("createdAt")
+                                                                        .order(co.elastic.clients.elasticsearch._types.SortOrder.Desc))),
+                                        JobDocument.class);
+                        List<JobDocument> content = response.hits().hits().stream()
+                                        .map(hit -> hit.source())
+                                        .toList();
+
+                        return new PageImpl<>(content, pageable, response.hits().total().value());
+
+                } catch (Exception e) {
+                        throw new AppException(ErrorCode.ELASTIC_SEARCH_FAILED, "Elasticsearch search failed");
+                }
+        }
 }
