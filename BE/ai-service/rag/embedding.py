@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from rag.chunk import DocumentChunk, ChunkEmbedding
-from langchain_community.embeddings import OllamaEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from rag.chunking import BatchedOllamaEmbeddings
 from rag.config import settings
 import uuid

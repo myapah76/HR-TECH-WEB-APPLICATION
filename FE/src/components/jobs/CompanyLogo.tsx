@@ -25,7 +25,7 @@ export function CompanyLogo({ url, name }: CompanyLogoProps) {
       ) : (
         <div className="w-full h-full relative">
           <Image
-            src={url}
+            src={url!}
             alt={name}
             fill
             onError={() => setImgError(true)}

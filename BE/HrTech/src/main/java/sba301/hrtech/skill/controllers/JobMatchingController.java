@@ -3,6 +3,7 @@ package sba301.hrtech.skill.controllers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import sba301.hrtech.shared.response.ApiResponse;
 import sba301.hrtech.skill.dtos.response.JobMatchingTaskResponse;
 import sba301.hrtech.skill.services.JobMatchingService;
 import java.util.Map;
@@ -16,17 +17,17 @@ public class JobMatchingController {
     private final JobMatchingService jobMatchingService;
 
     @PostMapping("/start-job-matching/{cvId}")
-    public ResponseEntity<Map<String, String>> startJobMatching(@PathVariable UUID cvId) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> startJobMatching(@PathVariable UUID cvId) {
         String taskId = jobMatchingService.startJobMatchingForCv(cvId);
-        return ResponseEntity.ok(Map.of("taskId", taskId));
+        return ResponseEntity.ok(ApiResponse.success(Map.of("taskId", taskId)));
     }
 
     @GetMapping("/job-matching-status/{taskId}")
-    public ResponseEntity<JobMatchingTaskResponse> getTaskStatus(@PathVariable String taskId) {
+    public ResponseEntity<ApiResponse<JobMatchingTaskResponse>> getTaskStatus(@PathVariable String taskId) {
         JobMatchingTaskResponse status = jobMatchingService.getTaskStatus(taskId);
         if (status == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(status);
+        return ResponseEntity.ok(ApiResponse.success(status));
     }
 }

@@ -188,6 +188,7 @@ Relationship Rules:
 3. RELATED_TO: If the `new_skill` and `db_skill` are related siblings, alternatives, or often used together but don't have a strict parent-child hierarchy (e.g., react and nodejs).
 - Do NOT include synonyms. We assume skill names are already normalized.
 - Only output the exact skill names from the provided `db_skills` array. Do not invent new skills.
+- CRITICAL RULE: Choose at most ONE strongest and most accurate relationship type between any two skills. Do NOT output multiple relationship types for the same target skill.
 
 Return ONLY a valid JSON array of objects. Example format:
 [

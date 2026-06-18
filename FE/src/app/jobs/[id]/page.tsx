@@ -21,7 +21,7 @@ import {
   Send,
   Loader2,
 } from 'lucide-react'
-<<<<<<< HEAD
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   useGetJobById,
   useGetJobs,
@@ -29,10 +29,7 @@ import {
   useSaveJob,
   useUnsaveJob,
 } from '@/src/hooks/job/job.hooks'
-import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
-=======
-import { useGetJobById, useGetJobs } from '@/src/hooks/job/job.hooks'
->>>>>>> 411fa835c0440dfe2e003a164bb328ae2a713fdb
+
 import { toast } from 'sonner'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { getAllCvs } from '@/src/services/cv.service'
@@ -103,6 +100,7 @@ export default function JobDetailPage() {
   const params = useParams()
   const router = useRouter()
   const jobId = params.id as string
+  const queryClient = useQueryClient()
 
   const { data: job, isLoading: loadingJob, error } = useGetJobById(jobId)
 
@@ -113,19 +111,11 @@ export default function JobDetailPage() {
 
   const { user } = useAuthStore()
 
-<<<<<<< HEAD
-  const { data: savedJobs = [] } = useGetSavedJobs(!!user)
-=======
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
   const [selectedCvId, setSelectedCvId] = useState('')
   const [coverLetter, setCoverLetter] = useState('')
 
-  const { data: savedJobs = [] } = useQuery({
-    queryKey: ['savedJobs'],
-    queryFn: () => getSavedJobs(),
-    enabled: !!user,
-  })
->>>>>>> 411fa835c0440dfe2e003a164bb328ae2a713fdb
+  const { data: savedJobs = [] } = useGetSavedJobs(!!user)
 
   const { data: cvs = [], isLoading: loadingCvs } = useQuery({
     queryKey: ['cvs'],

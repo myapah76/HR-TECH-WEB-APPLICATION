@@ -34,6 +34,9 @@ public record CompanyRegisterRequest(
         String address,
 
         @NotBlank(message = "Tax code is required")
-        String taxCode
+        String taxCode,
+
+        @NotBlank(message = "Company logo is required")
+        String logoUrl
 ) {}
 

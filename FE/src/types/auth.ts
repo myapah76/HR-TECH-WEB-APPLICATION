@@ -62,6 +62,7 @@ export interface CompanyRegisterRequest {
   size?: string
   address?: string
   taxCode: string
+  logoUrl?: string
 }
 
 export interface GoogleLoginRequest {
