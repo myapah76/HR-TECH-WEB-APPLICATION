@@ -1,5 +1,7 @@
 'use client'
 import Sidebar from '@/src/components/layout/Sidebar'
+import { useQuery } from '@tanstack/react-query'
+import { getSavedJobs } from '@/src/services/job.service'
 import {
   LayoutDashboard,
   UserCircle,
@@ -10,6 +12,8 @@ import {
   Brain,
   Star,
 } from 'lucide-react'
+
+import { getMyApplications } from '@/src/services/application.service'
 
 const candidateNavItems = [
   {
@@ -24,13 +28,13 @@ const candidateNavItems = [
     icon: Heart,
     label: 'Việc đã lưu',
     path: '/candidate/saved-jobs',
-    badge: 5,
+    badge: 0,
   },
   {
     icon: Send,
     label: 'Việc đã ứng tuyển',
     path: '/candidate/applied-jobs',
-    badge: 3,
+    badge: 0,
   },
   {
     icon: Brain,
@@ -41,10 +45,30 @@ const candidateNavItems = [
 ]
 
 export default function CandidateLayout({ children }: { children: React.ReactNode }) {
+  const { data: savedJobs = [] } = useQuery({
+    queryKey: ['savedJobs'],
+    queryFn: () => getSavedJobs(),
+  })
+
+  const { data: appliedJobs = [] } = useQuery({
+    queryKey: ['appliedJobs'],
+    queryFn: () => getMyApplications(),
+  })
+
+  const navItems = candidateNavItems.map((item) => {
+    if (item.path === '/candidate/saved-jobs') {
+      return { ...item, badge: savedJobs.length }
+    }
+    if (item.path === '/candidate/applied-jobs') {
+      return { ...item, badge: appliedJobs.length }
+    }
+    return item
+  })
+
   return (
     <div className="bg-slate-50/50 flex flex-col min-h-[calc(100vh-64px)]" id="candidate-root">
       <div className="flex flex-1">
-        <Sidebar items={candidateNavItems} title="Ứng viên" accentColor="blue" />
+        <Sidebar items={navItems} title="Ứng viên" accentColor="blue" />
         <main className="flex-1 p-6 lg:p-8 overflow-auto" id="candidate-content">
           {children}
         </main>

@@ -15,14 +15,16 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const initAuth = async () => {
       console.log('vào Auth init hàm')
       const { refreshToken: storeRefreshToken } = useAuthStore.getState()
-      const cookiesEnabled = checkCookiesEnabled();
-      
+      const cookiesEnabled = checkCookiesEnabled()
+
+      // nếu không có quyền cookie và không có refresh token
       if (!cookiesEnabled && !storeRefreshToken) {
         clearAuth()
         return
       }
 
-      const refreshReqData = (!cookiesEnabled && storeRefreshToken) ? { refreshToken: storeRefreshToken } : undefined
+      const refreshReqData =
+        !cookiesEnabled && storeRefreshToken ? { refreshToken: storeRefreshToken } : undefined
 
       try {
         const res = await refreshToken(refreshReqData)
