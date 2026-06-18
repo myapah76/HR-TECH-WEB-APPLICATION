@@ -91,10 +91,10 @@ public class AuthController {
             HttpServletResponse response) {
 
         TokenPair tokenPair = authService.login(request);
-        setRefreshTokenCookie(response, tokenPair.refreshToken());
-
         AuthResponse authResponse = tokenPair.authResponse();
+        
         if ("true".equalsIgnoreCase(cookiesEnabled)) {
+            setRefreshTokenCookie(response, tokenPair.refreshToken());
             authResponse.setRefreshToken(null);
         }
 
@@ -114,10 +114,10 @@ public class AuthController {
         }
 
         TokenPair tokenPair = authService.refresh(refreshToken);
-        setRefreshTokenCookie(response, tokenPair.refreshToken());
-
         AuthResponse authResponse = tokenPair.authResponse();
+
         if ("true".equalsIgnoreCase(cookiesEnabled)) {
+            setRefreshTokenCookie(response, tokenPair.refreshToken());
             authResponse.setRefreshToken(null);
         }
 
