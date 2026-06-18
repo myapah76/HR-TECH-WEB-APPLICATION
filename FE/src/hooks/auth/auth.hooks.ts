@@ -36,6 +36,7 @@ export const useLogin = () => {
       setAuth({
         user: response.data.userResponse,
         accessToken: response.data.accessToken,
+        refreshToken: response.data.refreshToken,
       })
     },
   })

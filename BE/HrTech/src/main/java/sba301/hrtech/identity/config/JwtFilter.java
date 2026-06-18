@@ -1,6 +1,5 @@
 package sba301.hrtech.identity.config;
 
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,7 +15,6 @@ import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.identity.dtos.user.CustomUserDetails;
 import sba301.hrtech.identity.abstractions.services.IJwtService;
-import sba301.hrtech.identity.services.cache.RedisTokenServiceImpl;
 
 import java.io.IOException;
 import sba301.hrtech.shared.response.ApiResponse;
@@ -29,15 +27,17 @@ public class JwtFilter extends OncePerRequestFilter {
     private final IJwtService jwtService;
     private final IRedisTokenService redisTokenService;
     private final UserRepository userRepository;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+            HttpServletResponse response,
+            FilterChain filterChain)
             throws ServletException, IOException {
 
         final String header = request.getHeader("Authorization");
 
-        if (header == null || !header.startsWith("Bearer ") || request.getServletPath().startsWith("/api/auth/login") || request.getServletPath().startsWith("/api/auth/refresh")) {
+        if (header == null || !header.startsWith("Bearer ") || request.getServletPath().startsWith("/api/auth/login")
+                || request.getServletPath().startsWith("/api/auth/refresh")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -61,9 +61,9 @@ public class JwtFilter extends OncePerRequestFilter {
             if (username != null && authentication == null) {
                 if (jwtService.isTokenValid(token, userDetails)) {
                     UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities()
-                    );
-                    usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                            userDetails, null, userDetails.getAuthorities());
+                    usernamePasswordAuthenticationToken
+                            .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
 
                     // Force Password Change Check
@@ -71,21 +71,20 @@ public class JwtFilter extends OncePerRequestFilter {
                         if (!path.equals("/api/auth/change-password") && !path.equals("/api/auth/logout")) {
                             response.setContentType("application/json;charset=UTF-8");
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            
+
                             ApiResponse<Void> apiResponse = ApiResponse.failed(
                                     HttpServletResponse.SC_FORBIDDEN,
                                     "Bạn bắt buộc phải đổi mật khẩu trước khi sử dụng hệ thống.",
                                     "PASSWORD_CHANGE_REQUIRED",
-                                    request.getRequestURI()
-                            );
-                            
+                                    request.getRequestURI());
+
                             ObjectMapper objectMapper = new ObjectMapper();
                             objectMapper.registerModule(new JavaTimeModule());
                             response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
                             return;
                         }
                     }
-                }else {
+                } else {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     return;
                 }

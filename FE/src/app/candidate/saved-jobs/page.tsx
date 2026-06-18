@@ -1,102 +1,32 @@
-'use client';
+'use client'
 
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-import { useState } from 'react';
-import Link from 'next/link';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Heart, Trash2, MapPin, DollarSign, Loader2, Briefcase, Award, ArrowRight } from 'lucide-react';
-import { getSavedJobs, unsaveJob } from '@/src/services/job.service';
-import { toast } from 'sonner';
-
-/** Generates a deterministic gradient from a company name */
-function getAvatarGradient(name: string): string {
-  const gradients = [
-    'from-blue-500 to-indigo-600',
-    'from-violet-500 to-purple-600',
-    'from-rose-500 to-pink-600',
-    'from-amber-500 to-orange-600',
-    'from-teal-500 to-cyan-600',
-    'from-emerald-500 to-green-600',
-    'from-sky-500 to-blue-600',
-    'from-fuchsia-500 to-violet-600',
-  ];
-  const index = (name?.charCodeAt(0) ?? 0) % gradients.length;
-  return gradients[index];
-}
-
-interface CompanyLogoProps {
-  url?: string | null;
-  name: string;
-}
-
-function CompanyLogo({ url, name }: CompanyLogoProps) {
-  const [imgError, setImgError] = useState(false);
-  const initial = name?.charAt(0)?.toUpperCase() ?? '?';
-  const gradient = getAvatarGradient(name);
-  const showFallback = !url || imgError;
-
-  return (
-    <div className="relative shrink-0 w-12 h-12">
-      {/* Outer ring */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200/80 shadow-sm border border-slate-200/40" />
-
-      {/* Logo surface */}
-      <div className="absolute inset-[2px] rounded-[14px] overflow-hidden bg-white flex items-center justify-center shadow-inner">
-        {showFallback ? (
-          <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>
-            <span className="text-white font-black text-sm select-none drop-shadow">
-              {initial}
-            </span>
-          </div>
-        ) : (
-          <img
-            src={url!}
-            alt={name}
-            onError={() => setImgError(true)}
-            className="w-full h-full object-contain p-1"
-          />
-        )}
-      </div>
-    </div>
-  );
-}
+import Link from 'next/link'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Heart, Trash2, MapPin, DollarSign, Briefcase, Award, ArrowRight } from 'lucide-react'
+import { getSavedJobs, unsaveJob } from '@/src/services/job.service'
+import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
+import { toast } from 'sonner'
 
 export default function SavedJobsPage() {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
 
   // Lấy danh sách công việc đã lưu từ Backend
   const { data: savedJobs = [], isLoading } = useQuery({
     queryKey: ['savedJobs'],
     queryFn: () => getSavedJobs(),
-  });
+  })
 
   // Mutation để bỏ lưu công việc
   const unsaveMutation = useMutation({
     mutationFn: unsaveJob,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['savedJobs'] });
-      toast.success('Đã bỏ lưu công việc thành công');
+      queryClient.invalidateQueries({ queryKey: ['savedJobs'] })
+      toast.success('Đã bỏ lưu công việc thành công')
     },
-    onError: (error) => {
-      console.error('Failed to unsave job:', error);
-      toast.error('Có lỗi xảy ra khi bỏ lưu công việc');
-    },
-  });
+  })
 
   const handleUnsave = (jobId: string) => {
-    unsaveMutation.mutate(jobId);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32 space-y-4">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        <p className="text-sm font-semibold text-slate-500">Đang tải danh sách công việc đã lưu...</p>
-      </div>
-    );
+    unsaveMutation.mutate(jobId)
   }
 
   return (
@@ -121,9 +51,7 @@ export default function SavedJobsPage() {
             <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100">
               <Heart className="w-6 h-6 text-slate-300" />
             </div>
-            <p className="text-slate-400 font-semibold text-sm">
-              Bạn chưa lưu công việc nào.
-            </p>
+            <p className="text-slate-400 font-semibold text-sm">Bạn chưa lưu công việc nào.</p>
             <Link
               href="/jobs"
               className="mt-2 text-xs font-black text-blue-600 hover:text-blue-800 bg-blue-50/50 hover:bg-blue-50 px-4 py-2 rounded-xl transition-all border border-blue-100/30"
@@ -136,7 +64,7 @@ export default function SavedJobsPage() {
             const salaryText =
               job.salaryMin && job.salaryMax
                 ? `$${job.salaryMin.toLocaleString()} – $${job.salaryMax.toLocaleString()}`
-                : 'Thỏa thuận';
+                : 'Thỏa thuận'
 
             return (
               <div
@@ -145,7 +73,7 @@ export default function SavedJobsPage() {
               >
                 <div className="flex items-start gap-4.5 flex-1 min-w-0">
                   <CompanyLogo url={job.companyLogoUrl} name={job.companyName} />
-                  
+
                   <div className="flex-1 min-w-0 space-y-2.5">
                     <div>
                       <Link
@@ -212,7 +140,7 @@ export default function SavedJobsPage() {
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
-                  
+
                   <Link
                     href={`/jobs/${job.id}`}
                     className="flex items-center justify-center gap-1 text-xs font-black text-blue-600 hover:text-blue-800 bg-blue-50/40 hover:bg-blue-50/80 px-4 py-2.5 rounded-xl transition-all border border-blue-100/30 hover:border-blue-200/50 group/btn shadow-xs hover:shadow-sm"
@@ -222,10 +150,10 @@ export default function SavedJobsPage() {
                   </Link>
                 </div>
               </div>
-            );
+            )
           })
         )}
       </div>
     </div>
-  );
+  )
 }

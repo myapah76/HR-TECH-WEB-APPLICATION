@@ -14,7 +14,6 @@ import sba301.hrtech.company.dtos.response.CompanyMemberResponse;
 import sba301.hrtech.company.dtos.response.CompanyResponse;
 import sba301.hrtech.identity.dtos.auth.response.ConfirmOtpResult;
 import sba301.hrtech.identity.dtos.auth.response.EmailActionResponse;
-import sba301.hrtech.identity.mapper.UserMapper;
 import sba301.hrtech.notification.abstractions.INotificationService;
 import sba301.hrtech.notification.dtos.OtpNotificationRequest;
 import sba301.hrtech.notification.dtos.OtpRequest;
@@ -85,10 +84,11 @@ public class CompanyServiceImpl implements ICompanyService {
     @Transactional
     public EmailActionResponse registerCompany(CompanyRegisterRequest request) {
         String email = request.email().toLowerCase();
-        
+
         // 1. Check if email exists
         if (userRepository.existsByEmail(email)) {
-            throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED, "Email is already registered. Please use a different email for business account.");
+            throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED,
+                    "Email is already registered. Please use a different email for business account.");
         }
 
         // 2. Check Tax Code
@@ -99,7 +99,8 @@ public class CompanyServiceImpl implements ICompanyService {
             if (!existingCompany.isDeleted()) {
                 throw new AppException(ErrorCode.DUPLICATE_TAX_CODE, "This tax code is already registered.");
             } else {
-                throw new AppException(ErrorCode.DUPLICATE_TAX_CODE, "This tax code is banned or deactivated. Please contact support.");
+                throw new AppException(ErrorCode.DUPLICATE_TAX_CODE,
+                        "This tax code is banned or deactivated. Please contact support.");
             }
         }
 
@@ -124,8 +125,7 @@ public class CompanyServiceImpl implements ICompanyService {
         notificationService.OtpNotificationHandler(new OtpNotificationRequest(
                 new OtpRequest(email, otp),
                 email + otp,
-                OtpType.REGISTER_COMPANY
-        ));
+                OtpType.REGISTER_COMPANY));
 
         return EmailActionResponse.builder()
                 .email(email)
@@ -136,7 +136,7 @@ public class CompanyServiceImpl implements ICompanyService {
     @Override
     @Transactional
     public ConfirmOtpResult confirmRegisterOtp(String email) {
-        
+
         // 1. Retrieve payload from Redis
         String key = OtpType.REGISTER_COMPANY + email;
         String json = (String) redisTemplate.opsForValue().get(key);
@@ -159,13 +159,13 @@ public class CompanyServiceImpl implements ICompanyService {
         // 2. Create User (RECRUITER)
         Role recruiterRole = roleRepository.findByName("RECRUITER")
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND, "RECRUITER role not found."));
-                
+
         User newUser = new User();
         newUser.setEmail(email);
         newUser.setUsername(email);
         newUser.setPassword(passwordEncoder.encode(payload.password()));
         newUser.setPhone(payload.phone());
-        
+
         String fullName = payload.fullName();
         if (fullName != null && !fullName.trim().isEmpty()) {
             String[] parts = fullName.trim().split("\\s+", 2);
@@ -205,8 +205,7 @@ public class CompanyServiceImpl implements ICompanyService {
 
         return new ConfirmOtpResult(
                 OtpType.REGISTER_COMPANY.toString(),
-                companyMapper.toResponse(savedCompany)
-        );
+                companyMapper.toResponse(savedCompany));
     }
 
     @Override
@@ -223,12 +222,13 @@ public class CompanyServiceImpl implements ICompanyService {
     public CompanyResponse getMyCompany() {
         User currentUser = getCurrentUser();
         Company company = companyRepository.findCompanyByUserIdIncludingDeleted(currentUser.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.COMPANY_NOT_FOUND, "You are not a member of any company."));
+                .orElseThrow(
+                        () -> new AppException(ErrorCode.COMPANY_NOT_FOUND, "You are not a member of any company."));
 
         if (company.isDeleted()) {
             throw new AppException(ErrorCode.COMPANY_BANNED, "Company has been deactivated or banned.");
         }
-        
+
         return companyMapper.toResponse(company);
     }
 
@@ -238,7 +238,8 @@ public class CompanyServiceImpl implements ICompanyService {
         User currentUser = getCurrentUser();
 
         // Use Permission service check
-        if (!companyPermissionService.hasPermission(currentUser.getId(), companyId, CompanyPermission.UPDATE_COMPANY_PROFILE)) {
+        if (!companyPermissionService.hasPermission(currentUser.getId(), companyId,
+                CompanyPermission.UPDATE_COMPANY_PROFILE)) {
             throw new AppException(ErrorCode.FORBIDDEN, "Access Denied");
         }
 
@@ -252,7 +253,8 @@ public class CompanyServiceImpl implements ICompanyService {
         if (request.size() != null) {
             try {
                 company.setSize(CompanySize.valueOf(request.size()));
-            } catch (IllegalArgumentException ignored) {}
+            } catch (IllegalArgumentException ignored) {
+            }
         }
 
         Company updatedCompany = companyRepository.save(company);
@@ -263,7 +265,7 @@ public class CompanyServiceImpl implements ICompanyService {
     @Transactional
     public void deleteCompany(UUID companyId) {
         User currentUser = getCurrentUser();
-        
+
         boolean isAdmin = currentUser.getRole() != null && "ADMIN_SYSTEM".equals(currentUser.getRole().getName());
         if (!isAdmin) {
             validateOwner(companyId, currentUser.getId());
@@ -284,7 +286,7 @@ public class CompanyServiceImpl implements ICompanyService {
             member.setMembershipStatus(MembershipStatus.REMOVED);
             member.setDeleted(true);
             companyMemberRepository.save(member);
-            
+
             // Block non-owner accounts so they cannot login
             if (member.getCompanyRole() != CompanyRole.OWNER) {
                 User user = member.getUser();
@@ -305,7 +307,8 @@ public class CompanyServiceImpl implements ICompanyService {
 
         String email = request.email().toLowerCase();
         if (userRepository.existsByEmail(email)) {
-            throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED, "Email is already registered. Please provide a new corporate email.");
+            throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED,
+                    "Email is already registered. Please provide a new corporate email.");
         }
 
         String requestedRole = request.role();
@@ -333,7 +336,7 @@ public class CompanyServiceImpl implements ICompanyService {
         newUser.setEmail(email);
         newUser.setUsername(email);
         newUser.setPassword(passwordEncoder.encode(randomPassword));
-        
+
         // Extract firstName and lastName from fullName if needed
         String fullName = request.fullName();
         if (fullName != null && !fullName.trim().isEmpty()) {
@@ -341,7 +344,7 @@ public class CompanyServiceImpl implements ICompanyService {
             newUser.setFirstName(parts.length > 1 ? parts[1] : "");
             newUser.setLastName(parts[0]);
         }
-        
+
         newUser.setRole(recruiterRole);
         newUser.setRequirePasswordChange(true);
         newUser.setIsBlocked(false);
@@ -370,7 +373,7 @@ public class CompanyServiceImpl implements ICompanyService {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(ErrorCode.COMPANY_NOT_FOUND, "Company not found."));
         if (company.isDeleted()) {
-             throw new AppException(ErrorCode.COMPANY_NOT_FOUND, "Company not found.");
+            throw new AppException(ErrorCode.COMPANY_NOT_FOUND, "Company not found.");
         }
 
         return companyMemberRepository.findByCompanyIdAndDeletedFalse(companyId)
@@ -396,9 +399,11 @@ public class CompanyServiceImpl implements ICompanyService {
         }
 
         if (targetMember.getCompanyRole() == CompanyRole.OWNER) {
-            List<CompanyMember> owners = companyMemberRepository.findAllByCompanyIdAndCompanyRoleAndDeletedFalse(companyId, CompanyRole.OWNER);
+            List<CompanyMember> owners = companyMemberRepository
+                    .findAllByCompanyIdAndCompanyRoleAndDeletedFalse(companyId, CompanyRole.OWNER);
             if (owners.size() <= 1) {
-                throw new AppException(ErrorCode.CANNOT_REMOVE_OWNER, "Company OWNER cannot be removed. Transfer ownership first.");
+                throw new AppException(ErrorCode.CANNOT_REMOVE_OWNER,
+                        "Company OWNER cannot be removed. Transfer ownership first.");
             }
         }
 
@@ -420,14 +425,17 @@ public class CompanyServiceImpl implements ICompanyService {
     public void transferOwnership(UUID companyId, UUID currentOwnerId, UUID targetMemberId) {
         validateOwner(companyId, currentOwnerId);
 
-        CompanyMember oldOwnerMember = companyMemberRepository.findByCompanyIdAndUserIdAndDeletedFalse(companyId, currentOwnerId)
+        CompanyMember oldOwnerMember = companyMemberRepository
+                .findByCompanyIdAndUserIdAndDeletedFalse(companyId, currentOwnerId)
                 .orElseThrow(() -> new AppException(ErrorCode.OWNER_NOT_FOUND, "Current owner not found."));
 
         CompanyMember targetMember = companyMemberRepository.findById(targetMemberId)
-                .orElseThrow(() -> new AppException(ErrorCode.MEMBER_NOT_FOUND,"Target member not found."));
+                .orElseThrow(() -> new AppException(ErrorCode.MEMBER_NOT_FOUND, "Target member not found."));
 
-        if (!targetMember.getCompany().getId().equals(companyId) || targetMember.getMembershipStatus() != MembershipStatus.ACTIVE) {
-            throw new AppException(ErrorCode.INVALID_TARGET_MEMBER,"Target member must be an active member of the same company.");
+        if (!targetMember.getCompany().getId().equals(companyId)
+                || targetMember.getMembershipStatus() != MembershipStatus.ACTIVE) {
+            throw new AppException(ErrorCode.INVALID_TARGET_MEMBER,
+                    "Target member must be an active member of the same company.");
         }
 
         // Transfer roles
@@ -438,9 +446,11 @@ public class CompanyServiceImpl implements ICompanyService {
         companyMemberRepository.save(targetMember);
 
         // Assert exactly 1 owner exists
-        List<CompanyMember> owners = companyMemberRepository.findAllByCompanyIdAndCompanyRoleAndDeletedFalse(companyId, CompanyRole.OWNER);
+        List<CompanyMember> owners = companyMemberRepository.findAllByCompanyIdAndCompanyRoleAndDeletedFalse(companyId,
+                CompanyRole.OWNER);
         if (owners.size() != 1) {
-            throw new AppException(ErrorCode.INVALID_OWNER_COUNT, "Ownership transfer resulted in an invalid number of owners.");
+            throw new AppException(ErrorCode.INVALID_OWNER_COUNT,
+                    "Ownership transfer resulted in an invalid number of owners.");
         }
     }
 

@@ -7,12 +7,13 @@ import sba301.hrtech.identity.entities.User;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findByEmailContains(String email);
 
     Optional<User> findByEmail(String email);
-    
+
     boolean existsByEmail(String email);
 
     Optional<User> findByUsername(String username);
@@ -20,8 +21,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findById(UUID id);
 
     List<User> findAll();
-
-    User save(User user);
 
     boolean existsById(UUID id);
 

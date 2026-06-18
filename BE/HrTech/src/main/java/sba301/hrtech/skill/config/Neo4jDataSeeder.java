@@ -9,11 +9,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.Resource;
-import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Component;
 import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
 import sba301.hrtech.skill.entities.SkillNode;
-import sba301.hrtech.skill.services.AiServiceClient;
 
 import java.io.InputStream;
 import java.time.Instant;
@@ -30,8 +28,6 @@ import java.util.*;
 public class Neo4jDataSeeder implements CommandLineRunner {
 
     private final SkillNodeRepository skillNodeRepository;
-    private final AiServiceClient aiServiceClient;
-    private final Neo4jClient neo4jClient;
     private final ObjectMapper objectMapper;
 
     @Value("classpath:skills-seed.json")
@@ -52,8 +48,6 @@ public class Neo4jDataSeeder implements CommandLineRunner {
             log.warn("Neo4j seeding partially failed: {}", e.getMessage());
         }
     }
-
-
 
     private void seedSkills() {
         long existingCount = skillNodeRepository.count();

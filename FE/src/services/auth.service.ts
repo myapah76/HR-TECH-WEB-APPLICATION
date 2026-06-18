@@ -12,9 +12,13 @@ import {
   CompanyRegisterRequest,
 } from '@/src/types/auth'
 import { ApiResponse } from '@/src/types/api'
+import { checkCookiesEnabled } from '../lib/utils'
 
 export const login = async (data: LoginRequest): Promise<ApiResponse<LoginResponse>> => {
-  const response = await api.post('/auth/login', data)
+  const headers = {
+    'X-Cookies-Enabled': checkCookiesEnabled() ? 'true' : 'false'
+  }
+  const response = await api.post('/auth/login', data, { headers })
   return response.data
 }
 
@@ -58,12 +62,18 @@ export const resetPassword = async (data: ResetPasswordRequest): Promise<ApiResp
   return response.data
 }
 
-export const refreshToken = async (): Promise<ApiResponse<LoginResponse>> => {
-  const response = await apiRaw.post('/auth/refresh')
+export const refreshToken = async (data?: { refreshToken: string }): Promise<ApiResponse<LoginResponse>> => {
+  const headers = {
+    'X-Cookies-Enabled': checkCookiesEnabled() ? 'true' : 'false'
+  }
+  const response = await apiRaw.post('/auth/refresh', data, { headers })
   return response.data
 }
 
-export const logout = async (): Promise<ApiResponse<string>> => {
-  const response = await api.post('/auth/logout')
+export const logout = async (data?: { refreshToken: string }): Promise<ApiResponse<string>> => {
+  const headers = {
+    'X-Cookies-Enabled': checkCookiesEnabled() ? 'true' : 'false'
+  }
+  const response = await api.post('/auth/logout', data, { headers })
   return response.data
 }

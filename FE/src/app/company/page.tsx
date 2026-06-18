@@ -19,11 +19,15 @@ import { useAuthStore } from '@/src/stores/auth.store'
 
 export default function RecruiterDashboardPage() {
   const { user } = useAuthStore()
-  
+
   const recentActivities = [
     { action: '5 ứng viên mới ứng tuyển Golang Dev', time: '1 giờ trước', status: 'new' },
     { action: 'Tin tuyển dụng React Native đã hết hạn', time: '3 giờ trước', status: 'expired' },
-    { action: 'Ứng viên Nguyễn Hoàng Nam phù hợp A.I 95%', time: '1 ngày trước', status: 'ai_match' },
+    {
+      action: 'Ứng viên Nguyễn Hoàng Nam phù hợp A.I 95%',
+      time: '1 ngày trước',
+      status: 'ai_match',
+    },
     { action: 'Đã cập nhật thông tin công ty thành công', time: '2 ngày trước', status: 'update' },
   ]
 
@@ -126,7 +130,9 @@ export default function RecruiterDashboardPage() {
                     <span className="font-bold text-slate-700">{p.stage}</span>
                     <span className="font-black text-slate-800">
                       {p.count} hồ sơ{' '}
-                      <span className="text-xs font-semibold text-slate-450">({p.percentage}%)</span>
+                      <span className="text-xs font-semibold text-slate-450">
+                        ({p.percentage}%)
+                      </span>
                     </span>
                   </div>
                   <div className="bg-slate-100 h-2.5 rounded-full overflow-hidden">
@@ -178,7 +184,7 @@ export default function RecruiterDashboardPage() {
           </div>
 
           {/* Premium HR Matching Widget */}
-          <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
+          <div className="bg-linear-to-br from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
             {/* Background absolute decor */}
             <div className="absolute right-0 bottom-0 opacity-10 translate-x-4 translate-y-4">
               <Brain className="w-36 h-36" />

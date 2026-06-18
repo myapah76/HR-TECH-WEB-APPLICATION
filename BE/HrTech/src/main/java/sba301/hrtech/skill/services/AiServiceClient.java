@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import sba301.hrtech.chat.dtos.response.RagChatResponseDto;
-import sba301.hrtech.skill.dtos.response.ExtractedSkillDto;
 import sba301.hrtech.skill.dtos.response.ParseExtractResponseDto;
 import sba301.hrtech.skill.dtos.response.JobExtractResponseDto;
 import sba301.hrtech.skill.dtos.response.MapRelationshipsResponseDto;
@@ -80,7 +79,8 @@ public class AiServiceClient {
 
             log.info("Sending Job text to Python AI Service for skill extraction");
             HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
-            ResponseEntity<JobExtractResponseDto> response = restTemplate.postForEntity(url, entity, JobExtractResponseDto.class);
+            ResponseEntity<JobExtractResponseDto> response = restTemplate.postForEntity(url, entity,
+                    JobExtractResponseDto.class);
             log.info("Received response from Python AI Service with status: {}", response.getStatusCode());
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
@@ -93,9 +93,9 @@ public class AiServiceClient {
         return null;
     }
 
-
     /**
-     * Calls Python AI service to map relationships between new skills and DB skills.
+     * Calls Python AI service to map relationships between new skills and DB
+     * skills.
      */
     public MapRelationshipsResponseDto mapRelationships(List<String> newSkills, List<String> dbSkills) {
         if (newSkills == null || newSkills.isEmpty() || dbSkills == null || dbSkills.isEmpty()) {
@@ -112,10 +112,11 @@ public class AiServiceClient {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            log.info("Sending {} new skills and {} db skills to AI Service for relationship mapping", 
-                newSkills.size(), dbSkills.size());
+            log.info("Sending {} new skills and {} db skills to AI Service for relationship mapping",
+                    newSkills.size(), dbSkills.size());
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-            ResponseEntity<MapRelationshipsResponseDto> response = restTemplate.postForEntity(url, entity, MapRelationshipsResponseDto.class);
+            ResponseEntity<MapRelationshipsResponseDto> response = restTemplate.postForEntity(url, entity,
+                    MapRelationshipsResponseDto.class);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 log.info("Successfully mapped relationships");
@@ -198,7 +199,8 @@ public class AiServiceClient {
 
             log.info("Sending chat query to Python AI Service RAG");
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-            ResponseEntity<RagChatResponseDto> response = restTemplate.postForEntity(url, entity, RagChatResponseDto.class);
+            ResponseEntity<RagChatResponseDto> response = restTemplate.postForEntity(url, entity,
+                    RagChatResponseDto.class);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 return response.getBody();

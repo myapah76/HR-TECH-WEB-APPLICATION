@@ -5,8 +5,6 @@ import lombok.*;
 import sba301.hrtech.shared.common.BaseEntity;
 import sba301.hrtech.shared.enums.SkillLevel;
 
-import java.math.BigDecimal;
-
 @Entity
 @Table(name = "cv_skills")
 @Getter
@@ -26,7 +24,6 @@ public class CvSkill extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "proficiency_level")
     private SkillLevel proficiencyLevel;
-
 
     @Column(name = "is_ai_extracted")
     private Boolean isAiExtracted;
