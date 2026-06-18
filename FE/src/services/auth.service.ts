@@ -10,9 +10,28 @@ import {
   ForgotPasswordResponse,
   ResetPasswordRequest,
   CompanyRegisterRequest,
+  GoogleLoginRequest,
+  GoogleLoginResponse,
+  SetupPasswordRequest,
 } from '@/src/types/auth'
 import { ApiResponse } from '@/src/types/api'
 import { checkCookiesEnabled } from '../lib/utils'
+
+export const loginWithGoogle = async (data: GoogleLoginRequest): Promise<ApiResponse<GoogleLoginResponse>> => {
+  const headers = {
+    'X-Cookies-Enabled': checkCookiesEnabled() ? 'true' : 'false'
+  }
+  const response = await api.post('/auth/google', data, { headers })
+  return response.data
+}
+
+export const setupGooglePassword = async (data: SetupPasswordRequest): Promise<ApiResponse<LoginResponse>> => {
+  const headers = {
+    'X-Cookies-Enabled': checkCookiesEnabled() ? 'true' : 'false'
+  }
+  const response = await api.post('/auth/setup-password', data, { headers })
+  return response.data
+}
 
 export const login = async (data: LoginRequest): Promise<ApiResponse<LoginResponse>> => {
   const headers = {

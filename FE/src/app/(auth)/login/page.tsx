@@ -12,15 +12,43 @@ import { Checkbox } from '@/src/components/ui/checkbox'
 import { Card, CardContent } from '@/src/components/ui/card'
 import { Label } from '@/src/components/ui/label'
 import { useRouter } from 'next/navigation'
-import { useLogin } from '@/src/hooks/auth/auth.hooks'
+import { useLogin, useGoogleLoginMutation } from '@/src/hooks/auth/auth.hooks'
+import { useGoogleLogin } from '@react-oauth/google'
 
 import { toast } from 'sonner'
 
 export default function LoginPage() {
   const loginMutation = useLogin()
+  const googleLoginMutation = useGoogleLoginMutation()
   const router = useRouter()
 
   const [showPassword, setShowPassword] = useState(false)
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: (tokenResponse) => {
+      googleLoginMutation.mutate(
+        { token: tokenResponse.access_token },
+        {
+          onSuccess: (response) => {
+            if (response.data.needsPasswordSetup) {
+              // Redirect to setup password with token
+              router.push(`/setup-password?token=${encodeURIComponent(response.data.setupToken || '')}`)
+              toast.info('Vui lòng tạo mật khẩu cho tài khoản Google của bạn')
+            } else {
+              router.push('/')
+              toast.success('Đăng nhập Google thành công')
+            }
+          },
+          onError: () => {
+            toast.error('Đăng nhập Google thất bại')
+          }
+        }
+      )
+    },
+    onError: () => {
+      toast.error('Google login failed')
+    }
+  })
 
   const {
     register,
@@ -143,11 +171,13 @@ export default function LoginPage() {
               <Button
                 type="button"
                 variant="outline"
+                disabled={googleLoginMutation.isPending}
+                onClick={() => handleGoogleLogin()}
                 className="flex items-center justify-center gap-2 text-[11px] 
               font-bold text-slate-700"
               >
                 <Globe className="h-4 w-4 text-blue-500" />
-                <span>Google</span>
+                <span>{googleLoginMutation.isPending ? 'Đang kết nối...' : 'Google'}</span>
               </Button>
               <Button
                 type="button"

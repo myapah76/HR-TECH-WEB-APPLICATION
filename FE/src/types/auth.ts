@@ -64,3 +64,19 @@ export interface CompanyRegisterRequest {
   taxCode: string
 }
 
+export interface GoogleLoginRequest {
+  token: string
+}
+
+export interface GoogleLoginResponse {
+  needsPasswordSetup?: boolean
+  setupToken?: string
+  accessToken?: string
+  userResponse?: User
+  refreshToken?: string
+}
+
+export interface SetupPasswordRequest {
+  setupToken: string
+  newPassword: string
+}

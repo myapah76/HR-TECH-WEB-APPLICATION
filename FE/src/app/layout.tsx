@@ -1,5 +1,6 @@
 import QueryProvider from '@/src/providers/QueryProvider'
 import AuthProvider from '../providers/AuthProvider'
+import GoogleProvider from '../providers/GoogleProvider'
 import Footer from '@/src/components/layout/Footer'
 import Header from '@/src/components/layout/Header'
 import '@/src/styles/global.css'
@@ -25,13 +26,15 @@ export default function RootLayout({
     <html lang="vi" className={cn('font-sans', geist.variable)}>
       <body>
         <Header />
-        <QueryProvider>
-          <AuthProvider>
-            {children}
-            <Toaster position="top-right" richColors closeButton />
-            <CookieWarningPopup />
-          </AuthProvider>
-        </QueryProvider>
+        <GoogleProvider>
+          <QueryProvider>
+            <AuthProvider>
+              {children}
+              <Toaster position="top-right" richColors closeButton />
+              <CookieWarningPopup />
+            </AuthProvider>
+          </QueryProvider>
+        </GoogleProvider>
         <Footer />
       </body>
     </html>

@@ -4,6 +4,8 @@ import {
   confirmForgotPasswordOtp,
   forgotPassword,
   login,
+  loginWithGoogle,
+  setupGooglePassword,
   registerUser,
   registerCompany,
   resetPassword,
@@ -57,5 +59,36 @@ export const useRegisterCompany = () => {
 export const useResetPassword = () => {
   return useMutation({
     mutationFn: resetPassword,
+  })
+}
+
+export const useGoogleLoginMutation = () => {
+  const setAuth = useAuthStore((state) => state.setAuth)
+  return useMutation({
+    mutationFn: loginWithGoogle,
+    onSuccess: (response) => {
+      // If no password setup is needed, we log them in directly
+      if (!response.data.needsPasswordSetup && response.data.userResponse && response.data.accessToken) {
+        setAuth({
+          user: response.data.userResponse,
+          accessToken: response.data.accessToken,
+          refreshToken: response.data.refreshToken,
+        })
+      }
+    },
+  })
+}
+
+export const useSetupGooglePassword = () => {
+  const setAuth = useAuthStore((state) => state.setAuth)
+  return useMutation({
+    mutationFn: setupGooglePassword,
+    onSuccess: (response) => {
+      setAuth({
+        user: response.data.userResponse,
+        accessToken: response.data.accessToken,
+        refreshToken: response.data.refreshToken,
+      })
+    },
   })
 }
