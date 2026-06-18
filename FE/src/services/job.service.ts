@@ -1,5 +1,7 @@
 import axios from 'axios';
+import { api } from '@/src/lib/axios';
 import { Job } from '@/src/types/job';
+import { ApiResponse } from '../types/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -21,3 +23,21 @@ export const getJobs = async (
 
   return response.data.data;
 };
+
+export const getSavedJobs = async (
+  page = 0,
+  size = 100
+): Promise<Job[]> => {
+  const response = await api.get<ApiResponse<PageResponse<Job>>>('/saved-jobs', {
+    params: { page, size }
+  });
+  return response.data.data.content || [];
+};
+
+export const saveJob = async (jobId: string): Promise<void> => {
+  await api.post<ApiResponse<void>>(`/saved-jobs/${jobId}`);
+};
+
+export const unsaveJob = async (jobId: string): Promise<void> => {
+  await api.delete<ApiResponse<void>>(`/saved-jobs/${jobId}`);
+};

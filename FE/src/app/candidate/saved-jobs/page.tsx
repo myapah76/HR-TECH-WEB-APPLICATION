@@ -1,0 +1,231 @@
+'use client';
+
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+import { useState } from 'react';
+import Link from 'next/link';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Heart, Trash2, MapPin, DollarSign, Loader2, Briefcase, Award, ArrowRight } from 'lucide-react';
+import { getSavedJobs, unsaveJob } from '@/src/services/job.service';
+import { toast } from 'sonner';
+
+/** Generates a deterministic gradient from a company name */
+function getAvatarGradient(name: string): string {
+  const gradients = [
+    'from-blue-500 to-indigo-600',
+    'from-violet-500 to-purple-600',
+    'from-rose-500 to-pink-600',
+    'from-amber-500 to-orange-600',
+    'from-teal-500 to-cyan-600',
+    'from-emerald-500 to-green-600',
+    'from-sky-500 to-blue-600',
+    'from-fuchsia-500 to-violet-600',
+  ];
+  const index = (name?.charCodeAt(0) ?? 0) % gradients.length;
+  return gradients[index];
+}
+
+interface CompanyLogoProps {
+  url?: string | null;
+  name: string;
+}
+
+function CompanyLogo({ url, name }: CompanyLogoProps) {
+  const [imgError, setImgError] = useState(false);
+  const initial = name?.charAt(0)?.toUpperCase() ?? '?';
+  const gradient = getAvatarGradient(name);
+  const showFallback = !url || imgError;
+
+  return (
+    <div className="relative shrink-0 w-12 h-12">
+      {/* Outer ring */}
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200/80 shadow-sm border border-slate-200/40" />
+
+      {/* Logo surface */}
+      <div className="absolute inset-[2px] rounded-[14px] overflow-hidden bg-white flex items-center justify-center shadow-inner">
+        {showFallback ? (
+          <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+            <span className="text-white font-black text-sm select-none drop-shadow">
+              {initial}
+            </span>
+          </div>
+        ) : (
+          <img
+            src={url!}
+            alt={name}
+            onError={() => setImgError(true)}
+            className="w-full h-full object-contain p-1"
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function SavedJobsPage() {
+  const queryClient = useQueryClient();
+
+  // Lấy danh sách công việc đã lưu từ Backend
+  const { data: savedJobs = [], isLoading } = useQuery({
+    queryKey: ['savedJobs'],
+    queryFn: () => getSavedJobs(),
+  });
+
+  // Mutation để bỏ lưu công việc
+  const unsaveMutation = useMutation({
+    mutationFn: unsaveJob,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['savedJobs'] });
+      toast.success('Đã bỏ lưu công việc thành công');
+    },
+    onError: (error) => {
+      console.error('Failed to unsave job:', error);
+      toast.error('Có lỗi xảy ra khi bỏ lưu công việc');
+    },
+  });
+
+  const handleUnsave = (jobId: string) => {
+    unsaveMutation.mutate(jobId);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <p className="text-sm font-semibold text-slate-500">Đang tải danh sách công việc đã lưu...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl space-y-6 animate-fade-in">
+      {/* Tiêu đề trang */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <Heart className="w-8 h-8 text-rose-600 fill-rose-600" />
+          <h1 className="text-3xl font-black tracking-tight text-slate-900 animate-slide-in">
+            Việc đã lưu
+          </h1>
+        </div>
+        <p className="text-slate-500 font-semibold tracking-wide text-sm bg-slate-100/50 self-start px-3 py-1 rounded-full border border-slate-200/40">
+          {savedJobs.length} công việc đã được lưu
+        </p>
+      </div>
+
+      {/* Danh sách công việc đã lưu */}
+      <div className="space-y-4">
+        {savedJobs.length === 0 ? (
+          <div className="p-16 text-center bg-white rounded-3xl border border-slate-200/60 shadow-xs flex flex-col items-center justify-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100">
+              <Heart className="w-6 h-6 text-slate-300" />
+            </div>
+            <p className="text-slate-400 font-semibold text-sm">
+              Bạn chưa lưu công việc nào.
+            </p>
+            <Link
+              href="/jobs"
+              className="mt-2 text-xs font-black text-blue-600 hover:text-blue-800 bg-blue-50/50 hover:bg-blue-50 px-4 py-2 rounded-xl transition-all border border-blue-100/30"
+            >
+              Tìm kiếm việc làm ngay
+            </Link>
+          </div>
+        ) : (
+          savedJobs.map((job) => {
+            const salaryText =
+              job.salaryMin && job.salaryMax
+                ? `$${job.salaryMin.toLocaleString()} – $${job.salaryMax.toLocaleString()}`
+                : 'Thỏa thuận';
+
+            return (
+              <div
+                key={job.id}
+                className="group relative bg-white rounded-2xl border border-slate-200/50 p-6 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:border-blue-200/80 hover:-translate-y-0.5 flex flex-col sm:flex-row sm:items-center justify-between gap-6"
+              >
+                <div className="flex items-start gap-4.5 flex-1 min-w-0">
+                  <CompanyLogo url={job.companyLogoUrl} name={job.companyName} />
+                  
+                  <div className="flex-1 min-w-0 space-y-2.5">
+                    <div>
+                      <Link
+                        href={`/jobs/${job.id}`}
+                        className="inline-block text-base font-extrabold text-slate-800 hover:text-blue-600 transition-colors truncate max-w-full"
+                      >
+                        {job.title}
+                      </Link>
+                      <p className="text-xs font-bold text-slate-400 mt-0.5">{job.companyName}</p>
+                    </div>
+
+                    {/* Metadata Pills */}
+                    <div className="flex flex-wrap gap-2 items-center">
+                      <span className="flex items-center gap-1 text-[11px] font-extrabold text-emerald-600 bg-emerald-50/70 px-2.5 py-0.5 rounded-lg border border-emerald-100/30">
+                        <DollarSign className="h-3 w-3" />
+                        {salaryText}
+                      </span>
+                      <span className="flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-50 px-2.5 py-0.5 rounded-lg border border-slate-100">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {job.location}
+                      </span>
+                      {job.jobType && (
+                        <span className="flex items-center gap-1 text-[11px] font-extrabold text-blue-600 bg-blue-50/70 px-2.5 py-0.5 rounded-lg border border-blue-100/30">
+                          <Briefcase className="h-3 w-3" />
+                          {job.jobType}
+                        </span>
+                      )}
+                      {job.experienceLevel && (
+                        <span className="flex items-center gap-1 text-[11px] font-extrabold text-violet-600 bg-violet-50/70 px-2.5 py-0.5 rounded-lg border border-violet-100/30">
+                          <Award className="h-3 w-3" />
+                          {job.experienceLevel}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Skill Badges */}
+                    {job.skills && job.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        {job.skills.slice(0, 3).map((skill) => (
+                          <span
+                            key={skill.id}
+                            className="text-[10px] font-extrabold text-slate-500 bg-slate-100/60 border border-slate-200/30 px-2.5 py-0.5 rounded-full"
+                          >
+                            {skill.skillName}
+                          </span>
+                        ))}
+                        {job.skills.length > 3 && (
+                          <span className="text-[9px] font-black text-slate-400 bg-slate-100/30 px-2 py-0.5 rounded-full border border-slate-200/20">
+                            +{job.skills.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions Section */}
+                <div className="flex items-center gap-3 self-end sm:self-center shrink-0 border-t sm:border-t-0 pt-4 sm:pt-0 w-full sm:w-auto justify-end border-slate-100">
+                  <button
+                    onClick={() => handleUnsave(job.id)}
+                    disabled={unsaveMutation.isPending}
+                    className="text-rose-500 hover:text-rose-700 bg-rose-50/50 hover:bg-rose-50 p-2.5 rounded-xl cursor-pointer transition-all shrink-0 disabled:opacity-50 flex items-center justify-center border border-rose-100/40"
+                    title="Bỏ lưu"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                  
+                  <Link
+                    href={`/jobs/${job.id}`}
+                    className="flex items-center justify-center gap-1 text-xs font-black text-blue-600 hover:text-blue-800 bg-blue-50/40 hover:bg-blue-50/80 px-4 py-2.5 rounded-xl transition-all border border-blue-100/30 hover:border-blue-200/50 group/btn shadow-xs hover:shadow-sm"
+                  >
+                    Xem chi tiết
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
+                  </Link>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
