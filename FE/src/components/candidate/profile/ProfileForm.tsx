@@ -3,7 +3,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { profileSchema, ProfileFormData } from '@/src/schemas/user.schema'
 import { useUpdateUserProfile } from '@/src/hooks/user/user.hooks'
 import { formatDateForInput } from '@/src/utils/format-date'
-import { getErrorMessage } from '@/src/utils/get-error-message'
 import { toast } from 'sonner'
 import { User } from '@/src/types/user'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card'
@@ -51,9 +50,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
       {
         onSuccess: () => {
           toast.success('Cập nhật hồ sơ cá nhân thành công!')
-        },
-        onError: (err) => {
-          toast.error(getErrorMessage(err))
         },
       }
     )

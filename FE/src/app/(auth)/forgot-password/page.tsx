@@ -12,7 +12,6 @@ import { Label } from '@/src/components/ui/label'
 import { useRouter } from 'next/navigation'
 import { useForgotPassword } from '@/src/hooks/auth/auth.hooks'
 import { OtpType } from '@/src/enums/otp.enum'
-import { getErrorMessage } from '@/src/utils/get-error-message'
 
 import { toast } from 'sonner'
 
@@ -35,9 +34,6 @@ export default function ForgotPasswordPage() {
         router.push(
           `/confirm-otp?email=${response?.data?.email}&expireIn=${response?.data?.expireIn}&otpType=${OtpType.FORGET_PASSWORD}`
         )
-      },
-      onError: (error) => {
-        toast.error(getErrorMessage(error))
       },
     })
   }

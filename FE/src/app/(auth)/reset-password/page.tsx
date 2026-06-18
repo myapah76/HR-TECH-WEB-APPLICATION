@@ -12,7 +12,6 @@ import { Label } from '@/src/components/ui/label'
 import { Input } from '@/src/components/ui/input'
 import { Button } from '@/src/components/ui/button'
 import { Lock, Eye, EyeOff, Loader2 } from 'lucide-react'
-import { getErrorMessage } from '@/src/utils/get-error-message'
 
 import { toast } from 'sonner'
 
@@ -45,9 +44,6 @@ function ResetPasswordContent() {
         onSuccess: () => {
           toast.success('Đặt lại mật khẩu thành công! Vui lòng đăng nhập.')
           router.push('/login')
-        },
-        onError: (error) => {
-          toast.error(getErrorMessage(error))
         },
       }
     )

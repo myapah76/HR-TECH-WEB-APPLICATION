@@ -39,3 +39,5 @@ export interface Job {
   createdAt: string;
   updatedAt: string;
 }
+
+export type JobResponse = Job;
