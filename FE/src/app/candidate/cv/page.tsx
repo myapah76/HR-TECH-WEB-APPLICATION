@@ -13,8 +13,7 @@ import {
   useUpdateCvTitle,
   useGetCvDetail,
 } from '@/src/hooks/cv/cv.hooks'
-import { useQuery } from '@tanstack/react-query'
-import { getSavedJobs } from '@/src/services/job.service'
+import { useGetSavedJobs } from '@/src/hooks/job/job.hooks'
 import { useCalculateMatchScore } from '@/src/hooks/recommendation/recommendation.hooks'
 import { SkillMatchScoreResponse } from '@/src/types/recommendation'
 import { FileSearch, X, Loader2 } from 'lucide-react'
@@ -23,10 +22,7 @@ import { getErrorMessage } from '@/src/utils/get-error-message'
 
 export default function CandidateCvPage() {
   const { data: cvs = [], isLoading: loadingCvs } = useGetAllCvs()
-  const { data: savedJobs = [], isLoading: loadingJobs } = useQuery({
-    queryKey: ['savedJobs'],
-    queryFn: () => getSavedJobs(),
-  })
+  const { data: savedJobs = [], isLoading: loadingJobs } = useGetSavedJobs()
 
   const loading = loadingCvs || loadingJobs
 

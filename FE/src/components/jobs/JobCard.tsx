@@ -1,23 +1,16 @@
 'use client'
 
-import { MapPin, Heart, DollarSign, Calendar, Sparkles } from 'lucide-react'
+import { MapPin, DollarSign, Calendar, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Job } from '@/src/types/job'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 
 interface JobCardProps {
   job: Job
-  isFavorite?: boolean
-  onToggleFavorite?: (id: string) => void
 }
 
-export default function JobCard({ job, isFavorite = false, onToggleFavorite }: JobCardProps) {
+export default function JobCard({ job }: JobCardProps) {
   const router = useRouter()
-
-  const handleFavoriteClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    onToggleFavorite?.(job.id)
-  }
 
   const formatSalary = (min: number, max: number) => {
     if (!min && !max) return 'Thỏa thuận'
@@ -111,21 +104,6 @@ export default function JobCard({ job, isFavorite = false, onToggleFavorite }: J
               Đóng tuyển
             </span>
           )}
-
-          <button
-            onClick={handleFavoriteClick}
-            className={`p-2 rounded-xl border transition-all duration-200 cursor-pointer ${
-              isFavorite
-                ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-sm'
-                : 'bg-white border-slate-200 text-slate-400 hover:border-slate-350 hover:bg-slate-50'
-            }`}
-          >
-            <Heart
-              className={`h-4 w-4 transition-transform duration-200 ${
-                isFavorite ? 'fill-rose-500 scale-110' : 'hover:scale-105'
-              }`}
-            />
-          </button>
         </div>
 
         <span className="text-[11px] font-bold text-slate-450 tracking-wide mt-2 sm:mt-auto">

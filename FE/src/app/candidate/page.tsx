@@ -4,15 +4,11 @@ import Link from 'next/link';
 import StatCard from '@/src/components/ui/StatCard';
 import { Briefcase, Eye, Heart, Send, FileText, Brain, Clock, ArrowRight } from 'lucide-react';
 import { useAuthStore } from '@/src/stores/auth.store';
-import { useQuery } from '@tanstack/react-query';
-import { getSavedJobs } from '@/src/services/job.service';
+import { useGetSavedJobs } from '@/src/hooks/job/job.hooks';
 
 export default function CandidateDashboardPage() {
   const { user } = useAuthStore();
-  const { data: savedJobs = [] } = useQuery({
-    queryKey: ['savedJobs'],
-    queryFn: () => getSavedJobs(),
-  });
+  const { data: savedJobs = [] } = useGetSavedJobs();
 
   const recentActivity = [
     { action: 'Ứng tuyển vị trí Senior Golang Dev', time: '2h', status: 'submitted' },

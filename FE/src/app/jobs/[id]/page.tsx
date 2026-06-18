@@ -18,11 +18,15 @@ import {
   Award,
   Clock,
 } from 'lucide-react'
-import { useGetJobById, useGetJobs } from '@/src/hooks/job/job.hooks'
+import {
+  useGetJobById,
+  useGetJobs,
+  useGetSavedJobs,
+  useSaveJob,
+  useUnsaveJob,
+} from '@/src/hooks/job/job.hooks'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import { toast } from 'sonner'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getSavedJobs, saveJob, unsaveJob } from '@/src/services/job.service'
 import { useAuthStore } from '@/src/stores/auth.store'
 
 export default function JobDetailPage() {
@@ -37,38 +41,14 @@ export default function JobDetailPage() {
   const allJobs = jobsData?.content ?? []
   const similarJobs = allJobs.filter((j) => j.id !== jobId).slice(0, 3)
 
-  const queryClient = useQueryClient()
   const { user } = useAuthStore()
 
-  const { data: savedJobs = [] } = useQuery({
-    queryKey: ['savedJobs'],
-    queryFn: () => getSavedJobs(),
-    enabled: !!user,
-  })
+  const { data: savedJobs = [] } = useGetSavedJobs(!!user)
 
   const isSaved = savedJobs.some((j) => j.id === jobId)
 
-  const saveMutation = useMutation({
-    mutationFn: saveJob,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['savedJobs'] })
-      toast.success('Lưu công việc thành công!')
-    },
-    onError: () => {
-      toast.error('Có lỗi xảy ra khi lưu công việc')
-    },
-  })
-
-  const unsaveMutation = useMutation({
-    mutationFn: unsaveJob,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['savedJobs'] })
-      toast.success('Đã hủy lưu công việc!')
-    },
-    onError: () => {
-      toast.error('Có lỗi xảy ra khi bỏ lưu công việc')
-    },
-  })
+  const saveMutation = useSaveJob()
+  const unsaveMutation = useUnsaveJob()
 
   const handleSaveToggle = () => {
     if (!user) {
@@ -76,9 +56,23 @@ export default function JobDetailPage() {
       return
     }
     if (isSaved) {
-      unsaveMutation.mutate(jobId)
+      unsaveMutation.mutate(jobId, {
+        onSuccess: () => {
+          toast.success('Đã hủy lưu công việc!')
+        },
+        onError: () => {
+          toast.error('Có lỗi xảy ra khi bỏ lưu công việc')
+        },
+      })
     } else {
-      saveMutation.mutate(jobId)
+      saveMutation.mutate(jobId, {
+        onSuccess: () => {
+          toast.success('Lưu công việc thành công!')
+        },
+        onError: () => {
+          toast.error('Có lỗi xảy ra khi lưu công việc')
+        },
+      })
     }
   }
 

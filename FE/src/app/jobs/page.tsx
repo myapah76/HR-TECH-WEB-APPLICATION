@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 
 import JobCard from '@/src/components/jobs/JobCard'
@@ -41,8 +41,6 @@ export default function Home() {
   const handleSearch = () => {
     setCurrentPage(1)
   }
-
-  const favoriteIds = useMemo(() => new Set<string>(), [])
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -100,9 +98,7 @@ export default function Home() {
               {isLoading ? (
                 <Loading />
               ) : jobs.length > 0 ? (
-                jobs.map((job) => (
-                  <JobCard key={job.id} job={job} isFavorite={favoriteIds.has(job.id)} />
-                ))
+                jobs.map((job) => <JobCard key={job.id} job={job} />)
               ) : (
                 <div className="text-center py-10 text-gray-500">No jobs found</div>
               )}
