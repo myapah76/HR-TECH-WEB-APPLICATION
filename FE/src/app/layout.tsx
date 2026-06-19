@@ -8,7 +8,7 @@ import { Geist } from 'next/font/google'
 import { cn } from '@/src/lib/utils'
 import { Metadata } from 'next'
 import { Toaster } from 'sonner'
-import { CookieWarningPopup } from '@/src/components/CookieWarningPopup'
+import { CookieWarningPopup } from '@/src/components/layout/CookieWarningPopup'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-sans' })
 
@@ -25,10 +25,10 @@ export default function RootLayout({
   return (
     <html lang="vi" className={cn('font-sans', geist.variable)} suppressHydrationWarning>
       <body>
-        <Header />
         <GoogleProvider>
           <QueryProvider>
             <AuthProvider>
+              <Header />
               {children}
               <Toaster position="top-right" richColors closeButton />
               <CookieWarningPopup />

@@ -132,7 +132,7 @@ export default function CandidateDashboardPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white">
+          <div className="bg-linear-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white">
             <h3 className="text-base font-black">Hoàn thiện hồ sơ</h3>
             <p className="text-sm font-medium text-blue-100 mt-1">
               Hồ sơ hoàn chỉnh tăng 3x cơ hội nhận việc

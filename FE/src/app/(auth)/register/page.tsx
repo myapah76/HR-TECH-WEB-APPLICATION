@@ -4,8 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { Card, CardContent } from '@/src/components/ui/card'
-import { CandidateRegisterForm } from '@/src/components/register/CandidateRegisterForm'
-import { CompanyRegisterForm } from '@/src/components/register/CompanyRegisterForm'
+import { CandidateRegisterForm } from '@/src/components/auth/register/CandidateRegisterForm'
+import { CompanyRegisterForm } from '@/src/components/auth/register/CompanyRegisterForm'
 
 export default function RegisterPage() {
   const [activeTab, setActiveTab] = useState<'candidate' | 'company'>('candidate')

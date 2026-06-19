@@ -20,21 +20,30 @@ export const useAuthStore = create<AuthState>((set) => ({
   isInitialized: false,
 
   setAuth: (data) =>
-    set((state) => ({
-      user: data.user,
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken !== undefined ? data.refreshToken : state.refreshToken,
-    })),
+    set((state) => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('hasSession', 'true')
+      }
+      return {
+        user: data.user,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken !== undefined ? data.refreshToken : state.refreshToken,
+      }
+    }),
   updateTokens: (accessToken: string, refreshToken?: string) =>
     set((state) => ({
       accessToken,
       refreshToken: refreshToken !== undefined ? refreshToken : state.refreshToken,
     })),
 
-  logout: () =>
-    set({
+  logout: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('hasSession')
+    }
+    return set({
       user: null,
       accessToken: null,
       refreshToken: null,
-    }),
+    })
+  },
 }))

@@ -53,12 +53,12 @@ const performRefreshToken = async (): Promise<string | null> => {
       throw new Error('No refresh token available')
     }
 
-    const refreshReqData = (!cookiesEnabled && refreshToken) ? { refreshToken } : undefined
+    const refreshReqData = !cookiesEnabled && refreshToken ? { refreshToken } : undefined
     const headers = { 'X-Cookies-Enabled': cookiesEnabled ? 'true' : 'false' }
     const res = await apiRaw.post('/auth/refresh', refreshReqData, { headers })
     const newAccess = res.data.data.accessToken
     const newRefresh = res.data.data.refreshToken
-    
+
     useAuthStore.getState().updateTokens(newAccess, newRefresh)
     processQueue(null, newAccess)
     return newAccess
@@ -76,7 +76,7 @@ const isTokenAboutToExpire = (token: string) => {
     const payload = JSON.parse(atob(token.split('.')[1]))
     // Buffer time: 30 seconds
     return payload.exp * 1000 < Date.now() + 30000
-  } catch (e) {
+  } catch {
     return false
   }
 }
@@ -114,11 +114,11 @@ api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config
-    
+
     if (error.config?.url?.includes('/auth/refresh')) {
       return Promise.reject(error)
     }
-    
+
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true
       try {

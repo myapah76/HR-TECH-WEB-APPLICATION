@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ChevronLeft, Loader2, MailCheck } from 'lucide-react'
 import { motion } from 'motion/react'
 import { Card, CardContent } from '@/src/components/ui/card'
-import { VerifyOtpForm } from '@/src/components/VerifyOtpForm'
+import { VerifyOtpForm } from '@/src/components/auth/VerifyOtpForm'
 import { useSearchParams } from 'next/navigation'
 import { OtpType } from '@/src/enums/otp.enum'
 
@@ -22,13 +22,11 @@ function OtpContent() {
           <MailCheck className="w-8 h-8 text-blue-600" />
         </div>
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 mb-2">
-            Xác thực Email
-          </h1>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900 mb-2">Xác thực Email</h1>
           <p className="text-sm text-slate-500 font-medium px-4">
             Chúng tôi đã gửi một mã OTP gồm 6 chữ số đến email:
-            <span className="font-bold text-slate-900 ml-1">{email}</span>. Vui lòng nhập mã để
-            tiếp tục.
+            <span className="font-bold text-slate-900 ml-1">{email}</span>. Vui lòng nhập mã để tiếp
+            tục.
           </p>
         </div>
       </div>

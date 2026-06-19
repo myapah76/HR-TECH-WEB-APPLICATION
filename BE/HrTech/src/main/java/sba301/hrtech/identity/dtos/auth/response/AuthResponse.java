@@ -1,16 +1,14 @@
 package sba301.hrtech.identity.dtos.auth.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import sba301.hrtech.identity.dtos.user.response.UserResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @Getter
 @Setter
 @AllArgsConstructor
-@lombok.NoArgsConstructor
-@lombok.Builder
+@NoArgsConstructor
+@Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AuthResponse {
     private UserResponse userResponse;
