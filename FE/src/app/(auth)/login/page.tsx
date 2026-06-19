@@ -32,7 +32,9 @@ export default function LoginPage() {
           onSuccess: (response) => {
             if (response.data.needsPasswordSetup) {
               // Redirect to setup password with token
-              router.push(`/setup-password?token=${encodeURIComponent(response.data.setupToken || '')}`)
+              router.push(
+                `/setup-password?token=${encodeURIComponent(response.data.setupToken || '')}`
+              )
               toast.info('Vui lòng tạo mật khẩu cho tài khoản Google của bạn')
             } else {
               router.push('/')
@@ -41,13 +43,13 @@ export default function LoginPage() {
           },
           onError: () => {
             toast.error('Đăng nhập Google thất bại')
-          }
+          },
         }
       )
     },
     onError: () => {
       toast.error('Google login failed')
-    }
+    },
   })
 
   const {
@@ -167,26 +169,17 @@ export default function LoginPage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3.5">
+            <div className="flex justify-center">
               <Button
                 type="button"
                 variant="outline"
                 disabled={googleLoginMutation.isPending}
                 onClick={() => handleGoogleLogin()}
-                className="flex items-center justify-center gap-2 text-[11px] 
-              font-bold text-slate-700"
+                className="group flex items-center justify-center text-[11px] px-6
+              font-bold border-2 border-orange-500 text-orange-600 hover:bg-orange-500 hover:text-white cursor-pointer"
               >
-                <Globe className="h-4 w-4 text-blue-500" />
+                <Globe className="h-4 w-4 text-orange-500 transition-colors group-hover:text-white" />
                 <span>{googleLoginMutation.isPending ? 'Đang kết nối...' : 'Google'}</span>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="flex items-center justify-center gap-2 text-[11px] 
-              font-bold text-slate-700"
-              >
-                <Code className="h-4 w-4 text-slate-900" />
-                <span>GitHub</span>
               </Button>
             </div>
 

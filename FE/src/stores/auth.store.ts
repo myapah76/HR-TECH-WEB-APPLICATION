@@ -5,12 +5,14 @@ interface AuthState {
   user: User | null
   accessToken: string | null
   refreshToken: string | null
+  isInitialized: boolean
 
   setAuth: (data: { user: User; accessToken: string; refreshToken?: string }) => void
 
   updateTokens: (accessToken: string, refreshToken?: string) => void
 
   logout: () => void
+  setInitialized: (isInitialized: boolean) => void
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -21,13 +23,14 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setAuth: (data) =>
     set((state) => {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('hasSession', 'true')
+      if (typeof document !== 'undefined') {
+        document.cookie = 'hasSession=true; path=/; max-age=604800; SameSite=Lax'
       }
       return {
         user: data.user,
         accessToken: data.accessToken,
         refreshToken: data.refreshToken !== undefined ? data.refreshToken : state.refreshToken,
+        isInitialized: true,
       }
     }),
   updateTokens: (accessToken: string, refreshToken?: string) =>
@@ -37,13 +40,15 @@ export const useAuthStore = create<AuthState>((set) => ({
     })),
 
   logout: () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('hasSession')
+    if (typeof document !== 'undefined') {
+      document.cookie = 'hasSession=; path=/; max-age=0; SameSite=Lax'
     }
     return set({
       user: null,
       accessToken: null,
       refreshToken: null,
+      isInitialized: true,
     })
   },
+  setInitialized: (isInitialized) => set({ isInitialized }),
 }))

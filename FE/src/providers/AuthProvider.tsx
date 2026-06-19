@@ -13,19 +13,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    console.log('vào Auth Provider')
     const initAuth = async () => {
-      console.log('vào Auth init hàm')
       const { refreshToken: storeRefreshToken } = useAuthStore.getState()
       const cookiesEnabled = checkCookiesEnabled()
-      const hasSession =
-        typeof window !== 'undefined' ? localStorage.getItem('hasSession') === 'true' : false
 
-      // nếu không có quyền cookie và không có refresh token (chế độ không cookie)
-      // HOẶC nếu có cookie nhưng local không ghi nhận session (chưa đăng nhập)
-      if ((!cookiesEnabled && !storeRefreshToken) || (cookiesEnabled && !hasSession)) {
+      if (!cookiesEnabled && !storeRefreshToken) {
         clearAuth()
         setIsLoading(false)
+        useAuthStore.getState().setInitialized(true)
         return
       }
 
@@ -40,16 +35,15 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           refreshToken: res.data.refreshToken,
         })
       } catch {
-        if (hasSession || storeRefreshToken) {
-          try {
-            await logout(refreshReqData)
-          } catch {
-            console.warn('Logout failed during initialization cleanup')
-          }
+        try {
+          await logout(refreshReqData)
+        } catch {
+          console.warn('Logout failed during initialization cleanup')
         }
         clearAuth()
       } finally {
         setIsLoading(false)
+        useAuthStore.getState().setInitialized(true)
       }
     }
     initAuth()

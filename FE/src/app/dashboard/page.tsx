@@ -4,13 +4,19 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { RoleUser } from '@/src/enums/role.enum'
+import Loading from '../loading'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const user = useAuthStore((state) => state.user)
+  const { user, isInitialized } = useAuthStore()
 
   useEffect(() => {
-    if (!user) return
+    if (!isInitialized) return
+
+    if (!user) {
+      router.replace('/login')
+      return
+    }
 
     switch (user.roleResponse.name) {
       case RoleUser.ADMIN_SYSTEM:
@@ -24,15 +30,7 @@ export default function DashboardPage() {
       default:
         router.replace('/candidate')
     }
-  }, [router, user])
+  }, [router, user, isInitialized])
 
-  return (
-    <div className="flex flex-col items-center justify-center py-32 space-y-4">
-      <div className="relative w-12 h-12">
-        <div className="absolute inset-0 rounded-full border-4 border-indigo-100 animate-pulse"></div>
-        <div className="absolute inset-0 rounded-full border-4 border-t-indigo-600 animate-spin"></div>
-      </div>
-      <p className="text-sm font-semibold text-slate-500">Đang tải...</p>
-    </div>
-  )
+  return <Loading />
 }

@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export function proxy(request: NextRequest) {
-  const refreshToken = request.cookies.get('refreshToken')
+  const hasSession = request.cookies.get('hasSession')?.value === 'true'
   const pathname = request.nextUrl.pathname
 
   const authRoutes = ['/login', '/register', '/forgot-password', '/confirm-otp', '/reset-password']
 
-  if (!refreshToken && !authRoutes.includes(pathname)) {
+  if (!hasSession && !authRoutes.includes(pathname)) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (refreshToken && authRoutes.includes(pathname)) {
+  if (hasSession && authRoutes.includes(pathname)) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
