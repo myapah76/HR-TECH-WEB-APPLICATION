@@ -21,7 +21,6 @@ public interface CompanyMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "taxCode", ignore = true)
     @Mapping(target = "status", ignore = true)
-    @Mapping(target = "logoUrl", ignore = true)
     @Mapping(target = "jobs", ignore = true)
     @Mapping(target = "members", ignore = true)
     @Mapping(target = "size", ignore = true)

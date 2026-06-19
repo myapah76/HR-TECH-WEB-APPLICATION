@@ -2,7 +2,20 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mail, Lock, Eye, EyeOff, User, Building, Phone, Globe, MapPin, Briefcase, FileText, Image as ImageIcon } from 'lucide-react'
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  User,
+  Building,
+  Phone,
+  Globe,
+  MapPin,
+  Briefcase,
+  FileText,
+  Image as ImageIcon,
+} from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
 import { Input } from '@/src/components/ui/input'
 import { Checkbox } from '@/src/components/ui/checkbox'
@@ -73,7 +86,7 @@ export function CompanyRegisterForm() {
           },
           onSettled: () => {
             setIsUploading(false)
-          }
+          },
         }
       )
     } catch (error) {
@@ -101,9 +114,7 @@ export function CompanyRegisterForm() {
             />
           </div>
           {errors.fullName && (
-            <p className="text-xs font-bold text-red-500 mt-1.5">
-              {errors.fullName.message}
-            </p>
+            <p className="text-xs font-bold text-red-500 mt-1.5">{errors.fullName.message}</p>
           )}
         </div>
         <div className="space-y-1">
@@ -121,9 +132,7 @@ export function CompanyRegisterForm() {
             />
           </div>
           {errors.phone && (
-            <p className="text-xs font-bold text-red-500 mt-1.5">
-              {errors.phone.message}
-            </p>
+            <p className="text-xs font-bold text-red-500 mt-1.5">{errors.phone.message}</p>
           )}
         </div>
       </div>
@@ -143,9 +152,7 @@ export function CompanyRegisterForm() {
           />
         </div>
         {errors.email && (
-          <p className="text-xs font-bold text-red-500 mt-1.5">
-            {errors.email.message}
-          </p>
+          <p className="text-xs font-bold text-red-500 mt-1.5">{errors.email.message}</p>
         )}
       </div>
 
@@ -165,9 +172,7 @@ export function CompanyRegisterForm() {
             />
           </div>
           {errors.name && (
-            <p className="text-xs font-bold text-red-500 mt-1.5">
-              {errors.name.message}
-            </p>
+            <p className="text-xs font-bold text-red-500 mt-1.5">{errors.name.message}</p>
           )}
         </div>
         <div className="space-y-1">
@@ -185,9 +190,7 @@ export function CompanyRegisterForm() {
             />
           </div>
           {errors.taxCode && (
-            <p className="text-xs font-bold text-red-500 mt-1.5">
-              {errors.taxCode.message}
-            </p>
+            <p className="text-xs font-bold text-red-500 mt-1.5">{errors.taxCode.message}</p>
           )}
         </div>
       </div>
@@ -312,9 +315,7 @@ export function CompanyRegisterForm() {
           </Button>
         </div>
         {errors.password && (
-          <p className="text-xs font-bold text-red-500 mt-1.5">
-            {errors.password.message}
-          </p>
+          <p className="text-xs font-bold text-red-500 mt-1.5">{errors.password.message}</p>
         )}
       </div>
 
@@ -341,9 +342,7 @@ export function CompanyRegisterForm() {
           </Button>
         </div>
         {errors.confirmPassword && (
-          <p className="text-xs font-bold text-red-500 mt-1.5">
-            {errors.confirmPassword.message}
-          </p>
+          <p className="text-xs font-bold text-red-500 mt-1.5">{errors.confirmPassword.message}</p>
         )}
       </div>
 
@@ -359,16 +358,12 @@ export function CompanyRegisterForm() {
                 onCheckedChange={field.onChange}
                 className="mt-1 shrink-0"
               />
-              <span>
-                Tôi đồng ý với Điều khoản Sử dụng và Chính sách Bảo mật của HR-Tech.
-              </span>
+              <span>Tôi đồng ý với Điều khoản Sử dụng và Chính sách Bảo mật của HR-Tech.</span>
             </Label>
           )}
         />
         {errors.acceptTerms && (
-          <p className="text-xs font-bold text-red-500 mt-1.5">
-            {errors.acceptTerms.message}
-          </p>
+          <p className="text-xs font-bold text-red-500 mt-1.5">{errors.acceptTerms.message}</p>
         )}
       </div>
 
@@ -378,7 +373,11 @@ export function CompanyRegisterForm() {
         className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs sm:text-sm py-4 rounded-xl transition-all duration-300 
         shadow-lg shadow-blue-600/20 hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer tracking-wider uppercase h-auto"
       >
-        {isUploading ? 'ĐANG TẢI ẢNH...' : registerCompanyMutation.isPending ? 'ĐANG ĐĂNG KÝ...' : 'ĐĂNG KÝ MIỄN PHÍ'}
+        {isUploading
+          ? 'ĐANG TẢI ẢNH...'
+          : registerCompanyMutation.isPending
+            ? 'ĐANG ĐĂNG KÝ...'
+            : 'ĐĂNG KÝ MIỄN PHÍ'}
       </Button>
     </form>
   )

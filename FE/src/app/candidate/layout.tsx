@@ -41,7 +41,6 @@ const candidateNavItems = [
     label: 'AI Assistant',
     path: '/candidate/ai-advisor',
   },
-  { icon: Settings, label: 'Cài đặt', path: '/candidate/settings' },
 ]
 
 export default function CandidateLayout({ children }: { children: React.ReactNode }) {
