@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mail, Lock, Eye, EyeOff, User, Building, Phone, Globe, MapPin, Briefcase, FileText } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, User, Building, Phone, Globe, MapPin, Briefcase, FileText, Image as ImageIcon } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
 import { Input } from '@/src/components/ui/input'
 import { Checkbox } from '@/src/components/ui/checkbox'
@@ -13,12 +13,15 @@ import { companyRegisterSchema, CompanyRegisterFormData } from '@/src/schemas/au
 import { useRegisterCompany } from '@/src/hooks/auth/auth.hooks'
 import { OtpType } from '@/src/enums/otp.enum'
 import { toast } from 'sonner'
+import { uploadFile } from '@/src/services/upload.service'
 
 export function CompanyRegisterForm() {
   const router = useRouter()
   const registerCompanyMutation = useRegisterCompany()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   const {
     register,
@@ -30,29 +33,54 @@ export function CompanyRegisterForm() {
   })
 
   const onSubmit = async (data: CompanyRegisterFormData) => {
-    registerCompanyMutation.mutate(
-      {
-        email: data.email,
-        password: data.password,
-        fullName: data.fullName,
-        phone: data.phone,
-        name: data.name,
-        description: data.description,
-        website: data.website,
-        industry: data.industry,
-        size: data.size,
-        address: data.address,
-        taxCode: data.taxCode,
-      },
-      {
-        onSuccess: (response) => {
-          toast.success('Đã gửi mã xác nhận. Vui lòng kiểm tra email!')
-          router.push(
-            `/confirm-otp?email=${response?.data?.email}&expireIn=${response?.data?.expireIn}&otpType=${OtpType.REGISTER_COMPANY}`
-          )
-        },
+    if (!logoFile) {
+      toast.error('Vui lòng chọn logo công ty!')
+      return
+    }
+
+    try {
+      setIsUploading(true)
+      let logoUrl = undefined
+
+      if (logoFile) {
+        const uploadRes = await uploadFile(logoFile)
+        if (uploadRes?.data) {
+          logoUrl = uploadRes.data
+        }
       }
-    )
+
+      registerCompanyMutation.mutate(
+        {
+          email: data.email,
+          password: data.password,
+          fullName: data.fullName,
+          phone: data.phone,
+          name: data.name,
+          description: data.description,
+          website: data.website,
+          industry: data.industry,
+          size: data.size,
+          address: data.address,
+          taxCode: data.taxCode,
+          logoUrl: logoUrl,
+        },
+        {
+          onSuccess: (response) => {
+            toast.success('Đã gửi mã xác nhận. Vui lòng kiểm tra email!')
+            router.push(
+              `/confirm-otp?email=${response?.data?.email}&expireIn=${response?.data?.expireIn}&otpType=${OtpType.REGISTER_COMPANY}`
+            )
+          },
+          onSettled: () => {
+            setIsUploading(false)
+          }
+        }
+      )
+    } catch (error) {
+      console.error(error)
+      toast.error('Lỗi khi tải ảnh lên, vui lòng thử lại!')
+      setIsUploading(false)
+    }
   }
 
   return (
@@ -242,6 +270,26 @@ export function CompanyRegisterForm() {
       </div>
 
       <div className="space-y-1">
+        <Label className="text-[11px] font-bold text-slate-500">Logo công ty</Label>
+        <div className="relative">
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+            <ImageIcon className="h-4 w-4" />
+          </span>
+          <Input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                setLogoFile(e.target.files[0])
+              }
+            }}
+            className="h-auto pl-9 pr-3 py-2 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none 
+            focus:bg-white focus:border-blue-500 transition-all file:border-0 file:bg-blue-50 file:text-blue-700 file:text-xs file:font-semibold file:px-2 file:py-1 file:rounded-md file:mr-2 cursor-pointer"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-1">
         <Label className="text-[11px] font-bold text-slate-500">* Mật khẩu</Label>
         <div className="relative">
           <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
@@ -326,11 +374,11 @@ export function CompanyRegisterForm() {
 
       <Button
         type="submit"
-        disabled={registerCompanyMutation.isPending}
+        disabled={registerCompanyMutation.isPending || isUploading}
         className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs sm:text-sm py-4 rounded-xl transition-all duration-300 
         shadow-lg shadow-blue-600/20 hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer tracking-wider uppercase h-auto"
       >
-        {registerCompanyMutation.isPending ? 'ĐANG ĐĂNG KÝ...' : 'ĐĂNG KÝ MIỄN PHÍ'}
+        {isUploading ? 'ĐANG TẢI ẢNH...' : registerCompanyMutation.isPending ? 'ĐANG ĐĂNG KÝ...' : 'ĐĂNG KÝ MIỄN PHÍ'}
       </Button>
     </form>
   )

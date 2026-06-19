@@ -62,5 +62,22 @@ export interface CompanyRegisterRequest {
   size?: string
   address?: string
   taxCode: string
+  logoUrl?: string
 }
 
+export interface GoogleLoginRequest {
+  token: string
+}
+
+export interface GoogleLoginResponse {
+  needsPasswordSetup?: boolean
+  setupToken?: string
+  accessToken?: string
+  userResponse?: User
+  refreshToken?: string
+}
+
+export interface SetupPasswordRequest {
+  setupToken: string
+  newPassword: string
+}

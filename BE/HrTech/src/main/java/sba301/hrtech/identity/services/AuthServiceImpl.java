@@ -4,11 +4,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import sba301.hrtech.identity.abstractions.cache.IRedisTokenService;
 import sba301.hrtech.identity.abstractions.repositories.RoleRepository;
 import sba301.hrtech.identity.abstractions.repositories.UserRepository;
@@ -43,6 +48,7 @@ import org.springframework.context.annotation.Lazy;
 
 import javax.management.relation.RoleNotFoundException;
 import java.time.Duration;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -242,6 +248,101 @@ public class AuthServiceImpl implements IAuthService {
         );
     }
 
+    @Override
+    public TokenPair googleLogin(GoogleLoginRequest request) {
+        String token = request.getToken();
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        HttpEntity<String> entity = new HttpEntity<>("", headers);
+        
+        ResponseEntity<Map> response;
+        try {
+            response = restTemplate.exchange(
+                "https://www.googleapis.com/oauth2/v3/userinfo", HttpMethod.GET, entity, Map.class);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid Google token");
+        }
+                
+        Map<String, Object> userInfo = response.getBody();
+        if (userInfo == null || !userInfo.containsKey("email")) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid Google token");
+        }
+        
+        String email = (String) userInfo.get("email");
+        String firstName = (String) userInfo.get("given_name");
+        String lastName = (String) userInfo.get("family_name");
+        String picture = (String) userInfo.get("picture");
+        
+        User user = userRepository.findByEmail(email).orElse(null);
+        
+        if (user == null) {
+            user = new User();
+            user.setEmail(email);
+            user.setUsername(email.split("@")[0]);
+            user.setFirstName(firstName);
+            user.setLastName(lastName);
+            user.setAvatarUrl(picture);
+            // generate random strong password
+            user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+            user.setRequirePasswordChange(true);
+            
+            Role role = roleRepository.findByName("CANDIDATE")
+                    .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Role CANDIDATE not found"));
+            user.setRole(role);
+            user = userRepository.save(user);
+        }
+        
+        if (user.getIsBlocked()) {
+            throw new AppException(ErrorCode.USER_ALREADY_REGISTERED, "User is blocked");
+        }
+        
+        if (user.getRequirePasswordChange() != null && user.getRequirePasswordChange()) {
+            String setupToken = UUID.randomUUID().toString();
+            redisTemplate.opsForValue().set("setup_pwd:" + setupToken, user.getId().toString(), Duration.ofMinutes(15));
+            
+            AuthResponse authResponse = AuthResponse.builder()
+                .needsPasswordSetup(true)
+                .setupToken(setupToken)
+                .build();
+            return new TokenPair(authResponse, null);
+        }
+        
+        UserDetails userDetails = new CustomUserDetails(user);
+        String accessToken = jwtService.generateToken(userDetails);
+        String refreshToken = refreshTokenService.createRefreshToken(user);
+
+        return new TokenPair(
+                new AuthResponse(userMapper.toResponse(user), accessToken, refreshToken), refreshToken
+        );
+    }
+
+    @Override
+    public TokenPair setupPassword(SetupPasswordRequest request) {
+        String key = "setup_pwd:" + request.getSetupToken();
+        String userIdStr = (String) redisTemplate.opsForValue().get(key);
+        
+        if (userIdStr == null) {
+            throw new AppException(ErrorCode.TOKEN_EXPIRED, "Setup token expired or invalid");
+        }
+        
+        User user = userRepository.findById(UUID.fromString(userIdStr))
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setRequirePasswordChange(false);
+        userRepository.save(user);
+        
+        redisTemplate.delete(key);
+        
+        UserDetails userDetails = new CustomUserDetails(user);
+        String accessToken = jwtService.generateToken(userDetails);
+        String refreshToken = refreshTokenService.createRefreshToken(user);
+
+        return new TokenPair(
+                new AuthResponse(userMapper.toResponse(user), accessToken, refreshToken), refreshToken
+        );
+    }
 
     @Override
     public void logout(String refreshToken) {

@@ -41,7 +41,8 @@ public class SecurityConfig {
             // Swagger
             "/swagger-ui/**",
             "/v3/api-docs/**",
-            "/api/jobs/**"
+            "/api/jobs/**",
+            "/api/files/**"
     };
 
     private final IJwtService jwtService;

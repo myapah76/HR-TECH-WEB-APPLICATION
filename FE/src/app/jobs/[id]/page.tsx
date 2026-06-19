@@ -141,7 +141,7 @@ export default function JobDetailPage() {
   ]
 
   if (loadingJob) {
-    return <Loading /``>
+    return <Loading />
   }
 
   if (error || !job) {

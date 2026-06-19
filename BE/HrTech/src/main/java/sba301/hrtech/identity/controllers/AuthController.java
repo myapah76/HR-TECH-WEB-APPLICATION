@@ -91,14 +91,52 @@ public class AuthController {
             HttpServletResponse response) {
 
         TokenPair tokenPair = authService.login(request);
-        setRefreshTokenCookie(response, tokenPair.refreshToken());
-
         AuthResponse authResponse = tokenPair.authResponse();
+        
         if ("true".equalsIgnoreCase(cookiesEnabled)) {
+            setRefreshTokenCookie(response, tokenPair.refreshToken());
             authResponse.setRefreshToken(null);
         }
 
         return ResponseEntity.ok(ApiResponse.success(authResponse, "Login successfully"));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<ApiResponse<AuthResponse>> googleLogin(
+            @Valid @RequestBody GoogleLoginRequest request,
+            @RequestHeader(value = "X-Cookies-Enabled", defaultValue = "true") String cookiesEnabled,
+            HttpServletResponse response) {
+
+        TokenPair tokenPair = authService.googleLogin(request);
+        AuthResponse authResponse = tokenPair.authResponse();
+
+        if (authResponse.getNeedsPasswordSetup() != null && authResponse.getNeedsPasswordSetup()) {
+            return ResponseEntity.ok(ApiResponse.success(authResponse, "Password setup required"));
+        }
+
+        if ("true".equalsIgnoreCase(cookiesEnabled)) {
+            setRefreshTokenCookie(response, tokenPair.refreshToken());
+            authResponse.setRefreshToken(null);
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(authResponse, "Google login successfully"));
+    }
+
+    @PostMapping("/setup-password")
+    public ResponseEntity<ApiResponse<AuthResponse>> setupPassword(
+            @Valid @RequestBody SetupPasswordRequest request,
+            @RequestHeader(value = "X-Cookies-Enabled", defaultValue = "true") String cookiesEnabled,
+            HttpServletResponse response) {
+
+        TokenPair tokenPair = authService.setupPassword(request);
+        AuthResponse authResponse = tokenPair.authResponse();
+
+        if ("true".equalsIgnoreCase(cookiesEnabled)) {
+            setRefreshTokenCookie(response, tokenPair.refreshToken());
+            authResponse.setRefreshToken(null);
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(authResponse, "Password setup successfully"));
     }
 
     @PostMapping("/refresh")
@@ -114,10 +152,10 @@ public class AuthController {
         }
 
         TokenPair tokenPair = authService.refresh(refreshToken);
-        setRefreshTokenCookie(response, tokenPair.refreshToken());
-
         AuthResponse authResponse = tokenPair.authResponse();
+
         if ("true".equalsIgnoreCase(cookiesEnabled)) {
+            setRefreshTokenCookie(response, tokenPair.refreshToken());
             authResponse.setRefreshToken(null);
         }
 

@@ -15,6 +15,8 @@ public interface IAuthService {
     void changePassword(ChangePasswordRequest request);
     ConfirmOtpResult confirmOtp(ConfirmOtpRequest request) throws RoleNotFoundException;
     TokenPair login(LoginRequest request);
+    TokenPair googleLogin(GoogleLoginRequest request);
+    TokenPair setupPassword(SetupPasswordRequest request);
     TokenPair refresh(String request);
     void logout(String refreshToken);
 }

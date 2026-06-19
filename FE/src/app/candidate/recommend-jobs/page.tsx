@@ -48,6 +48,12 @@ export default function RecommendJobsPage() {
   )
 
   useEffect(() => {
+    if (polledStatus) {
+      setTaskStatus(polledStatus)
+    }
+  }, [polledStatus])
+
+  useEffect(() => {
     if (cvs.length > 0 && !selectedCvId) {
       setSelectedCvId(cvs.find((c) => c.isPrimary)?.id || cvs[0].id)
     } else if (cvs.length === 0 && !loadingCvs) {

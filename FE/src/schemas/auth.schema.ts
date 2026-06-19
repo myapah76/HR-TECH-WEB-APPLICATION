@@ -64,6 +64,7 @@ export const companyRegisterSchema = z
     size: z.string().optional(),
     address: z.string().optional(),
     taxCode: z.string().min(1, 'Mã số thuế không được để trống'),
+    logoUrl: z.string().optional(),
     acceptTerms: z.boolean().refine((value) => value === true, {
       message: 'Bạn phải đồng ý với Điều khoản sử dụng',
     }),
