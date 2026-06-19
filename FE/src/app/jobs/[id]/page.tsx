@@ -21,7 +21,6 @@ import {
   Send,
   Loader2,
 } from 'lucide-react'
-<<<<<<< HEAD
 import {
   useGetJobById,
   useGetJobs,
@@ -29,75 +28,15 @@ import {
   useSaveJob,
   useUnsaveJob,
 } from '@/src/hooks/job/job.hooks'
-import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
-=======
-import { useGetJobById, useGetJobs } from '@/src/hooks/job/job.hooks'
->>>>>>> 411fa835c0440dfe2e003a164bb328ae2a713fdb
+import { useGetAllCvs } from '@/src/hooks/cv/cv.hooks'
+import {
+  useGetMyApplications,
+  useSubmitApplication,
+} from '@/src/hooks/application/application.hooks'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/src/stores/auth.store'
-import { getAllCvs } from '@/src/services/cv.service'
-import { submitApplication, getMyApplications } from '@/src/services/application.service'
-
-/** Generates a deterministic gradient from a company name */
-function getAvatarGradient(name: string): string {
-  const gradients = [
-    'from-blue-500 to-indigo-600',
-    'from-violet-500 to-purple-600',
-    'from-rose-500 to-pink-600',
-    'from-amber-500 to-orange-600',
-    'from-teal-500 to-cyan-600',
-    'from-emerald-500 to-green-600',
-    'from-sky-500 to-blue-600',
-    'from-fuchsia-500 to-violet-600',
-  ]
-  const index = (name?.charCodeAt(0) ?? 0) % gradients.length
-  return gradients[index]
-}
-
-interface CompanyLogoProps {
-  url?: string | null
-  name: string
-  sizeClassName?: string
-  textClassName?: string
-}
-
-function CompanyLogo({
-  url,
-  name,
-  sizeClassName = 'w-16 h-16 rounded-2xl',
-  textClassName = 'text-2xl',
-}: CompanyLogoProps) {
-  const [imgError, setImgError] = useState(false)
-  const initial = name?.charAt(0)?.toUpperCase() ?? '?'
-  const gradient = getAvatarGradient(name)
-
-  const showFallback = !url || imgError
-
-  return (
-    <div
-      className={`relative shrink-0 ${sizeClassName} overflow-hidden shadow-inner border border-slate-100 bg-white flex items-center justify-center`}
-    >
-      {showFallback ? (
-        <div
-          className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}
-        >
-          <span
-            className={`text-white font-black ${textClassName} tracking-tight select-none drop-shadow`}
-          >
-            {initial}
-          </span>
-        </div>
-      ) : (
-        <img
-          src={url!}
-          alt={name}
-          onError={() => setImgError(true)}
-          className="w-full h-full object-contain p-2"
-        />
-      )}
-    </div>
-  )
-}
+import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
+import Loading from '@/src/app/loading'
 
 export default function JobDetailPage() {
   const params = useParams()
@@ -113,55 +52,28 @@ export default function JobDetailPage() {
 
   const { user } = useAuthStore()
 
-<<<<<<< HEAD
-  const { data: savedJobs = [] } = useGetSavedJobs(!!user)
-=======
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
   const [selectedCvId, setSelectedCvId] = useState('')
   const [coverLetter, setCoverLetter] = useState('')
 
-  const { data: savedJobs = [] } = useQuery({
-    queryKey: ['savedJobs'],
-    queryFn: () => getSavedJobs(),
-    enabled: !!user,
-  })
->>>>>>> 411fa835c0440dfe2e003a164bb328ae2a713fdb
+  const { data: savedJobs = [] } = useGetSavedJobs(!!user)
 
-  const { data: cvs = [], isLoading: loadingCvs } = useQuery({
-    queryKey: ['cvs'],
-    queryFn: () => getAllCvs(),
-    enabled: isApplyModalOpen && !!user,
-  })
+  const { data: cvs = [], isLoading: loadingCvs } = useGetAllCvs(isApplyModalOpen && !!user)
 
-  const { data: appliedJobs = [] } = useQuery({
-    queryKey: ['appliedJobs'],
-    queryFn: () => getMyApplications(),
-    enabled: !!user,
-  })
+  const { data: appliedJobs = [] } = useGetMyApplications(!!user)
 
   const isSaved = savedJobs.some((j) => j.id === jobId)
   const hasApplied = appliedJobs.some((app) => app.jobId === jobId)
 
   // Pre-select primary CV at render time
   const primaryCv = cvs.find((c) => c.isPrimary)
-  const defaultCvId = primaryCv ? primaryCv.id : (cvs[0]?.id || '')
+  const defaultCvId = primaryCv ? primaryCv.id : cvs[0]?.id || ''
   const activeCvId = selectedCvId || defaultCvId
 
   const saveMutation = useSaveJob()
   const unsaveMutation = useUnsaveJob()
 
-  const applyMutation = useMutation({
-    mutationFn: submitApplication,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appliedJobs'] })
-      toast.success('Nộp đơn ứng tuyển thành công!')
-      setIsApplyModalOpen(false)
-      setCoverLetter('')
-    },
-    onError: () => {
-      toast.error('Có lỗi xảy ra khi nộp đơn ứng tuyển')
-    },
-  })
+  const applyMutation = useSubmitApplication()
 
   const handleSaveToggle = () => {
     if (!user) {
@@ -195,11 +107,23 @@ export default function JobDetailPage() {
       toast.error('Vui lòng chọn CV để ứng tuyển')
       return
     }
-    applyMutation.mutate({
-      jobId,
-      cvId: activeCvId,
-      coverLetter,
-    })
+    applyMutation.mutate(
+      {
+        jobId,
+        cvId: activeCvId,
+        coverLetter,
+      },
+      {
+        onSuccess: () => {
+          toast.success('Nộp đơn ứng tuyển thành công!')
+          setIsApplyModalOpen(false)
+          setCoverLetter('')
+        },
+        onError: () => {
+          toast.error('Có lỗi xảy ra khi nộp đơn ứng tuyển')
+        },
+      }
+    )
   }
 
   const handleShare = () => {
@@ -217,17 +141,7 @@ export default function JobDetailPage() {
   ]
 
   if (loadingJob) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center space-y-4">
-        <div className="relative w-12 h-12">
-          <div className="absolute inset-0 rounded-full border-4 border-blue-100 animate-pulse"></div>
-          <div className="absolute inset-0 rounded-full border-4 border-t-blue-600 animate-spin"></div>
-        </div>
-        <p className="text-sm font-bold text-slate-550 animate-pulse">
-          Đang tải chi tiết công việc...
-        </p>
-      </div>
-    )
+    return <Loading /``>
   }
 
   if (error || !job) {
@@ -288,15 +202,10 @@ export default function JobDetailPage() {
             {/* Job Header Card */}
             <div className="bg-white rounded-3xl border border-slate-200/60 p-6 sm:p-8 shadow-[0_5px_25px_rgba(0,0,0,0.015)] relative overflow-hidden group">
               {/* Decorative gradient border on top */}
-              <div className="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500" />
+              <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-blue-500 via-indigo-500 to-violet-500" />
 
               <div className="flex flex-col sm:flex-row items-start gap-5">
-                <CompanyLogo
-                  url={job.companyLogoUrl}
-                  name={job.companyName}
-                  sizeClassName="w-16 h-16 rounded-2xl"
-                  textClassName="text-2xl"
-                />
+                <CompanyLogo url={job.companyLogoUrl} name={job.companyName} />
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs font-black px-2.5 py-0.75 bg-slate-100 text-slate-600 rounded-lg uppercase tracking-wide">
@@ -365,7 +274,7 @@ export default function JobDetailPage() {
                     setIsApplyModalOpen(true)
                   }}
                   disabled={job.status !== 'APPROVED' && job.status !== 'OPEN'}
-                  className={`flex-1 min-w-[200px] font-black text-sm py-4 rounded-2xl transition-all duration-300 shadow-md active:scale-98 cursor-pointer uppercase tracking-wider flex items-center justify-center gap-2 ${
+                  className={`flex-1 min-w-50 font-black text-sm py-4 rounded-2xl transition-all duration-300 shadow-md active:scale-98 cursor-pointer uppercase tracking-wider flex items-center justify-center gap-2 ${
                     hasApplied
                       ? 'bg-slate-100 border border-slate-200 text-slate-400 hover:scale-100 hover:shadow-md'
                       : 'bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] hover:-translate-y-0.5 text-white shadow-blue-600/10 hover:shadow-lg hover:shadow-blue-600/20'
@@ -498,12 +407,7 @@ export default function JobDetailPage() {
             {/* Company Info Widget */}
             <div className="bg-white rounded-3xl border border-slate-200/60 p-6 shadow-[0_5px_25px_rgba(0,0,0,0.015)] space-y-4">
               <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
-                <CompanyLogo
-                  url={job.companyLogoUrl}
-                  name={job.companyName}
-                  sizeClassName="w-12 h-12 rounded-xl"
-                  textClassName="text-lg"
-                />
+                <CompanyLogo url={job.companyLogoUrl} name={job.companyName} />
                 <div>
                   <h3 className="font-extrabold text-slate-850 text-sm leading-snug">
                     {job.companyName}
@@ -545,12 +449,7 @@ export default function JobDetailPage() {
                       className="block p-3.5 rounded-2xl border border-slate-100 hover:border-blue-500/20 hover:bg-slate-50/50 transition-all duration-300 group"
                     >
                       <div className="flex items-center gap-3">
-                        <CompanyLogo
-                          url={rj.companyLogoUrl}
-                          name={rj.companyName}
-                          sizeClassName="w-10 h-10 rounded-xl"
-                          textClassName="text-sm"
-                        />
+                        <CompanyLogo url={rj.companyLogoUrl} name={rj.companyName} />
                         <div className="min-w-0 flex-1">
                           <h4 className="text-xs font-extrabold text-slate-800 group-hover:text-blue-600 transition-colors line-clamp-1">
                             {rj.title}
@@ -620,7 +519,9 @@ export default function JobDetailPage() {
             ) : (
               <form onSubmit={handleApplySubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Chọn CV ứng tuyển</label>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">
+                    Chọn CV ứng tuyển
+                  </label>
                   <select
                     className="w-full h-11 border border-slate-200 bg-white rounded-xl px-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-xs"
                     value={activeCvId}
@@ -635,7 +536,9 @@ export default function JobDetailPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Thư giới thiệu (Không bắt buộc)</label>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">
+                    Thư giới thiệu (Không bắt buộc)
+                  </label>
                   <textarea
                     className="w-full border border-slate-200 rounded-xl p-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs resize-none"
                     placeholder="Viết một đoạn ngắn giới thiệu bản thân hoặc lý do bạn phù hợp với công việc..."

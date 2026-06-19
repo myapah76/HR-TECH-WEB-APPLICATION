@@ -8,10 +8,11 @@ import {
   updateCvTitle,
 } from '@/src/services/cv.service'
 
-export const useGetAllCvs = () => {
+export const useGetAllCvs = (enabled = true) => {
   return useQuery({
     queryKey: ['cvs'],
     queryFn: getAllCvs,
+    enabled,
   })
 }
 

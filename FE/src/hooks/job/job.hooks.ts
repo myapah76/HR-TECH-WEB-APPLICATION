@@ -8,19 +8,19 @@ export const useGetJobs = (page: number, size: number) => {
   })
 }
 
-export const useGetJobById = (id: string, enabled = true) => {
+export const useGetJobById = (id: string) => {
   return useQuery({
     queryKey: ['job', id],
     queryFn: () => getJobById(id),
-    enabled: enabled && !!id,
+    enabled: !!id,
   })
 }
 
-export const useGetSavedJobs = (enabled = true) => {
+export const useGetSavedJobs = (enable = true) => {
   return useQuery({
     queryKey: ['savedJobs'],
     queryFn: () => getSavedJobs(),
-    enabled,
+    enabled: enable,
   })
 }
 
@@ -43,5 +43,3 @@ export const useUnsaveJob = () => {
     },
   })
 }
-
-
