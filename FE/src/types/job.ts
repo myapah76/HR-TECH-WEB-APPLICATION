@@ -40,4 +40,23 @@ export interface Job {
   updatedAt: string;
 }
 
-export type JobResponse = Job;
+export type JobResponse = Job;
+
+export interface JobSkillRequest {
+  skillNeo4jId: string;
+  requiredLevel?: string;
+}
+
+export interface CreateJobRequest {
+  companyId: string;
+  title: string;
+  description?: string;
+  location?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  jobType?: string;
+  experienceLevel?: string;
+  deadline?: string;
+  requirements?: string;
+  skills?: JobSkillRequest[];
+}

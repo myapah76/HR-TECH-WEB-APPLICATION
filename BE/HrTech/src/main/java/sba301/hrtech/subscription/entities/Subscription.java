@@ -37,6 +37,12 @@ public class Subscription extends SoftDeleteEntity {
     @Enumerated(EnumType.STRING)
     private SubscriptionStatus status;
 
+    @Column(name = "remaining_ai_credits")
+    private Integer remainingAiCredits = 0;
+
+    @Column(name = "remaining_job_posts")
+    private Integer remainingJobPosts = 0;
+
     @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Payment> payments;
 

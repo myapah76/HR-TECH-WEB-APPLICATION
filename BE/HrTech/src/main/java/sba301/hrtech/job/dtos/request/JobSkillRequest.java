@@ -7,6 +7,5 @@ public record JobSkillRequest(
         @NotBlank(message = "Skill Neo4j ID is required")
         String skillNeo4jId,
 
-        @NotNull(message = "Required level is required")
         String requiredLevel
 ) {}
