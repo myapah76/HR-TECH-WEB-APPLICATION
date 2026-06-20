@@ -65,7 +65,10 @@ public class JobMatchingService {
 
             updateTaskStatus(taskId, "SCORING", "Đang chấm điểm Graph Score với hệ thống công việc...", 80);
             
-            var recommendations = recommendationService.recommendJobsForCv(cvId, 20);
+            var recommendations = recommendationService.recommendJobsForCv(cvId, 20)
+                .stream()
+                .filter(rec -> rec.getMatchScore() > 0.0)
+                .toList();
 
             JobMatchingTaskResponse finalState = tasks.get(taskId);
             finalState.setStatus("DONE");

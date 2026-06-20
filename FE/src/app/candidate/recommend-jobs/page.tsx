@@ -31,22 +31,72 @@ export default function RecommendJobsPage() {
   const startJobMatchingMutation = useStartJobMatching()
 
   // Input states
-  const [cvMode, setCvMode] = useState<'existing' | 'new'>('existing')
-  const [selectedCvId, setSelectedCvId] = useState<string>('')
+  const [cvMode, setCvMode] = useState<'existing' | 'new'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('rec_cvMode')
+      if (saved === 'existing' || saved === 'new') return saved
+    }
+    return 'existing'
+  })
+  const [selectedCvId, setSelectedCvId] = useState<string>(() => {
+    if (typeof window !== 'undefined') return sessionStorage.getItem('rec_selectedCvId') || ''
+    return ''
+  })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [cvTitle, setCvTitle] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Process states
   const [isStarting, setIsStarting] = useState(false)
-  const [taskId, setTaskId] = useState<string | null>(null)
+  const [taskId, setTaskId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') return sessionStorage.getItem('rec_taskId')
+    return null
+  })
 
   const { data: polledStatus } = useGetJobMatchingStatus(taskId, !!taskId)
 
-  const [taskStatus, setTaskStatus] = useState<JobMatchingTaskResponse | null>(
-    polledStatus ? polledStatus : null
-  )
+  const [taskStatus, setTaskStatus] = useState<JobMatchingTaskResponse | null>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('rec_taskStatus')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch (e) {
+          return null
+        }
+      }
+    }
+    return null
+  })
 
+  // Persist states
+  useEffect(() => {
+    sessionStorage.setItem('rec_cvMode', cvMode)
+  }, [cvMode])
+
+  useEffect(() => {
+    if (selectedCvId) {
+      sessionStorage.setItem('rec_selectedCvId', selectedCvId)
+    }
+  }, [selectedCvId])
+
+  useEffect(() => {
+    if (taskId) {
+      sessionStorage.setItem('rec_taskId', taskId)
+    } else {
+      sessionStorage.removeItem('rec_taskId')
+    }
+  }, [taskId])
+
+  useEffect(() => {
+    if (taskStatus) {
+      sessionStorage.setItem('rec_taskStatus', JSON.stringify(taskStatus))
+    } else {
+      sessionStorage.removeItem('rec_taskStatus')
+    }
+  }, [taskStatus])
+
+  // Update status from polling
   useEffect(() => {
     if (polledStatus) {
       setTaskStatus(polledStatus)

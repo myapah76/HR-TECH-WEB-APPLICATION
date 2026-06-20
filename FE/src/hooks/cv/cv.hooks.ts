@@ -13,6 +13,11 @@ export const useGetAllCvs = (enabled = true) => {
     queryKey: ['cvs'],
     queryFn: getAllCvs,
     enabled,
+    refetchInterval: (query) => {
+      const cvs = query.state?.data || []
+      const hasPending = cvs.some(cv => cv.extractionStatus === 'PENDING' || cv.extractionStatus === 'PROCESSING')
+      return hasPending ? 3000 : false
+    }
   })
 }
 
