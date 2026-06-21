@@ -27,6 +27,8 @@ import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.services.AiServiceClient;
 
+import sba301.hrtech.subscription.abstractions.services.ICreditService;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -44,6 +46,7 @@ public class ChatServiceImpl implements IChatService {
     private final AuthUtils authUtils;
     private final AiServiceClient aiServiceClient;
     private final ObjectMapper objectMapper;
+    private final ICreditService creditService;
 
     @Override
     @Transactional
@@ -100,6 +103,10 @@ public class ChatServiceImpl implements IChatService {
     @Transactional
     public ChatMessageResponse sendMessage(UUID sessionId, SendChatMessageRequest request) {
         ChatSession session = getSessionAndVerifyOwnership(sessionId);
+        User currentUser = authUtils.getCurrentUser();
+
+        // 0. Deduct 5 AI Credits
+        creditService.deductAiCredit(currentUser.getId(), 5);
 
         // 1. Lưu tin nhắn của User
         ChatMessage userMessage = ChatMessage.builder()

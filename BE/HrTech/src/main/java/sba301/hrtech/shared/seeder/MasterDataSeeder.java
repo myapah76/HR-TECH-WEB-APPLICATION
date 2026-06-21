@@ -20,7 +20,9 @@ import sba301.hrtech.job.dtos.response.JobResponse;
 import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
 import sba301.hrtech.skill.entities.SkillNode;
 
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.*;
 
 @Component
@@ -160,11 +162,11 @@ public class MasterDataSeeder implements CommandLineRunner {
                 title,
                 "Looking for a highly skilled " + title,
                 "Ho Chi Minh City",
-                java.math.BigDecimal.valueOf(1000),
-                java.math.BigDecimal.valueOf(3000),
+                BigDecimal.valueOf(1000),
+                BigDecimal.valueOf(3000),
                 "FULL_TIME",
-                "MID",
-                java.time.LocalDate.now().plusDays(30),
+                "MIDDLE",
+                LocalDate.now().plusDays(30),
                 "Must have experience with: " + skills,
                 skillRequests
         );

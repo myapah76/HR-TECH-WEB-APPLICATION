@@ -29,6 +29,8 @@ import sba301.hrtech.shared.enums.ExtractionStatus;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
 
+import sba301.hrtech.subscription.abstractions.services.ICreditService;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -44,6 +46,7 @@ public class JobServiceImpl implements IJobService {
     private final ISkillExtractionService skillExtractionService;
     private final JobMapper jobMapper;
     private final JobValidator jobValidator;
+    private final ICreditService creditService;
 
     @Override
     @Transactional
@@ -51,6 +54,9 @@ public class JobServiceImpl implements IJobService {
         User currentUser = jobValidator.getCurrentUser();
         Company company = jobValidator.validateCompanyApproved(request.companyId());
         jobValidator.validateCanPostJob(currentUser, company.getId());
+
+        // Deduct 1 Job Post Quota from the user's active subscription
+        creditService.deductJobQuota(currentUser.getId(), 1);
 
         Job job = Job.builder()
                 .company(company)

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/src/components/ui/card'
 import { Button } from '@/src/components/ui/button'
 import { Input } from '@/src/components/ui/input'
@@ -39,9 +39,44 @@ export default function CandidateCvPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Matching state
-  const [selectedCvId, setSelectedCvId] = useState<string>('')
-  const [selectedJobId, setSelectedJobId] = useState<string>('')
-  const [matchScore, setMatchScore] = useState<SkillMatchScoreResponse | null>(null)
+  const [selectedCvId, setSelectedCvId] = useState<string>(() => {
+    if (typeof window !== 'undefined') return sessionStorage.getItem('match_selectedCvId') || ''
+    return ''
+  })
+  const [selectedJobId, setSelectedJobId] = useState<string>(() => {
+    if (typeof window !== 'undefined') return sessionStorage.getItem('match_selectedJobId') || ''
+    return ''
+  })
+  const [matchScore, setMatchScore] = useState<SkillMatchScoreResponse | null>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('match_matchScore')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch (e) {
+          return null
+        }
+      }
+    }
+    return null
+  })
+
+  // Persist matching state
+  useEffect(() => {
+    sessionStorage.setItem('match_selectedCvId', selectedCvId)
+  }, [selectedCvId])
+
+  useEffect(() => {
+    sessionStorage.setItem('match_selectedJobId', selectedJobId)
+  }, [selectedJobId])
+
+  useEffect(() => {
+    if (matchScore) {
+      sessionStorage.setItem('match_matchScore', JSON.stringify(matchScore))
+    } else {
+      sessionStorage.removeItem('match_matchScore')
+    }
+  }, [matchScore])
 
   // Edit & View state
   const [editingCvId, setEditingCvId] = useState<string | null>(null)
@@ -67,6 +102,7 @@ export default function CandidateCvPage() {
           setSelectedFile(null)
           setCvTitle('')
           if (fileInputRef.current) fileInputRef.current.value = ''
+          toast.success('Tải CV lên thành công! Hệ thống đang phân tích kỹ năng, vui lòng đợi trong giây lát.', { duration: 5000 })
         },
         onError: (error) => {
           toast.error(getErrorMessage(error))
@@ -211,12 +247,18 @@ export default function CandidateCvPage() {
                     value={selectedCvId}
                     onChange={(e) => setSelectedCvId(e.target.value)}
                   >
-                    <option value="">-- Chọn CV --</option>
-                    {cvs.map((cv) => (
-                      <option key={cv.id} value={cv.id}>
-                        {cv.title}
-                      </option>
-                    ))}
+                    {cvs.filter(cv => cv.extractionStatus === 'COMPLETED').length === 0 ? (
+                      <option value="" disabled>-- Chưa có CV nào được phân tích xong --</option>
+                    ) : (
+                      <>
+                        <option value="">-- Chọn CV --</option>
+                        {cvs.filter(cv => cv.extractionStatus === 'COMPLETED').map((cv) => (
+                          <option key={cv.id} value={cv.id}>
+                            {cv.title}
+                          </option>
+                        ))}
+                      </>
+                    )}
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -359,9 +401,9 @@ export default function CandidateCvPage() {
                 {cvs.map((cv) => (
                   <div
                     key={cv.id}
-                    className="p-5 hover:bg-slate-50/80 transition-colors flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center"
+                    className="p-5 hover:bg-slate-50/80 transition-colors flex flex-col gap-3"
                   >
-                    <div className="space-y-1 flex-1">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                       <div className="flex items-center gap-3">
                         {editingCvId === cv.id ? (
                           <Input
@@ -376,7 +418,7 @@ export default function CandidateCvPage() {
                           />
                         ) : (
                           <h3
-                            className="font-bold text-slate-800 text-lg cursor-pointer hover:text-blue-600 transition-colors border-b border-dashed border-slate-300"
+                            className="font-bold text-slate-800 text-lg cursor-pointer hover:text-blue-600 transition-colors border-b border-dashed border-slate-300 truncate max-w-[100px] sm:max-w-[120px] md:max-w-[150px] lg:max-w-[180px] xl:max-w-[250px]"
                             onClick={() => {
                               setEditingCvId(cv.id)
                               setEditTitle(cv.title)
@@ -389,42 +431,56 @@ export default function CandidateCvPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 text-slate-400 hover:text-blue-600 px-2 py-0"
+                          className="h-8 text-slate-500 hover:text-blue-600 px-3 py-0 flex items-center shrink-0"
                           onClick={() => handleViewCv(cv.id)}
                         >
-                          <FileSearch className="w-4 h-4 mr-1" /> Xem Nội Dung
+                          <FileSearch className="w-4 h-4 mr-1.5" /> Xem Nội Dung
                         </Button>
                         {cv.isPrimary && (
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase tracking-wider">
+                          <span className="shrink-0 h-8 px-3 flex items-center justify-center bg-blue-100 text-blue-700 text-xs font-bold rounded-md uppercase tracking-wider">
                             Mặc định
                           </span>
                         )}
+                        {cv.extractionStatus === 'PENDING' || cv.extractionStatus === 'PROCESSING' ? (
+                          <span className="shrink-0 h-8 px-3 flex items-center justify-center gap-1.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-md uppercase tracking-wider">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Đang phân tích
+                          </span>
+                        ) : cv.extractionStatus === 'COMPLETED' ? (
+                          <span className="shrink-0 h-8 px-3 flex items-center justify-center bg-emerald-100 text-emerald-700 text-xs font-bold rounded-md uppercase tracking-wider">
+                            Đã phân tích
+                          </span>
+                        ) : (
+                          <span className="shrink-0 h-8 px-3 flex items-center justify-center bg-rose-100 text-rose-700 text-xs font-bold rounded-md uppercase tracking-wider">
+                            Lỗi phân tích
+                          </span>
+                        )}
                       </div>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Tải lên: {new Date(cv.createdAt).toLocaleDateString('vi-VN')} lúc{' '}
-                        {new Date(cv.createdAt).toLocaleTimeString('vi-VN')}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                      {!cv.isPrimary && (
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {!cv.isPrimary && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSetPrimary(cv.id)}
+                            className="h-8 text-blue-600 border-blue-200 hover:bg-blue-50 flex-1 sm:flex-none px-3"
+                          >
+                            ĐẶT MẶC ĐỊNH
+                          </Button>
+                        )}
                         <Button
-                          variant="outline"
+                          variant="destructive"
                           size="sm"
-                          onClick={() => handleSetPrimary(cv.id)}
-                          className="text-blue-600 border-blue-200 hover:bg-blue-50 flex-1 sm:flex-none"
+                          onClick={() => handleDelete(cv.id)}
+                          className="h-8 bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-100 hover:text-rose-700 flex-1 sm:flex-none shadow-none px-3"
                         >
-                          ĐẶT MẶC ĐỊNH
+                          XÓA
                         </Button>
-                      )}
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(cv.id)}
-                        className="bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-100 hover:text-rose-700 flex-1 sm:flex-none shadow-none"
-                      >
-                        XÓA
-                      </Button>
+                      </div>
                     </div>
+                    <p className="text-xs text-slate-500">
+                      Tải lên: {new Date(cv.createdAt).toLocaleDateString('vi-VN')} lúc{' '}
+                      {new Date(cv.createdAt).toLocaleTimeString('vi-VN')}
+                    </p>
                   </div>
                 ))}
               </div>

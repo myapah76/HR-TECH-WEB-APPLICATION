@@ -16,6 +16,7 @@ import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionPlanService;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionService;
+import sba301.hrtech.subscription.entities.PlanFeature;
 import sba301.hrtech.subscription.entities.Subscription;
 import sba301.hrtech.subscription.entities.SubscriptionPlan;
 import sba301.hrtech.subscription.entities.enums.SubscriptionStatus;
@@ -105,6 +106,28 @@ public class PaymentServiceImpl implements IPaymentService {
                     startDate.plusDays(
                             subscription.getPlan()
                                     .getDurationDays()));
+
+            // Set quotas based on PlanFeatures
+            int aiCredits = 0;
+            int jobPosts = 0;
+            if (subscription.getPlan().getPlanFeatures() != null) {
+                for (PlanFeature pf : subscription.getPlan().getPlanFeatures()) {
+                    if (pf.getFeature() != null && pf.getFeature().getCode() != null) {
+                        String code = pf.getFeature().getCode();
+                        if ("AI_CREDITS".equals(code) || "AI_CHATBOT".equals(code) || "AI_MATCH_SCORING".equals(code)) {
+                            // Some plans might use different feature codes for AI, but they give a shared pool of AI Credits
+                            // Assuming AI_CREDITS is the main feature code for the quota
+                            aiCredits += pf.getQuota() != null ? pf.getQuota() : 0;
+                        }
+                        if ("JOB_POSTING".equals(code)) {
+                            jobPosts += pf.getQuota() != null ? pf.getQuota() : 0;
+                        }
+                    }
+                }
+            }
+            subscription.setRemainingAiCredits(aiCredits);
+            subscription.setRemainingJobPosts(jobPosts);
+
             paymentRepository.save(payment);
         } catch (Exception e) {
             throw new AppException(

@@ -103,6 +103,7 @@ function PricingContent() {
     const isPopular =
       pkg.name.toLowerCase().includes('premium') ||
       pkg.name.toLowerCase().includes('chuyên nghiệp') ||
+      pkg.name.toLowerCase().includes('cao cấp') ||
       pkg.name.toLowerCase().includes('pro')
     const buttonText = pkg.price === 0 ? 'Sử dụng miễn phí' : 'Nâng cấp ngay'
 

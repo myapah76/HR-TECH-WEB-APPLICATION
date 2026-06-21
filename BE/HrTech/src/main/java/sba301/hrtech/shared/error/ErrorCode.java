@@ -70,6 +70,7 @@ public enum ErrorCode {
 
     // Subscription
     SUBSCRIPTION_PLAN_NOT_FOUND(HttpStatus.NOT_FOUND, "Subscription plan not found"),
+    INSUFFICIENT_QUOTA(HttpStatus.PAYMENT_REQUIRED, "Insufficient quota for this operation"),
 
     // Payment
     HAS_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Payment error occurred"),
