@@ -9,7 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.cv.abstractions.repositories.CvRepository;
-import sba301.hrtech.cv.abstractions.services.CvService;
+import sba301.hrtech.cv.abstractions.services.ICvService;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.shared.enums.ExtractionStatus;
 import sba301.hrtech.shared.error.ErrorCode;
@@ -29,7 +29,7 @@ import java.util.UUID;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class CvServiceImpl implements CvService {
+public class ICvServiceImpl implements ICvService {
 
     private final CvRepository cvRepository;
     private final UserRepository userRepository;
@@ -201,5 +201,11 @@ public class CvServiceImpl implements CvService {
                         cvRepository.save(newPrimary);
                     });
         }
+    }
+
+    @Override
+    public Cv getCvEntityById(UUID cvId) {
+        return cvRepository.findById(cvId)
+                .orElseThrow(() -> new AppException(ErrorCode.CV_NOT_FOUND));
     }
 }

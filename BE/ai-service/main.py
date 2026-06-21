@@ -1,7 +1,18 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from models import EmbedRequest, EmbedResponse, ExtractedSkill, JobExtractionRequest, JobExtractionResponse, ParseExtractRequest, ParseExtractResponse, MapRelationshipsRequest, MapRelationshipsResponse, SkillRelationship
-from services import extract_skills, extract_job_skills, download_and_extract_pdf_text
+from models import (
+    EmbedRequest, EmbedResponse, ExtractedSkill, 
+    JobExtractionRequest, JobExtractionResponse, 
+    ParseExtractRequest, ParseExtractResponse, 
+    MapRelationshipsRequest, MapRelationshipsResponse, 
+    SkillRelationship,
+    GenerateQuestionsRequest, InterviewQAItem, EvaluateSessionRequest,
+    EvaluateSessionResponse, DetailedFeedbackItem
+)
+from services import (
+    extract_skills, extract_job_skills, download_and_extract_pdf_text,
+    generate_interview_questions, evaluate_interview_session
+)
 from sqlalchemy import text
 from rag.database import Base, engine
 from rag.router import router as rag_router
@@ -84,6 +95,35 @@ def api_map_relationships(req: MapRelationshipsRequest):
                 parsed_rels.append(SkillRelationship(new_skill=r["new_skill"], relations=relations_details))
                 
         return MapRelationshipsResponse(relationships=parsed_rels)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ai/generate-questions", response_model=list[str])
+def api_generate_questions(req: GenerateQuestionsRequest):
+    try:
+        questions = generate_interview_questions(
+            cv_text=req.cv_text,
+            jd_text=req.jd_text,
+            target_role=req.target_role,
+            num_questions=req.num_questions
+        )
+        return questions
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ai/evaluate-session", response_model=EvaluateSessionResponse)
+def api_evaluate_interview_session(req: EvaluateSessionRequest):
+    try:
+        evaluation = evaluate_interview_session(
+            cv_text=req.cv_text,
+            jd_text=req.jd_text,
+            history=[h.model_dump() for h in req.history]
+        )
+        return evaluation
     except Exception as e:
         import traceback
         traceback.print_exc()

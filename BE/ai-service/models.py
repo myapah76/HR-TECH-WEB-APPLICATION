@@ -42,3 +42,36 @@ class SkillRelationship(BaseModel):
 
 class MapRelationshipsResponse(BaseModel):
     relationships: List[SkillRelationship]
+
+# --- Mock Interview ---
+class GenerateQuestionsRequest(BaseModel):
+    cv_text: str = ""
+    jd_text: str = ""
+    target_role: str
+    num_questions: int = 5
+
+class InterviewQAItem(BaseModel):
+    question: str
+    answer: str
+
+class EvaluateSessionRequest(BaseModel):
+    cv_text: str = ""
+    jd_text: str = ""
+    history: List[InterviewQAItem]
+
+class DetailedFeedbackItem(BaseModel):
+    question: str
+    answer: str
+    score: float
+    feedback: str
+    modelAnswer: str
+
+class EvaluateSessionResponse(BaseModel):
+    overallScore: float
+    technicalScore: float
+    communicationScore: float
+    softSkillsScore: float
+    strengths: List[str]
+    weaknesses: List[str]
+    generalFeedback: str
+    detailedFeedback: List[DetailedFeedbackItem]

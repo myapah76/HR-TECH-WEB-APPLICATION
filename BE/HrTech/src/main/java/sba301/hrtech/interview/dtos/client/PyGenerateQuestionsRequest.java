@@ -1,0 +1,14 @@
+package sba301.hrtech.interview.dtos.client;
+
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+
+@Builder
+@Getter
+@Setter
+public class PyGenerateQuestionsRequest {
+    private String cv_text;
+    private String jd_text;
+    private String target_role;
+}

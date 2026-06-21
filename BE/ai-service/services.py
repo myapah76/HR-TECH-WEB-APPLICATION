@@ -252,3 +252,119 @@ def map_relationships_with_full_db(new_skills: list[str], db_skills: list[str]) 
     except Exception as e:
         print(f"Error parsing Gemini relationship response: {e}")
         return []
+
+
+INTERVIEW_QUESTIONS_PROMPT = PromptTemplate.from_template("""
+You are an expert IT Technical Recruiter.
+Generate a list of {num_questions} interview questions in Vietnamese for a candidate applying for the position of '{target_role}'.
+
+Inputs:
+- Candidate CV Text: {cv_text}
+- Job Description (JD): {jd_text}
+
+Rules for Question Generation:
+1. The questions must test both Technical Skills (core concepts, architectural design) and Behavioral/Soft Skills.
+2. Align the difficulty with the candidate's experience level from CV, and requirements from JD.
+3. Tailor at least 2 questions directly targeting the projects or specific technologies mentioned in the candidate's CV.
+4. Output must be a clean JSON array of strings representing the questions. Do NOT wrap it in extra markdown format like ```json, just pure JSON array.
+
+Example:
+[
+  "Question 1?",
+  "Question 2?"
+]
+""")
+
+def generate_interview_questions(
+    cv_text: str,
+    jd_text: str,
+    target_role: str,
+    num_questions: int
+) -> List:
+    """Sinh danh sách câu hỏi phỏng vấn bằng Gemini"""
+    interview_questions_prompt = INTERVIEW_QUESTIONS_PROMPT.format_prompt(
+        cv_text = cv_text if cv_text else "Not provided",
+        jd_text = jd_text if jd_text else "Not provided",
+        target_role = target_role,
+        num_questions = num_questions
+    )
+    response = llm.invoke(interview_questions_prompt)
+
+    try:
+        content = response.content
+        if isinstance(content, str):
+            return json.loads(content.strip())
+        return content
+    except Exception as e:
+        print(f"Error parsing generated questions: {e}")
+        return []
+
+
+INTERVIEW_EVALUATION_PROMPT = PromptTemplate.from_template("""
+You are an expert Senior IT Recruiter.
+Evaluate the candidate's mock interview performance based on the CV, Job Description (JD), and the Q&A history transcript.
+
+Inputs:
+- Candidate CV: {cv_text}
+- Job Description (JD): {jd_text}
+- Interview Transcript (Q&A):
+{transcript_text}
+
+Evaluation Guidelines:
+1. Rate the overall score on a scale of 0.0 to 10.0.
+2. Rate individual score components: Technical (chuyên môn), Communication (giao tiếp), Soft Skills (kỹ năng mềm) on a scale of 0.0 to 10.0.
+3. Detail strengths and weaknesses in Vietnamese.
+4. For each Q&A pair:
+   - Assess technical correctness and communication structure.
+   - Assign a score (0.0 to 10.0) for this answer.
+   - Provide feedback (nhận xét) and a model answer (câu trả lời tối ưu gợi ý).
+5. Language: All feedbacks, suggestions, and text MUST be in Vietnamese.
+6. Output must be a clean JSON object matching the following structure, do NOT wrap it in extra markdown format like ```json, just pure JSON array.:
+{{
+  "overallScore": 8.5,
+  "technicalScore": 8.0,
+  "communicationScore": 9.0,
+  "softSkillsScore": 8.5,
+  "strengths": ["...", "..."],
+  "weaknesses": ["...", "..."],
+  "generalFeedback": "...",
+  "detailedFeedback": [
+    {{
+      "question": "...",
+      "answer": "...",
+      "score": 8.0,
+      "feedback": "...",
+      "modelAnswer": "..."
+    }}
+  ]
+}}
+""")
+
+def evaluate_interview_session(
+    cv_text: str,
+    jd_text: str,
+    history: list
+) -> dict:
+    """Đánh giá toàn bộ phiên phỏng vấn và trả về kết quả dạng JSON"""
+    # Định dạng lại lịch sử chat thành dạng văn bản để gửi cho LLM dễ hiểu
+    transcript_parts = []
+    for idx, item in enumerate(history):
+        transcript_parts.append(
+            f"Q{idx+1}: {item['question']}\nA{idx+1}: {item['answer']}\n"
+        )
+    transcript_text = "\n".join(transcript_parts)
+    interview_evaluation_prompt = INTERVIEW_EVALUATION_PROMPT.format_prompt(
+        cv_text = cv_text if cv_text else "Not provided",
+        jd_text = jd_text if jd_text else "Not provided",
+        transcript_text = transcript_text
+    )
+    response = llm.invoke(interview_evaluation_prompt)
+    try:
+        content = response.content
+        if isinstance(content, str):
+            return json.loads(content.strip())
+        return content
+    except Exception as e:
+        print(f"Error parsing evaluation: {e}")
+        return {}
+    

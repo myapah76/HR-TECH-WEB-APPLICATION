@@ -51,6 +51,9 @@ public enum ErrorCode {
     CV_HAS_NO_SKILLS(HttpStatus.BAD_REQUEST, "CV has no skills"),
     CV_CONTENT_EMPTY(HttpStatus.BAD_REQUEST, "CV content is empty"),
 
+    //Cv
+    CV_NOT_BELONG_TO_USER(HttpStatus.FORBIDDEN, "CV does not belong to the user"),
+
     // AI
     AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AI service unavailable"),
     AI_EXTRACTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "AI extraction failed"),
@@ -109,6 +112,24 @@ public enum ErrorCode {
 
     //Chat
     CHAT_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "Chat session not found"),
+
+    // Interview
+    GENERATE_QUESTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to generate interview question"),
+    INTERVIEW_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "Interview session not found"),
+    INTERVIEW_SESSION_NOT_IN_PROGRESS(HttpStatus.BAD_REQUEST, "Interview session is not in progress"),
+    INTERVIEW_QUESTION_NOT_FOUND(HttpStatus.NOT_FOUND, "Interview question not found"),
+    INTERVIEW_QUESTION_NOT_BELONG_TO_SESSION(
+            HttpStatus.BAD_REQUEST,
+            "Interview question does not belong to the session"
+    ),
+    INTERVIEW_SESSION_ACCESS_DENIED(
+            HttpStatus.FORBIDDEN,
+            "You do not have access to this interview session"
+    ),
+    EVALUATE_SESSION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to evaluate interview session"),
+    JSON_SERIALIZATION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "JSON serialization error"),
+    INTERVIEW_ALREADY_EVALUATED(HttpStatus.BAD_REQUEST, "Interview session has already been evaluated"),
+    RESULT_NOT_FOUND(HttpStatus.NOT_FOUND, "Result interview not found"),
 
     // Generic
     FORBIDDEN_ACTION(HttpStatus.FORBIDDEN, "Access denied"),

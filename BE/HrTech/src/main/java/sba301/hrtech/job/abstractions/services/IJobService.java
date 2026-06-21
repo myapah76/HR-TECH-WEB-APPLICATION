@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import sba301.hrtech.job.dtos.request.JobRequest;
 import sba301.hrtech.job.dtos.request.JobSearchCriteria;
 import sba301.hrtech.job.dtos.response.JobResponse;
+import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.job.entities.JobDocument;
 
 import java.util.List;
@@ -40,4 +41,6 @@ public interface IJobService {
     List<JobResponse> getPendingJobs(UUID companyId);
 
     List<JobResponse> getMyJobs(UUID companyId);
+
+    Job getJobEntityById(UUID jobId);
 }

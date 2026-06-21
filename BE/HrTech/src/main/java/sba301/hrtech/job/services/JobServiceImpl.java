@@ -293,4 +293,10 @@ public class JobServiceImpl implements IJobService {
         return jobRepository.findByCompanyIdAndCreatedByIdAndDeletedFalse(companyId, currentUser.getId())
                 .stream().map(jobMapper::toResponse).collect(Collectors.toList());
     }
+
+    @Override
+    public Job getJobEntityById(UUID jobId) {
+        return jobRepository.findById(jobId)
+                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE));
+    }
 }

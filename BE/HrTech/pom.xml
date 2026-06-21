@@ -132,12 +132,6 @@
             <artifactId>payos-java</artifactId>
             <version>2.0.1</version>
         </dependency>
-        <!-- Devtool tự động cập nhật vs mount code -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-devtools</artifactId>
-            <scope>runtime</scope>
-        </dependency>
         <!-- UUID v7 -->
         <dependency>
             <groupId>com.github.f4b6a3</groupId>
