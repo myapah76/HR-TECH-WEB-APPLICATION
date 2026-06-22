@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { getMyCompany } from '@/src/services/company.service'
+import { getMyCompany, getCompanies, GetCompaniesParams } from '@/src/services/company.service'
 
 export const useGetMyCompany = () => {
   return useQuery({
@@ -11,3 +11,15 @@ export const useGetMyCompany = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 }
+
+export const useGetCompanies = (params?: GetCompaniesParams) => {
+  return useQuery({
+    queryKey: ['companies', params],
+    queryFn: async () => {
+      const response = await getCompanies(params)
+      return response.data
+    },
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  })
+}
+

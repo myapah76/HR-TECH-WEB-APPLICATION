@@ -1,57 +1,26 @@
 'use client'
 
 import { useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Briefcase, CheckCircle, Loader2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-
-import Loading from '@/src/app/loading'
-import RequiredSkillInput, {
-  RequiredSkill,
-} from '@/src/components/company/job/RequiredSkillInput'
+import { useCreateJobMutation } from '@/src/hooks/job/job.hooks'
+import { useGetMyCompany } from '@/src/hooks/company/company.hooks'
 import SkillTagInput from '@/src/components/company/job/SkillTagInput'
-import { useGetJobById, useUpdateJobMutation } from '@/src/hooks/job/job.hooks'
-import { jobSchema, JobFormData } from '@/src/schemas/job.schema'
-import { Job } from '@/src/types/job'
+import RequiredSkillInput, { RequiredSkill } from '@/src/components/company/job/RequiredSkillInput'
 import { Skill } from '@/src/types/skill'
-import { formatDateForInput } from '@/src/utils/format-date'
+import { Loader2, Briefcase, CheckCircle } from 'lucide-react'
+import { jobSchema, JobFormData } from '@/src/schemas/job.schema'
+import Loading from '@/src/app/loading'
 
-export default function UpdateJobPage() {
-  const { jobId } = useParams<{ jobId: string }>()
-  const { data: job, isLoading, isError } = useGetJobById(jobId)
-
-  if (isLoading) return <Loading />
-
-  if (isError || !job) {
-    return (
-      <div className="mx-auto max-w-5xl rounded-2xl border border-red-200 bg-red-50 px-6 py-10 text-center text-sm font-semibold text-red-600">
-        Không thể tải thông tin tin tuyển dụng. Vui lòng thử lại sau.
-      </div>
-    )
-  }
-
-  return <UpdateJobForm job={job} />
-}
-
-function UpdateJobForm({ job }: { job: Job }) {
+export default function PostJobPage() {
   const router = useRouter()
-  const updateJobMutation = useUpdateJobMutation(job.id)
-  const [requiredSkills, setRequiredSkills] = useState<RequiredSkill[]>(() =>
-    (job.skills ?? [])
-      .filter((skill) => Boolean(skill.requiredLevel))
-      .map((skill) => ({
-        id: skill.skillNeo4jId,
-        name: skill.skillName,
-        level: skill.requiredLevel,
-      }))
-  )
-  const [relatedSkills, setRelatedSkills] = useState<Skill[]>(() =>
-    (job.skills ?? [])
-      .filter((skill) => !skill.requiredLevel)
-      .map((skill) => ({ id: skill.skillNeo4jId, name: skill.skillName }))
-  )
+  const createJobMutation = useCreateJobMutation()
+  const { data: myCompany, isLoading: isCompanyLoading } = useGetMyCompany()
+
+  const [requiredSkills, setRequiredSkills] = useState<RequiredSkill[]>([])
+  const [relatedSkills, setRelatedSkills] = useState<Skill[]>([])
 
   const {
     register,
@@ -60,37 +29,47 @@ function UpdateJobForm({ job }: { job: Job }) {
   } = useForm({
     resolver: zodResolver(jobSchema),
     defaultValues: {
-      title: job.title,
-      jobType: job.jobType,
-      experienceLevel: job.experienceLevel,
-      location: job.location,
-      description: job.description,
-      requirements: job.requirements,
-      deadline: formatDateForInput(job.deadline),
-      salaryMin: job.salaryMin ?? undefined,
-      salaryMax: job.salaryMax ?? undefined,
+      title: '',
+      jobType: '',
+      experienceLevel: '',
+      location: '',
+      description: '',
+      requirements: '',
+      deadline: '',
+      salaryMin: undefined,
+      salaryMax: undefined,
     },
   })
 
   const onSubmit = (data: JobFormData) => {
-    const updatePayload = {
-      ...data,
-      companyId: job.companyId,
-      skills: [
-        ...requiredSkills.map((skill) => ({
-          skillNeo4jId: skill.id,
-          requiredLevel: skill.level,
-        })),
-        ...relatedSkills.map((skill) => ({ skillNeo4jId: skill.id })),
-      ],
+    if (!myCompany?.id) {
+      toast.error('Không tìm thấy thông tin công ty của bạn!')
+      return
     }
 
-    updateJobMutation.mutate(updatePayload, {
+    const companyId = myCompany.id
+
+    const skills = [
+      ...requiredSkills.map((s) => ({ skillNeo4jId: s.id, requiredLevel: s.level })),
+      ...relatedSkills.map((s) => ({ skillNeo4jId: s.id })),
+    ]
+
+    const payload = {
+      ...data,
+      companyId,
+      skills,
+    }
+
+    createJobMutation.mutate(payload, {
       onSuccess: () => {
-        toast.success('Cập nhật tin tuyển dụng thành công!')
-        router.push('/company/manage-jobs')
+        toast.success('Đăng tin tuyển dụng thành công!')
+        router.push('/recruiter/manage-jobs')
       },
     })
+  }
+
+  if (isCompanyLoading) {
+    return <Loading />
   }
 
   return (
@@ -98,14 +77,15 @@ function UpdateJobForm({ job }: { job: Job }) {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
           <Briefcase className="w-6 h-6 text-emerald-600" />
-          Cập nhật tin tuyển dụng
+          Tạo tin tuyển dụng mới
         </h1>
         <p className="text-slate-500 mt-1">
-          Chỉnh sửa các thông tin dưới đây cho tin tuyển dụng của bạn.
+          Điền các thông tin dưới đây để đăng tin tuyển dụng tìm kiếm ứng viên tài năng.
         </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        {/* Section 1: Basic Info */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2 border-b pb-3">
             <span className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold">
@@ -184,6 +164,7 @@ function UpdateJobForm({ job }: { job: Job }) {
           </div>
         </div>
 
+        {/* Section 2: Salary & Deadline */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2 border-b pb-3">
             <span className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold">
@@ -239,6 +220,7 @@ function UpdateJobForm({ job }: { job: Job }) {
           </div>
         </div>
 
+        {/* Section 3: Description */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2 border-b pb-3">
             <span className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold">
@@ -280,6 +262,7 @@ function UpdateJobForm({ job }: { job: Job }) {
           </div>
         </div>
 
+        {/* Section 4: Skills (Separated List) */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2 border-b pb-3">
             <span className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold">
@@ -289,6 +272,7 @@ function UpdateJobForm({ job }: { job: Job }) {
           </h2>
 
           <div className="space-y-8">
+            {/* REQUIRED SKILLS */}
             <div>
               <label className="block text-base font-bold text-slate-900 mb-1">
                 Kỹ năng bắt buộc (Required Skills) <span className="text-red-500">*</span>
@@ -301,6 +285,7 @@ function UpdateJobForm({ job }: { job: Job }) {
 
             <div className="border-t border-slate-100" />
 
+            {/* RELATED SKILLS */}
             <div>
               <label className="block text-base font-bold text-slate-900 mb-1">
                 Kỹ năng liên quan (Related Skills)
@@ -318,25 +303,26 @@ function UpdateJobForm({ job }: { job: Job }) {
           </div>
         </div>
 
+        {/* Actions */}
         <div className="flex items-center justify-end gap-4 pt-4">
           <button
             type="button"
-            onClick={() => router.push('/company/manage-jobs')}
+            onClick={() => router.back()}
             className="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 transition-colors"
           >
             Hủy bỏ
           </button>
           <button
             type="submit"
-            disabled={updateJobMutation.isPending}
+            disabled={createJobMutation.isPending}
             className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-600/20 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {updateJobMutation.isPending ? (
+            {createJobMutation.isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <CheckCircle className="w-4 h-4" />
             )}
-            Cập nhật tin tuyển dụng
+            Đăng tin tuyển dụng
           </button>
         </div>
       </form>

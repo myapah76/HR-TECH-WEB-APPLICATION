@@ -77,7 +77,7 @@ export default function ManageJobPage() {
         </div>
 
         <Link
-          href="/company/post-job"
+          href="/recruiter/post-job"
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm shadow-emerald-600/20 transition-colors hover:bg-emerald-700"
         >
           <PlusCircle className="h-4 w-4" />
@@ -183,7 +183,7 @@ export default function ManageJobPage() {
           </p>
           {!status && !jobType && (
             <Link
-              href="/company/post-job"
+              href="/recruiter/post-job"
               className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700"
             >
               <PlusCircle className="h-4 w-4" />

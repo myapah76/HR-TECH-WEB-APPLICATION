@@ -51,7 +51,7 @@ export default function RecruiterDashboardPage() {
           </p>
         </div>
         <Link
-          href="/company/post-job"
+          href="/recruiter/post-job"
           className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm py-3 px-6 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
         >
           <PlusCircle className="h-5 w-5" />
@@ -75,7 +75,7 @@ export default function RecruiterDashboardPage() {
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-black text-slate-900">Hoạt động gần đây</h2>
               <Link
-                href="/company/applications"
+                href="/recruiter/applications"
                 className="text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-colors"
               >
                 Xem tất cả <ArrowRight className="h-4 w-4" />
@@ -154,7 +154,7 @@ export default function RecruiterDashboardPage() {
             <h3 className="text-base font-black text-slate-900 mb-4">Thao tác nhanh</h3>
             <div className="space-y-2">
               <Link
-                href="/company/post-job"
+                href="/recruiter/post-job"
                 className="flex items-center gap-3.5 p-3.5 rounded-xl hover:bg-emerald-50 transition-colors group"
               >
                 <PlusCircle className="h-5 w-5 text-emerald-600" />
@@ -163,7 +163,7 @@ export default function RecruiterDashboardPage() {
                 </span>
               </Link>
               <Link
-                href="/company/search"
+                href="/recruiter/search"
                 className="flex items-center gap-3.5 p-3.5 rounded-xl hover:bg-blue-50 transition-colors group"
               >
                 <Search className="h-5 w-5 text-blue-600" />
@@ -172,7 +172,7 @@ export default function RecruiterDashboardPage() {
                 </span>
               </Link>
               <Link
-                href="/company/analytics"
+                href="/recruiter/analytics"
                 className="flex items-center gap-3.5 p-3.5 rounded-xl hover:bg-violet-50 transition-colors group"
               >
                 <BarChart3 className="h-5 w-5 text-violet-600" />
@@ -205,7 +205,7 @@ export default function RecruiterDashboardPage() {
               </div>
               <div className="pt-2">
                 <Link
-                  href="/company/search"
+                  href="/recruiter/search"
                   className="inline-flex items-center justify-center gap-1.5 bg-white text-emerald-700 font-black text-xs py-2.5 px-4 rounded-xl hover:bg-emerald-50 transition-all duration-200 shadow-sm"
                 >
                   <span>Thử nghiệm ngay</span>
