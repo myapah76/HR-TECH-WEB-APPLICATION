@@ -47,4 +47,6 @@ export * from './cv'
 export * from './job'
 export * from './recommendation'
 export * from './application'
+export * from './interview'
+
 

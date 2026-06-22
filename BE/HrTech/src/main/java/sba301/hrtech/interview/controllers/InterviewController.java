@@ -13,6 +13,7 @@ import sba301.hrtech.interview.dtos.response.InterviewResultResponse;
 import sba301.hrtech.interview.dtos.response.SessionStartResponse;
 import sba301.hrtech.shared.response.ApiResponse;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -55,5 +56,11 @@ public class InterviewController {
             @PathVariable UUID sessionId) {
         InterviewResultResponse response = interviewService.getResultBySessionId(sessionId);
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy thông tin báo cáo thành công."));
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<ApiResponse<List<SessionStartResponse>>> getMyHistory() {
+        List<SessionStartResponse> response = interviewService.getMyInterviewSessions();
+        return ResponseEntity.ok(ApiResponse.success(response, "Lấy lịch sử phỏng vấn thành công."));
     }
 }

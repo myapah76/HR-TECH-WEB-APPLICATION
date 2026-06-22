@@ -8,7 +8,7 @@ import {
   FolderOpen,
   Heart,
   Send,
-  Settings,
+  MessageSquare,
   Brain,
   Star,
 } from 'lucide-react'
@@ -40,6 +40,11 @@ const candidateNavItems = [
     icon: Brain,
     label: 'AI Assistant',
     path: '/candidate/ai-advisor',
+  },
+  {
+    icon: MessageSquare,
+    label: 'Mock Interview',
+    path: '/candidate/mock-interview',
   },
 ]
 

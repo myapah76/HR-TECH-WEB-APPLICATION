@@ -6,6 +6,7 @@ import sba301.hrtech.interview.dtos.response.AnswerSubmitResponse;
 import sba301.hrtech.interview.dtos.response.InterviewResultResponse;
 import sba301.hrtech.interview.dtos.response.SessionStartResponse;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface IInterviewService {
@@ -16,4 +17,6 @@ public interface IInterviewService {
     InterviewResultResponse submitSessionAndEvaluate(UUID sessionId);
 
     InterviewResultResponse getResultBySessionId(UUID sessionId);
+
+    List<SessionStartResponse> getMyInterviewSessions();
 }
