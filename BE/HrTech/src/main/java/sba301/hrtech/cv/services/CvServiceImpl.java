@@ -7,6 +7,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.web.multipart.MultipartFile;
 import sba301.hrtech.identity.abstractions.repositories.UserRepository;
+import sba301.hrtech.identity.abstractions.services.IUserService;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.cv.abstractions.repositories.CvRepository;
 import sba301.hrtech.cv.abstractions.services.ICvService;
@@ -29,10 +30,10 @@ import java.util.UUID;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class ICvServiceImpl implements ICvService {
+public class CvServiceImpl implements ICvService {
 
     private final CvRepository cvRepository;
-    private final UserRepository userRepository;
+    private final IUserService userService;
     private final CloudinaryService cloudinaryService;
     private final ISkillExtractionService skillExtractionService;
     private final AuthUtils authUtils;
@@ -41,11 +42,7 @@ public class ICvServiceImpl implements ICvService {
     @Override
     public CvSummaryResponse createCv(String title, MultipartFile file) {
         UUID userId = authUtils.getCurrentUserId();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(
-                        ErrorCode.USER_NOT_FOUND,
-                        "Người dùng không tồn tại với ID: " + userId
-                ));
+        User user = userService.getUserEntityById(userId);
 
 
         String contentType = file.getContentType();

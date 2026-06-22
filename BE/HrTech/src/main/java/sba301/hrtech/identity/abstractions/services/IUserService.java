@@ -17,5 +17,9 @@ public interface IUserService {
     UserResponse changePassword(ChangePasswordRequest request);
     void deleteById(UUID id);
 
+
     User getUserEntityById(UUID id);
+    User saveUserEntity(User user);
+    User getUserEntityByEmail(String email);
+
 }

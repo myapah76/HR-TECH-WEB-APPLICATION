@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sba301.hrtech.identity.abstractions.repositories.RoleRepository;
 import sba301.hrtech.identity.abstractions.repositories.UserRepository;
+import sba301.hrtech.identity.abstractions.services.IRoleService;
 import sba301.hrtech.identity.abstractions.services.IUserService;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
@@ -25,7 +26,7 @@ import java.util.UUID;
 public class UserServiceImpl implements IUserService {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
+    private final IRoleService roleService;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
@@ -41,8 +42,7 @@ public class UserServiceImpl implements IUserService {
 
         User user = userMapper.fromCreateRequest(request);
         if (userCommonRequest.getRoleId() != null) {
-            Role role = roleRepository.findById(UUID.fromString(userCommonRequest.getRoleId()))
-                    .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+            Role role = roleService.getRoleEntityById(UUID.fromString(userCommonRequest.getRoleId()));
             user.setRole(role);
         }
         User savedUser = userRepository.save(user);
@@ -73,8 +73,7 @@ public class UserServiceImpl implements IUserService {
 
         // Role set thủ công
         if (request.getRoleId() != null) {
-            Role role = roleRepository.findById(UUID.fromString(request.getRoleId()))
-                    .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+            Role role = roleService.getRoleEntityById(UUID.fromString(request.getRoleId()));
             user.setRole(role);
         }
 
@@ -106,6 +105,17 @@ public class UserServiceImpl implements IUserService {
     @Override
     public User getUserEntityById(UUID id) {
         return userRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    @Override
+    public User saveUserEntity(User user) {
+        return userRepository.save(user);
+    }
+
+    @Override
+    public User getUserEntityByEmail(String email) {
+        return userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
     }
 }

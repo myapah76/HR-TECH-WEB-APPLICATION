@@ -15,5 +15,6 @@ public interface ICvService {
     CvSummaryResponse setPrimaryCv(UUID cvId);
     CvSummaryResponse updateCvTitle(UUID cvId, String newTitle);
     void deleteCv(UUID cvId);
+
     Cv getCvEntityById(UUID cvId);
 }

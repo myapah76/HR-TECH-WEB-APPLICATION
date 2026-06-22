@@ -23,5 +23,4 @@ public interface CvRepository extends JpaRepository<Cv, UUID> {
     List<Cv> findStuckCvs(
             @Param("statuses") List<ExtractionStatus> statuses,
             @Param("threshold") Instant threshold);
-
 }

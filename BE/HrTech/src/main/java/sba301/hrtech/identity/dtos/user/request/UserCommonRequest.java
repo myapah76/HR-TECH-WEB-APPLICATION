@@ -3,12 +3,14 @@ package sba301.hrtech.identity.dtos.user.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
 @Getter
 @Setter
+@Builder
 public class UserCommonRequest {
     @NotBlank(message = "First name is required")
     private String firstName;

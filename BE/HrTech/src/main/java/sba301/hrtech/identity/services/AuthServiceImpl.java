@@ -20,6 +20,7 @@ import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.abstractions.services.IAuthService;
 import sba301.hrtech.identity.abstractions.services.IJwtService;
 import sba301.hrtech.identity.abstractions.services.IRefreshTokenService;
+import sba301.hrtech.identity.abstractions.services.IUserService;
 import sba301.hrtech.identity.dtos.auth.request.*;
 import sba301.hrtech.identity.dtos.auth.response.ConfirmOtpResult;
 import sba301.hrtech.identity.dtos.auth.response.EmailActionResponse;
@@ -55,7 +56,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements IAuthService {
 
-    private final UserRepository userRepository;
+    private final IUserService userService;
     private final PasswordEncoder passwordEncoder;
     private final IJwtService jwtService;
     private final RedisTemplate<String, Object> redisTemplate;
@@ -79,7 +80,7 @@ public class AuthServiceImpl implements IAuthService {
         // 1. generate OTP
         String otp = generateOtp();
 
-        if (userRepository.findByEmail(request.email()).isPresent()) {
+        if (userService.getUserEntityByEmail(request.email()) != null) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED);
         }
 
@@ -111,8 +112,7 @@ public class AuthServiceImpl implements IAuthService {
 
     @Override
     public EmailActionResponse forgetPassword(ForgetPasswordRequest request) {
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new AppException(ErrorCode.EMAIL_NOT_FOUND));
+        User user = userService.getUserEntityByEmail(request.email());
         if (user.getIsBlocked()) {
             throw new AppException(ErrorCode.USER_ALREADY_REGISTERED, "User is blocked");
         }
@@ -160,11 +160,9 @@ public class AuthServiceImpl implements IAuthService {
             throw new AppException(ErrorCode.TOKEN_EXPIRED);
         }
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new AppException(ErrorCode.EMAIL_NOT_FOUND));
-
+        User user = userService.getUserEntityByEmail(email);
         user.setPassword(passwordEncoder.encode(request.newPassword()));
-        userRepository.save(user);
+        userService.saveUserEntity(user);
         redisTemplate.delete(key);
     }
 
@@ -175,8 +173,7 @@ public class AuthServiceImpl implements IAuthService {
         }
 
         CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        User user = userRepository.findById(userDetails.user().getId())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        User user = userService.getUserEntityById(userDetails.user().getId());
 
         if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
             throw new AppException(ErrorCode.WRONG_PASSWORD, "Current password is incorrect");
@@ -184,7 +181,7 @@ public class AuthServiceImpl implements IAuthService {
 
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         user.setRequirePasswordChange(false);
-        userRepository.save(user);
+        userService.saveUserEntity(user);
     }
 
     @Override
@@ -210,8 +207,7 @@ public class AuthServiceImpl implements IAuthService {
     @Override
     public TokenPair login(LoginRequest request) {
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new AppException(ErrorCode.EMAIL_NOT_FOUND));
+        User user = userService.getUserEntityByEmail(request.getEmail());
         if (user.getIsBlocked()) {
             throw new AppException(ErrorCode.USER_ALREADY_REGISTERED, "User is blocked");
         }
@@ -274,7 +270,7 @@ public class AuthServiceImpl implements IAuthService {
         String lastName = (String) userInfo.get("family_name");
         String picture = (String) userInfo.get("picture");
         
-        User user = userRepository.findByEmail(email).orElse(null);
+        User user = userService.getUserEntityByEmail(email);
         
         if (user == null) {
             user = new User();
@@ -290,7 +286,7 @@ public class AuthServiceImpl implements IAuthService {
             Role role = roleRepository.findByName("CANDIDATE")
                     .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Role CANDIDATE not found"));
             user.setRole(role);
-            user = userRepository.save(user);
+            user = userService.saveUserEntity(user);
         }
         
         if (user.getIsBlocked()) {
@@ -326,12 +322,11 @@ public class AuthServiceImpl implements IAuthService {
             throw new AppException(ErrorCode.TOKEN_EXPIRED, "Setup token expired or invalid");
         }
         
-        User user = userRepository.findById(UUID.fromString(userIdStr))
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        User user = userService.getUserEntityById(UUID.fromString(userIdStr));
                 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setRequirePasswordChange(false);
-        userRepository.save(user);
+        userService.saveUserEntity(user);
         
         redisTemplate.delete(key);
         
@@ -447,7 +442,7 @@ public class AuthServiceImpl implements IAuthService {
                 .orElseThrow(RoleNotFoundException::new);
 
         user.setRole(role);
-        userRepository.save(user);
+        userService.saveUserEntity(user);
         SubscriptionPlan  subscriptionPlan = subscriptionPlanService.findByName("Free");
         subscriptionService.createPendingSubscription(user.getId(),subscriptionPlan.getId());
         redisTemplate.delete(key);

@@ -13,6 +13,9 @@ import sba301.hrtech.application.dtos.response.ApplicationSummaryResponse;
 import sba301.hrtech.application.entities.Application;
 import sba301.hrtech.application.entities.ApplicationScore;
 import sba301.hrtech.application.entities.enums.ApplicationStatus;
+import sba301.hrtech.cv.abstractions.services.ICvService;
+import sba301.hrtech.identity.abstractions.services.IUserService;
+import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.shared.enums.ScoreGrade;
 import sba301.hrtech.application.mapper.ApplicationMapper;
 import sba301.hrtech.identity.entities.User;
@@ -41,26 +44,23 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final ApplicationScoreRepository applicationScoreRepository;
-    private final JobRepository jobRepository;
-    private final CvRepository cvRepository;
-    private final UserRepository userRepository;
+    private final IJobService jobService;
+    private final ICvService cvService;
+    private final IUserService userService;
     private final ApplicationMapper applicationMapper;
     private final IRecommendationService recommendationService;
 
     @Override
     public ApplicationSummaryResponse submitApplication(UUID userId, SubmitApplicationRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found"));
+        User user = userService.getUserEntityById(userId);
 
-        Job job = jobRepository.findById(request.getJobId())
-                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE, "Job not found"));
+        Job job = jobService.getJobEntityById(request.getJobId());
 
         if (job.getStatus() != JobStatus.APPROVED) {
             throw new AppException(ErrorCode.JOB_INVALID_STATUS, "Job is not APPROVED for applications");
         }
 
-        Cv cv = cvRepository.findById(request.getCvId())
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_INPUT, "CV not found"));
+        Cv cv = cvService.getCvEntityById(request.getCvId());
 
         if (!cv.getUser().getId().equals(userId)) {
             throw new AppException( ErrorCode.JOB_PERMISSION_DENIED, "CV does not belong to user");

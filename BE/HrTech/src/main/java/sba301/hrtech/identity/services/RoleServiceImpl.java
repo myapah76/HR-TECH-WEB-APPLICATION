@@ -75,4 +75,16 @@ public class RoleServiceImpl implements IRoleService {
         }
         roleRepository.deleteById(id);
     }
+
+    @Override
+    public Role getRoleEntityById(UUID id) {
+        return roleRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+    }
+
+    @Override
+    public Role getRoleEntityByName(String name) {
+        return roleRepository.findByName(name)
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+    }
 }

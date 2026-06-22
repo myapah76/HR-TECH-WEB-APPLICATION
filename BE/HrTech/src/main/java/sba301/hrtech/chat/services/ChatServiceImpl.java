@@ -18,10 +18,12 @@ import sba301.hrtech.chat.entities.ChatMessage;
 import sba301.hrtech.chat.entities.ChatSession;
 import sba301.hrtech.chat.enums.SenderType;
 import sba301.hrtech.cv.abstractions.repositories.CvRepository;
+import sba301.hrtech.cv.abstractions.services.ICvService;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.identity.utils.AuthUtils;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
+import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
@@ -41,8 +43,8 @@ public class ChatServiceImpl implements IChatService {
 
     private final ChatSessionRepository chatSessionRepository;
     private final ChatMessageRepository chatMessageRepository;
-    private final JobRepository jobRepository;
-    private final CvRepository cvRepository;
+    private final IJobService jobService;
+    private final ICvService cvService;
     private final AuthUtils authUtils;
     private final AiServiceClient aiServiceClient;
     private final ObjectMapper objectMapper;
@@ -57,14 +59,12 @@ public class ChatServiceImpl implements IChatService {
         String title = "Chat Tư vấn mới";
 
         if (request.getJobId() != null) {
-            job = jobRepository.findById(request.getJobId())
-                    .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE, "Job not found"));
+            job = jobService.getJobEntityById(request.getJobId());
             title = "Chat về công việc: " + job.getTitle();
         }
 
         if (request.getCvId() != null) {
-            cv = cvRepository.findById(request.getCvId())
-                    .orElseThrow(() -> new AppException(ErrorCode.CV_NOT_FOUND, "CV not found"));
+            cv = cvService.getCvEntityById(request.getCvId());
             if (job == null) {
                 title = "Chat về CV của bạn";
             }

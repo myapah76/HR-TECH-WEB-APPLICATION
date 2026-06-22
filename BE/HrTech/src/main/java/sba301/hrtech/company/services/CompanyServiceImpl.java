@@ -12,6 +12,8 @@ import sba301.hrtech.company.dtos.request.CompanyRegisterRequest;
 import sba301.hrtech.company.dtos.request.CompanyUpdateRequest;
 import sba301.hrtech.company.dtos.response.CompanyMemberResponse;
 import sba301.hrtech.company.dtos.response.CompanyResponse;
+import sba301.hrtech.identity.abstractions.services.IRoleService;
+import sba301.hrtech.identity.abstractions.services.IUserService;
 import sba301.hrtech.identity.dtos.auth.response.ConfirmOtpResult;
 import sba301.hrtech.identity.dtos.auth.response.EmailActionResponse;
 import sba301.hrtech.notification.abstractions.INotificationService;
@@ -51,8 +53,8 @@ import java.util.stream.Collectors;
 public class CompanyServiceImpl implements ICompanyService {
 
     private final CompanyRepository companyRepository;
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
+    private final IUserService userService;
+    private final IRoleService roleService;
     private final TaxVerificationService taxVerificationService;
     private final CompanyMapper companyMapper;
     private final CompanyMemberRepository companyMemberRepository;
@@ -86,7 +88,7 @@ public class CompanyServiceImpl implements ICompanyService {
         String email = request.email().toLowerCase();
 
         // 1. Check if email exists
-        if (userRepository.existsByEmail(email)) {
+        if (userService.getUserEntityByEmail(email) != null) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED,
                     "Email is already registered. Please use a different email for business account.");
         }
@@ -152,13 +154,12 @@ public class CompanyServiceImpl implements ICompanyService {
         }
 
         // Double check email existence just in case
-        if (userRepository.existsByEmail(email)) {
+        if (userService.getUserEntityByEmail(email) != null) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED, "Email is already registered.");
         }
 
         // 2. Create User (RECRUITER)
-        Role recruiterRole = roleRepository.findByName("RECRUITER")
-                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND, "RECRUITER role not found."));
+        Role recruiterRole = roleService.getRoleEntityByName("RECRUITER");
 
         User newUser = new User();
         newUser.setEmail(email);
@@ -175,7 +176,7 @@ public class CompanyServiceImpl implements ICompanyService {
 
         newUser.setRole(recruiterRole);
         newUser.setIsBlocked(false);
-        User savedUser = userRepository.save(newUser);
+        User savedUser = userService.saveUserEntity(newUser);
 
         // 3. Create Company
         Company company = companyMapper.fromRegisterRequest(payload);
@@ -291,7 +292,7 @@ public class CompanyServiceImpl implements ICompanyService {
             if (member.getCompanyRole() != CompanyRole.OWNER) {
                 User user = member.getUser();
                 user.setIsBlocked(true);
-                userRepository.save(user);
+                userService.saveUserEntity(user);
             }
         }
     }
@@ -306,7 +307,7 @@ public class CompanyServiceImpl implements ICompanyService {
         }
 
         String email = request.email().toLowerCase();
-        if (userRepository.existsByEmail(email)) {
+        if (userService.getUserEntityByEmail(email) != null) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED,
                     "Email is already registered. Please provide a new corporate email.");
         }
@@ -326,8 +327,7 @@ public class CompanyServiceImpl implements ICompanyService {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(ErrorCode.COMPANY_NOT_FOUND, "Company not found."));
 
-        Role recruiterRole = roleRepository.findByName("RECRUITER")
-                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND, "RECRUITER role not found."));
+        Role recruiterRole = roleService.getRoleEntityByName("RECRUITER");
 
         // Generate a random password (e.g. 8 chars alphanumeric)
         String randomPassword = java.util.UUID.randomUUID().toString().substring(0, 8);
@@ -349,7 +349,7 @@ public class CompanyServiceImpl implements ICompanyService {
         newUser.setRequirePasswordChange(true);
         newUser.setIsBlocked(false);
 
-        User savedUser = userRepository.save(newUser);
+        User savedUser = userService.saveUserEntity(newUser);
 
         CompanyMember companyMember = CompanyMember.builder()
                 .company(company)
@@ -413,11 +413,10 @@ public class CompanyServiceImpl implements ICompanyService {
 
         // Revert global role to CANDIDATE
         User targetUser = targetMember.getUser();
-        Role candidateRole = roleRepository.findByName("CANDIDATE").orElse(null);
+        Role candidateRole = roleService.getRoleEntityByName("CANDIDATE");
         if (candidateRole != null) {
             targetUser.setRole(candidateRole);
-            userRepository.save(targetUser);
-        }
+              userService.saveUserEntity(targetUser);       }
     }
 
     @Override
