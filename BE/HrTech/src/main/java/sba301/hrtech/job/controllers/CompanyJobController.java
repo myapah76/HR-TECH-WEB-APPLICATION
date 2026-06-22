@@ -35,6 +35,11 @@ public class CompanyJobController {
         return ResponseEntity.ok(ApiResponse.success(jobService.getCompanyJobs(companyId)));
     }
 
+    @GetMapping("/{companyId}/jobs/manage")
+    public ResponseEntity<ApiResponse<List<JobResponse>>> getManageJobs(@PathVariable UUID companyId) {
+        return ResponseEntity.ok(ApiResponse.success(jobService.getManageJobs(companyId)));
+    }
+
     @GetMapping("/{companyId}/jobs/me")
     public ResponseEntity<ApiResponse<List<JobResponse>>> getMyJobs(@PathVariable UUID companyId) {
         return ResponseEntity.ok(ApiResponse.success(jobService.getMyJobs(companyId)));

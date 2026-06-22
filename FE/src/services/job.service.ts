@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { api } from '@/src/lib/axios'
-import { Job } from '@/src/types/job'
+import { CreateJobRequest, Job } from '@/src/types/job'
 import { ApiResponse } from '../types/api'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
@@ -39,7 +39,12 @@ export const getJobById = async (id: string): Promise<Job> => {
   return response.data.data
 }
 
-export const createJob = async (data: any): Promise<Job> => {
+export const getManageJobs = async (companyId: string): Promise<Job[]> => {
+  const response = await api.get<ApiResponse<Job[]>>(`/companies/${companyId}/jobs`)
+  return response.data.data
+}
+
+export const createJob = async (data: CreateJobRequest): Promise<Job> => {
   const response = await api.post<ApiResponse<Job>>('/jobs', data)
   return response.data.data
 }

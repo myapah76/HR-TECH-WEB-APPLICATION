@@ -38,6 +38,8 @@ public interface IJobService {
 
     List<JobResponse> getCompanyJobs(UUID companyId);
 
+    List<JobResponse> getManageJobs(UUID companyId);
+
     List<JobResponse> getPendingJobs(UUID companyId);
 
     List<JobResponse> getMyJobs(UUID companyId);
