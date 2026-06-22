@@ -262,7 +262,7 @@ public class JobServiceImpl implements IJobService {
     @Override
     @Transactional(readOnly = true)
     public Page<JobResponse> listJobs(Pageable pageable) {
-        return jobRepository.findByStatus(sba301.hrtech.job.entities.enums.JobStatus.APPROVED, pageable)
+        return jobRepository.findByStatus(JobStatus.APPROVED, pageable)
                 .map(jobMapper::toResponse);
     }
 
