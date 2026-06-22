@@ -1,4 +1,5 @@
 import { JobResponse } from './job'
+import { JobMatchingStatus } from '../enums/recommendation.enum'
 
 export interface SkillMatchDetail {
   skillName: string
@@ -41,7 +42,7 @@ export interface RecommendationResultResponse {
 
 export interface JobMatchingTaskResponse {
   taskId: string
-  status: 'PENDING' | 'EXTRACTING' | 'MAPPING' | 'SCORING' | 'DONE' | 'FAILED'
+  status: JobMatchingStatus
   message: string
   progressPercentage: number
   recommendedJobs: JobRecommendationResponse[] | null
