@@ -91,7 +91,7 @@ export default function ManageJobTable({ jobs }: ManageJobTableProps) {
                     </Link>
 
                     <Link
-                      href={`/company/manage-jobs/${job.id}/update`}
+                      href={`/recruiter/manage-jobs/${job.id}/update`}
                       aria-label={`Chỉnh sửa ${job.title}`}
                       className="rounded-lg p-2 text-amber-600 transition-colors hover:bg-amber-50"
                       title="Chỉnh sửa tin"

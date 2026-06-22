@@ -23,12 +23,12 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/companies")
 @RequiredArgsConstructor
-@PreAuthorize("isAuthenticated()")
 public class CompanyJobController {
 
     private final IJobService jobService;
 
     @GetMapping("/{companyId}/jobs/pending")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<JobResponse>>> getPendingJobs(@PathVariable UUID companyId) {
         return ResponseEntity.ok(ApiResponse.success(jobService.getPendingJobs(companyId)));
     }
@@ -51,11 +51,13 @@ public class CompanyJobController {
     }
 
     @GetMapping("/{companyId}/jobs/manage")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<JobResponse>>> getManageJobs(@PathVariable UUID companyId) {
         return ResponseEntity.ok(ApiResponse.success(jobService.getManageJobs(companyId)));
     }
 
     @GetMapping("/{companyId}/jobs/me")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<JobResponse>>> getMyJobs(@PathVariable UUID companyId) {
         return ResponseEntity.ok(ApiResponse.success(jobService.getMyJobs(companyId)));
     }

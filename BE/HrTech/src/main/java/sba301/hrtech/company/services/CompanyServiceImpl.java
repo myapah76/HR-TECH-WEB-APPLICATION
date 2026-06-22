@@ -1,6 +1,8 @@
 package sba301.hrtech.company.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -207,6 +209,13 @@ public class CompanyServiceImpl implements ICompanyService {
         return new ConfirmOtpResult(
                 OtpType.REGISTER_COMPANY.toString(),
                 companyMapper.toResponse(savedCompany));
+    }
+
+    @Override
+    public Page<CompanyResponse> getCompanies(String keyword, Pageable pageable) {
+        String cleanKeyword = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();
+        return companyRepository.searchCompanies(cleanKeyword, pageable)
+                .map(companyMapper::toResponse);
     }
 
     @Override

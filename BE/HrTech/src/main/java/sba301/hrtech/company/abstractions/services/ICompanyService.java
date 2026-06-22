@@ -1,5 +1,7 @@
 package sba301.hrtech.company.abstractions.services;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import sba301.hrtech.company.dtos.request.AddMemberRequest;
 import sba301.hrtech.company.dtos.request.CompanyRegisterRequest;
 import sba301.hrtech.company.dtos.request.CompanyUpdateRequest;
@@ -19,6 +21,8 @@ public interface ICompanyService {
     ConfirmOtpResult confirmRegisterOtp(String email);
 
     // CRUD
+    Page<CompanyResponse> getCompanies(String keyword, Pageable pageable);
+
     CompanyResponse getCompanyById(UUID companyId);
 
     CompanyResponse getMyCompany();

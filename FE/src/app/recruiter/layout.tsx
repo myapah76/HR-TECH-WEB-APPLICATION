@@ -17,49 +17,49 @@ const recruiterNavItems = [
   {
     icon: LayoutDashboard,
     label: 'Tổng quan',
-    path: '/company',
+    path: '/recruiter',
   },
   {
     icon: PlusCircle,
     label: 'Đăng tin tuyển dụng',
-    path: '/company/post-job',
+    path: '/recruiter/post-job',
   },
   {
     icon: List,
     label: 'Quản lý tin đăng',
-    path: '/company/manage-jobs',
+    path: '/recruiter/manage-jobs',
   },
   {
     icon: Search,
     label: 'Tìm ứng viên',
-    path: '/company/search',
+    path: '/recruiter/search',
   },
   {
     icon: Users,
     label: 'Đơn ứng tuyển',
-    path: '/company/applications',
+    path: '/recruiter/applications',
     badge: 12,
   },
   {
     icon: Building2,
     label: 'Hồ sơ công ty',
-    path: '/company/profile',
+    path: '/recruiter/profile',
   },
   {
     icon: BarChart3,
     label: 'Thống kê',
-    path: '/company/analytics',
+    path: '/recruiter/analytics',
   },
   {
     icon: MessageSquare,
     label: 'Tin nhắn',
-    path: '/company/messages',
+    path: '/recruiter/messages',
     badge: 4,
   },
   {
     icon: Settings,
     label: 'Cài đặt',
-    path: '/company/settings',
+    path: '/recruiter/settings',
   },
 ]
 

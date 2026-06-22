@@ -27,8 +27,8 @@ export const config = {
     '/dashboard', // <--- Khớp trang dashboard gốc
     '/admin', // <--- Khớp trang admin gốc
     '/admin/:path*',
-    '/company', // <--- Khớp trang company gốc
-    '/company/:path*',
+    '/recruiter', // <--- Khớp trang recruiter gốc
+    '/recruiter/:path*',
     '/candidate', // <--- Khớp trang candidate gốc
     '/candidate/:path*',
   ],
