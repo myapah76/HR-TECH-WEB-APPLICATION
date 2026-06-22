@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Heart, Trash2, MapPin, DollarSign, Briefcase, Award, ArrowRight } from 'lucide-react'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import { toast } from 'sonner'
-import { useGetSavedJobs, useUnsaveJob } from '@/src/hooks/job/job.hooks'
+import { useGetSavedJobs, useUnsaveJob } from '@/src/hooks/job'
 import Loading from '@/src/app/loading'
 
 export default function SavedJobsPage() {

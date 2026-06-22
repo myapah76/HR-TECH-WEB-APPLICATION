@@ -1,12 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getMyInterviewHistory, startInterviewSession } from '@/src/services/interview.service'
-
-export const useGetInterviewSessionHistory = () => {
-  return useQuery({
-    queryKey: ['interviewHistory'],
-    queryFn: getMyInterviewHistory,
-  })
-}
+import { useMutation } from '@tanstack/react-query'
+import { startInterviewSession } from '@/src/services/interview.service'
 
 export const useStartInterviewSession = () => {
   return useMutation({

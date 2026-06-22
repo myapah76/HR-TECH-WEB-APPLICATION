@@ -12,7 +12,7 @@ import RequiredSkillInput, {
   RequiredSkill,
 } from '@/src/components/company/job/RequiredSkillInput'
 import SkillTagInput from '@/src/components/company/job/SkillTagInput'
-import { useGetJobById, useUpdateJobMutation } from '@/src/hooks/job/job.hooks'
+import { useGetJobById, useUpdateJobMutation } from '@/src/hooks/job'
 import { jobSchema, JobFormData } from '@/src/schemas/job.schema'
 import { Job } from '@/src/types/job'
 import { Skill } from '@/src/types/skill'

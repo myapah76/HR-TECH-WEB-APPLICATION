@@ -7,7 +7,6 @@ import { Card } from '@/src/components/ui/card'
 import { Button } from '@/src/components/ui/button'
 import { getInterviewResult } from '@/src/services/interview.service'
 import {
-  Award,
   BookOpen,
   CheckCircle2,
   XCircle,

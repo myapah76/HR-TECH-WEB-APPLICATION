@@ -5,14 +5,14 @@ import { Card } from '@/src/components/ui/card'
 import { Button } from '@/src/components/ui/button'
 import { Input } from '@/src/components/ui/input'
 import { Label } from '@/src/components/ui/label'
-import { useGetAllCvs } from '@/src/hooks/cv/cv.hooks'
-import { useGetSavedJobs } from '@/src/hooks/job/job.hooks'
+import { useGetAllCvs } from '@/src/hooks/cv'
+import { useGetSavedJobs } from '@/src/hooks/job'
 import {
   useGetChatSessions,
   useGetChatMessages,
   useCreateChatSession,
   useSendChatMessage,
-} from '@/src/hooks/chat/chat.hooks'
+} from '@/src/hooks/chat'
 import { Send, Plus, MessageSquare, X, Bot, User as UserIcon, Loader2 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'

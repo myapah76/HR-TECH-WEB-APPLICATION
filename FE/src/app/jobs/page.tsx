@@ -8,7 +8,7 @@ import JobFilter from '@/src/components/jobs/JobFilter'
 import JobSearch from '@/src/components/jobs/JobSearch'
 import Pagination from '@/src/components/jobs/Pagination'
 import Loading from '@/src/app/loading'
-import { useGetJobs } from '@/src/hooks/job/job.hooks'
+import { useGetJobs } from '@/src/hooks/job'
 
 export default function Home() {
   const [keyword, setKeyword] = useState('Senior Software Engineer')

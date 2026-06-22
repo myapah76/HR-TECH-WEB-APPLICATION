@@ -1,11 +1,11 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { useGetAllCvs, useUploadCv } from '@/src/hooks/cv/cv.hooks'
+import { useGetAllCvs, useUploadCv } from '@/src/hooks/cv'
 import {
   useStartJobMatching,
   useGetJobMatchingStatus,
-} from '@/src/hooks/recommendation/recommendation.hooks'
+} from '@/src/hooks/recommendation'
 import { JobMatchingTaskResponse } from '@/src/types/recommendation'
 import { JobMatchingStatus } from '@/src/enums/recommendation.enum'
 import { Star } from 'lucide-react'

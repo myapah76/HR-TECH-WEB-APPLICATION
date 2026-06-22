@@ -8,9 +8,9 @@ import {
   useDeleteCv,
   useUpdateCvTitle,
   useGetCvDetail,
-} from '@/src/hooks/cv/cv.hooks'
-import { useGetSavedJobs } from '@/src/hooks/job/job.hooks'
-import { useCalculateMatchScore } from '@/src/hooks/recommendation/recommendation.hooks'
+} from '@/src/hooks/cv'
+import { useGetSavedJobs } from '@/src/hooks/job'
+import { useCalculateMatchScore } from '@/src/hooks/recommendation'
 import { SkillMatchScoreResponse } from '@/src/types/recommendation'
 import { toast } from 'sonner'
 import { getErrorMessage } from '@/src/utils/get-error-message'

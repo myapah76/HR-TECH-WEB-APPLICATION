@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { updateUserProfile, changeUserPassword } from '@/src/services/user.service'
+import { updateUserProfile } from '@/src/services/user.service'
 import { useAuthStore } from '@/src/stores/auth.store'
 
 export const useUpdateUserProfile = () => {
@@ -16,11 +16,5 @@ export const useUpdateUserProfile = () => {
         })
       }
     },
-  })
-}
-
-export const useChangeUserPassword = () => {
-  return useMutation({
-    mutationFn: changeUserPassword,
   })
 }

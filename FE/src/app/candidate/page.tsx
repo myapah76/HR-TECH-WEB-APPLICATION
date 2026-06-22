@@ -4,7 +4,7 @@ import Link from 'next/link'
 import StatCard from '@/src/components/ui/StatCard'
 import { Briefcase, Eye, Heart, Send, FileText, Brain, Clock, ArrowRight } from 'lucide-react'
 import { useAuthStore } from '@/src/stores/auth.store'
-import { useGetSavedJobs } from '@/src/hooks/job/job.hooks'
+import { useGetSavedJobs } from '@/src/hooks/job'
 import { getMyApplications } from '@/src/services/application.service'
 import { useQuery } from '@tanstack/react-query'
 

@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { profileSchema, ProfileFormData } from '@/src/schemas/user.schema'
-import { useUpdateUserProfile } from '@/src/hooks/user/user.hooks'
+import { useUpdateUserProfile } from '@/src/hooks/user'
 import { formatDateForInput } from '@/src/utils/format-date'
 import { toast } from 'sonner'
 import { User } from '@/src/types/user'

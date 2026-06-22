@@ -12,7 +12,7 @@ import { Checkbox } from '@/src/components/ui/checkbox'
 import { Card, CardContent } from '@/src/components/ui/card'
 import { Label } from '@/src/components/ui/label'
 import { useRouter } from 'next/navigation'
-import { useLogin, useGoogleLoginMutation } from '@/src/hooks/auth/auth.hooks'
+import { useLogin, useGoogleLoginMutation } from '@/src/hooks/auth'
 import { useGoogleLogin } from '@react-oauth/google'
 
 import { toast } from 'sonner'

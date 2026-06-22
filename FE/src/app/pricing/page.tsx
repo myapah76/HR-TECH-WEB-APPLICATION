@@ -22,7 +22,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import {
   useAllActiveSubscriptionPlansQuery,
   useCreatePaymentMutation,
-} from '@/src/hooks/subscription/subscription.hooks'
+} from '@/src/hooks/subscription'
 import { refreshToken } from '@/src/services/auth.service'
 import { getErrorMessage } from '@/src/utils/get-error-message'
 

@@ -13,7 +13,7 @@ import { Button } from '@/src/components/ui/button'
 import { Input } from '@/src/components/ui/input'
 import { Card, CardContent } from '@/src/components/ui/card'
 import { Label } from '@/src/components/ui/label'
-import { useSetupGooglePassword } from '@/src/hooks/auth/auth.hooks'
+import { useSetupGooglePassword } from '@/src/hooks/auth'
 
 const setupPasswordSchema = z.object({
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),

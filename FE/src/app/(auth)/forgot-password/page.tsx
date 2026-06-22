@@ -10,7 +10,7 @@ import { Input } from '@/src/components/ui/input'
 import { Card, CardContent } from '@/src/components/ui/card'
 import { Label } from '@/src/components/ui/label'
 import { useRouter } from 'next/navigation'
-import { useForgotPassword } from '@/src/hooks/auth/auth.hooks'
+import { useForgotPassword } from '@/src/hooks/auth'
 import { OtpType } from '@/src/enums/otp.enum'
 
 import { toast } from 'sonner'

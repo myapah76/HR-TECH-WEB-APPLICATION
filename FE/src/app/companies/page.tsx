@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useGetCompanies } from '@/src/hooks/company/company.hooks'
+import { useGetCompanies } from '@/src/hooks/company'
 import { Search, MapPin, Users, Star, Briefcase } from 'lucide-react'
 import { useState } from 'react'
 import { motion } from 'motion/react'

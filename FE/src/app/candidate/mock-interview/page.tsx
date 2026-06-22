@@ -6,12 +6,12 @@ import { Card } from '@/src/components/ui/card'
 import { Button } from '@/src/components/ui/button'
 import { Input } from '@/src/components/ui/input'
 import { Label } from '@/src/components/ui/label'
-import { useGetAllCvs } from '@/src/hooks/cv/cv.hooks'
-import { useGetSavedJobs } from '@/src/hooks/job/job.hooks'
+import { useGetAllCvs } from '@/src/hooks/cv'
+import { useGetSavedJobs } from '@/src/hooks/job'
 import {
   useGetInterviewSessionHistory,
   useStartInterviewSession,
-} from '@/src/hooks/interview/interview.hooks'
+} from '@/src/hooks/interview'
 import {
   MessageSquare,
   Play,

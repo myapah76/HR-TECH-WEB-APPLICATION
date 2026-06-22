@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import ManageJobTable from '@/src/components/company/job/ManageJobTable'
-import { useGetMyCompany } from '@/src/hooks/company/company.hooks'
-import { useGetManageJobs } from '@/src/hooks/job/job.hooks'
+import { useGetMyCompany } from '@/src/hooks/company'
+import { useGetManageJobs } from '@/src/hooks/job'
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Tất cả trạng thái' },

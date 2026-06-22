@@ -27,12 +27,12 @@ import {
   useGetSavedJobs,
   useSaveJob,
   useUnsaveJob,
-} from '@/src/hooks/job/job.hooks'
-import { useGetAllCvs } from '@/src/hooks/cv/cv.hooks'
+} from '@/src/hooks/job'
+import { useGetAllCvs } from '@/src/hooks/cv'
 import {
   useGetMyApplications,
   useSubmitApplication,
-} from '@/src/hooks/application/application.hooks'
+} from '@/src/hooks/application'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { RoleUser } from '@/src/enums/role.enum'
