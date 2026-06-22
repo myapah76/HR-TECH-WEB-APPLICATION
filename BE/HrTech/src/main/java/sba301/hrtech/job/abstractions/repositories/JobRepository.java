@@ -60,4 +60,19 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
     @Query("SELECT j FROM Job j")
     @EntityGraph(attributePaths = {"jobSkills"})
     List<Job> findAllWithSkills();
+
+    @Query("""
+        SELECT j FROM Job j
+        WHERE j.deleted = false
+          AND j.company.id = :companyId
+          AND (:status IS NULL OR j.status = :status)
+          AND (:jobType IS NULL OR j.jobType = :jobType)
+        ORDER BY j.createdAt DESC
+    """)
+    Page<Job> findCompanyJobsWithFilters(
+            @Param("companyId") UUID companyId,
+            @Param("status") JobStatus status,
+            @Param("jobType") JobType jobType,
+            Pageable pageable
+    );
 }

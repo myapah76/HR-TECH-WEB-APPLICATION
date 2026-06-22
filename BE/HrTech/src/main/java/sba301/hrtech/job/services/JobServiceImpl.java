@@ -321,6 +321,37 @@ public class JobServiceImpl implements IJobService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<JobResponse> getCompanyJobsWithFilters(UUID companyId, String status, String jobType, Pageable pageable) {
+        User currentUser = jobValidator.getCurrentUser();
+        jobValidator.validateCompanyApproved(companyId);
+        jobValidator.validateCanViewCompanyJobs(currentUser, companyId);
+
+        // Convert string status to enum if provided
+        JobStatus jobStatusEnum = null;
+        if (status != null) {
+            try {
+                jobStatusEnum = JobStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                // Invalid status, treat as null (no filter)
+            }
+        }
+
+        // Convert string jobType to enum if provided
+        JobType jobTypeEnum = null;
+        if (jobType != null) {
+            try {
+                jobTypeEnum = JobType.valueOf(jobType.toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                // Invalid jobType, treat as null (no filter)
+            }
+        }
+
+        return jobRepository.findCompanyJobsWithFilters(companyId, jobStatusEnum, jobTypeEnum, pageable)
+                .map(jobMapper::toResponse);
+    }
+
+    @Override
     public Job getJobEntityById(UUID jobId) {
         return jobRepository.findById(jobId)
                 .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE));
