@@ -35,6 +35,7 @@ import {
 } from '@/src/hooks/application/application.hooks'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/src/stores/auth.store'
+import { RoleUser } from '@/src/enums/role.enum'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import Loading from '@/src/app/loading'
 
@@ -56,11 +57,13 @@ export default function JobDetailPage() {
   const [selectedCvId, setSelectedCvId] = useState('')
   const [coverLetter, setCoverLetter] = useState('')
 
-  const { data: savedJobs = [] } = useGetSavedJobs(!!user)
+  const isCandidate = user?.roleResponse?.name === RoleUser.CANDIDATE
 
-  const { data: cvs = [], isLoading: loadingCvs } = useGetAllCvs(isApplyModalOpen && !!user)
+  const { data: savedJobs = [] } = useGetSavedJobs(isCandidate)
 
-  const { data: appliedJobs = [] } = useGetMyApplications(!!user)
+  const { data: cvs = [], isLoading: loadingCvs } = useGetAllCvs(isApplyModalOpen && isCandidate)
+
+  const { data: appliedJobs = [] } = useGetMyApplications(isCandidate)
 
   const isSaved = savedJobs.some((j) => j.id === jobId)
   const hasApplied = appliedJobs.some((app) => app.jobId === jobId)

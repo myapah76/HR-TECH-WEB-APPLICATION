@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.response.ApiResponse;
 
-import java.nio.file.AccessDeniedException;
+import org.springframework.security.access.AccessDeniedException;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
