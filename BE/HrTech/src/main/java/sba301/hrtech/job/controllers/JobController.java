@@ -32,7 +32,7 @@ public class JobController {
 
     private final IJobService jobService;
 
-    @GetMapping
+    @GetMapping("/search")
     public ResponseEntity<ApiResponse<Page<JobResponse>>> searchJobs(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String location,
@@ -48,7 +48,7 @@ public class JobController {
         return ResponseEntity.ok(ApiResponse.success(jobService.searchJobs(criteria, pageable)));
     }
 
-    @GetMapping("/list")
+    @GetMapping
     public ResponseEntity<ApiResponse<Page<JobResponse>>> listJobs(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {

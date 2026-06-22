@@ -14,7 +14,7 @@ export interface PageResponse<T> {
 }
 
 export const getJobs = async (page = 0, size = 10): Promise<PageResponse<Job>> => {
-  const response = await axios.get(`${API_URL}/jobs/list?page=${page}&size=${size}`)
+  const response = await axios.get(`${API_URL}/jobs?page=${page}&size=${size}`)
 
   return response.data.data
 }

@@ -1,4 +1,4 @@
-package sba301.hrtech.job.repositories;
+package sba301.hrtech.job.abstractions.repositories;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Repository;
-import sba301.hrtech.job.abstractions.repositories.JobSearchCustomRepository;
 import sba301.hrtech.job.entities.JobDocument;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
@@ -22,7 +21,6 @@ public class JobSearchRepositoryImpl implements JobSearchCustomRepository {
 
         @Override
         public Page<JobDocument> search(String keyword, Pageable pageable) {
-
                 return getJobDocuments(keyword, pageable, client);
         }
 
