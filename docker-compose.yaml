@@ -30,20 +30,6 @@ services:
       - redis_data:/data
     networks:
       - hrt-network
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
-    container_name: hrt_elasticsearch
-    restart: no
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
-    ports:
-      - "${ELASTICSEARCH_PORT}:9200"
-    volumes:
-      - elastic_data:/usr/share/elasticsearch/data
-    networks:
-      - hrt-network
   neo4j:
     image: neo4j:5.19
     container_name: hrt_neo4j
@@ -135,7 +121,6 @@ volumes:
   redis_data:
   neo4j_data:
   ollama_data:
-  elastic_data:
   maven-cache:
 networks:
   hrt-network:

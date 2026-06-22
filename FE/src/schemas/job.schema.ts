@@ -24,3 +24,5 @@ export const jobSchema = z
       path: ['salaryMax'],
     }
   )
+
+export type JobFormData = z.infer<typeof jobSchema>

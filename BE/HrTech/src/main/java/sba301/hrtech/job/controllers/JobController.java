@@ -13,7 +13,6 @@ import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.job.dtos.request.JobRequest;
 import sba301.hrtech.job.dtos.request.JobSearchCriteria;
 import sba301.hrtech.job.dtos.response.JobResponse;
-import sba301.hrtech.job.entities.JobDocument;
 import sba301.hrtech.shared.response.ApiResponse;
 
 import java.math.BigDecimal;
@@ -32,7 +31,7 @@ public class JobController {
 
     private final IJobService jobService;
 
-    @GetMapping
+    @GetMapping("/search")
     public ResponseEntity<ApiResponse<Page<JobResponse>>> searchJobs(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String location,
@@ -48,19 +47,11 @@ public class JobController {
         return ResponseEntity.ok(ApiResponse.success(jobService.searchJobs(criteria, pageable)));
     }
 
-    @GetMapping("/list")
+    @GetMapping
     public ResponseEntity<ApiResponse<Page<JobResponse>>> listJobs(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return ResponseEntity.ok(ApiResponse.success(jobService.listJobs(pageable)));
-    }
-
-
-
-    @GetMapping("/elastic")
-    public ResponseEntity<ApiResponse<Page<JobDocument>>> searchJobs(@RequestParam String keyword, Pageable pageable)
-    {
-        return ResponseEntity.ok(ApiResponse.success(jobService.searchJobsWithElasticsearch(keyword, pageable)));
     }
 
     @GetMapping("/{id}")

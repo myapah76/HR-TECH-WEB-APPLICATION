@@ -9,15 +9,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import sba301.hrtech.identity.entities.User;
+import sba301.hrtech.company.abstractions.repositories.CompanyMemberRepository;
 import sba301.hrtech.company.entities.Company;
+import sba301.hrtech.company.entities.CompanyMember;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
-import sba301.hrtech.job.abstractions.repositories.JobSearchRepository;
 import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.job.dtos.request.JobRequest;
 import sba301.hrtech.job.dtos.request.JobSearchCriteria;
 import sba301.hrtech.job.dtos.response.JobResponse;
 import sba301.hrtech.job.entities.Job;
-import sba301.hrtech.job.entities.JobDocument;
 import sba301.hrtech.job.entities.JobSkill;
 import sba301.hrtech.job.entities.enums.ExperienceLevel;
 import sba301.hrtech.job.entities.enums.JobStatus;
@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 public class JobServiceImpl implements IJobService {
 
     private final JobRepository jobRepository;
-    private final JobSearchRepository jobSearchRepository;
+    private final CompanyMemberRepository companyMemberRepository;
     private final ISkillExtractionService skillExtractionService;
     private final JobMapper jobMapper;
     private final JobValidator jobValidator;
@@ -67,16 +67,6 @@ public class JobServiceImpl implements IJobService {
         jobMapper.applyJobFields(job, request);
 
         Job savedJob = jobRepository.save(job);
-
-        // Build and save skills
-        List<JobSkill> skills = jobMapper.buildJobSkills(savedJob, request.skills());
-        savedJob.getJobSkills().addAll(skills);
-        savedJob.setExtractionStatus(ExtractionStatus.PENDING);
-        savedJob = jobRepository.save(savedJob);
-
-        // ElasticSearch
-        JobDocument doc = jobMapper.toDocument(savedJob);
-        jobSearchRepository.save(doc);
 
         log.info("Recruiter {} created job '{}' for company {}", currentUser.getId(), savedJob.getTitle(),
                 company.getId());
@@ -261,12 +251,6 @@ public class JobServiceImpl implements IJobService {
         return jobRepository.findByStatus(JobStatus.APPROVED, pageable)
                 .map(jobMapper::toResponse);
     }
-
-    @Override
-    public Page<JobDocument> searchJobsWithElasticsearch(String keyword, Pageable pageable) {
-        return jobSearchRepository.search(keyword, pageable);
-    }
-
     @Override
     @Transactional(readOnly = true)
     public List<JobResponse> getCompanyJobs(UUID companyId) {
@@ -276,6 +260,22 @@ public class JobServiceImpl implements IJobService {
 
         return jobRepository.findByCompanyIdAndDeletedFalse(companyId)
                 .stream().map(jobMapper::toResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<JobResponse> getManageJobs(UUID companyId) {
+        User currentUser = jobValidator.getCurrentUser();
+        CompanyMember member = companyMemberRepository
+                .findByCompanyIdAndUserIdAndDeletedFalse(companyId, currentUser.getId())
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.JOB_PERMISSION_DENIED,
+                        "You do not belong to this company."));
+
+        return switch (member.getCompanyRole()) {
+            case HR -> getMyJobs(companyId);
+            case OWNER, HR_MANAGER -> getCompanyJobs(companyId);
+        };
     }
 
     @Override
@@ -298,6 +298,37 @@ public class JobServiceImpl implements IJobService {
 
         return jobRepository.findByCompanyIdAndCreatedByIdAndDeletedFalse(companyId, currentUser.getId())
                 .stream().map(jobMapper::toResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<JobResponse> getCompanyJobsWithFilters(UUID companyId, String status, String jobType, Pageable pageable) {
+        User currentUser = jobValidator.getCurrentUser();
+        jobValidator.validateCompanyApproved(companyId);
+        jobValidator.validateCanViewCompanyJobs(currentUser, companyId);
+
+        // Convert string status to enum if provided
+        JobStatus jobStatusEnum = null;
+        if (status != null) {
+            try {
+                jobStatusEnum = JobStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                // Invalid status, treat as null (no filter)
+            }
+        }
+
+        // Convert string jobType to enum if provided
+        JobType jobTypeEnum = null;
+        if (jobType != null) {
+            try {
+                jobTypeEnum = JobType.valueOf(jobType.toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                // Invalid jobType, treat as null (no filter)
+            }
+        }
+
+        return jobRepository.findCompanyJobsWithFilters(companyId, jobStatusEnum, jobTypeEnum, pageable)
+                .map(jobMapper::toResponse);
     }
 
     @Override
