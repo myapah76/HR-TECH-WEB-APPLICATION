@@ -33,10 +33,11 @@ public interface IJobService {
 
     Page<JobResponse> listJobs(Pageable pageable);
 
-
     Page<JobDocument> searchJobsWithElasticsearch(String keyword, Pageable pageable);
 
     List<JobResponse> getCompanyJobs(UUID companyId);
+
+    List<JobResponse> getManageJobs(UUID companyId);
 
     List<JobResponse> getPendingJobs(UUID companyId);
 
