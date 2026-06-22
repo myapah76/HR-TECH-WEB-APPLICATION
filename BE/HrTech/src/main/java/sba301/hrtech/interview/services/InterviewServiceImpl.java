@@ -19,6 +19,7 @@ import sba301.hrtech.interview.dtos.request.StartSessionRequest;
 import sba301.hrtech.interview.dtos.request.SubmitAnswerRequest;
 import sba301.hrtech.interview.dtos.response.AnswerSubmitResponse;
 import sba301.hrtech.interview.dtos.response.InterviewResultResponse;
+import sba301.hrtech.interview.dtos.response.QuestionResponse;
 import sba301.hrtech.interview.dtos.response.SessionStartResponse;
 import sba301.hrtech.interview.entities.InterviewAnswer;
 import sba301.hrtech.interview.entities.InterviewQuestion;
@@ -239,6 +240,41 @@ public class InterviewServiceImpl implements IInterviewService {
                 .generalFeedback(result.getGeneralFeedback())
                 .detailedFeedback(result.getDetailedFeedback())
                 .build();
+    }
+
+    @Override
+    public List<SessionStartResponse> getMyInterviewSessions() {
+        UUID currentUserId = authUtils.getCurrentUserId();
+        List<InterviewSession> sessions = interviewSessionRepository.findByUserIdOrderByCreatedAtDesc(currentUserId);
+
+        return sessions.stream()
+                .map(session -> {
+                    var questions = session.getQuestions();
+                    QuestionResponse questionResponse = null;
+                    if (session.getStatus() == InterviewStatus.IN_PROGRESS && questions != null && !questions.isEmpty()) {
+                        InterviewQuestion nextUnanswered = questions.stream()
+                                .filter(q -> q.getAnswer() == null)
+                                .min(java.util.Comparator.comparingInt(InterviewQuestion::getOrderIndex))
+                                .orElse(null);
+                        if (nextUnanswered != null) {
+                            questionResponse = interviewQuestionMapper.toResponse(nextUnanswered);
+                        } else {
+                            questionResponse = interviewQuestionMapper.toResponse(
+                                    questions.stream()
+                                            .max(java.util.Comparator.comparingInt(InterviewQuestion::getOrderIndex))
+                                            .orElse(questions.getFirst())
+                            );
+                        }
+                    }
+
+                            return SessionStartResponse.builder()
+                                    .sessionId(session.getId())
+                                    .targetRole(session.getTargetRole())
+                                    .status(session.getStatus())
+                                    .totalQuestions(session.getQuestions() != null ? session.getQuestions().size() : 0)
+                                    .currentQuestion(questionResponse)
+                                    .build();
+                }).toList();
     }
 
     private String getJdTextForJob(Job job){
