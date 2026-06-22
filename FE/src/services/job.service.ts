@@ -11,6 +11,15 @@ export interface PageResponse<T> {
   totalElements: number
   size: number
   number: number
+  first: boolean
+  last: boolean
+}
+
+export interface ManageJobsParams {
+  status?: string
+  jobType?: string
+  page?: number
+  size?: number
 }
 
 export const getJobs = async (page = 0, size = 10): Promise<PageResponse<Job>> => {
@@ -39,8 +48,14 @@ export const getJobById = async (id: string): Promise<Job> => {
   return response.data.data
 }
 
-export const getManageJobs = async (companyId: string): Promise<Job[]> => {
-  const response = await api.get<ApiResponse<Job[]>>(`/companies/${companyId}/jobs`)
+export const getManageJobs = async (
+  companyId: string,
+  params?: ManageJobsParams
+): Promise<PageResponse<Job>> => {
+  const response = await api.get<ApiResponse<PageResponse<Job>>>(
+    `/companies/${companyId}/jobs`,
+    { params }
+  )
   return response.data.data
 }
 

@@ -1,26 +1,67 @@
 'use client'
 
+import { Briefcase, ChevronLeft, ChevronRight, Loader2, PlusCircle } from 'lucide-react'
 import Link from 'next/link'
-import { Briefcase, Loader2, PlusCircle } from 'lucide-react'
+import { useState } from 'react'
 
 import ManageJobTable from '@/src/components/company/job/ManageJobTable'
 import { useGetMyCompany } from '@/src/hooks/company/company.hooks'
 import { useGetManageJobs } from '@/src/hooks/job/job.hooks'
 
+const STATUS_OPTIONS = [
+  { value: '', label: 'Tất cả trạng thái' },
+  { value: 'DRAFT', label: 'Bản nháp' },
+  { value: 'PENDING_APPROVAL', label: 'Chờ duyệt' },
+  { value: 'APPROVED', label: 'Đã duyệt' },
+  { value: 'REJECTED', label: 'Bị từ chối' },
+  { value: 'CLOSED', label: 'Đã đóng' },
+]
+
+const JOB_TYPE_OPTIONS = [
+  { value: '', label: 'Tất cả hình thức' },
+  { value: 'FULL_TIME', label: 'Toàn thời gian' },
+  { value: 'PART_TIME', label: 'Bán thời gian' },
+  { value: 'CONTRACT', label: 'Hợp đồng' },
+  { value: 'INTERNSHIP', label: 'Thực tập' },
+  { value: 'REMOTE', label: 'Từ xa' },
+]
+
+const PAGE_SIZE = 10
+
 export default function ManageJobPage() {
+  const [page, setPage] = useState(0)
+  const [status, setStatus] = useState('')
+  const [jobType, setJobType] = useState('')
+
   const {
     data: myCompany,
     isLoading: isCompanyLoading,
     isError: isCompanyError,
   } = useGetMyCompany()
+
   const {
-    data: jobs = [],
+    data: pageData,
     isLoading: isJobsLoading,
     isError: isJobsError,
-  } = useGetManageJobs(myCompany?.id)
+  } = useGetManageJobs(myCompany?.id, {
+    status: status || undefined,
+    jobType: jobType || undefined,
+    page,
+    size: PAGE_SIZE,
+  })
 
   const isLoading = isCompanyLoading || isJobsLoading
   const isError = isCompanyError || isJobsError
+
+  const jobs = pageData?.content ?? []
+  const totalPages = pageData?.totalPages ?? 0
+  const totalElements = pageData?.totalElements ?? 0
+
+  const handleFilterChange = (newStatus: string, newJobType: string) => {
+    setPage(0)
+    setStatus(newStatus)
+    setJobType(newJobType)
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 pb-12">
@@ -44,6 +85,51 @@ export default function ManageJobPage() {
         </Link>
       </div>
 
+      {/* Filter Bar */}
+      <div className="flex flex-wrap items-center gap-3">
+        <select
+          id="filter-status"
+          value={status}
+          onChange={(e) => handleFilterChange(e.target.value, jobType)}
+          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+        >
+          {STATUS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
+        <select
+          id="filter-job-type"
+          value={jobType}
+          onChange={(e) => handleFilterChange(status, e.target.value)}
+          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+        >
+          {JOB_TYPE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
+        {(status || jobType) && (
+          <button
+            type="button"
+            onClick={() => handleFilterChange('', '')}
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-500 shadow-xs transition-colors hover:border-rose-300 hover:text-rose-600"
+          >
+            Xóa bộ lọc
+          </button>
+        )}
+
+        {!isLoading && totalElements > 0 && (
+          <span className="ml-auto text-sm font-semibold text-slate-400">
+            {totalElements} tin tuyển dụng
+          </span>
+        )}
+      </div>
+
       {isLoading ? (
         <div className="flex min-h-64 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
           <Loader2 className="h-7 w-7 animate-spin text-emerald-600" />
@@ -54,21 +140,56 @@ export default function ManageJobPage() {
           Không thể tải danh sách tin tuyển dụng. Vui lòng thử lại sau.
         </div>
       ) : jobs.length > 0 ? (
-        <ManageJobTable jobs={jobs} />
+        <>
+          <ManageJobTable jobs={jobs} />
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-xs">
+              <p className="text-sm font-semibold text-slate-500">
+                Trang <span className="font-bold text-slate-800">{page + 1}</span> / {totalPages}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-sm font-bold text-slate-700 transition-colors hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Trước
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={page >= totalPages - 1}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-sm font-bold text-slate-700 transition-colors hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Sau
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       ) : (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
           <Briefcase className="mx-auto h-10 w-10 text-slate-300" />
           <h2 className="mt-4 text-lg font-bold text-slate-900">Chưa có tin tuyển dụng</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Tạo tin tuyển dụng đầu tiên để bắt đầu tìm kiếm ứng viên.
+            {status || jobType
+              ? 'Không tìm thấy tin tuyển dụng với bộ lọc hiện tại.'
+              : 'Tạo tin tuyển dụng đầu tiên để bắt đầu tìm kiếm ứng viên.'}
           </p>
-          <Link
-            href="/company/post-job"
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700"
-          >
-            <PlusCircle className="h-4 w-4" />
-            Đăng tin mới
-          </Link>
+          {!status && !jobType && (
+            <Link
+              href="/company/post-job"
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700"
+            >
+              <PlusCircle className="h-4 w-4" />
+              Đăng tin mới
+            </Link>
+          )}
         </div>
       )}
     </div>

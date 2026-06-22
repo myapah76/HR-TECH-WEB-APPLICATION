@@ -13,15 +13,21 @@ const jobTypeLabels: Record<string, string> = {
 }
 
 const statusStyles: Record<string, string> = {
+  APPROVED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   OPEN: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   CLOSED: 'bg-slate-100 text-slate-600 border-slate-200',
   DRAFT: 'bg-amber-50 text-amber-700 border-amber-200',
+  PENDING_APPROVAL: 'bg-blue-50 text-blue-700 border-blue-200',
+  REJECTED: 'bg-red-50 text-red-700 border-red-200',
 }
 
 const statusLabels: Record<string, string> = {
+  APPROVED: 'Đã duyệt',
   OPEN: 'Đang tuyển',
   CLOSED: 'Đã đóng',
   DRAFT: 'Bản nháp',
+  PENDING_APPROVAL: 'Chờ duyệt',
+  REJECTED: 'Bị từ chối',
 }
 
 export default function ManageJobTable({ jobs }: ManageJobTableProps) {

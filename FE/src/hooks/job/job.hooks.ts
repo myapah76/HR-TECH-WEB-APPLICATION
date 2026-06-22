@@ -7,6 +7,7 @@ import {
   unsaveJob,
   createJob,
   updateJob,
+  ManageJobsParams,
 } from '@/src/services/job.service'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
@@ -25,10 +26,10 @@ export const useGetJobById = (id: string) => {
   })
 }
 
-export const useGetManageJobs = (companyId?: string) => {
+export const useGetManageJobs = (companyId?: string, params?: ManageJobsParams) => {
   return useQuery({
-    queryKey: ['manageJobs', companyId],
-    queryFn: () => getManageJobs(companyId!),
+    queryKey: ['manageJobs', companyId, params],
+    queryFn: () => getManageJobs(companyId!, params),
     enabled: !!companyId,
   })
 }
