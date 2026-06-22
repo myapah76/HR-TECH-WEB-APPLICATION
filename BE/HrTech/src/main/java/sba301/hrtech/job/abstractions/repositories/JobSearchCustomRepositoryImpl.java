@@ -15,7 +15,7 @@ import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
-public class JobSearchRepositoryImpl implements JobSearchCustomRepository {
+public class JobSearchCustomRepositoryImpl implements JobSearchCustomRepository {
 
         private final ElasticsearchClient client;
 
