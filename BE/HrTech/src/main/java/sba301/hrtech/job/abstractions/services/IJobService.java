@@ -6,7 +6,6 @@ import sba301.hrtech.job.dtos.request.JobRequest;
 import sba301.hrtech.job.dtos.request.JobSearchCriteria;
 import sba301.hrtech.job.dtos.response.JobResponse;
 import sba301.hrtech.job.entities.Job;
-import sba301.hrtech.job.entities.JobDocument;
 
 import java.util.List;
 import java.util.UUID;
@@ -32,8 +31,6 @@ public interface IJobService {
     Page<JobResponse> searchJobs(JobSearchCriteria criteria, Pageable pageable);
 
     Page<JobResponse> listJobs(Pageable pageable);
-
-    Page<JobDocument> searchJobsWithElasticsearch(String keyword, Pageable pageable);
 
     List<JobResponse> getCompanyJobs(UUID companyId);
 

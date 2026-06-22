@@ -12,15 +12,12 @@ import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.company.abstractions.repositories.CompanyMemberRepository;
 import sba301.hrtech.company.entities.Company;
 import sba301.hrtech.company.entities.CompanyMember;
-import sba301.hrtech.company.entities.enums.CompanyRole;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
-import sba301.hrtech.job.abstractions.repositories.JobSearchRepository;
 import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.job.dtos.request.JobRequest;
 import sba301.hrtech.job.dtos.request.JobSearchCriteria;
 import sba301.hrtech.job.dtos.response.JobResponse;
 import sba301.hrtech.job.entities.Job;
-import sba301.hrtech.job.entities.JobDocument;
 import sba301.hrtech.job.entities.JobSkill;
 import sba301.hrtech.job.entities.enums.ExperienceLevel;
 import sba301.hrtech.job.entities.enums.JobStatus;
@@ -46,7 +43,6 @@ public class JobServiceImpl implements IJobService {
 
     private final JobRepository jobRepository;
     private final CompanyMemberRepository companyMemberRepository;
-    private final JobSearchRepository jobSearchRepository;
     private final ISkillExtractionService skillExtractionService;
     private final JobMapper jobMapper;
     private final JobValidator jobValidator;
@@ -71,16 +67,6 @@ public class JobServiceImpl implements IJobService {
         jobMapper.applyJobFields(job, request);
 
         Job savedJob = jobRepository.save(job);
-
-        // Build and save skills
-        List<JobSkill> skills = jobMapper.buildJobSkills(savedJob, request.skills());
-        savedJob.getJobSkills().addAll(skills);
-        savedJob.setExtractionStatus(ExtractionStatus.PENDING);
-        savedJob = jobRepository.save(savedJob);
-
-        // ElasticSearch
-        JobDocument doc = jobMapper.toDocument(savedJob);
-        jobSearchRepository.save(doc);
 
         log.info("Recruiter {} created job '{}' for company {}", currentUser.getId(), savedJob.getTitle(),
                 company.getId());
@@ -265,12 +251,6 @@ public class JobServiceImpl implements IJobService {
         return jobRepository.findByStatus(JobStatus.APPROVED, pageable)
                 .map(jobMapper::toResponse);
     }
-
-    @Override
-    public Page<JobDocument> searchJobsWithElasticsearch(String keyword, Pageable pageable) {
-        return jobSearchRepository.search(keyword, pageable);
-    }
-
     @Override
     @Transactional(readOnly = true)
     public List<JobResponse> getCompanyJobs(UUID companyId) {
