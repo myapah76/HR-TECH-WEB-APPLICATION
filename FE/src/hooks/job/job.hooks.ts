@@ -6,6 +6,7 @@ import {
   saveJob,
   unsaveJob,
   createJob,
+  updateJob,
 } from '@/src/services/job.service'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
@@ -65,6 +66,18 @@ export const useCreateJobMutation = () => {
   return useMutation({
     mutationFn: createJob,
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] })
+      queryClient.invalidateQueries({ queryKey: ['manageJobs'] })
+    },
+  })
+}
+
+export const useUpdateJobMutation = (jobId: string) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Parameters<typeof updateJob>[1]) => updateJob(jobId, data),
+    onSuccess: (updatedJob) => {
+      queryClient.setQueryData(['job', jobId], updatedJob)
       queryClient.invalidateQueries({ queryKey: ['jobs'] })
       queryClient.invalidateQueries({ queryKey: ['manageJobs'] })
     },

@@ -84,16 +84,14 @@ export default function ManageJobTable({ jobs }: ManageJobTableProps) {
                       <Eye className="h-4 w-4" />
                     </Link>
 
-                    {/* TODO: Enable when an edit-job route and service are available. */}
-                    <button
-                      type="button"
-                      disabled
+                    <Link
+                      href={`/company/manage-jobs/${job.id}/update`}
                       aria-label={`Chỉnh sửa ${job.title}`}
-                      className="cursor-not-allowed rounded-lg p-2 text-slate-300"
-                      title="Chưa có chức năng chỉnh sửa"
+                      className="rounded-lg p-2 text-amber-600 transition-colors hover:bg-amber-50"
+                      title="Chỉnh sửa tin"
                     >
                       <Pencil className="h-4 w-4" />
-                    </button>
+                    </Link>
 
                     {/* TODO: Enable when a delete-job service is available. */}
                     <button

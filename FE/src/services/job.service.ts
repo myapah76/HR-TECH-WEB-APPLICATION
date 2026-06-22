@@ -48,3 +48,8 @@ export const createJob = async (data: CreateJobRequest): Promise<Job> => {
   const response = await api.post<ApiResponse<Job>>('/jobs', data)
   return response.data.data
 }
+
+export const updateJob = async (id: string, data: CreateJobRequest): Promise<Job> => {
+  const response = await api.put<ApiResponse<Job>>(`/jobs/${id}`, data)
+  return response.data.data
+}
