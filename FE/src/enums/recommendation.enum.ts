@@ -1,0 +1,8 @@
+export enum JobMatchingStatus {
+  PENDING = 'PENDING',
+  EXTRACTING = 'EXTRACTING',
+  MAPPING = 'MAPPING',
+  SCORING = 'SCORING',
+  DONE = 'DONE',
+  FAILED = 'FAILED'
+}
