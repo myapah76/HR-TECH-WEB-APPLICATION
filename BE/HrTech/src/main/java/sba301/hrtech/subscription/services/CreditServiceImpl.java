@@ -45,7 +45,7 @@ public class CreditServiceImpl implements ICreditService {
 
         boolean success = false;
         for (CandidateSubscription sub : activeSubscriptions) {
-            Optional<CandidateSubFeatureUsage> usageOpt = candidateSubFeatureUsageRepository.findBySubscriptionIdAndFeatureCode(sub.getId(), "AI_MATCHING");
+            Optional<CandidateSubFeatureUsage> usageOpt = candidateSubFeatureUsageRepository.findBySubscriptionIdAndFeatureCode(sub.getId(), "AI_CREDIT");
             if (usageOpt.isPresent()) {
                 CandidateSubFeatureUsage usage = usageOpt.get();
                 if (usage.getQuota() - usage.getUsed() >= amount) {
@@ -78,7 +78,7 @@ public class CreditServiceImpl implements ICreditService {
 
         boolean success = false;
         for (CompanySubscription sub : activeSubscriptions) {
-            Optional<CompanySubFeatureUsage> usageOpt = companySubFeatureUsageRepository.findBySubscriptionIdAndFeatureCode(sub.getId(), "JOB_POST");
+            Optional<CompanySubFeatureUsage> usageOpt = companySubFeatureUsageRepository.findBySubscriptionIdAndFeatureCode(sub.getId(), "JOB_POSTING");
             if (usageOpt.isPresent()) {
                 CompanySubFeatureUsage usage = usageOpt.get();
                 if (usage.getQuota() - usage.getUsed() >= amount) {

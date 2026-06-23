@@ -366,7 +366,7 @@ function PricingContent() {
                                 }`}
                               >
                                 {feature.name}
-                                {feature.quota > 0 && (
+                                {feature.quota > 0 && ['JOB_POSTING', 'AI_CREDIT'].includes(feature.code) && (
                                   <span
                                     className={`font-black ml-1 ${pkg.isPopular ? 'text-blue-400' : 'text-indigo-600'}`}
                                   >
