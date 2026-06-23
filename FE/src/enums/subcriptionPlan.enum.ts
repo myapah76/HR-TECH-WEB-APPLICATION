@@ -1,4 +1,4 @@
-export enum PlanType {
+export enum SubscriptionType {
   CANDIDATE = 'CANDIDATE',
   COMPANY = 'COMPANY',
 }

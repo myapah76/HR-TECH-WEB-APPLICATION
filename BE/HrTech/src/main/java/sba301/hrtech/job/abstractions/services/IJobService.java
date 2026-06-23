@@ -6,6 +6,9 @@ import sba301.hrtech.job.dtos.request.JobRequest;
 import sba301.hrtech.job.dtos.request.JobSearchCriteria;
 import sba301.hrtech.job.dtos.response.JobResponse;
 import sba301.hrtech.job.entities.Job;
+import sba301.hrtech.job.entities.JobSkill;
+import sba301.hrtech.shared.enums.ExtractionStatus;
+import java.time.Instant;
 
 import java.util.List;
 import java.util.UUID;
@@ -43,4 +46,8 @@ public interface IJobService {
     Page<JobResponse> getCompanyJobsWithFilters(UUID companyId, String status, String jobType, Pageable pageable);
 
     Job getJobEntityById(UUID jobId);
+    List<Job> findStuckJobs(List<ExtractionStatus> statuses, Instant threshold);
+    List<Job> getAllJobEntities();
+    Job saveJobEntity(Job job);
+    void saveJobSkill(JobSkill jobSkill);
 }

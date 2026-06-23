@@ -10,13 +10,18 @@ import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.abstractions.services.IUserService;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.cv.abstractions.repositories.CvRepository;
+import sba301.hrtech.cv.abstractions.repositories.CvSkillRepository;
 import sba301.hrtech.cv.abstractions.services.ICvService;
 import sba301.hrtech.cv.entities.Cv;
+import sba301.hrtech.cv.entities.CvSkill;
+import sba301.hrtech.shared.enums.ExtractionStatus;
+import java.time.Instant;
 import sba301.hrtech.shared.enums.ExtractionStatus;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.shared.services.CloudinaryService;
-import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
+import org.springframework.context.ApplicationEventPublisher;
+import sba301.hrtech.shared.events.CvExtractionRequestedEvent;
 
 import sba301.hrtech.identity.utils.AuthUtils;
 import sba301.hrtech.cv.mapper.CvMapper;
@@ -33,9 +38,10 @@ import java.util.UUID;
 public class CvServiceImpl implements ICvService {
 
     private final CvRepository cvRepository;
+    private final CvSkillRepository cvSkillRepository;
     private final IUserService userService;
     private final CloudinaryService cloudinaryService;
-    private final ISkillExtractionService skillExtractionService;
+    private final ApplicationEventPublisher eventPublisher;
     private final AuthUtils authUtils;
     private final CvMapper cvMapper;
 
@@ -69,21 +75,7 @@ public class CvServiceImpl implements ICvService {
 
         Cv savedCv = cvRepository.save(newCv);
 
-        // Trigger background task ONLY after the current transaction commits
-        // to ensure the CV is actually present in the database when the background
-        // thread runs.
-        if (TransactionSynchronizationManager.isActualTransactionActive()) {
-            TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        skillExtractionService.extractAndSaveSkills(savedCv.getId());
-                    }
-                }
-            );
-        } else {
-            skillExtractionService.extractAndSaveSkills(savedCv.getId());
-        }
+        eventPublisher.publishEvent(new CvExtractionRequestedEvent(savedCv.getId()));
 
         return cvMapper.toSummaryResponse(savedCv);
     }
@@ -204,5 +196,22 @@ public class CvServiceImpl implements ICvService {
     public Cv getCvEntityById(UUID cvId) {
         return cvRepository.findById(cvId)
                 .orElseThrow(() -> new AppException(ErrorCode.CV_NOT_FOUND));
+    }
+
+    @Override
+    public List<Cv> findStuckCvs(List<ExtractionStatus> statuses, Instant threshold) {
+        return cvRepository.findStuckCvs(statuses, threshold);
+    }
+
+    @Override
+    @Transactional
+    public Cv saveCvEntity(Cv cv) {
+        return cvRepository.save(cv);
+    }
+
+    @Override
+    @Transactional
+    public void saveCvSkill(CvSkill cvSkill) {
+        cvSkillRepository.save(cvSkill);
     }
 }

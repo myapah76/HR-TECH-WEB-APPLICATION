@@ -4,34 +4,56 @@ import org.mapstruct.*;
 import sba301.hrtech.subscription.dtos.subscriptionPlan.request.SubscriptionPlanRequest;
 import sba301.hrtech.subscription.dtos.subscriptionPlan.response.PlanFeatureResponse;
 import sba301.hrtech.subscription.dtos.subscriptionPlan.response.SubscriptionPlanResponse;
+import sba301.hrtech.subscription.entities.CandidatePlanFeature;
+import sba301.hrtech.subscription.entities.CandidateSubscriptionPlan;
+import sba301.hrtech.subscription.entities.CompanyPlanFeature;
+import sba301.hrtech.subscription.entities.CompanySubscriptionPlan;
 import sba301.hrtech.subscription.entities.Feature;
-import sba301.hrtech.subscription.entities.PlanFeature;
-import sba301.hrtech.subscription.entities.SubscriptionPlan;
 
 @Mapper(
         componentModel = "spring",
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
 )
 public interface SubscriptionPlanMapper {
-    SubscriptionPlan toEntity(SubscriptionPlanRequest request);
 
-    @Mapping(
-            target = "features",
-            source = "planFeatures",
-            qualifiedByName = "planFeatureToResponse"
-    )
-    SubscriptionPlanResponse toResponse(SubscriptionPlan subscriptionPlan);
+    // ==========================================
+    // CANDIDATE MAPPING
+    // ==========================================
+    CandidateSubscriptionPlan toCandidateEntity(SubscriptionPlanRequest request);
 
-    void updateEntity(
-            SubscriptionPlanRequest request,
-            @MappingTarget SubscriptionPlan subscriptionPlan
-    );
+    @Mapping(target = "features", source = "planFeatures", qualifiedByName = "candidatePlanFeatureToResponse")
+    @Mapping(target = "subscriptionType", constant = "CANDIDATE")
+    SubscriptionPlanResponse toCandidateResponse(CandidateSubscriptionPlan subscriptionPlan);
 
-    @Named("planFeatureToResponse")
-    default PlanFeatureResponse planFeatureToResponse(PlanFeature planFeature) {
+    void updateCandidateEntity(SubscriptionPlanRequest request, @MappingTarget CandidateSubscriptionPlan subscriptionPlan);
 
+    @Named("candidatePlanFeatureToResponse")
+    default PlanFeatureResponse candidatePlanFeatureToResponse(CandidatePlanFeature planFeature) {
+        if (planFeature == null || planFeature.getFeature() == null) return null;
         Feature feature = planFeature.getFeature();
+        return PlanFeatureResponse.builder()
+                .code(feature.getCode())
+                .name(feature.getName())
+                .description(feature.getDescription())
+                .quota(planFeature.getQuota())
+                .build();
+    }
 
+    // ==========================================
+    // COMPANY MAPPING
+    // ==========================================
+    CompanySubscriptionPlan toCompanyEntity(SubscriptionPlanRequest request);
+
+    @Mapping(target = "features", source = "planFeatures", qualifiedByName = "companyPlanFeatureToResponse")
+    @Mapping(target = "subscriptionType", constant = "COMPANY")
+    SubscriptionPlanResponse toCompanyResponse(CompanySubscriptionPlan subscriptionPlan);
+
+    void updateCompanyEntity(SubscriptionPlanRequest request, @MappingTarget CompanySubscriptionPlan subscriptionPlan);
+
+    @Named("companyPlanFeatureToResponse")
+    default PlanFeatureResponse companyPlanFeatureToResponse(CompanyPlanFeature planFeature) {
+        if (planFeature == null || planFeature.getFeature() == null) return null;
+        Feature feature = planFeature.getFeature();
         return PlanFeatureResponse.builder()
                 .code(feature.getCode())
                 .name(feature.getName())

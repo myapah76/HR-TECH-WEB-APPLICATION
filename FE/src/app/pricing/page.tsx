@@ -16,7 +16,7 @@ import {
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { RoleUser } from '@/src/enums/role.enum'
-import { PlanType } from '@/src/enums/subcriptionPlan.enum'
+import { SubscriptionType } from '@/src/enums/subcriptionPlan.enum'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'motion/react'
 import {
@@ -94,8 +94,8 @@ function PricingContent() {
     })
   }
 
-  const hrPackages = plans.filter((p) => p.planType === PlanType.COMPANY)
-  const candidatePackages = plans.filter((p) => p.planType === PlanType.CANDIDATE)
+  const hrPackages = plans.filter((p) => p.subscriptionType === SubscriptionType.COMPANY)
+  const candidatePackages = plans.filter((p) => p.subscriptionType === SubscriptionType.CANDIDATE)
 
   const rawPackages = activeTab === 'candidate' ? candidatePackages : hrPackages
 

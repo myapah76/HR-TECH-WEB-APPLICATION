@@ -85,6 +85,12 @@ public class CompanyServiceImpl implements ICompanyService {
     }
 
     @Override
+    public CompanyMember getMemberEntityByUserId(UUID userId) {
+        return companyMemberRepository.findByUserIdAndDeletedFalse(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User is not a company member"));
+    }
+
+    @Override
     @Transactional
     public EmailActionResponse registerCompany(CompanyRegisterRequest request) {
         String email = request.email().toLowerCase();

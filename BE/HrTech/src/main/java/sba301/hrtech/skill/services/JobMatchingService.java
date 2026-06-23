@@ -7,7 +7,7 @@ import java.util.UUID;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import sba301.hrtech.cv.abstractions.repositories.CvRepository;
+import sba301.hrtech.cv.abstractions.services.ICvService;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.shared.enums.ExtractionStatus;
 import sba301.hrtech.skill.dtos.response.JobMatchingTaskResponse;
@@ -20,7 +20,7 @@ import java.util.Collections;
 public class JobMatchingService {
 
     private final IRecommendationService recommendationService;
-    private final CvRepository cvRepository;
+    private final ICvService cvService;
 
     // In-memory map to store task statuses
     private final Map<String, JobMatchingTaskResponse> tasks = new ConcurrentHashMap<>();
@@ -44,13 +44,13 @@ public class JobMatchingService {
     public void processJobMatchingAsync(String taskId, UUID cvId) {
         try {
             // 1. Wait for Extract Skills to finish (it's triggered asynchronously upon CV upload)
-            Cv cv = cvRepository.findById(cvId).orElseThrow();
+            Cv cv = cvService.getCvEntityById(cvId);
             while (cv.getExtractionStatus() == ExtractionStatus.PENDING ||
                    cv.getExtractionStatus() == ExtractionStatus.PROCESSING) {
                 try {
                     Thread.sleep(2000);
                 } catch (InterruptedException ignored) {}
-                cv = cvRepository.findById(cvId).orElseThrow();
+                cv = cvService.getCvEntityById(cvId);
             }
             
             if (cv.getExtractionStatus() == ExtractionStatus.FAILED) {

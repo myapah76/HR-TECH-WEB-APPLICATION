@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import sba301.hrtech.cv.abstractions.repositories.CvRepository;
+import sba301.hrtech.cv.abstractions.services.ICvService;
 import sba301.hrtech.cv.entities.Cv;
-import sba301.hrtech.job.abstractions.repositories.JobRepository;
+import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.shared.enums.ExtractionStatus;
 import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
@@ -20,8 +20,8 @@ import java.util.List;
 @Slf4j
 public class RagSyncScheduler {
 
-    private final JobRepository jobRepository;
-    private final CvRepository cvRepository;
+    private final IJobService jobService;
+    private final ICvService cvService;
     private final ISkillExtractionService skillExtractionService;
 
     @Scheduled(cron = "0 0/5 * * * ?")
@@ -30,7 +30,7 @@ public class RagSyncScheduler {
         Instant threshold = Instant.now().minus(5, ChronoUnit.MINUTES);
         List<ExtractionStatus> statuses = List.of(ExtractionStatus.PENDING, ExtractionStatus.FAILED);
 
-        List<Job> stuckJobs = jobRepository.findStuckJobs(statuses, threshold);
+        List<Job> stuckJobs = jobService.findStuckJobs(statuses, threshold);
         for (Job job : stuckJobs) {
             log.info("Retrying extraction and RAG sync for stuck Job: {}", job.getId());
             try {
@@ -40,7 +40,7 @@ public class RagSyncScheduler {
             }
         }
 
-        List<Cv> stuckCvs = cvRepository.findStuckCvs(statuses, threshold);
+        List<Cv> stuckCvs = cvService.findStuckCvs(statuses, threshold);
         for (Cv cv : stuckCvs) {
             log.info("Retrying extraction and RAG sync for stuck CV: {}", cv.getId());
             try {

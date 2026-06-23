@@ -4,6 +4,9 @@ import org.springframework.web.multipart.MultipartFile;
 import sba301.hrtech.cv.dtos.response.CvDetailResponse;
 import sba301.hrtech.cv.dtos.response.CvSummaryResponse;
 import sba301.hrtech.cv.entities.Cv;
+import sba301.hrtech.cv.entities.CvSkill;
+import sba301.hrtech.shared.enums.ExtractionStatus;
+import java.time.Instant;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,4 +20,7 @@ public interface ICvService {
     void deleteCv(UUID cvId);
 
     Cv getCvEntityById(UUID cvId);
+    List<Cv> findStuckCvs(List<ExtractionStatus> statuses, Instant threshold);
+    Cv saveCvEntity(Cv cv);
+    void saveCvSkill(CvSkill cvSkill);
 }

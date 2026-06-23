@@ -12,6 +12,7 @@ import sba301.hrtech.identity.dtos.auth.response.EmailActionResponse;
 
 import java.util.List;
 import java.util.UUID;
+import sba301.hrtech.company.entities.CompanyMember;
 
 public interface ICompanyService {
 
@@ -32,6 +33,8 @@ public interface ICompanyService {
     void deleteCompany(UUID companyId);
 
     // Member Management
+    CompanyMember getMemberEntityByUserId(UUID userId);
+
     CompanyMemberResponse addMember(UUID companyId, AddMemberRequest request);
 
     List<CompanyMemberResponse> getMembers(UUID companyId);

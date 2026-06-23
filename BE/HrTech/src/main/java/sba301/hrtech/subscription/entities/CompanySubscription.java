@@ -2,28 +2,26 @@ package sba301.hrtech.subscription.entities;
 
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import sba301.hrtech.company.entities.Company;
 import sba301.hrtech.identity.entities.User;
-import sba301.hrtech.payment.entities.Payment;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import sba301.hrtech.subscription.entities.enums.PlanType;
 import sba301.hrtech.subscription.entities.enums.SubscriptionStatus;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @Entity
-@Table(name = "subscriptions")
+@Table(name = "company_subscriptions")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@SQLDelete(sql = "UPDATE subscriptions SET is_deleted = true WHERE id = ?")
+@SQLDelete(sql = "UPDATE company_subscriptions SET is_deleted = true WHERE id = ?")
 @SQLRestriction("is_deleted = false")
-public class Subscription extends SoftDeleteEntity {
+public class CompanySubscription extends SoftDeleteEntity {
 
     @Column(name = "start_date")
     private LocalDate startDate;
@@ -32,25 +30,18 @@ public class Subscription extends SoftDeleteEntity {
     private LocalDate endDate;
 
     @Enumerated(EnumType.STRING)
-    private PlanType planType;
-
-    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private SubscriptionStatus status;
 
-    @Column(name = "remaining_ai_credits")
-    private Integer remainingAiCredits = 0;
-
-    @Column(name = "remaining_job_posts")
-    private Integer remainingJobPosts = 0;
-
-    @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Payment> payments;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "purchased_by", nullable = false)
+    private User purchasedBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plan_id", nullable = false)
-    private SubscriptionPlan plan;
+    private CompanySubscriptionPlan plan;
 }

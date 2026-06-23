@@ -6,7 +6,7 @@ import sba301.hrtech.shared.common.BaseEntity;
 
 @Entity
 @Table(
-        name = "plan_features",
+        name = "company_plan_features",
         uniqueConstraints = {
                 @UniqueConstraint(
                         columnNames = {"plan_id", "feature_id"}
@@ -18,15 +18,16 @@ import sba301.hrtech.shared.common.BaseEntity;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PlanFeature extends BaseEntity {
+public class CompanyPlanFeature extends BaseEntity {
 
-    @ManyToOne
-    @JoinColumn(name = "plan_id")
-    private SubscriptionPlan plan;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "plan_id", nullable = false)
+    private CompanySubscriptionPlan plan;
 
-    @ManyToOne
-    @JoinColumn(name = "feature_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "feature_id", nullable = false)
     private Feature feature;
 
+    @Column(nullable = false)
     private Integer quota;
 }

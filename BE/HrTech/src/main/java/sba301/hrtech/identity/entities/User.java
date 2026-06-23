@@ -19,7 +19,8 @@ import sba301.hrtech.application.entities.Application;
 import sba301.hrtech.company.entities.CompanyMember;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
-import sba301.hrtech.subscription.entities.Subscription;
+import sba301.hrtech.subscription.entities.CandidateSubscription;
+import sba301.hrtech.subscription.entities.CompanySubscription;
 import sba301.hrtech.payment.entities.Payment;
 
 @Entity
@@ -78,31 +79,16 @@ public class User extends SoftDeleteEntity {
      * PERSIST: lưu các entity con khi tạo mới User.
      * MERGE: cập nhật các entity con khi cập nhật User.
      */
-    @OneToMany(
-            mappedBy = "user",
-            cascade = {
-                    CascadeType.PERSIST,
-                    CascadeType.MERGE
-            }
-    )
+    @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Application> applications = new ArrayList<>();
 
-    @OneToMany(
-            mappedBy = "user",
-            cascade = {
-                    CascadeType.PERSIST,
-                    CascadeType.MERGE
-            }
-    )
-    private List<Subscription> subscriptions = new ArrayList<>();
+    @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private List<CandidateSubscription> candidateSubscriptions = new ArrayList<>();
 
-    @OneToMany(
-            mappedBy = "user",
-            cascade = {
-                    CascadeType.PERSIST,
-                    CascadeType.MERGE
-            }
-    )
+    @OneToMany(mappedBy = "purchasedBy", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private List<CompanySubscription> companyPurchasedSubscriptions = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Payment> payments = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

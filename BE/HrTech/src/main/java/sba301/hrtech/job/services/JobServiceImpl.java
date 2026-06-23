@@ -13,6 +13,7 @@ import sba301.hrtech.company.abstractions.repositories.CompanyMemberRepository;
 import sba301.hrtech.company.entities.Company;
 import sba301.hrtech.company.entities.CompanyMember;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
+import sba301.hrtech.job.abstractions.repositories.JobSkillRepository;
 import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.job.dtos.request.JobRequest;
 import sba301.hrtech.job.dtos.request.JobSearchCriteria;
@@ -27,10 +28,12 @@ import sba301.hrtech.job.validators.JobValidator;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.enums.ExtractionStatus;
 import sba301.hrtech.shared.exceptions.AppException;
-import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
+import org.springframework.context.ApplicationEventPublisher;
+import sba301.hrtech.shared.events.JobExtractionRequestedEvent;
 
 import sba301.hrtech.subscription.abstractions.services.ICreditService;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -42,8 +45,9 @@ import java.util.stream.Collectors;
 public class JobServiceImpl implements IJobService {
 
     private final JobRepository jobRepository;
+    private final JobSkillRepository jobSkillRepository;
     private final CompanyMemberRepository companyMemberRepository;
-    private final ISkillExtractionService skillExtractionService;
+    private final ApplicationEventPublisher eventPublisher;
     private final JobMapper jobMapper;
     private final JobValidator jobValidator;
     private final ICreditService creditService;
@@ -142,12 +146,7 @@ public class JobServiceImpl implements IJobService {
         Job savedJob = jobRepository.save(job);
 
         final UUID finalApproveJobId = savedJob.getId();
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                skillExtractionService.extractAndSaveJobSkills(finalApproveJobId);
-            }
-        });
+        eventPublisher.publishEvent(new JobExtractionRequestedEvent(finalApproveJobId));
 
         log.info("Approver {} approved job {}", currentUser.getId(), jobId);
         return jobMapper.toResponse(savedJob);
@@ -335,5 +334,27 @@ public class JobServiceImpl implements IJobService {
     public Job getJobEntityById(UUID jobId) {
         return jobRepository.findById(jobId)
                 .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE));
+    }
+
+    @Override
+    public List<Job> findStuckJobs(List<ExtractionStatus> statuses, Instant threshold) {
+        return jobRepository.findStuckJobs(statuses, threshold);
+    }
+
+    @Override
+    public List<Job> getAllJobEntities() {
+        return jobRepository.findAll();
+    }
+
+    @Override
+    @Transactional
+    public Job saveJobEntity(Job job) {
+        return jobRepository.save(job);
+    }
+
+    @Override
+    @Transactional
+    public void saveJobSkill(JobSkill jobSkill) {
+        jobSkillRepository.save(jobSkill);
     }
 }

@@ -5,12 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sba301.hrtech.cv.abstractions.repositories.CvRepository;
-import sba301.hrtech.cv.abstractions.repositories.CvSkillRepository;
+import sba301.hrtech.cv.abstractions.services.ICvService;
+
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.cv.entities.CvSkill;
-import sba301.hrtech.job.abstractions.repositories.JobRepository;
-import sba301.hrtech.job.abstractions.repositories.JobSkillRepository;
+import sba301.hrtech.job.abstractions.services.IJobService;
+
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.job.entities.JobSkill;
 import sba301.hrtech.shared.error.ErrorCode;
@@ -42,10 +42,10 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class SkillExtractionServiceImpl implements ISkillExtractionService {
 
-    private final CvRepository cvRepository;
-    private final CvSkillRepository cvSkillRepository;
-    private final JobRepository jobRepository;
-    private final JobSkillRepository jobSkillRepository;
+    private final ICvService cvService;
+    
+    private final IJobService jobService;
+    
     private final SkillNodeRepository skillNodeRepository;
     private final AiServiceClient aiServiceClient;
     private final SkillMapper skillMapper;
@@ -55,18 +55,16 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
     @Transactional
     public CompletableFuture<CvExtractionResponse> extractAndSaveSkills(UUID cvId) {
         // 1. Get CV from PostgreSQL
-        Cv cv = cvRepository.findById(cvId)
-                .orElseThrow(() -> new AppException(
-                        ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
+        Cv cv = cvService.getCvEntityById(cvId);
 
         cv.setExtractionStatus(ExtractionStatus.PROCESSING);
-        cvRepository.save(cv);
+        cvService.saveCvEntity(cv);
 
         try {
             String fileUrl = cv.getFileUrl();
             if (fileUrl == null || fileUrl.isBlank()) {
                 cv.setExtractionStatus(ExtractionStatus.COMPLETED);
-                cvRepository.save(cv);
+                cvService.saveCvEntity(cv);
                 return CompletableFuture.completedFuture(CvExtractionResponse.builder()
                         .cvId(cvId)
                         .extractedSkills(Collections.emptyList())
@@ -80,7 +78,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
 
             if (parseResult == null) {
                 cv.setExtractionStatus(ExtractionStatus.COMPLETED);
-                cvRepository.save(cv);
+                cvService.saveCvEntity(cv);
                 return CompletableFuture.completedFuture(CvExtractionResponse.builder()
                         .cvId(cvId)
                         .extractedSkills(Collections.emptyList())
@@ -112,7 +110,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
 
             if (aiExtracted == null || aiExtracted.isEmpty()) {
                 cv.setExtractionStatus(ExtractionStatus.COMPLETED);
-                cvRepository.save(cv);
+                cvService.saveCvEntity(cv);
                 return CompletableFuture.completedFuture(CvExtractionResponse.builder()
                         .cvId(cvId)
                         .extractedSkills(Collections.emptyList())
@@ -150,7 +148,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
                             .proficiencyLevel(mapLevel(extracted.getLevel()))
                             .isAiExtracted(true)
                             .build();
-                    cvSkillRepository.save(cvSkill);
+                    cvService.saveCvSkill(cvSkill);
                     existingSkillNeo4jIds.add(skillNode.getId());
                 }
 
@@ -158,7 +156,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
             }
 
             cv.setExtractionStatus(ExtractionStatus.COMPLETED);
-            cvRepository.save(cv);
+            cvService.saveCvEntity(cv);
             log.info("CV {} extraction complete: {} matched, {} new", cvId, matchedCount, newCount);
 
             if (!newlyCreatedSkills.isEmpty()) {
@@ -174,7 +172,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
         } catch (Exception e) {
             log.error("Failed to extract skills for CV: {}", cvId, e);
             cv.setExtractionStatus(ExtractionStatus.FAILED);
-            cvRepository.save(cv);
+            cvService.saveCvEntity(cv);
             throw e;
         }
     }
@@ -184,16 +182,14 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
     @Transactional
     public CompletableFuture<JobExtractionResponse> extractAndSaveJobSkills(UUID jobId) {
         // 1. Get Job from PostgreSQL
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new AppException(
-                        ErrorCode.JOB_NOT_FOUND_CODE, "Job not found: " + jobId));
+        Job job = jobService.getJobEntityById(jobId);
 
         String description = job.getDescription();
         String requirements = job.getRequirements();
 
         if ((description == null || description.isBlank()) && (requirements == null || requirements.isBlank())) {
             job.setExtractionStatus(ExtractionStatus.COMPLETED);
-            jobRepository.save(job);
+            jobService.saveJobEntity(job);
             return CompletableFuture.completedFuture(JobExtractionResponse.builder()
                     .jobId(jobId)
                     .extractedSkills(Collections.emptyList())
@@ -233,7 +229,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
 
             if (extractResult == null) {
                 job.setExtractionStatus(ExtractionStatus.COMPLETED);
-                jobRepository.save(job);
+                jobService.saveJobEntity(job);
                 return CompletableFuture.completedFuture(JobExtractionResponse.builder()
                         .jobId(jobId)
                         .extractedSkills(Collections.emptyList())
@@ -247,7 +243,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
 
             if (aiExtracted == null || aiExtracted.isEmpty()) {
                 job.setExtractionStatus(ExtractionStatus.COMPLETED);
-                jobRepository.save(job);
+                jobService.saveJobEntity(job);
                 return CompletableFuture.completedFuture(JobExtractionResponse.builder()
                         .jobId(jobId)
                         .extractedSkills(Collections.emptyList())
@@ -290,7 +286,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
                             .requiredLevel(mapLevel(extracted.getLevel()))
                             .isAiExtracted(true)
                             .build();
-                    jobSkillRepository.save(jobSkill);
+                    jobService.saveJobSkill(jobSkill);
                     existingSkillNeo4jIds.add(skillNode.getId()); // Prevent duplicates in the same extraction loop
                 }
 
@@ -298,7 +294,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
             }
 
             job.setExtractionStatus(ExtractionStatus.COMPLETED);
-            jobRepository.save(job);
+            jobService.saveJobEntity(job);
             log.info("Job {} extraction complete", jobId);
 
             if (!newlyCreatedSkills.isEmpty()) {
@@ -314,7 +310,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
         } catch (Exception e) {
             log.error("Job extraction failed for job {}", jobId, e);
             job.setExtractionStatus(ExtractionStatus.FAILED);
-            jobRepository.save(job);
+            jobService.saveJobEntity(job);
             throw e;
         }
     }

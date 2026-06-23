@@ -16,14 +16,18 @@ import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionPlanService;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionService;
-import sba301.hrtech.subscription.entities.PlanFeature;
-import sba301.hrtech.subscription.entities.Subscription;
-import sba301.hrtech.subscription.entities.SubscriptionPlan;
+import sba301.hrtech.subscription.abstractions.repositories.CandidateSubscriptionRepository;
+import sba301.hrtech.subscription.abstractions.repositories.CompanySubscriptionRepository;
+import sba301.hrtech.subscription.abstractions.repositories.CandidateSubFeatureUsageRepository;
+import sba301.hrtech.subscription.abstractions.repositories.CompanySubFeatureUsageRepository;
+import sba301.hrtech.subscription.entities.*;
 import sba301.hrtech.subscription.entities.enums.SubscriptionStatus;
+import sba301.hrtech.subscription.entities.enums.SubscriptionType;
 import vn.payos.PayOS;
 import vn.payos.model.webhooks.Webhook;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -32,107 +36,118 @@ public class PaymentServiceImpl implements IPaymentService {
     private final ISubscriptionPlanService subscriptionPlanService;
     private final IPayOSService payOSService;
     private final ISubscriptionService subscriptionService;
-
+    private final CandidateSubscriptionRepository candidateSubscriptionRepository;
+    private final CompanySubscriptionRepository companySubscriptionRepository;
+    private final CandidateSubFeatureUsageRepository candidateSubFeatureUsageRepository;
+    private final CompanySubFeatureUsageRepository companySubFeatureUsageRepository;
     private final PaymentRepository paymentRepository;
-
     private final AuthUtils authUtils;
-
     private final PayOS payOS;
 
     @Override
     @Transactional
-    public CreatePaymentResponse createPayment(
-            CreatePaymentRequest request) {
+    public CreatePaymentResponse createPayment(CreatePaymentRequest request) {
         User user = authUtils.getCurrentUser();
-        SubscriptionPlan plan = subscriptionPlanService.getById(request.subscriptionPlanId());
+        Object planObj = subscriptionPlanService.getById(request.subscriptionPlanId());
+        
+        Long price = 0L;
+        String name = "";
+        SubscriptionType type = null;
+        UUID subscriptionId = null;
 
-        Subscription subscription = subscriptionService.createPendingSubscription(user.getId(), plan.getId());
+        Object subscriptionObj = subscriptionService.createPendingSubscription(user.getId(), request.subscriptionPlanId());
+
+        if (planObj instanceof CandidateSubscriptionPlan plan) {
+            price = plan.getPrice();
+            name = plan.getName();
+            type = SubscriptionType.CANDIDATE;
+            subscriptionId = ((CandidateSubscription) subscriptionObj).getId();
+        } else if (planObj instanceof CompanySubscriptionPlan plan) {
+            price = plan.getPrice();
+            name = plan.getName();
+            type = SubscriptionType.COMPANY;
+            subscriptionId = ((CompanySubscription) subscriptionObj).getId();
+        }
 
         Payment payment = new Payment();
         payment.setOrderCode(System.currentTimeMillis());
-        payment.setAmount(plan.getPrice());
-        payment.setSubscription(subscription);
+        payment.setAmount(price);
+        payment.setSubscriptionId(subscriptionId);
+        payment.setSubscriptionType(type);
         payment.setStatus(PaymentStatus.PENDING);
         payment.setUser(user);
         paymentRepository.save(payment);
 
-        return payOSService.createPaymentLink(payment.getOrderCode(), payment.getAmount(), plan.getName());
+        return payOSService.createPaymentLink(payment.getOrderCode(), payment.getAmount(), name);
     }
 
     @Transactional
     @Override
-    public void handleWebhook(
-            Webhook webhook) {
+    public void handleWebhook(Webhook webhook) {
         try {
             var data = payOS.webhooks().verify(webhook);
-
-            if (!Boolean.TRUE.equals(webhook.getSuccess())) {
-                return;
-            }
-
-            if (!"00".equals(webhook.getCode())) {
-                return;
-            }
+            if (!Boolean.TRUE.equals(webhook.getSuccess())) return;
+            if (!"00".equals(webhook.getCode())) return;
 
             Long orderCode = data.getOrderCode();
+            Payment payment = paymentRepository.findByOrderCode(orderCode)
+                    .orElseThrow(() -> new AppException(ErrorCode.ORDER_CODE_NOT_FOUND, "Payment not found"));
 
-            Payment payment = paymentRepository
-                    .findByOrderCode(orderCode)
-                    .orElseThrow(() -> new AppException(
-                            ErrorCode.ORDER_CODE_NOT_FOUND,
-                            "Không tìm thấy payment với order code: " + orderCode));
+            if (payment.getStatus() == PaymentStatus.PAID) return;
 
-            // webhook có thể gửi nhiều lần
-            if (payment.getStatus() == PaymentStatus.PAID) {
-                return;
-            }
-            // update payment
             payment.setStatus(PaymentStatus.PAID);
             payment.setPaymentLinkId(data.getPaymentLinkId());
-            // update subscription
-            Subscription subscription = payment.getSubscription();
-            LocalDate now = LocalDate.now();
-            subscription.setStatus(
-                    SubscriptionStatus.ACTIVE);
-            LocalDate startDate;
-            if (subscription.getEndDate() != null &&
-                    subscription.getEndDate().isAfter(now)) {
-                startDate = subscription.getEndDate();
-            } else {
-                startDate = now;
-            }
-            subscription.setStartDate(startDate);
-            subscription.setEndDate(
-                    startDate.plusDays(
-                            subscription.getPlan()
-                                    .getDurationDays()));
 
-            // Set quotas based on PlanFeatures
-            int aiCredits = 0;
-            int jobPosts = 0;
-            if (subscription.getPlan().getPlanFeatures() != null) {
-                for (PlanFeature pf : subscription.getPlan().getPlanFeatures()) {
-                    if (pf.getFeature() != null && pf.getFeature().getCode() != null) {
-                        String code = pf.getFeature().getCode();
-                        if ("AI_CREDITS".equals(code) || "AI_CHATBOT".equals(code) || "AI_MATCH_SCORING".equals(code)) {
-                            // Some plans might use different feature codes for AI, but they give a shared pool of AI Credits
-                            // Assuming AI_CREDITS is the main feature code for the quota
-                            aiCredits += pf.getQuota() != null ? pf.getQuota() : 0;
-                        }
-                        if ("JOB_POSTING".equals(code)) {
-                            jobPosts += pf.getQuota() != null ? pf.getQuota() : 0;
-                        }
+            LocalDate now = LocalDate.now();
+
+            if (payment.getSubscriptionType() == SubscriptionType.CANDIDATE) {
+                CandidateSubscription sub = candidateSubscriptionRepository.findById(payment.getSubscriptionId())
+                        .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Candidate Sub not found"));
+                
+                sub.setStatus(SubscriptionStatus.ACTIVE);
+                LocalDate startDate = (sub.getEndDate() != null && sub.getEndDate().isAfter(now)) ? sub.getEndDate() : now;
+                sub.setStartDate(startDate);
+                sub.setEndDate(startDate.plusDays(sub.getPlan().getDurationDays()));
+                candidateSubscriptionRepository.save(sub);
+
+                if (sub.getPlan().getPlanFeatures() != null) {
+                    for (CandidatePlanFeature pf : sub.getPlan().getPlanFeatures()) {
+                        CandidateSubFeatureUsage usage = CandidateSubFeatureUsage.builder()
+                                .subscription(sub)
+                                .feature(pf.getFeature())
+                                .quota(pf.getQuota())
+                                .used(0)
+                                .build();
+                        candidateSubFeatureUsageRepository.save(usage);
+                    }
+                }
+
+            } else if (payment.getSubscriptionType() == SubscriptionType.COMPANY) {
+                CompanySubscription sub = companySubscriptionRepository.findById(payment.getSubscriptionId())
+                        .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Company Sub not found"));
+
+                sub.setStatus(SubscriptionStatus.ACTIVE);
+                LocalDate startDate = (sub.getEndDate() != null && sub.getEndDate().isAfter(now)) ? sub.getEndDate() : now;
+                sub.setStartDate(startDate);
+                sub.setEndDate(startDate.plusDays(sub.getPlan().getDurationDays()));
+                companySubscriptionRepository.save(sub);
+
+                if (sub.getPlan().getPlanFeatures() != null) {
+                    for (CompanyPlanFeature pf : sub.getPlan().getPlanFeatures()) {
+                        CompanySubFeatureUsage usage = CompanySubFeatureUsage.builder()
+                                .subscription(sub)
+                                .feature(pf.getFeature())
+                                .quota(pf.getQuota())
+                                .used(0)
+                                .build();
+                        companySubFeatureUsageRepository.save(usage);
                     }
                 }
             }
-            subscription.setRemainingAiCredits(aiCredits);
-            subscription.setRemainingJobPosts(jobPosts);
 
             paymentRepository.save(payment);
         } catch (Exception e) {
-            throw new AppException(
-                    ErrorCode.WEBHOOK_NOT_FOUND,
-                    "Invalid PayOS webhook signature");
+            throw new AppException(ErrorCode.WEBHOOK_NOT_FOUND, "Invalid PayOS webhook signature");
         }
     }
 }

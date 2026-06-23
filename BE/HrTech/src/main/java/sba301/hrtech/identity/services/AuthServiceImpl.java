@@ -43,7 +43,8 @@ import sba301.hrtech.notification.dtos.OtpNotificationRequest;
 import sba301.hrtech.notification.dtos.OtpRequest;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionPlanService;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionService;
-import sba301.hrtech.subscription.entities.SubscriptionPlan;
+import sba301.hrtech.subscription.entities.CandidateSubscriptionPlan;
+import sba301.hrtech.subscription.entities.CompanySubscriptionPlan;
 import sba301.hrtech.company.abstractions.services.ICompanyService;
 import org.springframework.context.annotation.Lazy;
 
@@ -443,8 +444,16 @@ public class AuthServiceImpl implements IAuthService {
 
         user.setRole(role);
         userService.saveUserEntity(user);
-        SubscriptionPlan  subscriptionPlan = subscriptionPlanService.findByName("Free");
-        subscriptionService.createPendingSubscription(user.getId(),subscriptionPlan.getId());
+        Object subscriptionPlan = subscriptionPlanService.findByName("Free");
+        UUID planId = null;
+        if (subscriptionPlan instanceof CandidateSubscriptionPlan plan) {
+            planId = plan.getId();
+        } else if (subscriptionPlan instanceof CompanySubscriptionPlan plan) {
+            planId = plan.getId();
+        }
+        if (planId != null) {
+            subscriptionService.createPendingSubscription(user.getId(), planId);
+        }
         redisTemplate.delete(key);
         otpAttemptTracker.resetAttempts(email);
 

@@ -1,6 +1,6 @@
 package sba301.hrtech.subscription.dtos.subscriptionPlan.request;
 
-import sba301.hrtech.subscription.entities.enums.PlanType;
+import sba301.hrtech.subscription.entities.enums.SubscriptionType;
 
 import java.util.List;
 
@@ -9,7 +9,7 @@ public record SubscriptionPlanRequest(
         String description,
         Long price,
         Integer durationDays,
-        PlanType planType,
+        SubscriptionType subscriptionType,
         Boolean isActive,
         List<PlanFeatureRequest> features
 ) {}

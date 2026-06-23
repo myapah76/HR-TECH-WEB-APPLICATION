@@ -3,10 +3,10 @@ package sba301.hrtech.skill.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import sba301.hrtech.cv.abstractions.repositories.CvRepository;
+import sba301.hrtech.cv.abstractions.services.ICvService;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.cv.entities.CvSkill;
-import sba301.hrtech.job.abstractions.repositories.JobRepository;
+import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.job.entities.JobSkill;
 import sba301.hrtech.shared.error.ErrorCode;
@@ -29,8 +29,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class RecommendationServiceImpl implements IRecommendationService {
 
-    private final CvRepository cvRepository;
-    private final JobRepository jobRepository;
+    private final ICvService cvService;
+    private final IJobService jobService;
     private final SkillNodeRepository skillNodeRepository;
     private final ISkillExtractionService skillExtractionService;
 
@@ -67,12 +67,10 @@ public class RecommendationServiceImpl implements IRecommendationService {
     @Override
     @Transactional(readOnly = true)
     public List<JobRecommendationResponse> recommendJobsForCv(UUID cvId, int limit) {
-        Cv cv = cvRepository.findById(cvId)
-                .orElseThrow(
-                        () -> new AppException(ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
+        Cv cv = cvService.getCvEntityById(cvId);
 
         CvSkillContext ctx = buildCvSkillContext(cv);
-        List<Job> allJobs = jobRepository.findAll();
+        List<Job> allJobs = jobService.getAllJobEntities();
         List<JobRecommendationResponse> recommendations = new ArrayList<>();
 
         for (Job job : allJobs) {
@@ -113,13 +111,9 @@ public class RecommendationServiceImpl implements IRecommendationService {
     @Override
     @Transactional(readOnly = true)
     public SkillMatchScoreResponse calculateMatchScore(UUID cvId, UUID jobId) {
-        Cv cv = cvRepository.findById(cvId)
-                .orElseThrow(
-                        () -> new AppException( ErrorCode.CV_NOT_FOUND, "CV not found: " + cvId));
+        Cv cv = cvService.getCvEntityById(cvId);
 
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND,
-                        "Job not found: " + jobId));
+        Job job = jobService.getJobEntityById(jobId);
 
         CvSkillContext ctx = buildCvSkillContext(cv);
         List<JobSkill> jobSkills = job.getJobSkills();
