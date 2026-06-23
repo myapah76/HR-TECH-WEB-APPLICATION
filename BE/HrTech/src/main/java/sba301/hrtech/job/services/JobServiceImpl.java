@@ -60,7 +60,7 @@ public class JobServiceImpl implements IJobService {
         jobValidator.validateCanPostJob(currentUser, company.getId());
 
         // Deduct 1 Job Post Quota from the user's active subscription
-        creditService.deductJobQuota(currentUser.getId(), 1);
+        creditService.deductCompanyFeatureQuota(currentUser.getId(), "JOB_POSTING", 1);
 
         Job job = Job.builder()
                 .company(company)

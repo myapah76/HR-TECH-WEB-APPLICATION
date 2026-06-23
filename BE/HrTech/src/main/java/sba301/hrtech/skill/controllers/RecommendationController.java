@@ -5,12 +5,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.shared.response.ApiResponse;
 import sba301.hrtech.skill.abstractions.services.IRecommendationService;
+import sba301.hrtech.skill.dtos.response.AiMatchHistoryResponse;
 import sba301.hrtech.skill.dtos.response.JobRecommendationResponse;
 import sba301.hrtech.skill.dtos.response.RecommendationResultResponse;
 import sba301.hrtech.skill.dtos.response.SkillMatchScoreResponse;
 
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/recommendations")
@@ -47,5 +50,13 @@ public class RecommendationController {
             @RequestParam UUID cvId,
             @RequestParam UUID jobId) {
         return ResponseEntity.ok(ApiResponse.success(recommendationService.calculateMatchScore(cvId, jobId)));
+    }
+
+    @PostMapping("/premium-ai-match")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<ApiResponse<AiMatchHistoryResponse>> performPremiumAiMatching(
+            @RequestParam UUID cvId,
+            @RequestParam UUID jobId) {
+        return ResponseEntity.ok(ApiResponse.success(recommendationService.performPremiumAiMatching(cvId, jobId), "Tư vấn AI thành công"));
     }
 }

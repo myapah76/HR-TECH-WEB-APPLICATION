@@ -9,18 +9,21 @@ import sba301.hrtech.cv.entities.CvSkill;
 import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.job.entities.JobSkill;
-import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.enums.ScoreGrade;
 import sba301.hrtech.shared.enums.SkillLevel;
+import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
 import sba301.hrtech.skill.abstractions.services.IRecommendationService;
 import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
 import sba301.hrtech.skill.dtos.response.*;
 import sba301.hrtech.skill.entities.SkillNode;
-
+import sba301.hrtech.application.abstractions.services.IAiMatchHistoryService;
+import sba301.hrtech.application.entities.AiMatchHistory;
+import sba301.hrtech.identity.utils.AuthUtils;
+import sba301.hrtech.subscription.abstractions.services.ICreditService;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,6 +36,10 @@ public class RecommendationServiceImpl implements IRecommendationService {
     private final IJobService jobService;
     private final SkillNodeRepository skillNodeRepository;
     private final ISkillExtractionService skillExtractionService;
+    private final AiServiceClient aiServiceClient;
+    private final IAiMatchHistoryService aiMatchHistoryService;
+    private final ICreditService creditService;
+    private final AuthUtils authUtils;
 
 
     // === Skill level numeric values ===
@@ -67,6 +74,13 @@ public class RecommendationServiceImpl implements IRecommendationService {
     @Override
     @Transactional(readOnly = true)
     public List<JobRecommendationResponse> recommendJobsForCv(UUID cvId, int limit) {
+        UUID userId = authUtils.getCurrentUserId();
+        // Check Feature Access & Deduct Token
+        if (!creditService.hasCandidateFeatureAccess(userId, "RECOMMEND_JOB")) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Gói của bạn không có tính năng Gợi ý Job (RECOMMEND_JOB). Vui lòng nâng cấp gói.");
+        }
+        creditService.deductCandidateQuota(userId, "AI_CREDIT", 50);
+
         Cv cv = cvService.getCvEntityById(cvId);
 
         CvSkillContext ctx = buildCvSkillContext(cv);
@@ -135,6 +149,72 @@ public class RecommendationServiceImpl implements IRecommendationService {
                 .missingSkills(missingSkills)
                 .skillDetails(details)
                 .build();
+    }
+
+    @Override
+    public AiMatchHistoryResponse performPremiumAiMatching(UUID cvId, UUID jobId) {
+        UUID userId = authUtils.getCurrentUserId();
+        // Check Feature Access
+        if (!creditService.hasCandidateFeatureAccess(userId, "AI_MATCHING")) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Gói của bạn không có tính năng AI Matching. Vui lòng nâng cấp.");
+        }
+
+        // 1. Check if history exists
+        Optional<AiMatchHistory> existingHistory = aiMatchHistoryService.getHistoryEntityByCvAndJob(cvId, jobId);
+
+        // Calculate score
+        SkillMatchScoreResponse matchScore = calculateMatchScore(cvId, jobId);
+        
+        Cv cv = cvService.getCvEntityById(cvId);
+        Job job = jobService.getJobEntityById(jobId);
+
+        String improvementTips = "";
+        List<String> actionPlan = new ArrayList<>();
+        AiMatchHistory history;
+
+        if (existingHistory.isPresent()) {
+            history = existingHistory.get();
+            improvementTips = history.getImprovementTips();
+            
+            if (history.getActionPlan() != null && !history.getActionPlan().isEmpty()) {
+                actionPlan = Arrays.asList(history.getActionPlan().split("\n\\|\\|\\|\n"));
+            }
+        } else {
+            // Check & Deduct AI_CREDIT (20 tokens)
+            creditService.deductCandidateQuota(userId, "AI_CREDIT", 20);
+            
+            // Call AI Service
+            AiMatchingAdviceResponseDto advice =
+                aiServiceClient.getMatchingAdvice(cv.getParsedContent(), job.getDescription() + "\n" + job.getRequirements(), matchScore.getMissingSkills());
+            
+            if (advice != null) {
+                improvementTips = advice.getImprovement_tips();
+                actionPlan = advice.getAction_plan();
+            }
+
+            // Save history
+            String actionPlanStr = actionPlan != null ? String.join("\n|||\n", actionPlan) : "";
+            history = AiMatchHistory.builder()
+                .userId(userId)
+                .cvId(cvId)
+                .jobId(jobId)
+                .overallScore(BigDecimal.valueOf(matchScore.getOverallScore()))
+                .improvementTips(improvementTips)
+                .actionPlan(actionPlanStr)
+                .build();
+            history = aiMatchHistoryService.saveHistoryEntity(history);
+        }
+
+        return AiMatchHistoryResponse.builder()
+            .id(history.getId() != null ? history.getId().toString() : null)
+            .overallScore(matchScore.getOverallScore())
+            .matchGrade(matchScore.getGrade())
+            .matchedSkills(matchScore.getMatchedSkills())
+            .missingSkills(matchScore.getMissingSkills())
+            .skillDetails(matchScore.getSkillDetails())
+            .improvementTips(improvementTips)
+            .actionPlan(actionPlan)
+            .build();
     }
 
     // ========== PRIVATE HELPER METHODS & RECORDS ==========
@@ -350,13 +430,13 @@ public class RecommendationServiceImpl implements IRecommendationService {
 
             details.add(SkillMatchDetail.builder()
                     .skillName(skillName)
+                    .skillNeo4jId(neo4jId)
                     .matchType(matchType)
                     .requiredLevel(jobSkill.getRequiredLevel() != null
                             ? jobSkill.getRequiredLevel().name()
                             : null)
                     .candidateLevel(candidateLevel)
                     .matchStatus(matchStatus)
-                    .similarityScore(0.0) // Could compute per-skill embedding similarity
                     .build());
         }
 

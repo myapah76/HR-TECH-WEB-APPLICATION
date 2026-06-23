@@ -15,4 +15,5 @@ public interface ApplicationService {
     void withdrawApplication(UUID userId, UUID applicationId);
     ApplicationSummaryResponse updateStatus(UUID applicationId, ApplicationStatus newStatus);
     List<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId);
+    ApplicationDetailResponse scoreApplication(UUID userId, UUID applicationId);
 }

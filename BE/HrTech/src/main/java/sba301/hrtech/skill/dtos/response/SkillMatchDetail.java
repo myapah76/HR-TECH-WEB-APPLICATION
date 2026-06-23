@@ -12,9 +12,9 @@ import lombok.NoArgsConstructor;
 public class SkillMatchDetail {
 
     private String skillName;
-    private String matchType;       // EXACT, SYNONYM, RELATED, SEMANTIC
+    private String skillNeo4jId;    // Neo4j ID of the skill
+    private String matchType;       // EXACT, RELATED, CHILD_TO_PARENT, PARENT_TO_CHILD, NONE
     private String requiredLevel;   // Job's required level
     private String candidateLevel;  // CV's proficiency level
     private String matchStatus;     // MATCHED, EXCEEDED, PARTIAL, MISSING
-    private double similarityScore; // Embedding cosine similarity (0.0 - 1.0)
 }

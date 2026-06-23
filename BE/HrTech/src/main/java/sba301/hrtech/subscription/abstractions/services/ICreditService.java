@@ -4,7 +4,11 @@ import java.util.UUID;
 
 public interface ICreditService {
 
-    void deductAiCredit(UUID userId, int amount);
+    void deductCandidateQuota(UUID userId, String featureCode, int amount);
 
-    void deductJobQuota(UUID userId, int amount);
+    void deductCompanyFeatureQuota(UUID userId, String featureCode, int amount);
+
+    boolean hasCandidateFeatureAccess(UUID userId, String featureCode);
+
+    boolean hasCompanyFeatureAccess(UUID userId, String featureCode);
 }

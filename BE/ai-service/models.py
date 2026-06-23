@@ -75,3 +75,13 @@ class EvaluateSessionResponse(BaseModel):
     weaknesses: List[str]
     generalFeedback: str
     detailedFeedback: List[DetailedFeedbackItem]
+
+# --- AI Matching Advice ---
+class AiMatchingAdviceRequest(BaseModel):
+    cv_text: str
+    jd_text: str
+    missing_skills: List[str]
+
+class AiMatchingAdviceResponse(BaseModel):
+    improvement_tips: str
+    action_plan: List[str]

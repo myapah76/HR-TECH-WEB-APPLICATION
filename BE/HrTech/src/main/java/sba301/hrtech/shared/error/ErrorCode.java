@@ -135,7 +135,8 @@ public enum ErrorCode {
     // Generic
     FORBIDDEN_ACTION(HttpStatus.FORBIDDEN, "Access denied"),
     INVALID_ROLE(HttpStatus.BAD_REQUEST, "Invalid role"),
-    PASSWORD_CHANGE_REQUIRED(HttpStatus.FORBIDDEN, "Password change is required");
+    PASSWORD_CHANGE_REQUIRED(HttpStatus.FORBIDDEN, "Password change is required"),
+    UNCATEGORIZED_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "Uncategorized exception");
 
 
     private final HttpStatus statusCode;

@@ -105,8 +105,12 @@ public class ChatServiceImpl implements IChatService {
         ChatSession session = getSessionAndVerifyOwnership(sessionId);
         User currentUser = authUtils.getCurrentUser();
 
-        // 0. Deduct 5 AI Credits
-        creditService.deductAiCredit(currentUser.getId(), 5);
+        // 0. Deduct 5 AI Credits based on role
+        if (currentUser.getRole().getName().equalsIgnoreCase("CANDIDATE")) {
+            creditService.deductCandidateQuota(currentUser.getId(), "AI_CREDIT", 5);
+        } else {
+            creditService.deductCompanyFeatureQuota(currentUser.getId(), "AI_CREDIT", 5);
+        }
 
         // 1. Lưu tin nhắn của User
         ChatMessage userMessage = ChatMessage.builder()

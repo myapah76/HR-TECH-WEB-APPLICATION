@@ -73,4 +73,12 @@ public class ApplicationController {
             @PathVariable UUID jobId) {
         return ResponseEntity.ok(ApiResponse.success(applicationService.getApplicationsByJob(jobId)));
     }
+
+    @PostMapping("/{id}/score")
+    @PreAuthorize("isAuthenticated()") // Could be Candidate or HR
+    public ResponseEntity<ApiResponse<ApplicationDetailResponse>> scoreApplication(
+            @PathVariable UUID id) {
+        UUID currentUserId = authUtils.getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse.success(applicationService.scoreApplication(currentUserId, id), "Chấm điểm thành công"));
+    }
 }

@@ -19,17 +19,19 @@ import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.shared.enums.ScoreGrade;
 import sba301.hrtech.application.mapper.ApplicationMapper;
 import sba301.hrtech.identity.entities.User;
-import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.cv.entities.Cv;
-import sba301.hrtech.cv.abstractions.repositories.CvRepository;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.job.entities.enums.JobStatus;
-import sba301.hrtech.job.abstractions.repositories.JobRepository;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.abstractions.services.IRecommendationService;
 import sba301.hrtech.skill.dtos.response.SkillMatchScoreResponse;
-
+import sba301.hrtech.application.abstractions.repositories.SkillMatchRepository;
+import sba301.hrtech.application.entities.SkillMatch;
+import sba301.hrtech.application.entities.enums.MatchStatus;
+import sba301.hrtech.application.entities.enums.MatchType;
+import sba301.hrtech.skill.dtos.response.SkillMatchDetail;
+import sba301.hrtech.subscription.abstractions.services.ICreditService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -44,11 +46,13 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final ApplicationScoreRepository applicationScoreRepository;
+    private final SkillMatchRepository skillMatchRepository;
     private final IJobService jobService;
     private final ICvService cvService;
     private final IUserService userService;
     private final ApplicationMapper applicationMapper;
     private final IRecommendationService recommendationService;
+    private final ICreditService creditService;
 
     @Override
     public ApplicationSummaryResponse submitApplication(UUID userId, SubmitApplicationRequest request) {
@@ -82,35 +86,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         application = applicationRepository.save(application);
 
-        // Call recommendation service to calculate match score
-        try {
-            SkillMatchScoreResponse matchScore = recommendationService.calculateMatchScore(cv.getId(), job.getId());
-            ScoreGrade grade = matchScore.getGrade();
 
-            ApplicationScore applicationScore = ApplicationScore.builder()
-                    .application(application)
-                    .overallScore(BigDecimal.valueOf(matchScore.getOverallScore()))
-                    .grade(grade)
-                    .aiSummary("AI Score calculated from graph and embeddings")
-                    .aiSuggestion(generateSuggestion(grade))
-                    .modelVersion("1.0")
-                    .scoredAt(Instant.now())
-                    .build();
-
-            applicationScore = applicationScoreRepository.save(applicationScore);
-            application.setApplicationScore(applicationScore);
-        } catch (Exception e) {
-            log.error("Failed to calculate AI match score for application {}", application.getId(), e);
-            // Optionally could set a default empty score or let it fail. We will fail softly here:
-            ApplicationScore emptyScore = ApplicationScore.builder()
-                    .application(application)
-                    .overallScore(BigDecimal.ZERO)
-                    .grade(ScoreGrade.POOR)
-                    .aiSummary("AI calculation failed")
-                    .scoredAt(Instant.now())
-                    .build();
-            applicationScoreRepository.save(emptyScore);
-        }
 
         log.info("User {} applied for job {}", userId, job.getId());
         return applicationMapper.toSummaryResponse(application);
@@ -175,5 +151,109 @@ public class ApplicationServiceImpl implements ApplicationService {
         return applicationRepository.findByJobId(jobId).stream()
                 .map(applicationMapper::toSummaryResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public ApplicationDetailResponse scoreApplication(UUID userId, UUID applicationId) {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Application not found"));
+
+        if (application.getApplicationScore() != null) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "Application has already been scored.");
+        }
+
+        // Deduct token (APP_SCORING costs 10 AI_CREDIT)
+        boolean isProcessed = false;
+        
+        if (creditService.hasCandidateFeatureAccess(userId, "APP_SCORING")) {
+            creditService.deductCandidateQuota(userId, "AI_CREDIT", 10);
+            isProcessed = true;
+        } 
+        
+        if (!isProcessed) {
+            try {
+                if (creditService.hasCompanyFeatureAccess(userId, "APP_SCORING")) {
+                    creditService.deductCompanyFeatureQuota(userId, "AI_CREDIT", 10);
+                    isProcessed = true;
+                }
+            } catch (Exception e) {
+                // Ignore if user is not a company member
+            }
+        }
+
+        if (!isProcessed) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Gói của bạn không có tính năng Chấm điểm CV (APP_SCORING). Vui lòng nâng cấp gói.");
+        }
+        
+        try {
+            SkillMatchScoreResponse matchScore = recommendationService.calculateMatchScore(application.getCv().getId(), application.getJob().getId());
+            ScoreGrade grade = matchScore.getGrade();
+
+            ApplicationScore applicationScore = ApplicationScore.builder()
+                    .application(application)
+                    .overallScore(BigDecimal.valueOf(matchScore.getOverallScore()))
+                    .grade(grade)
+                    .aiSummary("AI Score calculated from graph and embeddings")
+                    .aiSuggestion(generateSuggestion(grade))
+                    .modelVersion("1.0")
+                    .scoredAt(Instant.now())
+                    .build();
+
+            applicationScore = applicationScoreRepository.save(applicationScore);
+            application.setApplicationScore(applicationScore);
+            
+            // Save SkillMatch entities
+            for (SkillMatchDetail detail : matchScore.getSkillDetails()) {
+                MatchStatus mStatus;
+                try {
+                    mStatus = MatchStatus.valueOf(detail.getMatchStatus());
+                } catch (Exception e) {
+                    mStatus = MatchStatus.MISSING;
+                }
+
+                MatchType mType;
+                try {
+                    mType = MatchType.valueOf(detail.getMatchType());
+                } catch (Exception e) {
+                    if (detail.getMatchType() != null && detail.getMatchType().contains("RELATED")) {
+                        mType = MatchType.RELATED;
+                    } else if (detail.getMatchType() != null && detail.getMatchType().contains("PARENT")) {
+                        mType = MatchType.PARENT;
+                    } else if ("EXACT".equals(detail.getMatchType())) {
+                        mType = MatchType.DIRECT;
+                    } else {
+                        mType = null;
+                    }
+                }
+
+                sba301.hrtech.shared.enums.SkillLevel reqLevel = null;
+                try {
+                    if (detail.getRequiredLevel() != null) reqLevel = sba301.hrtech.shared.enums.SkillLevel.valueOf(detail.getRequiredLevel());
+                } catch (Exception ignored) {}
+
+                sba301.hrtech.shared.enums.SkillLevel candLevel = null;
+                try {
+                    if (detail.getCandidateLevel() != null) candLevel = sba301.hrtech.shared.enums.SkillLevel.valueOf(detail.getCandidateLevel());
+                } catch (Exception ignored) {}
+
+                SkillMatch skillMatch = SkillMatch.builder()
+                        .applicationScore(applicationScore)
+                        .skillNeo4jId(detail.getSkillNeo4jId())
+                        .requiredLevel(reqLevel)
+                        .candidateLevel(candLevel)
+                        .matchStatus(mStatus)
+                        .matchType(mType)
+                        .weight(BigDecimal.valueOf(1.0))
+                        .isMandatory(false)
+                        .build();
+                skillMatchRepository.save(skillMatch);
+            }
+            
+        } catch (Exception e) {
+            log.error("Failed to calculate AI match score for application {}", application.getId(), e);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Failed to score application: " + e.getMessage());
+        }
+
+        return applicationMapper.toDetailResponse(application);
     }
 }

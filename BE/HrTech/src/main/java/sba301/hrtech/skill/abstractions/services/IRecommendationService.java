@@ -1,5 +1,6 @@
 package sba301.hrtech.skill.abstractions.services;
 
+import sba301.hrtech.skill.dtos.response.AiMatchHistoryResponse;
 import sba301.hrtech.skill.dtos.response.JobRecommendationResponse;
 import sba301.hrtech.skill.dtos.response.RecommendationResultResponse;
 import sba301.hrtech.skill.dtos.response.SkillMatchScoreResponse;
@@ -23,4 +24,9 @@ public interface IRecommendationService {
      * Calculate detailed match score between a specific CV and Job.
      */
     SkillMatchScoreResponse calculateMatchScore(UUID cvId, UUID jobId);
+
+    /**
+     * Perform premium AI matching (Candidate pre-apply) using LLM and saving history.
+     */
+    AiMatchHistoryResponse performPremiumAiMatching(UUID cvId, UUID jobId);
 }

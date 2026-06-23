@@ -368,4 +368,55 @@ def evaluate_interview_session(
     except Exception as e:
         print(f"Error parsing evaluation: {e}")
         return {}
-    
+
+AI_MATCHING_ADVICE_PROMPT = PromptTemplate.from_template("""
+You are an expert IT Career Advisor and Technical Recruiter.
+A candidate has used our AI Matching tool to compare their CV against a Job Description. 
+We have already identified their missing skills.
+
+Your task is to provide:
+1. "improvement_tips": Actionable advice (in Vietnamese) on how the candidate can improve their CV or what they should learn to cover the missing skills and better fit the job. Keep it concise, encouraging, and professional.
+2. "action_plan": A list of 3-5 specific steps (in Vietnamese) that combine:
+   - Short-term learning path or resources to quickly acquire the missing skills.
+   - Practical project ideas the candidate can build to gain hands-on experience.
+   - Suggestions on how to highlight alternative, related skills they already have in their CV to compensate for the missing ones.
+
+Inputs:
+- Candidate CV: {cv_text}
+- Job Description (JD): {jd_text}
+- Missing Skills: {missing_skills}
+
+Output must be a clean JSON object matching the following structure. Do NOT wrap it in extra markdown format like ```json, just pure JSON object:
+{{
+  "improvement_tips": "Bạn nên bổ sung...",
+  "action_plan": [
+    "Khóa học ngắn hạn / Tài liệu: Học cơ bản về X...",
+    "Dự án thực tế: Xây dựng một ứng dụng nhỏ dùng Y...",
+    "Thay thế bằng kỹ năng có sẵn: Có thể nhấn mạnh kỹ năng Z tương đồng..."
+  ]
+}}
+""")
+
+def generate_matching_advice(cv_text: str, jd_text: str, missing_skills: list) -> dict:
+    """Sinh lời khuyên và dự đoán câu hỏi phỏng vấn dựa trên kỹ năng còn thiếu"""
+    prompt_value = AI_MATCHING_ADVICE_PROMPT.format_prompt(
+        cv_text=cv_text if cv_text else "Not provided",
+        jd_text=jd_text if jd_text else "Not provided",
+        missing_skills=", ".join(missing_skills) if missing_skills else "None"
+    )
+    response = llm.invoke(prompt_value)
+    try:
+        content = response.content
+        if isinstance(content, str):
+            content = content.strip()
+            if content.startswith("```json"):
+                content = content[7:]
+            elif content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            return json.loads(content.strip())
+        return content
+    except Exception as e:
+        print(f"Error parsing matching advice: {e}")
+        return {"improvement_tips": "Rất tiếc, AI đang quá tải và không thể sinh lời khuyên lúc này.", "predicted_questions": []}

@@ -7,7 +7,7 @@ from models import (
     MapRelationshipsRequest, MapRelationshipsResponse, 
     SkillRelationship,
     GenerateQuestionsRequest, InterviewQAItem, EvaluateSessionRequest,
-    EvaluateSessionResponse, DetailedFeedbackItem
+    EvaluateSessionResponse, DetailedFeedbackItem, AiMatchingAdviceRequest, AiMatchingAdviceResponse
 )
 from services import (
     extract_skills, extract_job_skills, download_and_extract_pdf_text,
@@ -124,6 +124,24 @@ def api_evaluate_interview_session(req: EvaluateSessionRequest):
             history=[h.model_dump() for h in req.history]
         )
         return evaluation
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ai/candidate-matching-advice", response_model=AiMatchingAdviceResponse)
+def api_candidate_matching_advice(req: AiMatchingAdviceRequest):
+    try:
+        from services import generate_matching_advice
+        advice = generate_matching_advice(
+            cv_text=req.cv_text,
+            jd_text=req.jd_text,
+            missing_skills=req.missing_skills
+        )
+        return AiMatchingAdviceResponse(
+            improvement_tips=advice.get("improvement_tips", ""),
+            predicted_questions=advice.get("predicted_questions", [])
+        )
     except Exception as e:
         import traceback
         traceback.print_exc()

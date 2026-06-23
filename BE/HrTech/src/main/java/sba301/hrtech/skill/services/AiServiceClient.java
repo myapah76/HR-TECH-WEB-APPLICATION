@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import sba301.hrtech.chat.dtos.response.RagChatResponseDto;
+import sba301.hrtech.skill.dtos.response.AiMatchingAdviceResponseDto;
 import sba301.hrtech.skill.dtos.response.ParseExtractResponseDto;
 import sba301.hrtech.skill.dtos.response.JobExtractResponseDto;
 import sba301.hrtech.skill.dtos.response.MapRelationshipsResponseDto;
@@ -208,6 +209,35 @@ public class AiServiceClient {
             log.error("Failed to chat with RAG, status: {}", response.getStatusCode());
         } catch (Exception e) {
             log.error("AI service RAG chat error: {}", e.getMessage(), e);
+        }
+        return null;
+    }
+
+    public sba301.hrtech.skill.dtos.response.AiMatchingAdviceResponseDto getMatchingAdvice(String cvText, String jdText, List<String> missingSkills) {
+        if (missingSkills == null || missingSkills.isEmpty()) {
+            return null; // Không cần lời khuyên nếu không thiếu kỹ năng
+        }
+        try {
+            String url = aiServiceUrl + "/api/ai/candidate-matching-advice";
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("cv_text", cvText != null ? cvText : "");
+            requestBody.put("jd_text", jdText != null ? jdText : "");
+            requestBody.put("missing_skills", missingSkills);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            log.info("Sending candidate matching advice request to AI Service for {} missing skills", missingSkills.size());
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            ResponseEntity<AiMatchingAdviceResponseDto> response = restTemplate.postForEntity(
+                    url, entity, AiMatchingAdviceResponseDto.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody();
+            }
+            log.error("Failed to get matching advice, status: {}", response.getStatusCode());
+        } catch (Exception e) {
+            log.error("AI service get matching advice error: {}", e.getMessage(), e);
         }
         return null;
     }
