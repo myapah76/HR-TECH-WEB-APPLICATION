@@ -5,8 +5,9 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import ManageJobTable from '@/src/components/company/job/ManageJobTable'
-import { useGetMyCompany } from '@/src/hooks/company'
+import { useGetCompanyMembers, useGetMyCompany } from '@/src/hooks/company'
 import { useGetManageJobs } from '@/src/hooks/job'
+import { useAuthStore } from '@/src/stores/auth.store'
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Tất cả trạng thái' },
@@ -32,6 +33,7 @@ export default function ManageJobPage() {
   const [page, setPage] = useState(0)
   const [status, setStatus] = useState('')
   const [jobType, setJobType] = useState('')
+  const { user } = useAuthStore()
 
   const {
     data: myCompany,
@@ -50,7 +52,12 @@ export default function ManageJobPage() {
     size: PAGE_SIZE,
   })
 
-  const isLoading = isCompanyLoading || isJobsLoading
+  const { data: companyMembers = [], isLoading: isMembersLoading } = useGetCompanyMembers(
+    myCompany?.id
+  )
+  const currentMember = companyMembers.find((member) => member.userId === user?.id)
+
+  const isLoading = isCompanyLoading || isJobsLoading || isMembersLoading
   const isError = isCompanyError || isJobsError
 
   const jobs = pageData?.content ?? []
@@ -141,7 +148,11 @@ export default function ManageJobPage() {
         </div>
       ) : jobs.length > 0 ? (
         <>
-          <ManageJobTable jobs={jobs} />
+          <ManageJobTable
+            jobs={jobs}
+            currentUserId={user?.id}
+            companyRole={currentMember?.role}
+          />
 
           {/* Pagination */}
           {totalPages > 1 && (

@@ -108,6 +108,56 @@ public class CompanySecurityExpression {
         return hasJobRole(jobId, "OWNER", "HR_MANAGER");
     }
 
+    public boolean isJobManager(Object jobId) {
+        return hasJobRole(jobId, "HR_MANAGER");
+    }
+
+    public boolean isJobCreatorOrManager(Object jobId) {
+        if (jobId == null) return false;
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()
+                    || "anonymousUser".equals(authentication.getPrincipal())) {
+                return false;
+            }
+
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            Job job = jobRepository.findById(UUID.fromString(jobId.toString())).orElse(null);
+            if (job == null || job.getCompany() == null) {
+                return false;
+            }
+
+            boolean isCreator = job.getCreatedBy() != null
+                    && job.getCreatedBy().getId().equals(userDetails.user().getId());
+            return isCreator || hasRole(job.getCompany().getId(), "HR_MANAGER");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean isJobCreatorOrHr(Object jobId) {
+        if (jobId == null) return false;
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()
+                    || "anonymousUser".equals(authentication.getPrincipal())) {
+                return false;
+            }
+
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            Job job = jobRepository.findById(UUID.fromString(jobId.toString())).orElse(null);
+            if (job == null || job.getCompany() == null) {
+                return false;
+            }
+
+            boolean isCreator = job.getCreatedBy() != null
+                    && job.getCreatedBy().getId().equals(userDetails.user().getId());
+            return isCreator || hasRole(job.getCompany().getId(), "HR");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public boolean isJobMember(Object jobId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {

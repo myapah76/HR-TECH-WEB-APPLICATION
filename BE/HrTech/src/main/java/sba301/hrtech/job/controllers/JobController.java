@@ -78,25 +78,25 @@ public class JobController {
     }
 
     @PutMapping("/{id}/submit")
-    @PreAuthorize("@companySecurity.hasJobRole(#id, 'OWNER', 'HR_MANAGER', 'HR')")
+    @PreAuthorize("@companySecurity.isJobCreatorOrHr(#id)")
     public ResponseEntity<ApiResponse<JobResponse>> submitJob(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(jobService.submitJob(id)));
     }
 
     @PutMapping("/{id}/approve")
-    @PreAuthorize("@companySecurity.isJobOwnerOrManager(#id)")
+    @PreAuthorize("@companySecurity.isJobManager(#id)")
     public ResponseEntity<ApiResponse<JobResponse>> approveJob(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(jobService.approveJob(id)));
     }
 
     @PutMapping("/{id}/reject")
-    @PreAuthorize("@companySecurity.isJobOwnerOrManager(#id)")
+    @PreAuthorize("@companySecurity.isJobManager(#id)")
     public ResponseEntity<ApiResponse<JobResponse>> rejectJob(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(jobService.rejectJob(id)));
     }
 
     @PutMapping("/{id}/close")
-    @PreAuthorize("@companySecurity.isJobOwnerOrManager(#id)")
+    @PreAuthorize("@companySecurity.isJobCreatorOrManager(#id)")
     public ResponseEntity<ApiResponse<JobResponse>> closeJob(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(jobService.closeJob(id)));
     }

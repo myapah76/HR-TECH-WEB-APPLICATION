@@ -80,7 +80,7 @@ public class JobServiceImpl implements IJobService {
         Job job = jobValidator.getActiveJob(jobId);
 
         jobValidator.validateCompanyApproved(job.getCompany().getId());
-        jobValidator.validateCanEditJob(currentUser, job);
+        jobValidator.validateCanSubmitJob(currentUser, job);
 
         if (job.getStatus() != JobStatus.DRAFT) {
             throw new AppException(
@@ -181,12 +181,12 @@ public class JobServiceImpl implements IJobService {
         Job job = jobValidator.getActiveJob(jobId);
 
         jobValidator.validateCompanyApproved(job.getCompany().getId());
-        jobValidator.validateCanCloseJob(currentUser, job.getCompany().getId());
+        jobValidator.validateCanCloseJob(currentUser, job);
 
-        if (job.getStatus() != JobStatus.APPROVED) {
+        if (job.getStatus() == JobStatus.CLOSED) {
             throw new AppException(
                     ErrorCode.JOB_INVALID_STATUS,
-                    "Only APPROVED jobs can be closed. Current status: " + job.getStatus());
+                    "Job is already CLOSED.");
         }
 
         job.setStatus(JobStatus.CLOSED);

@@ -12,6 +12,7 @@ import sba301.hrtech.company.entities.CompanyMember;
 import sba301.hrtech.company.entities.enums.CompanyPermission;
 import sba301.hrtech.company.entities.enums.CompanyRole;
 import sba301.hrtech.company.entities.enums.CompanyStatus;
+import sba301.hrtech.company.entities.enums.MembershipStatus;
 import sba301.hrtech.company.services.CompanyPermissionService;
 import sba301.hrtech.job.abstractions.repositories.JobRepository;
 import sba301.hrtech.job.entities.Job;
@@ -78,17 +79,33 @@ public class JobValidator {
     }
 
     public void validateCanApproveJob(User user, UUID companyId) {
-        if (!permissionService.hasPermission(user.getId(), companyId, CompanyPermission.APPROVE_JOB)) {
+        CompanyMember member = getActiveCompanyMember(user, companyId);
+        if (member.getCompanyRole() != CompanyRole.HR_MANAGER
+                || !permissionService.hasPermission(user.getId(), companyId, CompanyPermission.APPROVE_JOB)) {
             throw new AppException(ErrorCode.JOB_PERMISSION_DENIED,
-                    "You do not have permission to approve/reject jobs in this company.");
+                    "Only HR managers can approve or reject jobs in this company.");
         }
     }
 
-    public void validateCanCloseJob(User user, UUID companyId) {
-        // Close job permission requires DELETE_JOB or general managing privileges
-        if (!permissionService.hasPermission(user.getId(), companyId, CompanyPermission.DELETE_JOB)) {
+    public void validateCanSubmitJob(User user, Job job) {
+        CompanyMember member = getActiveCompanyMember(user, job.getCompany().getId());
+        boolean isCreator = job.getCreatedBy() != null && job.getCreatedBy().getId().equals(user.getId());
+        boolean isHr = member.getCompanyRole() == CompanyRole.HR;
+
+        if (!isCreator && !isHr) {
             throw new AppException(ErrorCode.JOB_PERMISSION_DENIED,
-                    "You do not have permission to close jobs in this company.");
+                    "Only the job creator or HR can submit this job.");
+        }
+    }
+
+    public void validateCanCloseJob(User user, Job job) {
+        CompanyMember member = getActiveCompanyMember(user, job.getCompany().getId());
+        boolean isCreator = job.getCreatedBy() != null && job.getCreatedBy().getId().equals(user.getId());
+        boolean isManager = member.getCompanyRole() == CompanyRole.HR_MANAGER;
+
+        if (!isCreator && !isManager) {
+            throw new AppException(ErrorCode.JOB_PERMISSION_DENIED,
+                    "Only the job creator or an HR manager can close this job.");
         }
     }
 
@@ -113,5 +130,20 @@ public class JobValidator {
             throw new AppException(ErrorCode.JOB_NOT_FOUND_CODE, "Job not found: " + jobId);
         }
         return job;
+    }
+
+    private CompanyMember getActiveCompanyMember(User user, UUID companyId) {
+        CompanyMember member = companyMemberRepository
+                .findByCompanyIdAndUserIdAndDeletedFalse(companyId, user.getId())
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.JOB_PERMISSION_DENIED,
+                        "You do not belong to this company."));
+
+        if (member.getMembershipStatus() != MembershipStatus.ACTIVE) {
+            throw new AppException(ErrorCode.JOB_PERMISSION_DENIED,
+                    "Your company membership is not active.");
+        }
+
+        return member;
     }
 }

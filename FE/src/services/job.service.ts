@@ -22,6 +22,8 @@ export interface ManageJobsParams {
   size?: number
 }
 
+export type JobStatusAction = 'submit' | 'approve' | 'reject' | 'close'
+
 export const getJobs = async (page = 0, size = 10): Promise<PageResponse<Job>> => {
   const response = await axios.get(`${API_URL}/jobs?page=${page}&size=${size}`)
 
@@ -66,5 +68,13 @@ export const createJob = async (data: CreateJobRequest): Promise<Job> => {
 
 export const updateJob = async (id: string, data: CreateJobRequest): Promise<Job> => {
   const response = await api.put<ApiResponse<Job>>(`/jobs/${id}`, data)
+  return response.data.data
+}
+
+export const updateJobStatus = async (
+  jobId: string,
+  action: JobStatusAction
+): Promise<Job> => {
+  const response = await api.put<ApiResponse<Job>>(`/jobs/${jobId}/${action}`)
   return response.data.data
 }

@@ -1,7 +1,7 @@
 import { api } from '@/src/lib/axios'
 import { ApiResponse } from '@/src/types/api'
 
-import { CompanyResponse } from '@/src/types/company'
+import { CompanyMemberResponse, CompanyResponse } from '@/src/types/company'
 
 export const getMyCompany = async (): Promise<ApiResponse<CompanyResponse>> => {
   const response = await api.get<ApiResponse<CompanyResponse>>('/companies/my-company')
@@ -29,5 +29,12 @@ export const getCompanies = async (
 ): Promise<ApiResponse<PageResponse<CompanyResponse>>> => {
   const response = await api.get<ApiResponse<PageResponse<CompanyResponse>>>('/companies', { params })
   return response.data
+}
+
+export const getCompanyMembers = async (companyId: string): Promise<CompanyMemberResponse[]> => {
+  const response = await api.get<ApiResponse<CompanyMemberResponse[]>>(
+    `/companies/${companyId}/members`
+  )
+  return response.data.data
 }
 

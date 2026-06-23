@@ -20,6 +20,8 @@ import {
   Clock,
   Send,
   Loader2,
+  ThumbsDown,
+  ThumbsUp,
 } from 'lucide-react'
 import {
   useGetJobById,
@@ -27,7 +29,9 @@ import {
   useGetSavedJobs,
   useSaveJob,
   useUnsaveJob,
+  useUpdateJobStatusMutation,
 } from '@/src/hooks/job'
+import { useGetCompanyMembers, useGetMyCompany } from '@/src/hooks/company'
 import { useGetAllCvs } from '@/src/hooks/cv'
 import {
   useGetMyApplications,
@@ -38,6 +42,22 @@ import { useAuthStore } from '@/src/stores/auth.store'
 import { RoleUser } from '@/src/enums/role.enum'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import Loading from '@/src/app/loading'
+
+const statusLabels: Record<string, string> = {
+  DRAFT: 'Bản nháp',
+  PENDING_APPROVAL: 'Chờ duyệt',
+  APPROVED: 'Đã duyệt',
+  REJECTED: 'Bị từ chối',
+  CLOSED: 'Đã đóng',
+}
+
+const statusStyles: Record<string, string> = {
+  DRAFT: 'bg-amber-50 text-amber-700 border-amber-200',
+  PENDING_APPROVAL: 'bg-blue-50 text-blue-700 border-blue-200',
+  APPROVED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  REJECTED: 'bg-rose-50 text-rose-700 border-rose-200',
+  CLOSED: 'bg-slate-100 text-slate-600 border-slate-200',
+}
 
 export default function JobDetailPage() {
   const params = useParams()
@@ -58,6 +78,15 @@ export default function JobDetailPage() {
   const [coverLetter, setCoverLetter] = useState('')
 
   const isCandidate = user?.roleResponse?.name === RoleUser.CANDIDATE
+  const isRecruiter = user?.roleResponse?.name === RoleUser.RECRUITER
+  const { data: recruiterCompany } = useGetMyCompany(isRecruiter)
+  const isRecruiterCompanyJob = recruiterCompany?.id === job?.companyId
+  const { data: companyMembers = [] } = useGetCompanyMembers(
+    job?.companyId,
+    isRecruiter && isRecruiterCompanyJob
+  )
+  const currentMember = companyMembers.find((member) => member.userId === user?.id)
+  const isHrManager = currentMember?.role === 'HR_MANAGER'
 
   const { data: savedJobs = [] } = useGetSavedJobs(isCandidate)
 
@@ -77,6 +106,22 @@ export default function JobDetailPage() {
   const unsaveMutation = useUnsaveJob()
 
   const applyMutation = useSubmitApplication()
+  const statusMutation = useUpdateJobStatusMutation()
+
+  const reviewJob = (action: 'approve' | 'reject') => {
+    statusMutation.mutate(
+      { jobId, action },
+      {
+        onSuccess: () => {
+          toast.success(
+            action === 'approve'
+              ? 'Đã phê duyệt tin tuyển dụng!'
+              : 'Đã từ chối tin tuyển dụng!'
+          )
+        },
+      }
+    )
+  }
 
   const handleSaveToggle = () => {
     if (!user) {
@@ -225,15 +270,13 @@ export default function JobDetailPage() {
                         {job.experienceLevel}
                       </span>
                     )}
-                    {job.status === 'OPEN' ? (
-                      <span className="text-[10px] font-black tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-0.75 rounded-lg uppercase leading-none">
-                        Đang tuyển
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-black tracking-widest bg-slate-100 text-slate-500 border border-slate-200 px-2.5 py-0.75 rounded-lg uppercase leading-none">
-                        Đóng tuyển
-                      </span>
-                    )}
+                    <span
+                      className={`text-[10px] font-black tracking-widest border px-2.5 py-0.75 rounded-lg uppercase leading-none ${
+                        statusStyles[job.status] || statusStyles.CLOSED
+                      }`}
+                    >
+                      {statusLabels[job.status] || job.status}
+                    </span>
                   </div>
 
                   <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight leading-tight">
@@ -264,6 +307,37 @@ export default function JobDetailPage() {
 
               {/* Action Buttons Row */}
               <div className="flex flex-wrap items-center gap-3 mt-8 pt-6 border-t border-slate-100">
+                {isHrManager && job.status === 'PENDING_APPROVAL' && (
+                  <div className="flex items-center gap-3 mr-auto">
+                    <button
+                      type="button"
+                      onClick={() => reviewJob('approve')}
+                      disabled={statusMutation.isPending}
+                      className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {statusMutation.isPending && statusMutation.variables?.action === 'approve' ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ThumbsUp className="h-4 w-4" />
+                      )}
+                      APPROVED
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => reviewJob('reject')}
+                      disabled={statusMutation.isPending}
+                      className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-5 py-3 text-sm font-black text-white transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {statusMutation.isPending && statusMutation.variables?.action === 'reject' ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ThumbsDown className="h-4 w-4" />
+                      )}
+                      REJECTED
+                    </button>
+                  </div>
+                )}
+
                 <button
                   onClick={() => {
                     if (!user) {
