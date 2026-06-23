@@ -1,4 +1,5 @@
 export * from './useGetJobs'
+export * from './useSearchJobs'
 export * from './useGetJobById'
 export * from './useGetManageJobs'
 export * from './useGetSavedJobs'

@@ -24,9 +24,38 @@ export interface ManageJobsParams {
 
 export type JobStatusAction = 'submit' | 'approve' | 'reject' | 'close'
 
+export interface JobSearchParams {
+  keyword?: string
+  location?: string
+  jobType?: string
+  experienceLevel?: string
+  salaryMin?: number
+  salaryMax?: number
+  page?: number
+  size?: number
+}
+
 export const getJobs = async (page = 0, size = 10): Promise<PageResponse<Job>> => {
   const response = await axios.get(`${API_URL}/jobs?page=${page}&size=${size}`)
 
+  return response.data.data
+}
+
+export const searchJobs = async (params: JobSearchParams): Promise<PageResponse<Job>> => {
+  const { page = 0, size = 10, keyword, location, jobType, experienceLevel, salaryMin, salaryMax } = params
+
+  // Build query params, only include non-empty values
+  const queryParams = new URLSearchParams()
+  queryParams.set('page', String(page))
+  queryParams.set('size', String(size))
+  if (keyword?.trim()) queryParams.set('keyword', keyword.trim())
+  if (location?.trim()) queryParams.set('location', location.trim())
+  if (jobType) queryParams.set('jobType', jobType)
+  if (experienceLevel) queryParams.set('experienceLevel', experienceLevel)
+  if (salaryMin !== undefined && salaryMin > 0) queryParams.set('salaryMin', String(salaryMin))
+  if (salaryMax !== undefined && salaryMax > 0) queryParams.set('salaryMax', String(salaryMax))
+
+  const response = await axios.get(`${API_URL}/jobs/search?${queryParams.toString()}`)
   return response.data.data
 }
 

@@ -40,14 +40,19 @@ export default function JobFilter({
     }))
   }
 
-  const jobTypes = ['Full-time', 'Part-time', 'Contract', 'Internship']
+  const jobTypes = [
+    { id: 'FULL_TIME', label: 'Full-time' },
+    { id: 'PART_TIME', label: 'Part-time' },
+    { id: 'CONTRACT', label: 'Contract' },
+    { id: 'INTERNSHIP', label: 'Internship' },
+  ]
 
   const experienceLevels = [
-    { id: 'Junior', label: 'Junior (Ít hơn 2 năm)' },
-    { id: 'Mid', label: 'Mid Level (2 - 5 năm)' },
-    { id: 'Senior', label: 'Senior (5+ năm)' },
-    { id: 'Lead', label: 'Lead / Tech Lead' },
-    { id: 'Executive', label: 'Executive / Giám đốc' },
+    { id: 'INTERN', label: 'Intern' },
+    { id: 'FRESHER', label: 'Fresher' },
+    { id: 'JUNIOR', label: 'Junior (Ít hơn 2 năm)' },
+    { id: 'MIDDLE', label: 'Middle (2 - 5 năm)' },
+    { id: 'SENIOR', label: 'Senior (5+ năm)' },
   ]
 
   const techOptions = [
@@ -99,16 +104,16 @@ export default function JobFilter({
           <div className="space-y-3 animate-fade-in">
             {jobTypes.map((type) => (
               <label
-                key={type}
+                key={type.id}
                 className="flex items-center gap-3 text-sm font-bold text-slate-650 hover:text-slate-900 transition-colors cursor-pointer select-none"
               >
                 <input
                   type="checkbox"
-                  checked={selectedTypes.includes(type)}
-                  onChange={() => onTypeChange(type)}
+                  checked={selectedTypes.includes(type.id)}
+                  onChange={() => onTypeChange(type.id)}
                   className="w-4.5 h-4.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer accent-blue-600"
                 />
-                <span>{type}</span>
+                <span>{type.label}</span>
               </label>
             ))}
           </div>

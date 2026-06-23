@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronDown } from 'lucide-react'
 
 import JobCard from '@/src/components/jobs/JobCard'
@@ -8,22 +8,38 @@ import JobFilter from '@/src/components/jobs/JobFilter'
 import JobSearch from '@/src/components/jobs/JobSearch'
 import Pagination from '@/src/components/jobs/Pagination'
 import Loading from '@/src/app/loading'
-import { useGetJobs } from '@/src/hooks/job'
+import { useSearchJobs } from '@/src/hooks/job'
 
 export default function Home() {
-  const [keyword, setKeyword] = useState('Senior Software Engineer')
+  const [keyword, setKeyword] = useState('')
   const [location, setLocation] = useState('')
 
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(['Remote'])
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([])
   const [salaryRange, setSalaryRange] = useState(0)
-  const [selectedExp, setSelectedExp] = useState<string[]>(['Senior'])
-  const [selectedTechs, setSelectedTechs] = useState<string[]>(['Golang'])
+  const [selectedExp, setSelectedExp] = useState<string[]>([])
+  const [selectedTechs, setSelectedTechs] = useState<string[]>([])
 
   const [currentPage, setCurrentPage] = useState(1)
 
   const PAGE_SIZE = 10
 
-  const { data, isLoading } = useGetJobs(currentPage - 1, PAGE_SIZE)
+  // Reset về page 1 bất cứ khi nào filter thay đổi
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [keyword, location, selectedTypes, salaryRange, selectedExp, selectedTechs])
+
+  const { data, isLoading } = useSearchJobs({
+    page: currentPage - 1,
+    size: PAGE_SIZE,
+    keyword: keyword || undefined,
+    location: location || undefined,
+    // Backend nhận 1 giá trị jobType, gửi phần tử đầu tiên nếu có
+    jobType: selectedTypes.length === 1 ? selectedTypes[0] : undefined,
+    // Backend nhận 1 giá trị experienceLevel, gửi phần tử đầu tiên nếu có
+    experienceLevel: selectedExp.length === 1 ? selectedExp[0] : undefined,
+    salaryMax: salaryRange > 0 ? salaryRange : undefined,
+  })
+
   const jobs = data?.content ?? []
   const totalPages = data?.totalPages ?? 0
   const totalResults = data?.totalElements ?? 0
