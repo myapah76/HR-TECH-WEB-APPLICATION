@@ -3,6 +3,7 @@ package sba301.hrtech.skill.controllers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import sba301.hrtech.shared.response.ApiResponse;
 import sba301.hrtech.skill.dtos.response.JobMatchingTaskResponse;
 import sba301.hrtech.skill.services.JobMatchingService;
@@ -12,6 +13,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/recommendations")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('CANDIDATE')")
 public class JobMatchingController {
 
     private final JobMatchingService jobMatchingService;

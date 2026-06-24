@@ -4,10 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import sba301.hrtech.identity.dtos.user.CustomUserDetails;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.company.abstractions.repositories.CompanyMemberRepository;
 import sba301.hrtech.company.entities.Company;
@@ -302,15 +304,23 @@ public class JobServiceImpl implements IJobService {
     @Override
     @Transactional(readOnly = true)
     public Page<JobResponse> getCompanyJobsWithFilters(UUID companyId, String status, String jobType, Pageable pageable) {
-        User currentUser = jobValidator.getCurrentUser();
         jobValidator.validateCompanyApproved(companyId);
-        jobValidator.validateCanViewCompanyJobs(currentUser, companyId);
+
+        Object principal = SecurityContextHolder.getContext().getAuthentication() != null
+                ? SecurityContextHolder.getContext().getAuthentication().getPrincipal()
+                : null;
+        User currentUser = (principal instanceof CustomUserDetails userDetails) ? userDetails.user() : null;
+
+        String targetStatus = status;
+        if (!jobValidator.hasViewCompanyJobsPermission(currentUser, companyId)) {
+            targetStatus = "APPROVED";
+        }
 
         // Convert string status to enum if provided
         JobStatus jobStatusEnum = null;
-        if (status != null) {
+        if (targetStatus != null) {
             try {
-                jobStatusEnum = JobStatus.valueOf(status.toUpperCase());
+                jobStatusEnum = JobStatus.valueOf(targetStatus.toUpperCase());
             } catch (IllegalArgumentException ignored) {
                 // Invalid status, treat as null (no filter)
             }

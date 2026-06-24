@@ -1,4 +1,8 @@
 'use client'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuthStore } from '@/src/stores/auth.store'
+import { RoleUser } from '@/src/enums/role.enum'
 import Sidebar from '@/src/components/layout/Sidebar'
 import { useQuery } from '@tanstack/react-query'
 import { getSavedJobs } from '@/src/services/job.service'
@@ -49,14 +53,30 @@ const candidateNavItems = [
 ]
 
 export default function CandidateLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+  const { user, isInitialized } = useAuthStore()
+
+  useEffect(() => {
+    if (!isInitialized) return
+    if (!user) {
+      router.replace('/login')
+      return
+    }
+    if (user.roleResponse?.name !== RoleUser.CANDIDATE) {
+      router.replace('/dashboard')
+    }
+  }, [user, isInitialized, router])
+
   const { data: savedJobs = [] } = useQuery({
     queryKey: ['savedJobs'],
     queryFn: () => getSavedJobs(),
+    enabled: isInitialized && !!user && user.roleResponse?.name === RoleUser.CANDIDATE,
   })
 
   const { data: appliedJobs = [] } = useQuery({
     queryKey: ['appliedJobs'],
     queryFn: () => getMyApplications(),
+    enabled: isInitialized && !!user && user.roleResponse?.name === RoleUser.CANDIDATE,
   })
 
   const navItems = candidateNavItems.map((item) => {
@@ -68,6 +88,10 @@ export default function CandidateLayout({ children }: { children: React.ReactNod
     }
     return item
   })
+
+  if (!isInitialized || !user || user.roleResponse?.name !== RoleUser.CANDIDATE) {
+    return null
+  }
 
   return (
     <div className="bg-slate-50/50 flex flex-col min-h-[calc(100vh-64px)]" id="candidate-root">

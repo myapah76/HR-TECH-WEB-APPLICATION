@@ -1,5 +1,8 @@
 'use client'
-
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuthStore } from '@/src/stores/auth.store'
+import { RoleUser } from '@/src/enums/role.enum'
 import Sidebar from '@/src/components/layout/Sidebar'
 import {
   LayoutDashboard,
@@ -64,6 +67,24 @@ const recruiterNavItems = [
 ]
 
 export default function RecruiterLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+  const { user, isInitialized } = useAuthStore()
+
+  useEffect(() => {
+    if (!isInitialized) return
+    if (!user) {
+      router.replace('/login')
+      return
+    }
+    if (user.roleResponse?.name !== RoleUser.RECRUITER) {
+      router.replace('/dashboard')
+    }
+  }, [user, isInitialized, router])
+
+  if (!isInitialized || !user || user.roleResponse?.name !== RoleUser.RECRUITER) {
+    return null
+  }
+
   return (
     <div className="bg-slate-50/50 flex flex-col min-h-[calc(100vh-64px)]" id="recruiter-root">
       <div className="flex flex-1">

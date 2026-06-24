@@ -116,6 +116,20 @@ public class JobValidator {
         }
     }
 
+    public boolean hasViewCompanyJobsPermission(User user, UUID companyId) {
+        if (user == null) return false;
+        try {
+            CompanyMember member = companyMemberRepository.findByCompanyIdAndUserIdAndDeletedFalse(companyId, user.getId())
+                    .orElse(null);
+            if (member == null || member.getMembershipStatus() != MembershipStatus.ACTIVE) {
+                return false;
+            }
+            return permissionService.hasPermission(user.getId(), companyId, CompanyPermission.VIEW_APPLICANTS);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public void validateJobOwnership(Job job, UUID userId) {
         if (job.getCreatedBy() == null || !job.getCreatedBy().getId().equals(userId)) {
             throw new AppException(ErrorCode.JOB_NOT_OWNER,

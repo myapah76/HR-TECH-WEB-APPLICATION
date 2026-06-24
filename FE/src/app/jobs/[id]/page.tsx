@@ -338,51 +338,66 @@ export default function JobDetailPage() {
                   </div>
                 )}
 
-                <button
-                  onClick={() => {
-                    if (!user) {
-                      toast.error('Vui lòng đăng nhập để ứng tuyển')
-                      return
-                    }
-                    if (hasApplied) {
-                      toast.info('Bạn đã ứng tuyển công việc này rồi!')
-                      return
-                    }
-                    setIsApplyModalOpen(true)
-                  }}
-                  disabled={job.status !== 'APPROVED' && job.status !== 'OPEN'}
-                  className={`flex-1 min-w-50 font-black text-sm py-4 rounded-2xl transition-all duration-300 shadow-md active:scale-98 cursor-pointer uppercase tracking-wider flex items-center justify-center gap-2 ${
-                    hasApplied
-                      ? 'bg-slate-100 border border-slate-200 text-slate-400 hover:scale-100 hover:shadow-md'
-                      : 'bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] hover:-translate-y-0.5 text-white shadow-blue-600/10 hover:shadow-lg hover:shadow-blue-600/20'
-                  }`}
-                >
-                  {hasApplied ? <Check className="w-5 h-5" /> : <PlusCircle className="w-5 h-5" />}
-                  <span>{hasApplied ? 'Đã ứng tuyển' : 'Ứng tuyển ngay'}</span>
-                </button>
+                {(!user || isCandidate) && (
+                  <button
+                    onClick={() => {
+                      if (!user) {
+                        toast.error('Vui lòng đăng nhập để ứng tuyển')
+                        return
+                      }
+                      if (hasApplied) {
+                        toast.info('Bạn đã ứng tuyển công việc này rồi!')
+                        return
+                      }
+                      setIsApplyModalOpen(true)
+                    }}
+                    disabled={job.status !== 'APPROVED' && job.status !== 'OPEN'}
+                    className={`flex-1 min-w-50 font-black text-sm py-4 rounded-2xl transition-all duration-300 shadow-md active:scale-98 cursor-pointer uppercase tracking-wider flex items-center justify-center gap-2 ${
+                      hasApplied
+                        ? 'bg-slate-100 border border-slate-200 text-slate-400 hover:scale-100 hover:shadow-md'
+                        : 'bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] hover:-translate-y-0.5 text-white shadow-blue-600/10 hover:shadow-lg hover:shadow-blue-600/20'
+                    }`}
+                  >
+                    {hasApplied ? <Check className="w-5 h-5" /> : <PlusCircle className="w-5 h-5" />}
+                    <span>{hasApplied ? 'Đã ứng tuyển' : 'Ứng tuyển ngay'}</span>
+                  </button>
+                )}
 
-                <button
-                  onClick={handleSaveToggle}
-                  disabled={saveMutation.isPending || unsaveMutation.isPending}
-                  className={`p-4 border rounded-2xl transition-all duration-200 cursor-pointer flex justify-center items-center ${
-                    isSaved
-                      ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-sm'
-                      : 'bg-white border-slate-200 text-slate-500 hover:border-slate-350 hover:bg-slate-50'
-                  }`}
-                  title="Lưu công việc"
-                >
-                  <Heart
-                    className={`w-5 h-5 transition-transform duration-200 ${isSaved ? 'fill-rose-500 scale-110' : 'hover:scale-105'}`}
-                  />
-                </button>
+                {(!user || isCandidate) && (
+                  <button
+                    onClick={handleSaveToggle}
+                    disabled={saveMutation.isPending || unsaveMutation.isPending}
+                    className={`p-4 border rounded-2xl transition-all duration-200 cursor-pointer flex justify-center items-center ${
+                      isSaved
+                        ? 'bg-rose-50 border-rose-200 text-rose-550 shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-500 hover:border-slate-350 hover:bg-slate-50'
+                    }`}
+                    title="Lưu công việc"
+                  >
+                    <Heart
+                      className={`w-5 h-5 transition-transform duration-200 ${isSaved ? 'fill-rose-500 scale-110' : 'hover:scale-105'}`}
+                    />
+                  </button>
+                )}
 
-                <button
-                  onClick={handleShare}
-                  className="p-4 bg-white border border-slate-200 hover:border-slate-350 rounded-2xl text-slate-500 hover:bg-slate-50 transition-all cursor-pointer flex justify-center items-center"
-                  title="Chia sẻ công việc"
-                >
-                  <Share2 className="w-5 h-5" />
-                </button>
+                {(!user || isCandidate) ? (
+                  <button
+                    onClick={handleShare}
+                    className="p-4 bg-white border border-slate-200 hover:border-slate-350 rounded-2xl text-slate-500 hover:bg-slate-50 transition-all cursor-pointer flex justify-center items-center"
+                    title="Chia sẻ công việc"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleShare}
+                    className="flex-1 font-black text-sm py-4 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50/50 rounded-2xl text-slate-700 hover:scale-[1.01] transition-all duration-200 cursor-pointer flex justify-center items-center gap-2 uppercase tracking-wider"
+                    title="Chia sẻ công việc"
+                  >
+                    <Share2 className="w-5 h-5 text-slate-500" />
+                    <span>Chia sẻ tin tuyển dụng</span>
+                  </button>
+                )}
               </div>
             </div>
 

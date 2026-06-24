@@ -18,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 @RestController
 @RequestMapping("/api/recommendations")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('CANDIDATE')")
 public class RecommendationController {
 
     private final IRecommendationService recommendationService;

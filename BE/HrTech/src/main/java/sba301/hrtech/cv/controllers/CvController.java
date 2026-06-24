@@ -7,6 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import sba301.hrtech.cv.dtos.request.CreateCvRequest;
 import sba301.hrtech.cv.dtos.request.UpdateCvTitleRequest;
 import sba301.hrtech.cv.dtos.response.CvDetailResponse;
@@ -21,6 +22,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/cvs")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('CANDIDATE')")
 public class CvController {
 
     private final ICvService ICvService;

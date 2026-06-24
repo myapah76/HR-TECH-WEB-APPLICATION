@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import sba301.hrtech.interview.abstractions.services.IInterviewService;
 import sba301.hrtech.interview.dtos.request.StartSessionRequest;
 import sba301.hrtech.interview.dtos.request.SubmitAnswerRequest;
@@ -19,6 +20,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/interviews")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('CANDIDATE')")
 public class InterviewController {
 
     private final IInterviewService interviewService;
