@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import sba301.hrtech.identity.abstractions.cache.IRedisTokenService;
 import sba301.hrtech.identity.abstractions.repositories.RoleRepository;
-import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.abstractions.services.IAuthService;
 import sba301.hrtech.identity.abstractions.services.IJwtService;
 import sba301.hrtech.identity.abstractions.services.IRefreshTokenService;
@@ -51,6 +50,7 @@ import org.springframework.context.annotation.Lazy;
 import javax.management.relation.RoleNotFoundException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -113,8 +113,8 @@ public class AuthServiceImpl implements IAuthService {
 
     @Override
     public EmailActionResponse forgetPassword(ForgetPasswordRequest request) {
-        User user = userService.getUserEntityByEmail(request.email());
-        if (user.getIsBlocked()) {
+        Optional<User> user = userService.getUserEntityByEmail(request.email());
+        if (user.isEmpty() || user.get().getIsBlocked()) {
             throw new AppException(ErrorCode.USER_ALREADY_REGISTERED, "User is blocked");
         }
         String key = OtpType.FORGET_PASSWORD + request.email();
@@ -161,9 +161,9 @@ public class AuthServiceImpl implements IAuthService {
             throw new AppException(ErrorCode.TOKEN_EXPIRED);
         }
 
-        User user = userService.getUserEntityByEmail(email);
-        user.setPassword(passwordEncoder.encode(request.newPassword()));
-        userService.saveUserEntity(user);
+        Optional<User> user = userService.getUserEntityByEmail(email);
+        user.get().setPassword(passwordEncoder.encode(request.newPassword()));
+        userService.saveUserEntity(user.orElse(null));
         redisTemplate.delete(key);
     }
 
@@ -208,20 +208,20 @@ public class AuthServiceImpl implements IAuthService {
     @Override
     public TokenPair login(LoginRequest request) {
 
-        User user = userService.getUserEntityByEmail(request.getEmail());
-        if (user.getIsBlocked()) {
+        Optional<User> user = userService.getUserEntityByEmail(request.getEmail());
+        if (user.isPresent() && user.get().getIsBlocked()) {
             throw new AppException(ErrorCode.USER_ALREADY_REGISTERED, "User is blocked");
         }
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.orElse(new User()).getPassword())) {
             throw new AppException(ErrorCode.WRONG_PASSWORD);
         }
-        UserDetails userDetails = new CustomUserDetails(user);
+        UserDetails userDetails = new CustomUserDetails(user.orElse(null));
         String accessToken = jwtService.generateToken(userDetails);
 
-        String refreshToken = refreshTokenService.createRefreshToken(user);
+        String refreshToken = refreshTokenService.createRefreshToken(user.orElse(null));
 
         return new TokenPair(
-                new AuthResponse(userMapper.toResponse(user), accessToken, refreshToken),
+                new AuthResponse(userMapper.toResponse(user.orElse(null)), accessToken, refreshToken),
                 refreshToken
         );
     }
@@ -271,32 +271,32 @@ public class AuthServiceImpl implements IAuthService {
         String lastName = (String) userInfo.get("family_name");
         String picture = (String) userInfo.get("picture");
         
-        User user = userService.getUserEntityByEmail(email);
+        Optional<User> user = userService.getUserEntityByEmail(email);
         
-        if (user == null) {
-            user = new User();
-            user.setEmail(email);
-            user.setUsername(email.split("@")[0]);
-            user.setFirstName(firstName);
-            user.setLastName(lastName);
-            user.setAvatarUrl(picture);
+        if (user.isEmpty()) {
+            user = Optional.of(new User());
+            user.get().setEmail(email);
+            user.get().setUsername(email.split("@")[0]);
+            user.get().setFirstName(firstName);
+            user.get().setLastName(lastName);
+            user.get().setAvatarUrl(picture);
             // generate random strong password
-            user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-            user.setRequirePasswordChange(true);
+            user.get().setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+            user.get().setRequirePasswordChange(true);
             
             Role role = roleRepository.findByName("CANDIDATE")
                     .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Role CANDIDATE not found"));
-            user.setRole(role);
-            user = userService.saveUserEntity(user);
+            user.get().setRole(role);
+            user = Optional.ofNullable(userService.saveUserEntity(user.orElse(null)));
         }
         
-        if (user.getIsBlocked()) {
+        if (user.get().getIsBlocked()) {
             throw new AppException(ErrorCode.USER_ALREADY_REGISTERED, "User is blocked");
         }
         
-        if (user.getRequirePasswordChange() != null && user.getRequirePasswordChange()) {
+        if (user.get().getRequirePasswordChange() != null && user.get().getRequirePasswordChange()) {
             String setupToken = UUID.randomUUID().toString();
-            redisTemplate.opsForValue().set("setup_pwd:" + setupToken, user.getId().toString(), Duration.ofMinutes(15));
+            redisTemplate.opsForValue().set("setup_pwd:" + setupToken, user.get().getId().toString(), Duration.ofMinutes(15));
             
             AuthResponse authResponse = AuthResponse.builder()
                 .needsPasswordSetup(true)
@@ -305,12 +305,12 @@ public class AuthServiceImpl implements IAuthService {
             return new TokenPair(authResponse, null);
         }
         
-        UserDetails userDetails = new CustomUserDetails(user);
+        UserDetails userDetails = new CustomUserDetails(user.orElse(null));
         String accessToken = jwtService.generateToken(userDetails);
-        String refreshToken = refreshTokenService.createRefreshToken(user);
+        String refreshToken = refreshTokenService.createRefreshToken(user.orElse(null));
 
         return new TokenPair(
-                new AuthResponse(userMapper.toResponse(user), accessToken, refreshToken), refreshToken
+                new AuthResponse(userMapper.toResponse(user.orElse(null)), accessToken, refreshToken), refreshToken
         );
     }
 

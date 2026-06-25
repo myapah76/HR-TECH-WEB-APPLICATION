@@ -19,6 +19,7 @@ import sba301.hrtech.identity.dtos.user.response.UserResponse;
 import sba301.hrtech.identity.mapper.UserMapper;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -114,8 +115,7 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    public User getUserEntityByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    public Optional<User> getUserEntityByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 }

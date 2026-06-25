@@ -1,3 +1,15 @@
+export interface StartSessionRequest {
+  cvId: string
+  jobId: string | null
+  targetRole: string
+  numQuestions: number
+}
+
+export interface AnswerSubmitRequest {
+  questionId: string
+  answer: string
+}
+
 export interface QuestionResponse {
   id: string
   questionText: string

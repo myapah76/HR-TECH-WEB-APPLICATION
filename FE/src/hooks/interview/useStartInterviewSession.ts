@@ -1,18 +1,16 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { startInterviewSession } from '@/src/services/interview.service'
+import { SessionStartResponse } from '@/src/types/interview'
 
 export const useStartInterviewSession = () => {
+  const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      cvId,
-      jobId,
-      targetRole,
-      numQuestions,
-    }: {
-      cvId: string
-      jobId: string | null
-      targetRole: string
-      numQuestions: number
-    }) => startInterviewSession(cvId, jobId, targetRole, numQuestions),
+    mutationFn: startInterviewSession,
+    onSuccess: (newSession) => {
+      queryClient.setQueryData<SessionStartResponse[]>(['interviewHistory'], (oldData) => {
+        if (!oldData) return [newSession]
+        return [newSession, ...oldData]
+      })
+    },
   })
 }
