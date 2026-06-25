@@ -2,18 +2,17 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { useQuery, useMutation } from '@tanstack/react-query'
 import { Card } from '@/src/components/ui/card'
 import { Button } from '@/src/components/ui/button'
-import {
-  submitInterviewAnswer,
-  submitAndEvaluateInterview,
-  getMyInterviewHistory,
-} from '@/src/services/interview.service'
 import { QuestionResponse } from '@/src/types/interview'
 import { Mic, Loader2, Sparkles, HelpCircle, ArrowRight, ChevronLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { motion } from 'motion/react'
+import {
+  useGetInterviewSessionHistory,
+  useSubmitInterviewAnswer,
+  useSubmitAndEvaluateInterview,
+} from '@/src/hooks/interview'
 
 export default function MockInterviewPracticePage() {
   const router = useRouter()
@@ -34,10 +33,9 @@ export default function MockInterviewPracticePage() {
   const [evalStep, setEvalStep] = useState(0)
 
   // Fetch all sessions to find the current active target role & details
-  const { data: history = [], isLoading } = useQuery({
-    queryKey: ['interviewHistory'],
-    queryFn: getMyInterviewHistory,
-  })
+  const { data: history = [], isLoading } = useGetInterviewSessionHistory()
+  const evaluateSessionMut = useSubmitAndEvaluateInterview()
+  const submitAnswerMut = useSubmitInterviewAnswer()
 
   const currentSession = history.find((s) => s.sessionId === sessionId)
   const totalQuestions = currentSession?.totalQuestions || 5
@@ -56,40 +54,6 @@ export default function MockInterviewPracticePage() {
   }, [currentQuestion?.id])
 
   // Submit Answer Mutation
-  const submitAnswerMut = useMutation({
-    mutationFn: (data: { questionId: string; text: string }) =>
-      submitInterviewAnswer(sessionId, data.questionId, data.text),
-    onSuccess: (data) => {
-      setAnswerText('')
-
-      if (data.finished) {
-        // Tự động gọi chấm điểm
-        setIsEvaluating(true)
-        setEvalStep(0)
-        evaluateSessionMut.mutate()
-      } else if (data.nextQuestion) {
-        setCurrentQuestion(data.nextQuestion)
-      }
-    },
-    onError: (err) => {
-      console.error(err)
-      toast.error('Gửi câu trả lời thất bại. Vui lòng thử lại.')
-    },
-  })
-
-  // Submit Interview and Start AI Evaluation Mutation
-  const evaluateSessionMut = useMutation({
-    mutationFn: () => submitAndEvaluateInterview(sessionId),
-    onSuccess: () => {
-      toast.success('AI hoàn thành chấm điểm!')
-      router.push(`/candidate/mock-interview/${sessionId}/result`)
-    },
-    onError: (err) => {
-      console.error(err)
-      setIsEvaluating(false)
-      toast.error('AI chấm điểm thất bại. Vui lòng thử lại.')
-    },
-  })
 
   // Speech Recognition Setup
   useEffect(() => {
@@ -103,24 +67,14 @@ export default function MockInterviewPracticePage() {
         recognition.lang = 'vi-VN'
 
         recognition.onresult = (event: any) => {
-          let interimTranscript = ''
-          let finalTranscript = ''
-
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-              finalTranscript += event.results[i][0].transcript
-            } else {
-              interimTranscript += event.results[i][0].transcript
-            }
+          let fullTranscript = ''
+          for (let i = 0; i < event.results.length; ++i) {
+            fullTranscript += event.results[i][0].transcript
           }
-
-          if (finalTranscript) {
-            setAnswerText((prev) => (prev ? prev + ' ' + finalTranscript : finalTranscript))
-          }
+          setAnswerText(fullTranscript)
         }
 
         recognition.onerror = (event: any) => {
-          console.error('Speech recognition error', event.error)
           setIsListening(false)
           if (event.error === 'not-allowed') {
             toast.error('Vui lòng cấp quyền truy cập Microphone cho trình duyệt')
@@ -181,10 +135,38 @@ export default function MockInterviewPracticePage() {
       setIsListening(false)
     }
 
-    submitAnswerMut.mutate({
-      questionId: currentQuestion.id,
-      text: answerText,
-    })
+    submitAnswerMut.mutate(
+      {
+        sessionId: sessionId,
+        request: {
+          questionId: currentQuestion?.id || '',
+          answerText: answerText,
+        },
+      },
+      {
+        onSuccess: (data) => {
+          setAnswerText('')
+
+          if (data.finished) {
+            // Tự động gọi chấm điểm
+            setIsEvaluating(true)
+            setEvalStep(0)
+            // Submit Interview and Start AI Evaluation Mutation
+            evaluateSessionMut.mutate(sessionId, {
+              onSuccess: () => {
+                toast.success('AI hoàn thành chấm điểm!')
+                router.push(`/candidate/mock-interview/${sessionId}/result`)
+              },
+              onError: () => {
+                setIsEvaluating(false)
+              },
+            })
+          } else if (data.nextQuestion) {
+            setCurrentQuestion(data.nextQuestion)
+          }
+        },
+      }
+    )
   }
 
   // Loading Steps Animation Effect
@@ -388,7 +370,7 @@ export default function MockInterviewPracticePage() {
                     </span>
                   </div>
                   <textarea
-                    className="w-full min-h-[180px] max-h-[300px] rounded-2xl border border-blue-200 bg-blue-50/5 p-5 text-sm font-semibold text-slate-650 shadow-xs resize-none"
+                    className="w-full min-h-45 max-h-75 rounded-2xl border border-blue-200 bg-blue-50/5 p-5 text-sm font-semibold text-slate-650 shadow-xs resize-none"
                     placeholder="Hãy nói lớn câu trả lời của bạn vào mic. Chữ sẽ tự động xuất hiện tại đây..."
                     value={answerText}
                     readOnly
@@ -423,7 +405,7 @@ export default function MockInterviewPracticePage() {
                         Đang ghi âm... Hãy nói câu trả lời của bạn.
                       </span>
                       <span className="text-[10px] text-slate-400 font-medium mt-0.5">
-                        Bấm nút đỏ hoặc click "HOÀN THÀNH NÓI" để sửa câu trả lời.
+                        Bấm nút đỏ hoặc click {'HOÀN THÀNH NÓI'} để sửa câu trả lời.
                       </span>
                     </div>
                   </div>
@@ -451,7 +433,7 @@ export default function MockInterviewPracticePage() {
                     </span>
                   </div>
                   <textarea
-                    className="w-full min-h-[180px] max-h-[300px] rounded-2xl border border-slate-200 bg-slate-50/20 p-5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-xs resize-none"
+                    className="w-full min-h-45 max-h-75 rounded-2xl border border-slate-200 bg-slate-50/20 p-5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-xs resize-none"
                     placeholder="Hãy chỉnh sửa lại các thuật ngữ bị nhận diện sai hoặc bổ sung nội dung..."
                     value={answerText}
                     onChange={(e) => setAnswerText(e.target.value)}
