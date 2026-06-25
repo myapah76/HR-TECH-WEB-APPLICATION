@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ChevronDown } from 'lucide-react'
 
 import JobCard from '@/src/components/jobs/JobCard'
@@ -11,8 +12,10 @@ import Loading from '@/src/app/loading'
 import { useSearchJobs } from '@/src/hooks/job'
 
 export default function Home() {
-  const [keyword, setKeyword] = useState('')
-  const [location, setLocation] = useState('')
+  const searchParams = useSearchParams()
+
+  const [keyword, setKeyword] = useState(() => searchParams.get('keyword') ?? '')
+  const [location, setLocation] = useState(() => searchParams.get('location') ?? '')
 
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
   const [salaryRange, setSalaryRange] = useState(0)
@@ -40,9 +43,22 @@ export default function Home() {
     salaryMax: salaryRange > 0 ? salaryRange : undefined,
   })
 
-  const jobs = data?.content ?? []
+  const allJobs = data?.content ?? []
   const totalPages = data?.totalPages ?? 0
-  const totalResults = data?.totalElements ?? 0
+
+  // Client-side filter by selected technologies/skills
+  const jobs =
+    selectedTechs.length === 0
+      ? allJobs
+      : allJobs.filter((job) =>
+        selectedTechs.every((tech) =>
+          job.skills?.some(
+            (s) => s.skillName.toLowerCase() === tech.toLowerCase()
+          )
+        )
+      )
+
+  const totalResults = selectedTechs.length > 0 ? jobs.length : (data?.totalElements ?? 0)
 
   const toggleInArray = (arr: string[], value: string) =>
     arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]
