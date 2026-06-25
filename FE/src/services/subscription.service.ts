@@ -16,3 +16,8 @@ export const createPayment = async (subscriptionPlanId: string): Promise<ApiResp
   const response = await api.post('/payments', { subscriptionPlanId })
   return response.data
 }
+
+export const getMyCurrentSubscription = async (): Promise<ApiResponse<any>> => {
+  const response = await api.get('/subscriptions/my-current')
+  return response.data
+}

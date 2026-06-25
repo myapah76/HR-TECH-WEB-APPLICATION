@@ -180,7 +180,7 @@ public class AiServiceClient {
     /**
      * Calls Python AI service to chat using RAG.
      */
-    public RagChatResponseDto chatWithRag(String query, String documentId, int topK) {
+    public RagChatResponseDto chatWithRag(String query, List<String> documentIds, int topK) {
         if (query == null || query.trim().isEmpty()) {
             return null;
         }
@@ -190,8 +190,8 @@ public class AiServiceClient {
 
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("query", query);
-            if (documentId != null) {
-                requestBody.put("document_id", documentId);
+            if (documentIds != null && !documentIds.isEmpty()) {
+                requestBody.put("document_ids", documentIds);
             }
             requestBody.put("top_k", topK);
 

@@ -2,6 +2,7 @@ package sba301.hrtech.payment.services;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.identity.utils.AuthUtils;
@@ -23,12 +24,16 @@ import sba301.hrtech.subscription.abstractions.repositories.CompanySubFeatureUsa
 import sba301.hrtech.subscription.entities.*;
 import sba301.hrtech.subscription.entities.enums.SubscriptionStatus;
 import sba301.hrtech.subscription.entities.enums.SubscriptionType;
+import sba301.hrtech.payment.dtos.response.PaymentResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import vn.payos.PayOS;
 import vn.payos.model.webhooks.Webhook;
 
 import java.time.LocalDate;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements IPaymentService {
@@ -86,6 +91,7 @@ public class PaymentServiceImpl implements IPaymentService {
     public void handleWebhook(Webhook webhook) {
         try {
             var data = payOS.webhooks().verify(webhook);
+            log.info("Received PayOS webhook: {}", data);
             if (!Boolean.TRUE.equals(webhook.getSuccess())) return;
             if (!"00".equals(webhook.getCode())) return;
 
@@ -149,5 +155,28 @@ public class PaymentServiceImpl implements IPaymentService {
         } catch (Exception e) {
             throw new AppException(ErrorCode.WEBHOOK_NOT_FOUND, "Invalid PayOS webhook signature");
         }
+    }
+
+    @Override
+    public Page<PaymentResponse> getMyPaymentHistory(Pageable pageable) {
+        UUID userId = authUtils.getCurrentUserId();
+        return paymentRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
+            .map(payment -> {
+                String subName = "Unknown";
+                if (payment.getSubscriptionType() == SubscriptionType.CANDIDATE) {
+                    subName = candidateSubscriptionRepository.findById(payment.getSubscriptionId())
+                        .map(sub -> sub.getPlan().getName()).orElse("Unknown Plan");
+                } else if (payment.getSubscriptionType() == SubscriptionType.COMPANY) {
+                    subName = companySubscriptionRepository.findById(payment.getSubscriptionId())
+                        .map(sub -> sub.getPlan().getName()).orElse("Unknown Plan");
+                }
+                return new PaymentResponse(
+                    payment.getOrderCode(),
+                    payment.getAmount(),
+                    payment.getStatus(),
+                    subName,
+                    payment.getCreatedAt()
+                );
+            });
     }
 }

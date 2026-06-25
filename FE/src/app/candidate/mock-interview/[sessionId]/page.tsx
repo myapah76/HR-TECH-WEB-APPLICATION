@@ -232,22 +232,20 @@ export default function MockInterviewPracticePage() {
             {evaluationSteps.map((step, idx) => (
               <div
                 key={idx}
-                className={`flex items-center gap-3 text-xs transition-opacity duration-300 ${
-                  evalStep === idx
+                className={`flex items-center gap-3 text-xs transition-opacity duration-300 ${evalStep === idx
                     ? 'text-blue-400 font-bold opacity-100'
                     : evalStep > idx
                       ? 'text-emerald-400 font-bold opacity-80'
                       : 'text-slate-500 opacity-40'
-                }`}
+                  }`}
               >
                 <div
-                  className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border text-[10px] ${
-                    evalStep === idx
+                  className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border text-[10px] ${evalStep === idx
                       ? 'border-blue-400 animate-pulse bg-blue-500/10'
                       : evalStep > idx
                         ? 'border-emerald-400 bg-emerald-500/15'
                         : 'border-slate-600'
-                  }`}
+                    }`}
                 >
                   {evalStep > idx ? '✓' : idx + 1}
                 </div>

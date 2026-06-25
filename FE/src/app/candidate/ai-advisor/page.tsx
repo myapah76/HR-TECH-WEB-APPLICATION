@@ -22,7 +22,8 @@ export default function AiAdvisorPage() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [messageText, setMessageText] = useState('')
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [optimisticMessage, setOptimisticMessage] = useState('')
+  const chatContainerRef = useRef<HTMLDivElement>(null)
 
   // Data fetching
   const { data: sessions = [], isLoading: loadingSessions } = useGetChatSessions()
@@ -40,12 +41,17 @@ export default function AiAdvisorPage() {
 
   // Auto scroll to bottom of chat
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      })
+    }
   }
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages, sendMessageMut.isPending])
+  }, [messages, sendMessageMut.isPending, optimisticMessage])
 
   // Select the latest session automatically if none selected
   useEffect(() => {
@@ -82,18 +88,23 @@ export default function AiAdvisorPage() {
   const handleSendMessage = (e?: React.FormEvent) => {
     e?.preventDefault()
     if (!messageText.trim() || !activeSessionId) return
+    const currentText = messageText;
+    setOptimisticMessage(currentText);
+    setMessageText('');
 
     sendMessageMut.mutate(
       {
         sessionId: activeSessionId,
-        request: { content: messageText },
+        request: { content: currentText },
       },
       {
         onSuccess: () => {
-          setMessageText('')
+          setOptimisticMessage('');
         },
         onError: () => {
           toast.error('Có lỗi xảy ra khi gửi tin nhắn')
+          setMessageText(currentText);
+          setOptimisticMessage('');
         },
       }
     )
@@ -167,7 +178,7 @@ export default function AiAdvisorPage() {
             </div>
 
             {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30" ref={chatContainerRef}>
               {loadingMessages ? (
                 <div className="flex justify-center p-8">
                   <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -227,6 +238,18 @@ export default function AiAdvisorPage() {
                 ))
               )}
 
+              {/* Optimistic Message */}
+              {optimisticMessage && (
+                <div className="flex gap-4 max-w-[85%] ml-auto flex-row-reverse">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1 bg-slate-200 text-slate-600">
+                    <UserIcon className="w-4 h-4" />
+                  </div>
+                  <div className="p-4 rounded-2xl shadow-sm bg-slate-800 text-white rounded-tr-none">
+                    <p className="whitespace-pre-wrap text-sm font-medium opacity-70">{optimisticMessage}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Typing indicator */}
               {sendMessageMut.isPending && (
                 <div className="flex gap-4 max-w-[85%] mt-4">
@@ -240,7 +263,6 @@ export default function AiAdvisorPage() {
                   </div>
                 </div>
               )}
-              <div ref={messagesEndRef} />
             </div>
 
             {/* Input Area */}

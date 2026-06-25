@@ -50,4 +50,13 @@ public class PaymentController {
 
         return ResponseEntity.ok().build();
     }
+
+    @org.springframework.web.bind.annotation.GetMapping("/my-history")
+    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
+    public ApiResponse<org.springframework.data.domain.Page<sba301.hrtech.payment.dtos.response.PaymentResponse>> getMyPaymentHistory(
+            org.springframework.data.domain.Pageable pageable
+    ) {
+        org.springframework.data.domain.Page<sba301.hrtech.payment.dtos.response.PaymentResponse> response = paymentService.getMyPaymentHistory(pageable);
+        return ApiResponse.success(response, "Payment history retrieved successfully");
+    }
 }

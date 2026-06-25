@@ -17,3 +17,20 @@ export interface PlanFeature {
   description: string
   quota: number
 }
+
+export interface SubFeatureUsageResponse {
+  featureCode: string
+  featureName: string
+  quota: number
+  used: number
+}
+
+export interface MySubscriptionResponse {
+  id: string
+  planId: string
+  planName: string
+  status: string
+  startDate: string
+  endDate: string
+  featuresUsage: SubFeatureUsageResponse[]
+}
