@@ -6,10 +6,9 @@
  */
 import { useMemo } from 'react'
 import Link from 'next/link'
-import { useQuery } from '@tanstack/react-query'
 import { Send, Clock, Loader2, MapPin, DollarSign, ArrowRight, FileText } from 'lucide-react'
-import { getMyApplications } from '@/src/services/application.service'
-import { getJobs } from '@/src/services/job.service'
+import { useGetMyApplications } from '@/src/hooks/application'
+import { useGetJobs } from '@/src/hooks/job'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 
 const statusConfig: Record<string, { label: string; bg: string; text: string; border: string }> = {
@@ -58,15 +57,9 @@ const statusConfig: Record<string, { label: string; bg: string; text: string; bo
 }
 
 export default function AppliedJobsPage() {
-  const { data: applications = [], isLoading: loadingApps } = useQuery({
-    queryKey: ['appliedJobs'],
-    queryFn: () => getMyApplications(),
-  })
+  const { data: applications = [], isLoading: loadingApps } = useGetMyApplications()
 
-  const { data: jobsData, isLoading: loadingJobs } = useQuery({
-    queryKey: ['jobs', 0, 100],
-    queryFn: () => getJobs(0, 100),
-  })
+  const { data: jobsData, isLoading: loadingJobs } = useGetJobs(0, 100)
 
   const jobsMap = useMemo(() => {
     const map = new Map<string, any>()

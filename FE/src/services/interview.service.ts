@@ -1,5 +1,7 @@
 import { api } from '@/src/lib/axios'
 import {
+  StartSessionRequest,
+  AnswerSubmitRequest,
   SessionStartResponse,
   AnswerSubmitResponse,
   InterviewResultResponse,
@@ -7,31 +9,22 @@ import {
 import { ApiResponse } from '../types/api'
 
 export const startInterviewSession = async (
-  cvId: string,
-  jobId: string | null,
-  targetRole: string,
-  numQuestions: number = 5
+  request: StartSessionRequest
 ): Promise<SessionStartResponse> => {
-  const response = await api.post<ApiResponse<SessionStartResponse>>('/interviews/sessions', {
-    cvId,
-    jobId,
-    targetRole,
-    numQuestions,
-  })
+  const response = await api.post<ApiResponse<SessionStartResponse>>(
+    '/interviews/sessions',
+    request
+  )
   return response.data.data
 }
 
 export const submitInterviewAnswer = async (
   sessionId: string,
-  questionId: string,
-  answerText: string
+  request: AnswerSubmitRequest
 ): Promise<AnswerSubmitResponse> => {
   const response = await api.post<ApiResponse<AnswerSubmitResponse>>(
     `/interviews/sessions/${sessionId}/answers`,
-    {
-      questionId,
-      answerText,
-    }
+    request
   )
   return response.data.data
 }
