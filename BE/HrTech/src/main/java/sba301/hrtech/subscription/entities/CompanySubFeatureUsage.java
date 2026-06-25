@@ -6,6 +6,9 @@ import sba301.hrtech.shared.common.SoftDeleteEntity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import sba301.hrtech.subscription.entities.enums.ResetType;
+
+import java.time.LocalDate;
 
 @Entity
 @Table(
@@ -39,4 +42,12 @@ public class CompanySubFeatureUsage extends SoftDeleteEntity {
     @Column(nullable = false)
     @Builder.Default
     private Integer used = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "reset_type", nullable = false)
+    @Builder.Default
+    private ResetType resetType = ResetType.TOTAL;
+
+    @Column(name = "last_reset_date")
+    private LocalDate lastResetDate;
 }

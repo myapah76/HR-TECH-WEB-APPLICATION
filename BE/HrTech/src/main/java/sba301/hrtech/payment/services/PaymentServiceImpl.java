@@ -31,6 +31,7 @@ import vn.payos.PayOS;
 import vn.payos.model.webhooks.Webhook;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -110,10 +111,20 @@ public class PaymentServiceImpl implements IPaymentService {
                 CandidateSubscription sub = candidateSubscriptionRepository.findById(payment.getSubscriptionId())
                         .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Candidate Sub not found"));
                 
+                // CLEAN SLATE: Cancel all currently active subscriptions for this user
+                List<CandidateSubscription> activeSubs = candidateSubscriptionRepository
+                        .findByUserIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                                payment.getUser().getId(), SubscriptionStatus.ACTIVE, now, now);
+                for (CandidateSubscription activeSub : activeSubs) {
+                    if (!activeSub.getId().equals(sub.getId())) {
+                        activeSub.setStatus(SubscriptionStatus.CANCELLED);
+                        candidateSubscriptionRepository.save(activeSub);
+                    }
+                }
+
                 sub.setStatus(SubscriptionStatus.ACTIVE);
-                LocalDate startDate = (sub.getEndDate() != null && sub.getEndDate().isAfter(now)) ? sub.getEndDate() : now;
-                sub.setStartDate(startDate);
-                sub.setEndDate(startDate.plusDays(sub.getPlan().getDurationDays()));
+                sub.setStartDate(now);
+                sub.setEndDate(now.plusDays(sub.getPlan().getDurationDays()));
                 candidateSubscriptionRepository.save(sub);
 
                 if (sub.getPlan().getPlanFeatures() != null) {
@@ -123,6 +134,8 @@ public class PaymentServiceImpl implements IPaymentService {
                                 .feature(pf.getFeature())
                                 .quota(pf.getQuota())
                                 .used(0)
+                                .resetType(pf.getResetType())
+                                .lastResetDate(now)
                                 .build();
                         candidateSubFeatureUsageRepository.save(usage);
                     }
@@ -132,10 +145,20 @@ public class PaymentServiceImpl implements IPaymentService {
                 CompanySubscription sub = companySubscriptionRepository.findById(payment.getSubscriptionId())
                         .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Company Sub not found"));
 
+                // CLEAN SLATE: Cancel all currently active subscriptions for this company
+                List<CompanySubscription> activeSubs = companySubscriptionRepository
+                        .findByCompanyIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                                sub.getCompany().getId(), SubscriptionStatus.ACTIVE, now, now);
+                for (CompanySubscription activeSub : activeSubs) {
+                    if (!activeSub.getId().equals(sub.getId())) {
+                        activeSub.setStatus(SubscriptionStatus.CANCELLED);
+                        companySubscriptionRepository.save(activeSub);
+                    }
+                }
+
                 sub.setStatus(SubscriptionStatus.ACTIVE);
-                LocalDate startDate = (sub.getEndDate() != null && sub.getEndDate().isAfter(now)) ? sub.getEndDate() : now;
-                sub.setStartDate(startDate);
-                sub.setEndDate(startDate.plusDays(sub.getPlan().getDurationDays()));
+                sub.setStartDate(now);
+                sub.setEndDate(now.plusDays(sub.getPlan().getDurationDays()));
                 companySubscriptionRepository.save(sub);
 
                 if (sub.getPlan().getPlanFeatures() != null) {
@@ -145,6 +168,8 @@ public class PaymentServiceImpl implements IPaymentService {
                                 .feature(pf.getFeature())
                                 .quota(pf.getQuota())
                                 .used(0)
+                                .resetType(pf.getResetType())
+                                .lastResetDate(now)
                                 .build();
                         companySubFeatureUsageRepository.save(usage);
                     }

@@ -3,6 +3,7 @@ package sba301.hrtech.subscription.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import sba301.hrtech.shared.common.BaseEntity;
+import sba301.hrtech.subscription.entities.enums.ResetType;
 
 @Entity
 @Table(
@@ -30,4 +31,9 @@ public class CompanyPlanFeature extends BaseEntity {
 
     @Column(nullable = false)
     private Integer quota;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "reset_type", nullable = false)
+    @Builder.Default
+    private ResetType resetType = ResetType.TOTAL;
 }

@@ -17,9 +17,12 @@ import sba301.hrtech.subscription.entities.CandidateSubscription;
 import sba301.hrtech.subscription.entities.CompanySubscription;
 import sba301.hrtech.subscription.entities.CandidateSubFeatureUsage;
 import sba301.hrtech.subscription.entities.CompanySubFeatureUsage;
+import sba301.hrtech.subscription.entities.enums.ResetType;
 import sba301.hrtech.subscription.entities.enums.SubscriptionStatus;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.IsoFields;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -50,6 +53,31 @@ public class CreditServiceImpl implements ICreditService {
                     .findBySubscriptionIdAndFeatureCode(sub.getId(), featureCode);
             if (usageOpt.isPresent()) {
                 CandidateSubFeatureUsage usage = usageOpt.get();
+                
+                // Handle Reset
+                if (usage.getResetType() != null && usage.getResetType() != ResetType.TOTAL) {
+                    LocalDate today = LocalDate.now();
+                    LocalDate lastReset = usage.getLastResetDate();
+                    boolean shouldReset = false;
+                    
+                    if (lastReset == null) {
+                        shouldReset = true;
+                    } else if (usage.getResetType() == ResetType.DAILY) {
+                        if (today.isAfter(lastReset)) shouldReset = true;
+                    } else if (usage.getResetType() == ResetType.WEEKLY) {
+                        long currentWeek = ChronoUnit.DAYS.between(sub.getStartDate(), today) / 7;
+                        long lastResetWeek = ChronoUnit.DAYS.between(sub.getStartDate(), lastReset) / 7;
+                        if (currentWeek > lastResetWeek) {
+                            shouldReset = true;
+                        }
+                    }
+                    
+                    if (shouldReset) {
+                        usage.setUsed(0);
+                        usage.setLastResetDate(today);
+                    }
+                }
+
                 if (usage.getQuota() - usage.getUsed() >= amount) {
                     usage.setUsed(usage.getUsed() + amount);
                     candidateSubFeatureUsageRepository.save(usage);
@@ -85,6 +113,31 @@ public class CreditServiceImpl implements ICreditService {
                     .findBySubscriptionIdAndFeatureCode(sub.getId(), featureCode);
             if (usageOpt.isPresent()) {
                 CompanySubFeatureUsage usage = usageOpt.get();
+                
+                // Handle Reset
+                if (usage.getResetType() != null && usage.getResetType() != ResetType.TOTAL) {
+                    LocalDate today = LocalDate.now();
+                    LocalDate lastReset = usage.getLastResetDate();
+                    boolean shouldReset = false;
+                    
+                    if (lastReset == null) {
+                        shouldReset = true;
+                    } else if (usage.getResetType() == ResetType.DAILY) {
+                        if (today.isAfter(lastReset)) shouldReset = true;
+                    } else if (usage.getResetType() == ResetType.WEEKLY) {
+                        long currentWeek = ChronoUnit.DAYS.between(sub.getStartDate(), today) / 7;
+                        long lastResetWeek = ChronoUnit.DAYS.between(sub.getStartDate(), lastReset) / 7;
+                        if (currentWeek > lastResetWeek) {
+                            shouldReset = true;
+                        }
+                    }
+                    
+                    if (shouldReset) {
+                        usage.setUsed(0);
+                        usage.setLastResetDate(today);
+                    }
+                }
+
                 if (usage.getQuota() - usage.getUsed() >= amount) {
                     usage.setUsed(usage.getUsed() + amount);
                     companySubFeatureUsageRepository.save(usage);
