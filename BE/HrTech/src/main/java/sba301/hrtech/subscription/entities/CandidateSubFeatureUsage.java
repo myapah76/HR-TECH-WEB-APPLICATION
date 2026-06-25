@@ -6,17 +6,15 @@ import sba301.hrtech.shared.common.SoftDeleteEntity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import sba301.hrtech.subscription.entities.enums.ResetType;
 
-import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(
     name = "candidate_sub_feature_usages",
     uniqueConstraints = {
-        @UniqueConstraint(
-                columnNames = {"subscription_id", "feature_id"}
-        )
+        @UniqueConstraint(columnNames = {"subscription_id", "feature_id"})
     }
 )
 @Getter
@@ -36,18 +34,14 @@ public class CandidateSubFeatureUsage extends SoftDeleteEntity {
     @JoinColumn(name = "feature_id", nullable = false)
     private Feature feature;
 
-    @Column(nullable = false)
-    private Integer quota;
+    @Column(name = "total_quota", nullable = false)
+    private Integer totalQuota;
 
-    @Column(nullable = false)
+    @Column(name = "total_used", nullable = false)
     @Builder.Default
-    private Integer used = 0;
+    private Integer totalUsed = 0;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "reset_type", nullable = false)
+    @OneToMany(mappedBy = "usage", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
-    private ResetType resetType = ResetType.TOTAL;
-
-    @Column(name = "last_reset_date")
-    private Instant lastResetDate;
+    private List<CandidateSubFeatureRateUsage> rateUsages = new ArrayList<>();
 }

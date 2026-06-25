@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { RoleUser } from '@/src/enums/role.enum'
 import { formatDate } from '@/src/lib/utils'
+import dayjs from 'dayjs'
 
 interface CurrentPlanCardProps {
   subscription: MySubscriptionResponse | undefined
@@ -114,6 +115,37 @@ export const CurrentPlanCard: React.FC<CurrentPlanCardProps> = ({ subscription, 
                   </div>
                   {isNearLimit && (
                     <p className="text-xs text-rose-500 mt-2 font-medium">Bạn sắp sử dụng hết lượt tính năng này.</p>
+                  )}
+
+                  {feature.rateLimits && feature.rateLimits.length > 0 && (
+                    <div className="mt-4 space-y-2 border-t border-slate-200/60 pt-3">
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Định mức sử dụng</p>
+                      {feature.rateLimits.map((limit, idx) => {
+                        const limPercentage = Math.min(100, Math.round((limit.used / limit.capQuota) * 100))
+                        const limNear = limPercentage >= 80
+                        return (
+                          <div key={idx} className="bg-white rounded-lg p-2.5 border border-slate-100 shadow-sm text-sm">
+                            <div className="flex justify-between items-center mb-1.5">
+                              <span className="text-slate-600 font-medium text-xs">
+                                {limit.resetType === 'DAILY' ? 'Trong ngày' : 'Trong tuần'}
+                              </span>
+                              <span className="text-xs font-semibold">
+                                <span className={limNear ? 'text-rose-600' : 'text-slate-700'}>{limit.used}</span> / {limit.capQuota}
+                              </span>
+                            </div>
+                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mb-2">
+                              <div 
+                                className={`h-full rounded-full transition-all duration-500 ${limNear ? 'bg-rose-400' : 'bg-indigo-400'}`}
+                                style={{ width: `${limPercentage}%` }}
+                              ></div>
+                            </div>
+                            <div className="text-[10px] text-slate-400 text-right">
+                              Sẽ reset vào: {dayjs(limit.lastResetDate).add(limit.resetType === 'DAILY' ? 1 : 7, 'day').format('HH:mm - DD/MM/YYYY')}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
                   )}
                 </div>
               )

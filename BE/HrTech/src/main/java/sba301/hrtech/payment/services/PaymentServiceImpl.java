@@ -17,12 +17,7 @@ import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionPlanService;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionService;
-import sba301.hrtech.subscription.abstractions.repositories.CandidateSubscriptionRepository;
-import sba301.hrtech.subscription.abstractions.repositories.CompanySubscriptionRepository;
-import sba301.hrtech.subscription.abstractions.repositories.CandidateSubFeatureUsageRepository;
-import sba301.hrtech.subscription.abstractions.repositories.CompanySubFeatureUsageRepository;
 import sba301.hrtech.subscription.entities.*;
-import sba301.hrtech.subscription.entities.enums.SubscriptionStatus;
 import sba301.hrtech.subscription.entities.enums.SubscriptionType;
 import sba301.hrtech.payment.dtos.response.PaymentResponse;
 import org.springframework.data.domain.Page;
@@ -30,9 +25,6 @@ import org.springframework.data.domain.Pageable;
 import vn.payos.PayOS;
 import vn.payos.model.webhooks.Webhook;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -43,10 +35,6 @@ public class PaymentServiceImpl implements IPaymentService {
     private final ISubscriptionPlanService subscriptionPlanService;
     private final IPayOSService payOSService;
     private final ISubscriptionService subscriptionService;
-    private final CandidateSubscriptionRepository candidateSubscriptionRepository;
-    private final CompanySubscriptionRepository companySubscriptionRepository;
-    private final CandidateSubFeatureUsageRepository candidateSubFeatureUsageRepository;
-    private final CompanySubFeatureUsageRepository companySubFeatureUsageRepository;
     private final PaymentRepository paymentRepository;
     private final AuthUtils authUtils;
     private final PayOS payOS;
@@ -106,76 +94,7 @@ public class PaymentServiceImpl implements IPaymentService {
             payment.setStatus(PaymentStatus.PAID);
             payment.setPaymentLinkId(data.getPaymentLinkId());
 
-            Instant now = Instant.now();
-
-            if (payment.getSubscriptionType() == SubscriptionType.CANDIDATE) {
-                CandidateSubscription sub = candidateSubscriptionRepository.findById(payment.getSubscriptionId())
-                        .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Candidate Sub not found"));
-                
-                // CLEAN SLATE: Cancel all currently active subscriptions for this user
-                List<CandidateSubscription> activeSubs = candidateSubscriptionRepository
-                        .findByUserIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                                payment.getUser().getId(), SubscriptionStatus.ACTIVE, now, now);
-                for (CandidateSubscription activeSub : activeSubs) {
-                    if (!activeSub.getId().equals(sub.getId())) {
-                        activeSub.setStatus(SubscriptionStatus.CANCELLED);
-                        candidateSubscriptionRepository.save(activeSub);
-                    }
-                }
-
-                sub.setStatus(SubscriptionStatus.ACTIVE);
-                sub.setStartDate(now);
-                sub.setEndDate(now.plus(sub.getPlan().getDurationDays(), ChronoUnit.DAYS));
-                candidateSubscriptionRepository.save(sub);
-
-                if (sub.getPlan().getPlanFeatures() != null) {
-                    for (CandidatePlanFeature pf : sub.getPlan().getPlanFeatures()) {
-                        CandidateSubFeatureUsage usage = CandidateSubFeatureUsage.builder()
-                                .subscription(sub)
-                                .feature(pf.getFeature())
-                                .quota(pf.getQuota())
-                                .used(0)
-                                .resetType(pf.getResetType())
-                                .lastResetDate(now)
-                                .build();
-                        candidateSubFeatureUsageRepository.save(usage);
-                    }
-                }
-
-            } else if (payment.getSubscriptionType() == SubscriptionType.COMPANY) {
-                CompanySubscription sub = companySubscriptionRepository.findById(payment.getSubscriptionId())
-                        .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Company Sub not found"));
-
-                // CLEAN SLATE: Cancel all currently active subscriptions for this company
-                List<CompanySubscription> activeSubs = companySubscriptionRepository
-                        .findByCompanyIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                                sub.getCompany().getId(), SubscriptionStatus.ACTIVE, now, now);
-                for (CompanySubscription activeSub : activeSubs) {
-                    if (!activeSub.getId().equals(sub.getId())) {
-                        activeSub.setStatus(SubscriptionStatus.CANCELLED);
-                        companySubscriptionRepository.save(activeSub);
-                    }
-                }
-
-                sub.setStatus(SubscriptionStatus.ACTIVE);
-                sub.setStartDate(now);
-                sub.setEndDate(now.plus(sub.getPlan().getDurationDays(), ChronoUnit.DAYS));
-                companySubscriptionRepository.save(sub);
-
-                if (sub.getPlan().getPlanFeatures() != null) {
-                    for (CompanyPlanFeature pf : sub.getPlan().getPlanFeatures()) {
-                        CompanySubFeatureUsage usage = CompanySubFeatureUsage.builder()
-                                .subscription(sub)
-                                .feature(pf.getFeature())
-                                .quota(pf.getQuota())
-                                .used(0)
-                                .resetType(pf.getResetType())
-                                .lastResetDate(now)
-                                .build();
-                        companySubFeatureUsageRepository.save(usage);
-                    }
-                }
-            }
+            subscriptionService.activateSubscription(payment.getSubscriptionId(), payment.getSubscriptionType());
 
             paymentRepository.save(payment);
         } catch (Exception e) {
@@ -188,14 +107,7 @@ public class PaymentServiceImpl implements IPaymentService {
         UUID userId = authUtils.getCurrentUserId();
         return paymentRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
             .map(payment -> {
-                String subName = "Unknown";
-                if (payment.getSubscriptionType() == SubscriptionType.CANDIDATE) {
-                    subName = candidateSubscriptionRepository.findById(payment.getSubscriptionId())
-                        .map(sub -> sub.getPlan().getName()).orElse("Unknown Plan");
-                } else if (payment.getSubscriptionType() == SubscriptionType.COMPANY) {
-                    subName = companySubscriptionRepository.findById(payment.getSubscriptionId())
-                        .map(sub -> sub.getPlan().getName()).orElse("Unknown Plan");
-                }
+                String subName = subscriptionService.getSubscriptionPlanName(payment.getSubscriptionId(), payment.getSubscriptionType());
                 return new PaymentResponse(
                     payment.getOrderCode(),
                     payment.getAmount(),

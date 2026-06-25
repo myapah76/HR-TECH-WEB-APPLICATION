@@ -3,15 +3,15 @@ package sba301.hrtech.subscription.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import sba301.hrtech.shared.common.BaseEntity;
-import sba301.hrtech.subscription.entities.enums.ResetType;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(
         name = "company_plan_features",
         uniqueConstraints = {
-                @UniqueConstraint(
-                        columnNames = {"plan_id", "feature_id"}
-                )
+                @UniqueConstraint(columnNames = {"plan_id", "feature_id"})
         }
 )
 @Getter
@@ -29,11 +29,10 @@ public class CompanyPlanFeature extends BaseEntity {
     @JoinColumn(name = "feature_id", nullable = false)
     private Feature feature;
 
-    @Column(nullable = false)
-    private Integer quota;
+    @Column(name = "total_quota", nullable = false)
+    private Integer totalQuota;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "reset_type", nullable = false)
+    @OneToMany(mappedBy = "planFeature", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
-    private ResetType resetType = ResetType.TOTAL;
+    private List<CompanyPlanFeatureRateLimit> rateLimits = new ArrayList<>();
 }
