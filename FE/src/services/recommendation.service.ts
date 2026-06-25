@@ -2,7 +2,7 @@ import { api } from '@/src/lib/axios'
 import {
   RecommendationResultResponse,
   JobRecommendationResponse,
-  SkillMatchScoreResponse,
+  AiMatchHistoryResponse,
   JobMatchingTaskResponse,
 } from '../types/recommendation'
 import { ApiResponse } from '../types/api'
@@ -27,12 +27,13 @@ export const recommendJobsForCv = async (
   return response.data.data
 }
 
-export const calculateMatchScore = async (
+
+export const performPremiumAiMatch = async (
   cvId: string,
   jobId: string
-): Promise<SkillMatchScoreResponse> => {
-  const response = await api.get<ApiResponse<SkillMatchScoreResponse>>(
-    `/recommendations/match-score?cvId=${cvId}&jobId=${jobId}`
+): Promise<AiMatchHistoryResponse> => {
+  const response = await api.post<ApiResponse<AiMatchHistoryResponse>>(
+    `/recommendations/premium-ai-match?cvId=${cvId}&jobId=${jobId}`
   )
   return response.data.data
 }

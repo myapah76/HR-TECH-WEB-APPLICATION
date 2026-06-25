@@ -1,5 +1,5 @@
 export * from './useAnalyzeCvAndRecommend'
 export * from './useRecommendJobsForCv'
-export * from './useCalculateMatchScore'
+export * from './usePremiumAiMatch'
 export * from './useStartJobMatching'
 export * from './useGetJobMatchingStatus'

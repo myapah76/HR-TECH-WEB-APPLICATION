@@ -8,7 +8,7 @@ import sba301.hrtech.skill.abstractions.services.IRecommendationService;
 import sba301.hrtech.skill.dtos.response.AiMatchHistoryResponse;
 import sba301.hrtech.skill.dtos.response.JobRecommendationResponse;
 import sba301.hrtech.skill.dtos.response.RecommendationResultResponse;
-import sba301.hrtech.skill.dtos.response.SkillMatchScoreResponse;
+
 
 import java.util.List;
 import java.util.UUID;
@@ -43,15 +43,7 @@ public class RecommendationController {
         return ResponseEntity.ok(ApiResponse.success(recommendationService.recommendJobsForCv(cvId, limit)));
     }
 
-    /**
-     * Calculate detailed match score between a specific CV and Job.
-     */
-    @GetMapping("/match-score")
-    public ResponseEntity<ApiResponse<SkillMatchScoreResponse>> calculateMatchScore(
-            @RequestParam UUID cvId,
-            @RequestParam UUID jobId) {
-        return ResponseEntity.ok(ApiResponse.success(recommendationService.calculateMatchScore(cvId, jobId)));
-    }
+
 
     @PostMapping("/premium-ai-match")
     @PreAuthorize("hasRole('CANDIDATE')")

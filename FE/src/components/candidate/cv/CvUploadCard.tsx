@@ -4,15 +4,7 @@ import { Button } from '@/src/components/ui/button'
 import { Input } from '@/src/components/ui/input'
 import { Label } from '@/src/components/ui/label'
 
-interface CvUploadCardProps {
-  cvTitle: string
-  setCvTitle: (title: string) => void
-  selectedFile: File | null
-  fileInputRef: RefObject<HTMLInputElement | null>
-  handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  handleUpload: () => void
-  isPending: boolean
-}
+import { CvUploadCardProps } from '@/src/types/cv'
 
 export function CvUploadCard({
   cvTitle,

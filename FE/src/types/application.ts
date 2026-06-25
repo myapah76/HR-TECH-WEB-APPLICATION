@@ -1,12 +1,5 @@
-export type ApplicationStatus =
-  | 'SUBMITTED'
-  | 'SCREENING'
-  | 'SCORED'
-  | 'INTERVIEW'
-  | 'OFFER'
-  | 'REJECTED'
-  | 'WITHDRAWN';
-
+import { ApplicationStatus } from '../enums/application.enum';
+export { ApplicationStatus };
 export interface ApplicationSummaryResponse {
   id: string;
   jobId: string;
@@ -40,4 +33,15 @@ export interface SubmitApplicationRequest {
 
 export interface UpdateApplicationStatusRequest {
   status: ApplicationStatus;
+}
+
+// --- Component Props ---
+
+export interface ApplicationMatchModalProps {
+  isOpen: boolean
+  onClose: () => void
+  cvId: string
+  jobId: string
+  jobTitle: string
+  companyName: string
 }

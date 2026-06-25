@@ -10,14 +10,15 @@ export interface SkillMatchDetail {
   similarityScore: number
 }
 
-export interface SkillMatchScoreResponse {
+export interface AiMatchHistoryResponse {
+  id: string
   overallScore: number
-  grade: string
-  graphScore: number
-  embeddingScore: number
+  matchGrade: string
   matchedSkills: string[]
   missingSkills: string[]
   skillDetails: SkillMatchDetail[]
+  improvementTips: string
+  actionPlan: string[]
 }
 
 export interface JobRecommendationResponse {
@@ -46,4 +47,10 @@ export interface JobMatchingTaskResponse {
   message: string
   progressPercentage: number
   recommendedJobs: JobRecommendationResponse[] | null
+}
+
+// --- Component Props ---
+
+export interface AiMatchResultDisplayProps {
+  matchScore: AiMatchHistoryResponse
 }

@@ -214,8 +214,8 @@ public class AiServiceClient {
     }
 
     public sba301.hrtech.skill.dtos.response.AiMatchingAdviceResponseDto getMatchingAdvice(String cvText, String jdText, List<String> missingSkills) {
-        if (missingSkills == null || missingSkills.isEmpty()) {
-            return null; // Không cần lời khuyên nếu không thiếu kỹ năng
+        if (missingSkills == null) {
+            missingSkills = new ArrayList<>();
         }
         try {
             String url = aiServiceUrl + "/api/ai/candidate-matching-advice";

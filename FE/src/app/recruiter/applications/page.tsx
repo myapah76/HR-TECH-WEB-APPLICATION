@@ -36,24 +36,24 @@ const STATUS_CONFIG: Record<
   ApplicationStatus,
   { label: string; color: string; bg: string; dot: string }
 > = {
-  SUBMITTED: { label: 'Mới nộp', color: 'text-blue-700', bg: 'bg-blue-50', dot: 'bg-blue-500' },
-  SCREENING: { label: 'Đang xét', color: 'text-amber-700', bg: 'bg-amber-50', dot: 'bg-amber-500' },
-  SCORED: { label: 'Đã chấm', color: 'text-violet-700', bg: 'bg-violet-50', dot: 'bg-violet-500' },
-  INTERVIEW: { label: 'Phỏng vấn', color: 'text-indigo-700', bg: 'bg-indigo-50', dot: 'bg-indigo-500' },
-  OFFER: { label: 'Offer', color: 'text-emerald-700', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
-  REJECTED: { label: 'Từ chối', color: 'text-rose-700', bg: 'bg-rose-50', dot: 'bg-rose-500' },
-  WITHDRAWN: { label: 'Đã rút', color: 'text-slate-600', bg: 'bg-slate-100', dot: 'bg-slate-400' },
+  [ApplicationStatus.SUBMITTED]: { label: 'Mới nộp', color: 'text-blue-700', bg: 'bg-blue-50', dot: 'bg-blue-500' },
+  [ApplicationStatus.SCREENING]: { label: 'Đang xét', color: 'text-amber-700', bg: 'bg-amber-50', dot: 'bg-amber-500' },
+  [ApplicationStatus.SCORED]: { label: 'Đã chấm', color: 'text-violet-700', bg: 'bg-violet-50', dot: 'bg-violet-500' },
+  [ApplicationStatus.INTERVIEW]: { label: 'Phỏng vấn', color: 'text-indigo-700', bg: 'bg-indigo-50', dot: 'bg-indigo-500' },
+  [ApplicationStatus.OFFER]: { label: 'Offer', color: 'text-emerald-700', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
+  [ApplicationStatus.REJECTED]: { label: 'Từ chối', color: 'text-rose-700', bg: 'bg-rose-50', dot: 'bg-rose-500' },
+  [ApplicationStatus.WITHDRAWN]: { label: 'Đã rút', color: 'text-slate-600', bg: 'bg-slate-100', dot: 'bg-slate-400' },
 }
 
 const FILTER_STATUS_OPTIONS: { value: ApplicationStatus | ''; label: string }[] = [
   { value: '', label: 'Tất cả trạng thái' },
-  { value: 'SUBMITTED', label: 'Mới nộp' },
-  { value: 'SCREENING', label: 'Đang xét' },
-  { value: 'SCORED', label: 'Đã chấm điểm AI' },
-  { value: 'INTERVIEW', label: 'Phỏng vấn' },
-  { value: 'OFFER', label: 'Offer' },
-  { value: 'REJECTED', label: 'Từ chối' },
-  { value: 'WITHDRAWN', label: 'Đã rút' },
+  { value: ApplicationStatus.SUBMITTED, label: 'Mới nộp' },
+  { value: ApplicationStatus.SCREENING, label: 'Đang xét' },
+  { value: ApplicationStatus.SCORED, label: 'Đã chấm điểm AI' },
+  { value: ApplicationStatus.INTERVIEW, label: 'Phỏng vấn' },
+  { value: ApplicationStatus.OFFER, label: 'Offer' },
+  { value: ApplicationStatus.REJECTED, label: 'Từ chối' },
+  { value: ApplicationStatus.WITHDRAWN, label: 'Đã rút' },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -191,9 +191,9 @@ export default function HRApplicationsPage() {
   // ─── Derived stats ─────────────────────────────────────────────────────────
   const stats = {
     total: applications.length,
-    submitted: applications.filter((a) => a.status === 'SUBMITTED').length,
-    interview: applications.filter((a) => a.status === 'INTERVIEW').length,
-    offer: applications.filter((a) => a.status === 'OFFER').length,
+    submitted: applications.filter((a) => a.status === ApplicationStatus.SUBMITTED).length,
+    interview: applications.filter((a) => a.status === ApplicationStatus.INTERVIEW).length,
+    offer: applications.filter((a) => a.status === ApplicationStatus.OFFER).length,
   }
 
   // ─── Filter ─────────────────────────────────────────────────────────────────

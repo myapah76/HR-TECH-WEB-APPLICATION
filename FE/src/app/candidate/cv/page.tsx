@@ -10,8 +10,8 @@ import {
   useGetCvDetail,
 } from '@/src/hooks/cv'
 import { useGetSavedJobs } from '@/src/hooks/job'
-import { useCalculateMatchScore } from '@/src/hooks/recommendation'
-import { SkillMatchScoreResponse } from '@/src/types/recommendation'
+import { usePremiumAiMatch } from '@/src/hooks/recommendation'
+import { AiMatchHistoryResponse } from '@/src/types/recommendation'
 import { toast } from 'sonner'
 import { getErrorMessage } from '@/src/utils/get-error-message'
 
@@ -32,7 +32,7 @@ export default function CandidateCvPage() {
   const setPrimaryCvMutation = useSetPrimaryCv()
   const deleteCvMutation = useDeleteCv()
   const updateCvTitleMutation = useUpdateCvTitle()
-  const calculateScoreMutation = useCalculateMatchScore()
+  const calculateScoreMutation = usePremiumAiMatch()
 
   // Upload state
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -48,7 +48,7 @@ export default function CandidateCvPage() {
     if (typeof window !== 'undefined') return sessionStorage.getItem('match_selectedJobId') || ''
     return ''
   })
-  const [matchScore, setMatchScore] = useState<SkillMatchScoreResponse | null>(() => {
+  const [matchScore, setMatchScore] = useState<AiMatchHistoryResponse | null>(() => {
     if (typeof window !== 'undefined') {
       const saved = sessionStorage.getItem('match_matchScore')
       if (saved) {

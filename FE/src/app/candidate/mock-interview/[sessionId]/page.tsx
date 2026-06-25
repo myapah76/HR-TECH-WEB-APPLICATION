@@ -140,7 +140,7 @@ export default function MockInterviewPracticePage() {
         sessionId: sessionId,
         request: {
           questionId: currentQuestion?.id || '',
-          answerText: answerText,
+          answer: answerText,
         },
       },
       {

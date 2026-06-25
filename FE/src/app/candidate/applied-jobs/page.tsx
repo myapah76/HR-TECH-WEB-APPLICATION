@@ -6,10 +6,12 @@
  */
 import { useMemo } from 'react'
 import Link from 'next/link'
-import { Send, Clock, Loader2, MapPin, DollarSign, ArrowRight, FileText } from 'lucide-react'
+import { Send, Clock, Loader2, MapPin, DollarSign, ArrowRight, FileText, Sparkles } from 'lucide-react'
 import { useGetMyApplications } from '@/src/hooks/application'
 import { useGetJobs } from '@/src/hooks/job'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
+import { ApplicationMatchModal } from '@/src/components/candidate/application/ApplicationMatchModal'
+import { useState } from 'react'
 
 const statusConfig: Record<string, { label: string; bg: string; text: string; border: string }> = {
   SUBMITTED: {
@@ -60,6 +62,13 @@ export default function AppliedJobsPage() {
   const { data: applications = [], isLoading: loadingApps } = useGetMyApplications()
 
   const { data: jobsData, isLoading: loadingJobs } = useGetJobs(0, 100)
+
+  const [matchApp, setMatchApp] = useState<{
+    cvId: string
+    jobId: string
+    jobTitle: string
+    companyName: string
+  } | null>(null)
 
   const jobsMap = useMemo(() => {
     const map = new Map<string, any>()
@@ -181,6 +190,22 @@ export default function AppliedJobsPage() {
                     {statusInfo.label}
                   </span>
 
+                  <button
+                    onClick={() =>
+                      setMatchApp({
+                        cvId: app.cvId,
+                        jobId: app.jobId,
+                        jobTitle: app.jobTitle,
+                        companyName: companyName,
+                      })
+                    }
+                    className="flex items-center justify-center gap-1 text-xs font-black text-indigo-600 hover:text-indigo-800 bg-indigo-50/70 hover:bg-indigo-100 px-3 py-2 rounded-xl transition-all border border-indigo-200/50 shadow-xs"
+                    title="Đánh giá mức độ phù hợp bằng AI"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span className="hidden sm:inline">AI Đánh giá</span>
+                  </button>
+
                   <Link
                     href={`/jobs/${app.jobId}`}
                     className="flex items-center justify-center gap-1 text-xs font-black text-blue-600 hover:text-blue-800 bg-blue-50/40 hover:bg-blue-50/80 px-4 py-2.5 rounded-xl transition-all border border-blue-100/30 hover:border-blue-200/50 group/btn shadow-xs hover:shadow-sm"
@@ -194,6 +219,15 @@ export default function AppliedJobsPage() {
           })
         )}
       </div>
+
+      <ApplicationMatchModal
+        isOpen={!!matchApp}
+        onClose={() => setMatchApp(null)}
+        cvId={matchApp?.cvId || ''}
+        jobId={matchApp?.jobId || ''}
+        jobTitle={matchApp?.jobTitle || ''}
+        companyName={matchApp?.companyName || ''}
+      />
     </div>
   )
 }

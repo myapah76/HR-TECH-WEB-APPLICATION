@@ -4,11 +4,7 @@ import { X, Loader2 } from 'lucide-react'
 import { CvDetailResponse } from '@/src/types/cv'
 import { CvExtractionStatus } from '@/src/enums/cv.enum'
 
-interface CvDetailModalProps {
-  viewCv: CvDetailResponse | null
-  loadingDetail: boolean
-  setViewCvId: (id: string | null) => void
-}
+import { CvDetailModalProps } from '@/src/types/cv'
 
 export function CvDetailModal({ viewCv, loadingDetail, setViewCvId }: CvDetailModalProps) {
   return (
