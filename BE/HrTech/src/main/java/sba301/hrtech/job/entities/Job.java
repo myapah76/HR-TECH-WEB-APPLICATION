@@ -17,7 +17,7 @@ import sba301.hrtech.job.entities.enums.JobStatus;
 import sba301.hrtech.job.entities.enums.JobType;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.Instant;
 
 @Entity
 @Table(name = "jobs")
@@ -63,7 +63,7 @@ public class Job extends SoftDeleteEntity {
     @Enumerated(EnumType.STRING)
     private JobStatus status;
 
-    private LocalDate deadline;
+    private Instant deadline;
 
     @Column(columnDefinition = "TEXT")
     private String requirements;

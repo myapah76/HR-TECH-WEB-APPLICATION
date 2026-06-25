@@ -4,7 +4,7 @@ import lombok.*;
 import sba301.hrtech.application.entities.enums.ApplicationStatus;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Getter
@@ -20,7 +20,7 @@ public class ApplicationDetailResponse {
     private String cvTitle;
     private String coverLetter;
     private ApplicationStatus status;
-    private LocalDateTime appliedAt;
+    private Instant appliedAt;
 
     // Thông tin AI chấm điểm
     private BigDecimal overallScore;

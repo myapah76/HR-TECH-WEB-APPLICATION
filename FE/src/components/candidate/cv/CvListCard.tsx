@@ -7,6 +7,7 @@ import { CvSummaryResponse } from '@/src/types/cv'
 import { CvExtractionStatus } from '@/src/enums/cv.enum'
 
 import { CvListCardProps } from '@/src/types/cv'
+import { formatDateTime } from '@/src/lib/utils'
 
 export function CvListCard({
   cvs,
@@ -109,8 +110,7 @@ export function CvListCard({
                   </div>
                 </div>
                 <p className="text-xs text-slate-500">
-                  Tải lên: {new Date(cv.createdAt).toLocaleDateString('vi-VN')} lúc{' '}
-                  {new Date(cv.createdAt).toLocaleTimeString('vi-VN')}
+                  Tải lên: {formatDateTime(cv.createdAt)}
                 </p>
               </div>
             ))}

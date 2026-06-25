@@ -1,8 +1,6 @@
 package sba301.hrtech.application.mapper;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -20,27 +18,19 @@ public interface ApplicationMapper {
     @Mapping(target = "jobTitle", source = "job.title")
     @Mapping(target = "cvId", source = "cv.id")
     @Mapping(target = "cvTitle", source = "cv.title")
-    @Mapping(target = "appliedAt", source = "appliedAt", qualifiedByName = "instantToLocalDateTime")
+    @Mapping(target = "appliedAt", source = "appliedAt")
     ApplicationSummaryResponse toSummaryResponse(Application entity);
 
     @Mapping(target = "jobId", source = "job.id")
     @Mapping(target = "jobTitle", source = "job.title")
     @Mapping(target = "cvId", source = "cv.id")
     @Mapping(target = "cvTitle", source = "cv.title")
-    @Mapping(target = "appliedAt", source = "appliedAt", qualifiedByName = "instantToLocalDateTime")
+    @Mapping(target = "appliedAt", source = "appliedAt")
     @Mapping(target = "overallScore", source = "applicationScore.overallScore")
     @Mapping(target = "grade", source = "applicationScore.grade", qualifiedByName = "enumToString")
     @Mapping(target = "aiSummary", source = "applicationScore.aiSummary")
     @Mapping(target = "aiSuggestion", source = "applicationScore.aiSuggestion")
     ApplicationDetailResponse toDetailResponse(Application entity);
-
-    // ── Helper
-    @Named("instantToLocalDateTime")
-    default LocalDateTime instantToLocalDateTime(Instant instant) {
-        if (instant == null)
-            return null;
-        return instant.atZone(ZoneOffset.UTC).toLocalDateTime();
-    }
 
     // ── Helper
     @Named("enumToString")

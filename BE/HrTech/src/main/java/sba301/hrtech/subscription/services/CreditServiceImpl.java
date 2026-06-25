@@ -20,7 +20,7 @@ import sba301.hrtech.subscription.entities.CompanySubFeatureUsage;
 import sba301.hrtech.subscription.entities.enums.ResetType;
 import sba301.hrtech.subscription.entities.enums.SubscriptionStatus;
 
-import java.time.LocalDate;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.IsoFields;
 import java.util.List;
@@ -45,7 +45,7 @@ public class CreditServiceImpl implements ICreditService {
 
         List<CandidateSubscription> activeSubscriptions = candidateSubscriptionRepository
                 .findByUserIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                        userId, SubscriptionStatus.ACTIVE, LocalDate.now(), LocalDate.now());
+                        userId, SubscriptionStatus.ACTIVE, Instant.now(), Instant.now());
 
         boolean success = false;
         for (CandidateSubscription sub : activeSubscriptions) {
@@ -56,17 +56,17 @@ public class CreditServiceImpl implements ICreditService {
                 
                 // Handle Reset
                 if (usage.getResetType() != null && usage.getResetType() != ResetType.TOTAL) {
-                    LocalDate today = LocalDate.now();
-                    LocalDate lastReset = usage.getLastResetDate();
+                    Instant today = Instant.now();
+                    Instant lastReset = usage.getLastResetDate();
                     boolean shouldReset = false;
                     
                     if (lastReset == null) {
                         shouldReset = true;
                     } else if (usage.getResetType() == ResetType.DAILY) {
-                        if (today.isAfter(lastReset)) shouldReset = true;
+                        if (today.truncatedTo(ChronoUnit.DAYS).isAfter(lastReset.truncatedTo(ChronoUnit.DAYS))) shouldReset = true;
                     } else if (usage.getResetType() == ResetType.WEEKLY) {
-                        long currentWeek = ChronoUnit.DAYS.between(sub.getStartDate(), today) / 7;
-                        long lastResetWeek = ChronoUnit.DAYS.between(sub.getStartDate(), lastReset) / 7;
+                        long currentWeek = ChronoUnit.DAYS.between(sub.getStartDate().truncatedTo(ChronoUnit.DAYS), today.truncatedTo(ChronoUnit.DAYS)) / 7;
+                        long lastResetWeek = ChronoUnit.DAYS.between(sub.getStartDate().truncatedTo(ChronoUnit.DAYS), lastReset.truncatedTo(ChronoUnit.DAYS)) / 7;
                         if (currentWeek > lastResetWeek) {
                             shouldReset = true;
                         }
@@ -105,7 +105,7 @@ public class CreditServiceImpl implements ICreditService {
 
         List<CompanySubscription> activeSubscriptions = companySubscriptionRepository
                 .findByCompanyIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                        companyId, SubscriptionStatus.ACTIVE, LocalDate.now(), LocalDate.now());
+                        companyId, SubscriptionStatus.ACTIVE, Instant.now(), Instant.now());
 
         boolean success = false;
         for (CompanySubscription sub : activeSubscriptions) {
@@ -116,17 +116,17 @@ public class CreditServiceImpl implements ICreditService {
                 
                 // Handle Reset
                 if (usage.getResetType() != null && usage.getResetType() != ResetType.TOTAL) {
-                    LocalDate today = LocalDate.now();
-                    LocalDate lastReset = usage.getLastResetDate();
+                    Instant today = Instant.now();
+                    Instant lastReset = usage.getLastResetDate();
                     boolean shouldReset = false;
                     
                     if (lastReset == null) {
                         shouldReset = true;
                     } else if (usage.getResetType() == ResetType.DAILY) {
-                        if (today.isAfter(lastReset)) shouldReset = true;
+                        if (today.truncatedTo(ChronoUnit.DAYS).isAfter(lastReset.truncatedTo(ChronoUnit.DAYS))) shouldReset = true;
                     } else if (usage.getResetType() == ResetType.WEEKLY) {
-                        long currentWeek = ChronoUnit.DAYS.between(sub.getStartDate(), today) / 7;
-                        long lastResetWeek = ChronoUnit.DAYS.between(sub.getStartDate(), lastReset) / 7;
+                        long currentWeek = ChronoUnit.DAYS.between(sub.getStartDate().truncatedTo(ChronoUnit.DAYS), today.truncatedTo(ChronoUnit.DAYS)) / 7;
+                        long lastResetWeek = ChronoUnit.DAYS.between(sub.getStartDate().truncatedTo(ChronoUnit.DAYS), lastReset.truncatedTo(ChronoUnit.DAYS)) / 7;
                         if (currentWeek > lastResetWeek) {
                             shouldReset = true;
                         }
@@ -160,7 +160,7 @@ public class CreditServiceImpl implements ICreditService {
     public boolean hasCandidateFeatureAccess(UUID userId, String featureCode) {
         List<CandidateSubscription> activeSubscriptions = candidateSubscriptionRepository
                 .findByUserIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                        userId, SubscriptionStatus.ACTIVE, LocalDate.now(), LocalDate.now());
+                        userId, SubscriptionStatus.ACTIVE, Instant.now(), Instant.now());
 
         for (CandidateSubscription sub : activeSubscriptions) {
             Optional<CandidateSubFeatureUsage> usageOpt = candidateSubFeatureUsageRepository
@@ -180,7 +180,7 @@ public class CreditServiceImpl implements ICreditService {
 
         List<CompanySubscription> activeSubscriptions = companySubscriptionRepository
                 .findByCompanyIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                        companyId, SubscriptionStatus.ACTIVE, LocalDate.now(), LocalDate.now());
+                        companyId, SubscriptionStatus.ACTIVE, Instant.now(), Instant.now());
 
         for (CompanySubscription sub : activeSubscriptions) {
             Optional<CompanySubFeatureUsage> usageOpt = companySubFeatureUsageRepository

@@ -5,6 +5,7 @@ import { MySubscriptionResponse } from '@/src/types/subscription'
 import Link from 'next/link'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { RoleUser } from '@/src/enums/role.enum'
+import { formatDate } from '@/src/lib/utils'
 
 interface CurrentPlanCardProps {
   subscription: MySubscriptionResponse | undefined
@@ -65,7 +66,7 @@ export const CurrentPlanCard: React.FC<CurrentPlanCardProps> = ({ subscription, 
             </span>
           </div>
           <p className="text-slate-500 text-sm">
-            Có hiệu lực từ {new Date(subscription.startDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })} đến <span className="font-medium text-slate-700">{new Date(subscription.endDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+            Có hiệu lực từ {formatDate(subscription.startDate)} đến <span className="font-medium text-slate-700">{formatDate(subscription.endDate)}</span>
           </p>
         </div>
         <Link href="/pricing">

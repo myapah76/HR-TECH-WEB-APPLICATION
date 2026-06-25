@@ -30,7 +30,8 @@ import org.springframework.data.domain.Pageable;
 import vn.payos.PayOS;
 import vn.payos.model.webhooks.Webhook;
 
-import java.time.LocalDate;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -105,7 +106,7 @@ public class PaymentServiceImpl implements IPaymentService {
             payment.setStatus(PaymentStatus.PAID);
             payment.setPaymentLinkId(data.getPaymentLinkId());
 
-            LocalDate now = LocalDate.now();
+            Instant now = Instant.now();
 
             if (payment.getSubscriptionType() == SubscriptionType.CANDIDATE) {
                 CandidateSubscription sub = candidateSubscriptionRepository.findById(payment.getSubscriptionId())
@@ -124,7 +125,7 @@ public class PaymentServiceImpl implements IPaymentService {
 
                 sub.setStatus(SubscriptionStatus.ACTIVE);
                 sub.setStartDate(now);
-                sub.setEndDate(now.plusDays(sub.getPlan().getDurationDays()));
+                sub.setEndDate(now.plus(sub.getPlan().getDurationDays(), ChronoUnit.DAYS));
                 candidateSubscriptionRepository.save(sub);
 
                 if (sub.getPlan().getPlanFeatures() != null) {
@@ -158,7 +159,7 @@ public class PaymentServiceImpl implements IPaymentService {
 
                 sub.setStatus(SubscriptionStatus.ACTIVE);
                 sub.setStartDate(now);
-                sub.setEndDate(now.plusDays(sub.getPlan().getDurationDays()));
+                sub.setEndDate(now.plus(sub.getPlan().getDurationDays(), ChronoUnit.DAYS));
                 companySubscriptionRepository.save(sub);
 
                 if (sub.getPlan().getPlanFeatures() != null) {

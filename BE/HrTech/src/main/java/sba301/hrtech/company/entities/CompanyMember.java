@@ -9,7 +9,7 @@ import sba301.hrtech.company.entities.enums.CompanyRole;
 import sba301.hrtech.company.entities.enums.MembershipStatus;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.shared.common.SoftDeleteEntity;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "company_members", uniqueConstraints = {
@@ -37,7 +37,7 @@ public class CompanyMember extends SoftDeleteEntity {
     private CompanyRole companyRole;
 
     @Column(name = "joined_at")
-    private LocalDateTime joinedAt;
+    private Instant joinedAt;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)

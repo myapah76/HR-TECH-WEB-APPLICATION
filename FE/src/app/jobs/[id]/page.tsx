@@ -42,6 +42,7 @@ import { useAuthStore } from '@/src/stores/auth.store'
 import { RoleUser } from '@/src/enums/role.enum'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import Loading from '@/src/app/loading'
+import { formatDate } from '@/src/lib/utils'
 
 const statusLabels: Record<string, string> = {
   DRAFT: 'Bản nháp',
@@ -297,7 +298,7 @@ export default function JobDetailPage() {
                       <span>
                         Hạn nộp:{' '}
                         {job.deadline
-                          ? new Date(job.deadline).toLocaleDateString('vi-VN')
+                          ? formatDate(job.deadline)
                           : 'Không thời hạn'}
                       </span>
                     </span>

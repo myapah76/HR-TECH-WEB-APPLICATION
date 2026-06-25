@@ -12,6 +12,7 @@ import { useGetJobs } from '@/src/hooks/job'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import { ApplicationMatchModal } from '@/src/components/candidate/application/ApplicationMatchModal'
 import { useState } from 'react'
+import { formatDate } from '@/src/lib/utils'
 
 const statusConfig: Record<string, { label: string; bg: string; text: string; border: string }> = {
   SUBMITTED: {
@@ -175,7 +176,7 @@ export default function AppliedJobsPage() {
                       {app.appliedAt && (
                         <span className="flex items-center gap-1 text-[11px] font-bold text-slate-450 bg-slate-50 px-2.5 py-0.5 rounded-lg border border-slate-100/40">
                           <Clock className="h-3.5 w-3.5" />
-                          Nộp ngày: {new Date(app.appliedAt).toLocaleDateString('vi-VN')}
+                          Nộp ngày: {formatDate(app.appliedAt)}
                         </span>
                       )}
                     </div>

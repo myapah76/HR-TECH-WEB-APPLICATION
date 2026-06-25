@@ -21,7 +21,7 @@ import sba301.hrtech.subscription.entities.CompanySubscription;
 import sba301.hrtech.subscription.entities.CompanySubscriptionPlan;
 import sba301.hrtech.subscription.entities.enums.SubscriptionStatus;
 
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -80,7 +80,7 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
         if (user.getRole().getName().equals("CANDIDATE")) {
             List<CandidateSubscription> subs = candidateSubscriptionRepository
                     .findByUserIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                            userId, SubscriptionStatus.ACTIVE, LocalDate.now(), LocalDate.now());
+                            userId, SubscriptionStatus.ACTIVE, Instant.now(), Instant.now());
             if (!subs.isEmpty()) {
                 CandidateSubscription sub = subs.get(0);
                 List<SubFeatureUsageResponse> usage = candidateSubFeatureUsageRepository.findBySubscriptionId(sub.getId())
@@ -100,7 +100,7 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
             if (member != null && member.getCompany() != null) {
                 List<CompanySubscription> subs = companySubscriptionRepository
                         .findByCompanyIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                                member.getCompany().getId(), SubscriptionStatus.ACTIVE, LocalDate.now(), LocalDate.now());
+                                member.getCompany().getId(), SubscriptionStatus.ACTIVE, Instant.now(), Instant.now());
                 if (!subs.isEmpty()) {
                     CompanySubscription sub = subs.get(0);
                     List<SubFeatureUsageResponse> usage = companySubFeatureUsageRepository.findBySubscriptionId(sub.getId())

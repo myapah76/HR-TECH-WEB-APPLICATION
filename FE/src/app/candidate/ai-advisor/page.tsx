@@ -17,6 +17,7 @@ import { Send, Plus, MessageSquare, X, Bot, User as UserIcon, Loader2 } from 'lu
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { toast } from 'sonner'
+import { formatDate } from '@/src/lib/utils'
 
 export default function AiAdvisorPage() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
@@ -152,7 +153,7 @@ export default function AiAdvisorPage() {
                   {session.title}
                 </div>
                 <div className="text-xs text-slate-500 mt-1 font-medium">
-                  {new Date(session.createdAt).toLocaleDateString('vi-VN')}
+                  {formatDate(session.createdAt)}
                 </div>
               </div>
             ))

@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { PaymentResponse } from '@/src/types/payment'
+import { formatDateTime } from '@/src/lib/utils'
 
 interface PaymentHistoryTableProps {
   payments: PaymentResponse[]
@@ -53,7 +54,7 @@ export const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ paymen
                   {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(payment.amount)}
                 </td>
                 <td className="px-6 py-4 text-slate-500">
-                  {new Date(payment.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' - ' + new Date(payment.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  {formatDateTime(payment.createdAt)}
                 </td>
                 <td className="px-6 py-4">
                   {payment.status === 'PAID' && (

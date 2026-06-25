@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 import sba301.hrtech.subscription.entities.CompanySubscription;
 import sba301.hrtech.subscription.entities.enums.SubscriptionStatus;
 
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,6 +14,6 @@ public interface CompanySubscriptionRepository extends JpaRepository<CompanySubs
     List<CompanySubscription> findByCompanyIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
             UUID companyId, 
             SubscriptionStatus status, 
-            LocalDate startDate,
-            LocalDate endDate);
+            Instant startDate,
+            Instant endDate);
 }

@@ -8,7 +8,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import sba301.hrtech.subscription.entities.enums.ResetType;
 
-import java.time.LocalDate;
+import java.time.Instant;
 
 @Entity
 @Table(
@@ -49,5 +49,5 @@ public class CandidateSubFeatureUsage extends SoftDeleteEntity {
     private ResetType resetType = ResetType.TOTAL;
 
     @Column(name = "last_reset_date")
-    private LocalDate lastResetDate;
+    private Instant lastResetDate;
 }
