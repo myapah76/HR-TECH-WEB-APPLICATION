@@ -95,7 +95,7 @@ export default function JobCard({ job }: JobCardProps) {
       {/* Right Side: Status and Favorites */}
       <div className="flex sm:flex-col justify-between items-center sm:items-end w-full sm:w-auto shrink-0 self-stretch mt-3 sm:mt-0 pt-3 sm:pt-0 border-t border-slate-100 sm:border-none">
         <div className="flex items-center gap-2.5">
-          {job.status === 'OPEN' ? (
+          {job.status === 'APPROVED' ? (
             <span className="text-[10px] font-black tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-200 px-3 py-1.5 rounded-xl uppercase leading-none shadow-xs">
               Đang tuyển
             </span>
