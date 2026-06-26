@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.web.multipart.MultipartFile;
+import sba301.hrtech.cv.dtos.request.CreateCvRequest;
 import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.abstractions.services.IUserService;
 import sba301.hrtech.identity.entities.User;
@@ -46,29 +47,17 @@ public class CvServiceImpl implements ICvService {
     private final CvMapper cvMapper;
 
     @Override
-    public CvSummaryResponse createCv(String title, MultipartFile file) {
-        UUID userId = authUtils.getCurrentUserId();
-        User user = userService.getUserEntityById(userId);
-
-
-        String contentType = file.getContentType();
-        if (contentType == null ||
-                (!contentType.equals("application/pdf") &&
-                        !contentType.startsWith("image/"))) {
-            throw new AppException(
-                    ErrorCode.INVALID_FILE_TYPE,
-                    "Chỉ chấp nhận file PDF hoặc ảnh!"
-            );
-        }
-
-        String fileUrl = cloudinaryService.uploadFile(file, "hrtech/cvs");
-
-        boolean isFirstCv = cvRepository.findByUserId(userId).isEmpty();
+    public CvSummaryResponse createCv(CreateCvRequest request) {
+        User user = authUtils.getCurrentUser();
+        // Validate the file URL using CloudinaryService
+        cloudinaryService.checkValidUrl(request.getFileUrl());
+        // Check if this is the first CV for the user
+        boolean isFirstCv = cvRepository.findByUserId(user.getId()).isEmpty();
 
         Cv newCv = Cv.builder()
                 .user(user)
-                .title(title)
-                .fileUrl(fileUrl)
+                .title(request.getTitle())
+                .fileUrl(request.getFileUrl())
                 .extractionStatus(ExtractionStatus.PENDING)
                 .isPrimary(isFirstCv)
                 .build();

@@ -254,15 +254,17 @@ export default function MockInterviewResultPage() {
                       <p className="text-slate-800 font-bold">{item.question}</p>
                     </div>
 
-                    {/* Candidate Answer */}
-                    <div className="space-y-2">
-                      <h4 className="text-xs uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5 text-slate-400" /> Câu trả lời của bạn
-                      </h4>
-                      <div className="bg-slate-800 text-white rounded-2xl p-4 leading-relaxed max-w-[85%] font-medium">
-                        {item.answer}
+                    {/* Candidate Answer - Audio Player */}
+                    {item.audioUrl && (
+                      <div className="space-y-2">
+                        <h4 className="text-xs uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5 text-slate-400" /> Bản ghi câu trả lời của bạn
+                        </h4>
+                        <div className="bg-slate-50 border border-slate-200 p-3 rounded-2xl max-w-md">
+                          <audio src={item.audioUrl} controls className="w-full h-8" />
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* AI Feedback */}
                     <div className="space-y-2">

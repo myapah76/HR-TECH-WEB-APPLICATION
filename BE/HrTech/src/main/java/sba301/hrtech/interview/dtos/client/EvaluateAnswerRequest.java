@@ -7,7 +7,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PyInterviewQAItem {
+public class EvaluateAnswerRequest {
+    private String cv_text;
+    private String jd_text;
     private String question;
-    private String answer;
+    private String audio_url;
 }

@@ -1,6 +1,8 @@
 package sba301.hrtech.interview.dtos.response;
 
 import lombok.*;
+
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -19,5 +21,5 @@ public class InterviewResultResponse {
     private Object strengths;
     private Object weaknesses;
     private String generalFeedback;
-    private Object detailedFeedback;
+    private List<DetailedFeedbackItem> detailedFeedback;
 }

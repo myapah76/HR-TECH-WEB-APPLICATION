@@ -9,7 +9,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PyEvaluateSessionResponse {
+public class EvaluateSessionResponse {
     private Double overallScore;
     private Double technicalScore;
     private Double communicationScore;
@@ -17,5 +17,4 @@ public class PyEvaluateSessionResponse {
     private List<String> strengths;
     private List<String> weaknesses;
     private String generalFeedback;
-    private List<DetailedFeedbackItem> detailedFeedback;
 }

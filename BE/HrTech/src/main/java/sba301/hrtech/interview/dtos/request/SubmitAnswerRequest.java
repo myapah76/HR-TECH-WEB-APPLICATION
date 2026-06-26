@@ -8,7 +8,7 @@ import java.util.UUID;
 public record SubmitAnswerRequest(
         @NotNull(message = "ID câu hỏi không được để trống")
         UUID questionId,
-        @NotBlank(message = "Nội dung câu trả lời không được để trống")
-        String answerText
+        @NotBlank(message = "URL âm thanh không được để trống")
+        String audioUrl
 ) {
 }

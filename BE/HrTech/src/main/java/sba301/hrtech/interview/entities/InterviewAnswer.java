@@ -17,8 +17,15 @@ public class InterviewAnswer extends BaseEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id", nullable = false, unique = true)
     private InterviewQuestion question;
-
-    // Nội dung câu trả lời của ứng viên (Dùng TEXT vì ứng viên có thể nói dài)
-    @Column(name = "answer_text", nullable = false, columnDefinition = "TEXT")
-    private String answerText;
+    // URL của file ghi âm lưu trữ trên Cloudinary
+    @Column(name = "audio_url", columnDefinition = "TEXT")
+    private String audioUrl;
+    // Điểm số của câu trả lời này (thang điểm 10)
+    private Double score;
+    // Nhận xét chi tiết cho câu trả lời này
+    @Column(name = "feedback", columnDefinition = "TEXT")
+    private String feedback;
+    // Câu trả lời tối ưu gợi ý của AI
+    @Column(name = "model_answer", columnDefinition = "TEXT")
+    private String modelAnswer;
 }

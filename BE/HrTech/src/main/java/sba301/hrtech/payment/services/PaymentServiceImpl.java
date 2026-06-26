@@ -2,6 +2,7 @@ package sba301.hrtech.payment.services;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.identity.utils.AuthUtils;
@@ -29,6 +30,7 @@ import vn.payos.model.webhooks.Webhook;
 import java.time.LocalDate;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements IPaymentService {
@@ -86,6 +88,7 @@ public class PaymentServiceImpl implements IPaymentService {
     public void handleWebhook(Webhook webhook) {
         try {
             var data = payOS.webhooks().verify(webhook);
+            log.info("data: ", data);
             if (!Boolean.TRUE.equals(webhook.getSuccess())) return;
             if (!"00".equals(webhook.getCode())) return;
 

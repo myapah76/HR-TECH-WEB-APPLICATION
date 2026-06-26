@@ -52,16 +52,21 @@ class GenerateQuestionsRequest(BaseModel):
 
 class InterviewQAItem(BaseModel):
     question: str
-    answer: str
+    score: float
+    feedback: str
+
+class EvaluationAnswerRequest(BaseModel):
+    cv_text: str = ""
+    jd_text: str = ""
+    question: str
+    audio_url: str
 
 class EvaluateSessionRequest(BaseModel):
     cv_text: str = ""
     jd_text: str = ""
     history: List[InterviewQAItem]
 
-class DetailedFeedbackItem(BaseModel):
-    question: str
-    answer: str
+class EvaluateAnswerResponse(BaseModel):
     score: float
     feedback: str
     modelAnswer: str
@@ -74,7 +79,6 @@ class EvaluateSessionResponse(BaseModel):
     strengths: List[str]
     weaknesses: List[str]
     generalFeedback: str
-    detailedFeedback: List[DetailedFeedbackItem]
 
 # --- AI Matching Advice ---
 class AiMatchingAdviceRequest(BaseModel):

@@ -7,7 +7,7 @@ export interface StartSessionRequest {
 
 export interface AnswerSubmitRequest {
   questionId: string
-  answer: string
+  audioUrl: string
 }
 
 export interface QuestionResponse {
@@ -31,7 +31,7 @@ export interface AnswerSubmitResponse {
 
 export interface DetailedFeedbackItem {
   question: string
-  answer: string
+  audioUrl: string
   score: number
   feedback: string
   modelAnswer: string

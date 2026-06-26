@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from models import (
-    EmbedRequest, EmbedResponse, ExtractedSkill, 
+    EmbedRequest, EmbedResponse, EvaluateAnswerResponse, EvaluationAnswerRequest, ExtractedSkill, 
     JobExtractionRequest, JobExtractionResponse, 
     ParseExtractRequest, ParseExtractResponse, 
     MapRelationshipsRequest, MapRelationshipsResponse, 
@@ -110,6 +110,22 @@ def api_generate_questions(req: GenerateQuestionsRequest):
             num_questions=req.num_questions
         )
         return questions
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/api/ai/evaluate-answer", response_model=EvaluateAnswerResponse)
+def api_evaluate_answer(req: EvaluationAnswerRequest):
+    try:
+        from services import evaluate_answer
+        evaluation = evaluate_answer(
+            cv_text=req.cv_text,
+            jd_text=req.jd_text,
+            question=req.question,
+            audio_url=req.audio_url
+        )
+        return evaluation
     except Exception as e:
         import traceback
         traceback.print_exc()

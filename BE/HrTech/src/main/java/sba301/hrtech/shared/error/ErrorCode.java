@@ -132,6 +132,9 @@ public enum ErrorCode {
     INTERVIEW_ALREADY_EVALUATED(HttpStatus.BAD_REQUEST, "Interview session has already been evaluated"),
     RESULT_NOT_FOUND(HttpStatus.NOT_FOUND, "Result interview not found"),
 
+    // Cloudinary
+    INVALID_CLOUDINARY_URL(HttpStatus.BAD_REQUEST, "Invalid Cloudinary URL"),
+
     // Generic
     FORBIDDEN_ACTION(HttpStatus.FORBIDDEN, "Access denied"),
     INVALID_ROLE(HttpStatus.BAD_REQUEST, "Invalid role"),

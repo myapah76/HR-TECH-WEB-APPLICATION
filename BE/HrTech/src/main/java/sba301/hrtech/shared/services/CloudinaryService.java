@@ -10,6 +10,8 @@ import sba301.hrtech.shared.exceptions.AppException;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +36,21 @@ public class CloudinaryService {
                     ErrorCode.FILE_UPLOAD_FAILED,
                     "Failed to upload file to Cloudinary: " + e.getMessage()
             );
+        }
+    }
+
+    public void checkValidUrl(String url) {
+        Pattern pattern = Pattern.compile(".*/(?:image|raw|video)/upload/(?:v\\d+/)?(.+)\\.[^.]+$");
+        Matcher matcher = pattern.matcher(url);
+
+        if (!matcher.matches()) {
+            throw new AppException(ErrorCode.INVALID_CLOUDINARY_URL);
+        }
+        String publicId = matcher.group(1);
+        try {
+            cloudinary.api().resource(publicId, ObjectUtils.emptyMap());
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.INVALID_CLOUDINARY_URL);
         }
     }
 }

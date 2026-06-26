@@ -37,10 +37,11 @@ public class CvController {
         return ResponseEntity.ok(ApiResponse.success(ICvService.getCvById(cvId), "CV retrieved successfully"));
     }
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping
     public ResponseEntity<ApiResponse<CvSummaryResponse>> uploadCv(
-            @ModelAttribute @Valid CreateCvRequest request) {
-        CvSummaryResponse response = ICvService.createCv(request.getTitle(), request.getFile());
+            @RequestBody @Valid CreateCvRequest request
+    ) {
+        CvSummaryResponse response = ICvService.createCv(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(response, "CV uploaded successfully"));
     }

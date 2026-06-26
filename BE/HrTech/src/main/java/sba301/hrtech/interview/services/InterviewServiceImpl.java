@@ -1,20 +1,21 @@
 package sba301.hrtech.interview.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import sba301.hrtech.cv.abstractions.services.ICvService;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.identity.utils.AuthUtils;
+import sba301.hrtech.interview.abstractions.repositories.InterviewAnswerRepository;
 import sba301.hrtech.interview.abstractions.repositories.InterviewQuestionRepository;
 import sba301.hrtech.interview.abstractions.repositories.InterviewResultRepository;
 import sba301.hrtech.interview.abstractions.repositories.InterviewSessionRepository;
 import sba301.hrtech.interview.abstractions.services.IInterviewService;
-import sba301.hrtech.interview.dtos.client.PyEvaluateSessionResponse;
-import sba301.hrtech.interview.dtos.client.PyInterviewQAItem;
+import sba301.hrtech.interview.dtos.client.*;
+import sba301.hrtech.interview.dtos.response.DetailedFeedbackItem;
 import sba301.hrtech.interview.dtos.request.StartSessionRequest;
 import sba301.hrtech.interview.dtos.request.SubmitAnswerRequest;
 import sba301.hrtech.interview.dtos.response.AnswerSubmitResponse;
@@ -31,11 +32,13 @@ import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
+import sba301.hrtech.shared.services.CloudinaryService;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -46,14 +49,18 @@ public class InterviewServiceImpl implements IInterviewService {
     private final ICvService cvService;
     private final IJobService jobService;
     private final InterviewAiServiceClient interviewAiServiceClient;
+    private final CloudinaryService cloudinaryService;
 
     private final InterviewSessionRepository interviewSessionRepository;
     private final InterviewQuestionRepository interviewQuestionRepository;
     private final InterviewResultRepository interviewResultRepository;
+    private final InterviewAnswerRepository interviewAnswerRepository;
 
     private final AuthUtils authUtils;
 
     private final InterviewQuestionMapper interviewQuestionMapper;
+
+    private final TransactionTemplate transactionTemplate;
 
     @Override
     public SessionStartResponse startSession(StartSessionRequest request) {
@@ -134,13 +141,47 @@ public class InterviewServiceImpl implements IInterviewService {
         if(!question.getSession().getId().equals(sessionId)) {
             throw new AppException(ErrorCode.INTERVIEW_QUESTION_NOT_BELONG_TO_SESSION);
         }
-
-        // Lưu câu trả lời vào cơ sở dữ liệu
+        // Kiểm tra URL âm thanh có hợp lệ hay không
+        cloudinaryService.checkValidUrl(request.audioUrl());
+        // Lưu câu trả lời
         InterviewAnswer answer = InterviewAnswer.builder()
                 .question(question)
-                .answerText(request.answerText())
+                .audioUrl(request.audioUrl())
                 .build();
         question.setAnswer(answer);
+
+        final String cvText = session.getCv().getParsedContent();
+        final String jdText = getJdTextForJob(session.getJob());
+        final String qText = question.getQuestionText();
+        final String audioUrl = request.audioUrl();
+        final UUID answerId = answer.getId();
+        // Gọi AI phân tích câu trả lời bất đồng bộ
+        CompletableFuture.runAsync(() -> {
+            try{
+                EvaluateAnswerRequest evaluateAnswerRequest = EvaluateAnswerRequest.builder()
+                        .cv_text(cvText)
+                        .jd_text(jdText)
+                        .question(qText)
+                        .audio_url(audioUrl)
+                        .build();
+                // Gọi API AI phân tích tệp âm thanh
+                EvaluateAnswerResponse evaluation = interviewAiServiceClient.evaluateAnswer(evaluateAnswerRequest);
+
+                // Cập nhật các thông tin feedback vào DB
+                transactionTemplate.executeWithoutResult(status-> {
+                    InterviewAnswer answerToUpdate = interviewAnswerRepository.findById(answerId)
+                            .orElse(null);
+                    if(answerToUpdate != null){
+                        answerToUpdate.setScore(evaluation.getScore());
+                        answerToUpdate.setFeedback(evaluation.getFeedback());
+                        answerToUpdate.setModelAnswer(evaluation.getModelAnswer());
+                        interviewAnswerRepository.save(answerToUpdate);
+                    }
+                });
+            }catch (Exception e){
+                log.error("Lỗi phân tích âm thanh bất đồng bộ cho câu trả lời ID " + answerId, e);
+            }
+        });
         // Tìm câu hỏi tiếp theo dựa trên orderIndex
         InterviewQuestion nextQuestion = interviewQuestionRepository.findBySessionIdAndOrderIndex(
                 sessionId, question.getOrderIndex() + 1
@@ -175,19 +216,61 @@ public class InterviewServiceImpl implements IInterviewService {
         }
         // Đọc lịch sử câu hỏi/câu trả lời
         List<InterviewQuestion> questions = interviewQuestionRepository.findBySessionIdOrderByOrderIndexAsc(sessionId);
-        List<PyInterviewQAItem> history = new ArrayList<>();
+        List<InterviewQAItem> history = new ArrayList<>();
+        List<DetailedFeedbackItem> detailedFeedbacks = new ArrayList<>();
+
         for(InterviewQuestion question : questions){
-            String answerText = question.getAnswer() != null ? question.getAnswer().getAnswerText() : "Không trả lời";
-            history.add(new PyInterviewQAItem(question.getQuestionText(), answerText));
+            InterviewAnswer answer = question.getAnswer();
+            if (answer != null) {
+                // Nếu chưa có kết quả chấm điểm ngầm, thực hiện gọi đồng bộ để lấy kết quả
+                if (answer.getScore() == null) {
+                    try {
+                        EvaluateAnswerRequest evalRequest = EvaluateAnswerRequest.builder()
+                                .cv_text(session.getCv().getParsedContent())
+                                .jd_text(getJdTextForJob(session.getJob()))
+                                .question(question.getQuestionText())
+                                .audio_url(answer.getAudioUrl())
+                                .build();
+                        EvaluateAnswerResponse evaluation = interviewAiServiceClient.evaluateAnswer(evalRequest);
+                        answer.setScore(evaluation.getScore());
+                        answer.setFeedback(evaluation.getFeedback());
+                        answer.setModelAnswer(evaluation.getModelAnswer());
+                        interviewAnswerRepository.save(answer);
+                    } catch (Exception e) {
+                        answer.setScore(0.0);
+                        answer.setFeedback("Lỗi phân tích đồng bộ khi nộp bài");
+                        answer.setModelAnswer("");
+                        interviewAnswerRepository.save(answer);
+                    }
+                }
+
+                // Đưa vào lịch sử đánh giá tổng quan (dùng question, score và feedback)
+                history.add(InterviewQAItem.builder()
+                        .question(question.getQuestionText())
+                        .score(answer.getScore())
+                        .feedback(answer.getFeedback())
+                        .build());
+
+                // Đưa vào chi tiết feedback cho FE
+                detailedFeedbacks.add(DetailedFeedbackItem.builder()
+                        .question(question.getQuestionText())
+                        .audioUrl(answer.getAudioUrl())
+                        .score(answer.getScore())
+                        .feedback(answer.getFeedback())
+                        .modelAnswer(answer.getModelAnswer())
+                        .build());
+            }
         }
+
         // Lấy JD text nếu có để cung cấp cho AI đánh giá sát hơn
         String jdText = getJdTextForJob(session.getJob());
         // Gọi AI đánh giá buổi phỏng vấn
-        PyEvaluateSessionResponse evaluate = interviewAiServiceClient.evaluateInterviewSession(
-                session.getCv().getParsedContent(),
-                jdText,
-                history
-        );
+        EvaluateSessionRequest evaluateSessionRequest = EvaluateSessionRequest.builder()
+                .cv_text(session.getCv().getParsedContent())
+                .jd_text(jdText)
+                .history(history)
+                .build();
+        EvaluateSessionResponse evaluate = interviewAiServiceClient.evaluateInterviewSession(evaluateSessionRequest);
         // Nếu AI đánh giá thất bại (có thể do lỗi hệ thống hoặc không đủ dữ liệu)
         if(evaluate == null){
             session.setStatus(InterviewStatus.FAILED);
@@ -203,7 +286,6 @@ public class InterviewServiceImpl implements IInterviewService {
                 .strengths(evaluate.getStrengths())
                 .weaknesses(evaluate.getWeaknesses())
                 .generalFeedback(evaluate.getGeneralFeedback())
-                .detailedFeedback(evaluate.getDetailedFeedback())
                 .build();
 
         session.setStatus(InterviewStatus.COMPLETED);
@@ -219,7 +301,7 @@ public class InterviewServiceImpl implements IInterviewService {
                 .strengths(result.getStrengths())
                 .weaknesses(result.getWeaknesses())
                 .generalFeedback(result.getGeneralFeedback())
-                .detailedFeedback(result.getDetailedFeedback())
+                .detailedFeedback(detailedFeedbacks)
                 .build();
     }
 
@@ -228,6 +310,20 @@ public class InterviewServiceImpl implements IInterviewService {
     public InterviewResultResponse getResultBySessionId(UUID sessionId) {
         InterviewResult result = interviewResultRepository.findBySessionId(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.RESULT_NOT_FOUND));
+
+        List<InterviewQuestion> questions = interviewQuestionRepository.findBySessionIdOrderByOrderIndexAsc(sessionId);
+        List<DetailedFeedbackItem> detailedFeedbacks = new ArrayList<>();
+        
+        for (InterviewQuestion question : questions) {
+            InterviewAnswer answer = question.getAnswer();
+            detailedFeedbacks.add(DetailedFeedbackItem.builder()
+                    .question(question.getQuestionText())
+                    .audioUrl(answer != null ? answer.getAudioUrl() : "")
+                    .score(answer != null ? answer.getScore() : 0.0)
+                    .feedback(answer != null ? answer.getFeedback() : "Không có feedback")
+                    .modelAnswer(answer != null ? answer.getModelAnswer() : "")
+                    .build());
+        }
 
         return InterviewResultResponse.builder()
                 .sessionId(sessionId)
@@ -238,7 +334,7 @@ public class InterviewServiceImpl implements IInterviewService {
                 .strengths(result.getStrengths())
                 .weaknesses(result.getWeaknesses())
                 .generalFeedback(result.getGeneralFeedback())
-                .detailedFeedback(result.getDetailedFeedback())
+                .detailedFeedback(detailedFeedbacks)
                 .build();
     }
 

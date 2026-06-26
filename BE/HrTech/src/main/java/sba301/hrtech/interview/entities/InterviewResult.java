@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import sba301.hrtech.interview.dtos.client.DetailedFeedbackItem;
 import sba301.hrtech.shared.common.BaseEntity;
 
 import java.util.List;
@@ -48,9 +47,4 @@ public class InterviewResult extends BaseEntity {
     // Nhận xét tổng quát
     @Column(columnDefinition = "TEXT")
     private String generalFeedback;
-
-    // Nhận xét chi tiết cho từng câu kèm câu trả lời mẫu gợi ý (Lưu JSON String)
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
-    private List<DetailedFeedbackItem> detailedFeedback;
 }

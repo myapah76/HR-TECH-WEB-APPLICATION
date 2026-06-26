@@ -10,6 +10,10 @@ import requests
 import fitz  # PyMuPDF
 from typing import List
 
+import base64
+import requests
+from langchain_core.messages import HumanMessage
+
 # Load from root .env file
 root_env_path = Path(__file__).resolve().parent.parent.parent / '.env'
 load_dotenv(dotenv_path=root_env_path)
@@ -299,28 +303,101 @@ def generate_interview_questions(
     except Exception as e:
         print(f"Error parsing generated questions: {e}")
         return []
-
-
-INTERVIEW_EVALUATION_PROMPT = PromptTemplate.from_template("""
+    
+EVALUATE_AUDIO_ANSWER_PROMPT = """
 You are an expert Senior IT Recruiter.
-Evaluate the candidate's mock interview performance based on the CV, Job Description (JD), and the Q&A history transcript.
+Analyze the candidate's spoken answer (provided in the audio file) to the following interview question, using the candidate's CV and the Job Description (JD) as context.
 
 Inputs:
 - Candidate CV: {cv_text}
 - Job Description (JD): {jd_text}
-- Interview Transcript (Q&A):
-{transcript_text}
+- Interview Question: {question}
 
+Tasks:
+Evaluate the candidate's spoken answer directly from the audio file:
+1. Rate the answer correctness and completeness on a scale of 0.0 to 10.0. Set this as "score".
+2. Provide constructive feedback (nhận xét) on technical accuracy, completeness, and communication structure (e.g., clarity, confidence, pacing heard in the audio) in Vietnamese. Set this as "feedback".
+3. Provide a recommended model answer (câu trả lời tối ưu gợi ý) in Vietnamese. Set this as "modelAnswer".
+
+CRITICAL RULES:
+- All output fields (feedback, modelAnswer) MUST be in Vietnamese.
+- Output must be a clean JSON object matching the following structure (do NOT wrap it in markdown block like ```json):
+{{
+  "score": 8.0,
+  "feedback": "...",
+  "modelAnswer": "..."
+}}
+"""
+
+def evaluate_audio_answer(cv_text: str, jd_text: str, question: str, audio_url: str) -> dict:
+    """Tải audio từ url, gửi kèm Prompt tới Gemini để chấm điểm trực tiếp từ giọng nói"""
+    try:
+        # 1. Tải file ghi âm âm thanh từ Cloudinary
+        response = requests.get(audio_url, timeout=15)
+        response.raise_for_status()
+        audio_bytes = response.content
+        audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
+        # Xác định mime_type dựa trên định dạng tệp ghi âm
+        mime_type = "audio/webm"
+        if audio_url.lower().endswith(".wav"):
+            mime_type = "audio/wav"
+        elif audio_url.lower().endswith(".ogg"):
+            mime_type = "audio/ogg"
+        elif audio_url.lower().endswith(".mp3"):
+            mime_type = "audio/mp3"
+        # 2. Tạo nội dung Prompt
+        prompt_text = EVALUATE_AUDIO_ANSWER_PROMPT.format(
+            cv_text=cv_text if cv_text else "Not provided",
+            jd_text=jd_text if jd_text else "Not provided",
+            question=question
+        )
+        # 3. Tạo tin nhắn chứa cả text prompt và tệp âm thanh gửi lên Gemini
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": prompt_text},
+                {
+                    "type": "media",
+                    "mime_type": mime_type,
+                    "data": audio_b64
+                }
+            ]
+        )
+        # 4. Gọi LLM
+        res = llm.invoke([message])
+        content = res.content
+        if isinstance(content, str):
+            content = content.strip()
+            if content.startswith("```json"):
+                content = content[7:]
+            elif content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            return json.loads(content.strip())
+        return content
+    except Exception as e:
+        print(f"Error evaluating audio answer: {e}")
+        return {
+            "score": 0.0,
+            "feedback": f"Lỗi phân tích âm thanh từ AI: {str(e)}",
+            "modelAnswer": ""
+        }
+
+INTERVIEW_EVALUATION_PROMPT = PromptTemplate.from_template("""
+You are an expert Senior IT Recruiter.
+Evaluate the candidate's overall mock interview performance based on the CV, Job Description (JD), and the feedback/scores of each question they answered.
+Inputs:
+- Candidate CV: {cv_text}
+- Job Description (JD): {jd_text}
+- Question Feedbacks:
+{transcript_text}
 Evaluation Guidelines:
 1. Rate the overall score on a scale of 0.0 to 10.0.
 2. Rate individual score components: Technical (chuyên môn), Communication (giao tiếp), Soft Skills (kỹ năng mềm) on a scale of 0.0 to 10.0.
 3. Detail strengths and weaknesses in Vietnamese.
-4. For each Q&A pair:
-   - Assess technical correctness and communication structure.
-   - Assign a score (0.0 to 10.0) for this answer.
-   - Provide feedback (nhận xét) and a model answer (câu trả lời tối ưu gợi ý).
+4. Provide a general feedback summary in Vietnamese.
 5. Language: All feedbacks, suggestions, and text MUST be in Vietnamese.
-6. Output must be a clean JSON object matching the following structure, do NOT wrap it in extra markdown format like ```json, just pure JSON array.:
+6. Output must be a clean JSON object matching the following structure, do NOT wrap it in extra markdown format like ```json, just pure JSON:
 {{
   "overallScore": 8.5,
   "technicalScore": 8.0,
@@ -328,16 +405,7 @@ Evaluation Guidelines:
   "softSkillsScore": 8.5,
   "strengths": ["...", "..."],
   "weaknesses": ["...", "..."],
-  "generalFeedback": "...",
-  "detailedFeedback": [
-    {{
-      "question": "...",
-      "answer": "...",
-      "score": 8.0,
-      "feedback": "...",
-      "modelAnswer": "..."
-    }}
-  ]
+  "generalFeedback": "..."
 }}
 """)
 
@@ -346,12 +414,11 @@ def evaluate_interview_session(
     jd_text: str,
     history: list
 ) -> dict:
-    """Đánh giá toàn bộ phiên phỏng vấn và trả về kết quả dạng JSON"""
-    # Định dạng lại lịch sử chat thành dạng văn bản để gửi cho LLM dễ hiểu
+    """Đánh giá toàn bộ phiên phỏng vấn dựa trên điểm số & feedback của từng câu lẻ"""
     transcript_parts = []
     for idx, item in enumerate(history):
         transcript_parts.append(
-            f"Q{idx+1}: {item['question']}\nA{idx+1}: {item['answer']}\n"
+            f"Q{idx+1}: {item['question']}\n- Score: {item['score']}/10\n- Feedback: {item['feedback']}\n"
         )
     transcript_text = "\n".join(transcript_parts)
     interview_evaluation_prompt = INTERVIEW_EVALUATION_PROMPT.format_prompt(
@@ -363,6 +430,13 @@ def evaluate_interview_session(
     try:
         content = response.content
         if isinstance(content, str):
+            content = content.strip()
+            if content.startswith("```json"):
+                content = content[7:]
+            elif content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
             return json.loads(content.strip())
         return content
     except Exception as e:

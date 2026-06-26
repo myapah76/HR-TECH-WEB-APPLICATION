@@ -9,8 +9,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PyEvaluateSessionRequest {
+public class EvaluateSessionRequest {
     private String cv_text;
     private String jd_text;
-    private List<PyInterviewQAItem> history;
+    private List<InterviewQAItem> history;
 }

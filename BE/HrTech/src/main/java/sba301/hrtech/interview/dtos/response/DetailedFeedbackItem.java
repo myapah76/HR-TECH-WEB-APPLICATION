@@ -1,4 +1,4 @@
-package sba301.hrtech.interview.dtos.client;
+package sba301.hrtech.interview.dtos.response;
 
 import lombok.*;
 
@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 public class DetailedFeedbackItem {
     private String question;
-    private String answer;
+    private String audioUrl;
     private Double score;
     private String feedback;
     private String modelAnswer;

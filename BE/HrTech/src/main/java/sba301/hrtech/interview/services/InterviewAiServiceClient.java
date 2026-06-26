@@ -7,10 +7,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import sba301.hrtech.interview.dtos.client.PyEvaluateSessionRequest;
-import sba301.hrtech.interview.dtos.client.PyEvaluateSessionResponse;
-import sba301.hrtech.interview.dtos.client.PyGenerateQuestionsRequest;
-import sba301.hrtech.interview.dtos.client.PyInterviewQAItem;
+import sba301.hrtech.interview.dtos.client.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,7 +27,7 @@ public class InterviewAiServiceClient {
             // Gọi endpoint của Python AI service để sinh câu hỏi
             String url = aiServiceUrl + "/api/ai/generate-questions";
             // Tạo request body với dữ liệu CV, JD và vai trò mục tiêu
-            var requestBody = PyGenerateQuestionsRequest.builder()
+            var requestBody = GenerateQuestionsRequest.builder()
                     .cv_text(cvText != null ? cvText : "")
                     .jd_text(jdText != null ? jdText : "")
                     .target_role(targetRole)
@@ -59,33 +56,48 @@ public class InterviewAiServiceClient {
         return Collections.emptyList();
     }
 
-    // Gọi Python AI service để đánh giá buổi phỏng vấn dựa trên CV, JD và lịch sử Q&A
-    public PyEvaluateSessionResponse evaluateInterviewSession(
-            String cvText,
-            String jdText,
-            List<PyInterviewQAItem> history
-    ){
+    public EvaluateAnswerResponse evaluateAnswer(EvaluateAnswerRequest request){
+        String url = aiServiceUrl + "/api/ai/evaluate-answer";
         try {
-            // Gọi endpoint của Python AI service để đánh giá buổi phỏng vấn
-            String url = aiServiceUrl + "/api/ai/evaluate-session";
-            // Tạo request body với dữ liệu CV, JD và lịch sử Q&A
-            var requestBody = PyEvaluateSessionRequest.builder()
-                    .cv_text(cvText != null ? cvText : "")
-                    .jd_text(jdText != null ? jdText : "")
-                    .history(history)
-                    .build();
             // Thiết lập headers cho request
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             // Tạo HttpEntity với request body và headers
-            HttpEntity<Object> entity = new HttpEntity<>(requestBody, headers);
+            HttpEntity<Object> entity = new HttpEntity<>(request, headers);
             // Gửi request POST đến Python AI service và nhận response
-            ResponseEntity<PyEvaluateSessionResponse> response =
+            ResponseEntity<EvaluateAnswerResponse> response =
                     restTemplate.exchange(
                             url,
                             HttpMethod.POST,
                             entity,
-                            PyEvaluateSessionResponse.class
+                            EvaluateAnswerResponse.class
+                    );
+            // Kiểm tra nếu response thành công và có body, trả về kết quả đánh giá
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody();
+            }
+        } catch (Exception e) {
+            log.warn(e.getMessage());
+        }
+        return null;
+    }
+
+    // Gọi Python AI service để đánh giá buổi phỏng vấn dựa trên CV, JD và lịch sử Q&A
+    public EvaluateSessionResponse evaluateInterviewSession(EvaluateSessionRequest request){
+        String url = aiServiceUrl + "/api/ai/evaluate-session";
+        try {
+            // Thiết lập headers cho request
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            // Tạo HttpEntity với request body và headers
+            HttpEntity<Object> entity = new HttpEntity<>(request, headers);
+            // Gửi request POST đến Python AI service và nhận response
+            ResponseEntity<EvaluateSessionResponse> response =
+                    restTemplate.exchange(
+                            url,
+                            HttpMethod.POST,
+                            entity,
+                            EvaluateSessionResponse.class
                     );
             // Kiểm tra nếu response thành công và có body, trả về kết quả đánh giá
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
