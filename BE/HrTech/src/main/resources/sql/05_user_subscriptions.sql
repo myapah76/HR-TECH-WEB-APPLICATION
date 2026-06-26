@@ -1,14 +1,22 @@
 -- Seed User Subscriptions to bypass quota error for HR users
 INSERT INTO company_subscriptions (id, created_at, updated_at, is_deleted, start_date, end_date, status, company_id, purchased_by, plan_id)
 VALUES
-    ('50000000-0000-0000-0000-000000000001', NOW(), NOW(), false, NOW(), NOW() + INTERVAL '30 days', 'ACTIVE', 'c0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000007', 'dddddddd-dddd-dddd-dddd-dddddddddddd'),
-    ('50000000-0000-0000-0000-000000000002', NOW(), NOW(), false, NOW(), NOW() + INTERVAL '30 days', 'ACTIVE', 'c0000000-0000-0000-0000-000000000002', 'b0000000-0000-0000-0000-000000000008', 'dddddddd-dddd-dddd-dddd-dddddddddddd')
+    ('50000000-0000-0000-0000-000000000001', NOW(), NOW(), false, NOW() - INTERVAL '1 day', NOW() + INTERVAL '30 days', 'ACTIVE', 'c0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000007', 'dddddddd-dddd-dddd-dddd-dddddddddddd'),
+    ('50000000-0000-0000-0000-000000000002', NOW(), NOW(), false, NOW() - INTERVAL '1 day', NOW() + INTERVAL '30 days', 'ACTIVE', 'c0000000-0000-0000-0000-000000000002', 'b0000000-0000-0000-0000-000000000008', 'dddddddd-dddd-dddd-dddd-dddddddddddd')
 ON CONFLICT (id) DO NOTHING;
+
+-- Xóa dữ liệu rate usage cũ để tránh lỗi Foreign Key khi ghi đè
+DELETE FROM company_sub_feature_rate_usages WHERE usage_id IN (
+    '60000000-0000-0000-0000-000000000001', '60000000-0000-0000-0000-000000000002',
+    '60000000-0000-0000-0000-000000000011', '60000000-0000-0000-0000-000000000012',
+    '60000000-0000-0000-0000-000000000003', '60000000-0000-0000-0000-000000000004', '60000000-0000-0000-0000-000000000005',
+    '60000000-0000-0000-0000-000000000013', '60000000-0000-0000-0000-000000000014', '60000000-0000-0000-0000-000000000015'
+);
 
 -- Xóa dữ liệu usage cũ của seed data để ghi đè (tránh conflict nếu đổi logic)
 DELETE FROM company_sub_feature_usages WHERE subscription_id IN ('50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000002');
 
-INSERT INTO company_sub_feature_usages (id, created_at, updated_at, is_deleted, subscription_id, feature_id, quota, used)
+INSERT INTO company_sub_feature_usages (id, created_at, updated_at, is_deleted, subscription_id, feature_id, total_quota, total_used)
 VALUES
     -- FPT Software HR (Pro Plan: dddddddd-dddd-dddd-dddd-dddddddddddd)
     ('60000000-0000-0000-0000-000000000001', NOW(), NOW(), false, '50000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 20, 0),    -- Job Posting
@@ -23,4 +31,24 @@ VALUES
     ('60000000-0000-0000-0000-000000000013', NOW(), NOW(), false, '50000000-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', 1, 0),     -- App Scoring
     ('60000000-0000-0000-0000-000000000014', NOW(), NOW(), false, '50000000-0000-0000-0000-000000000002', '77777777-7777-7777-7777-777777777777', 1, 0),     -- Chatbot
     ('60000000-0000-0000-0000-000000000015', NOW(), NOW(), false, '50000000-0000-0000-0000-000000000002', '66666666-6666-6666-6666-666666666666', 1, 0)      -- Rcm Candidate
+ON CONFLICT (id) DO NOTHING;
+
+
+INSERT INTO company_sub_feature_rate_usages (id, created_at, updated_at, is_deleted, usage_id, reset_type, cap_quota, used, last_reset_date)
+VALUES
+    -- FPT Software HR
+    -- Job Posting (usage: 00000001) -> Pro Plan: daily=3, weekly=7
+    ('70000000-0000-0000-0000-000000000001', NOW(), NOW(), false, '60000000-0000-0000-0000-000000000001', 'DAILY', 3, 0, NOW() - INTERVAL '1 day'),
+    ('70000000-0000-0000-0000-000000000002', NOW(), NOW(), false, '60000000-0000-0000-0000-000000000001', 'WEEKLY', 7, 0, NOW() - INTERVAL '1 day'),
+    -- AI Credit (usage: 00000002) -> Pro Plan: daily=750, weekly=4500
+    ('70000000-0000-0000-0000-000000000003', NOW(), NOW(), false, '60000000-0000-0000-0000-000000000002', 'DAILY', 750, 0, NOW() - INTERVAL '1 day'),
+    ('70000000-0000-0000-0000-000000000004', NOW(), NOW(), false, '60000000-0000-0000-0000-000000000002', 'WEEKLY', 4500, 0, NOW() - INTERVAL '1 day'),
+
+    -- VNG Corporation HR
+    -- Job Posting (usage: 00000011) -> Pro Plan: daily=3, weekly=7
+    ('70000000-0000-0000-0000-000000000011', NOW(), NOW(), false, '60000000-0000-0000-0000-000000000011', 'DAILY', 3, 0, NOW() - INTERVAL '1 day'),
+    ('70000000-0000-0000-0000-000000000012', NOW(), NOW(), false, '60000000-0000-0000-0000-000000000011', 'WEEKLY', 7, 0, NOW() - INTERVAL '1 day'),
+    -- AI Credit (usage: 00000012) -> Pro Plan: daily=750, weekly=4500
+    ('70000000-0000-0000-0000-000000000013', NOW(), NOW(), false, '60000000-0000-0000-0000-000000000012', 'DAILY', 750, 0, NOW() - INTERVAL '1 day'),
+    ('70000000-0000-0000-0000-000000000014', NOW(), NOW(), false, '60000000-0000-0000-0000-000000000012', 'WEEKLY', 4500, 0, NOW() - INTERVAL '1 day')
 ON CONFLICT (id) DO NOTHING;

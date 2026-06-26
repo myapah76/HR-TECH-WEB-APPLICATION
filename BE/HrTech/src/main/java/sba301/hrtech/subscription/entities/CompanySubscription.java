@@ -10,7 +10,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import sba301.hrtech.subscription.entities.enums.SubscriptionStatus;
 
-import java.time.LocalDate;
+import java.time.Instant;
 
 @Entity
 @Table(name = "company_subscriptions")
@@ -24,10 +24,10 @@ import java.time.LocalDate;
 public class CompanySubscription extends SoftDeleteEntity {
 
     @Column(name = "start_date")
-    private LocalDate startDate;
+    private Instant startDate;
 
     @Column(name = "end_date")
-    private LocalDate endDate;
+    private Instant endDate;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

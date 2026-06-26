@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import {
   useAllActiveSubscriptionPlansQuery,
   useCreatePaymentMutation,
+  useMyCurrentSubscriptionQuery,
 } from '@/src/hooks/subscription'
 import { refreshToken } from '@/src/services/auth.service'
 import { getErrorMessage } from '@/src/utils/get-error-message'
@@ -38,6 +39,8 @@ function PricingContent() {
 
   const { data: res, isLoading } = useAllActiveSubscriptionPlansQuery()
   const paymentMutation = useCreatePaymentMutation()
+  const { data: currentSubRes, isLoading: isSubLoading } = useMyCurrentSubscriptionQuery(!!user)
+  const currentSubscription = currentSubRes?.data
 
   const plans = res?.data || []
 
@@ -105,7 +108,8 @@ function PricingContent() {
       pkg.name.toLowerCase().includes('chuyên nghiệp') ||
       pkg.name.toLowerCase().includes('cao cấp') ||
       pkg.name.toLowerCase().includes('pro')
-    const buttonText = pkg.price === 0 ? 'Sử dụng miễn phí' : 'Nâng cấp ngay'
+    const isCurrent = currentSubscription?.planId === pkg.id
+    const buttonText = isCurrent ? 'Đang sử dụng' : (pkg.price === 0 ? 'Sử dụng miễn phí' : 'Nâng cấp ngay')
 
     let period = ''
     if (pkg.durationDays > 0) {
@@ -128,6 +132,7 @@ function PricingContent() {
       description: pkg.description,
       features: pkg.features || [],
       isPopular,
+      isCurrent,
       buttonText,
     }
   })
@@ -228,7 +233,7 @@ function PricingContent() {
         )}
 
         {/* Pricing Cards */}
-        {isLoading || paymentMutation.isPending ? (
+        {isLoading || isSubLoading || paymentMutation.isPending ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-4">
             <div className="relative w-12 h-12">
               <div className="absolute inset-0 rounded-full border-4 border-indigo-100 animate-pulse"></div>
@@ -323,15 +328,17 @@ function PricingContent() {
                     {/* Button */}
                     <button
                       onClick={() => handleSubscribe(pkg.id)}
-                      disabled={paymentMutation.isPending}
+                      disabled={paymentMutation.isPending || pkg.isCurrent}
                       className={`w-full py-4 px-6 rounded-2xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 mb-8 ${
-                        pkg.isPopular
-                          ? 'bg-white text-slate-900 hover:bg-slate-100 hover:scale-[1.01] shadow-md shadow-white/5 active:scale-98'
-                          : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.01] shadow-lg shadow-indigo-600/10 active:scale-98'
-                      } cursor-pointer disabled:opacity-50`}
+                        pkg.isCurrent
+                          ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none'
+                          : pkg.isPopular
+                            ? 'bg-white text-slate-900 hover:bg-slate-100 hover:scale-[1.01] shadow-md shadow-white/5 active:scale-98'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.01] shadow-lg shadow-indigo-600/10 active:scale-98'
+                      } ${!pkg.isCurrent && 'cursor-pointer'} disabled:opacity-50`}
                     >
                       <span>{pkg.buttonText}</span>
-                      <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                      {!pkg.isCurrent && <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />}
                     </button>
 
                     <div

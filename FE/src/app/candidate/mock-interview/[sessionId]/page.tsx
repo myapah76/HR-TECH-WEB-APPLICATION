@@ -5,7 +5,16 @@ import { useRouter, useParams } from 'next/navigation'
 import { Card } from '@/src/components/ui/card'
 import { Button } from '@/src/components/ui/button'
 import { QuestionResponse } from '@/src/types/interview'
-import { Mic, Loader2, Sparkles, HelpCircle, ArrowRight, ChevronLeft, Play, Square, RefreshCw } from 'lucide-react'
+import {
+  Mic,
+  Loader2,
+  Sparkles,
+  HelpCircle,
+  ArrowRight,
+  ChevronLeft,
+  Square,
+  RefreshCw,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { motion } from 'motion/react'
 import {
@@ -79,7 +88,7 @@ export default function MockInterviewPracticePage() {
         const localUrl = URL.createObjectURL(recordedBlob)
         setAudioUrlLocal(localUrl)
         setPracticeState('REVIEWING')
-        
+
         // Tắt microphone stream
         stream.getTracks().forEach((track) => track.stop())
       }
@@ -352,7 +361,7 @@ export default function MockInterviewPracticePage() {
                     <Mic className="w-8 h-8 animate-bounce" />
                   </div>
                 </div>
-                
+
                 <div className="text-center space-y-1">
                   <span className="text-sm font-bold text-red-500 block uppercase tracking-widest">
                     ĐANG GHI ÂM...
@@ -393,7 +402,8 @@ export default function MockInterviewPracticePage() {
                   )}
 
                   <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
-                    * Bạn có thể nghe lại để kiểm tra âm lượng. Nếu thấy chưa ưng ý hoặc bị ồn, hãy bấm **THỬ LẠI** để ghi âm lại.
+                    * Bạn có thể nghe lại để kiểm tra âm lượng. Nếu thấy chưa ưng ý hoặc bị ồn, hãy
+                    bấm **THỬ LẠI** để ghi âm lại.
                   </p>
                 </div>
 
@@ -413,8 +423,12 @@ export default function MockInterviewPracticePage() {
                     disabled={!audioBlob || submitAnswerMut.isPending || isUploading}
                     className="bg-blue-600 hover:bg-blue-700 text-white font-black h-12 px-6 rounded-xl shadow-md transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    {isUploading ? 'ĐANG TẢI AUDIO...' : (currentQuestionIndex === totalQuestions ? 'NỘP BÀI & XEM KẾT QUẢ' : 'CÂU TIẾP THEO')}
-                    {(submitAnswerMut.isPending || isUploading) ? (
+                    {isUploading
+                      ? 'ĐANG TẢI AUDIO...'
+                      : currentQuestionIndex === totalQuestions
+                        ? 'NỘP BÀI & XEM KẾT QUẢ'
+                        : 'CÂU TIẾP THEO'}
+                    {submitAnswerMut.isPending || isUploading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <ArrowRight className="w-4 h-4" />

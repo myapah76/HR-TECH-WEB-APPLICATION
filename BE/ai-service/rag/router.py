@@ -41,7 +41,8 @@ def index_document(req: IndexRequest, background_tasks: BackgroundTasks, db: Ses
 
 # --- CHAT ---
 class ChatRequest(BaseModel):
-    document_id: str | None = None # Optional filter
+    document_id: str | None = None # Legacy support
+    document_ids: list[str] | None = None # Support multiple docs
     query: str
     top_k: int = 5
 
@@ -68,12 +69,22 @@ def chat_with_rag(req: ChatRequest, db: Session = Depends(get_db)):
         .join(ChunkEmbedding, DocumentChunk.id == ChunkEmbedding.chunk_id)
     )
 
+    uuids = []
     if req.document_id:
         try:
-            doc_uuid = uuid.UUID(req.document_id)
+            uuids.append(uuid.UUID(req.document_id))
         except:
-            doc_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, req.document_id)
-        stmt = stmt.where(DocumentChunk.document_id == doc_uuid)
+            uuids.append(uuid.uuid5(uuid.NAMESPACE_DNS, req.document_id))
+            
+    if req.document_ids:
+        for did in req.document_ids:
+            try:
+                uuids.append(uuid.UUID(did))
+            except:
+                uuids.append(uuid.uuid5(uuid.NAMESPACE_DNS, did))
+                
+    if uuids:
+        stmt = stmt.where(DocumentChunk.document_id.in_(uuids))
 
     stmt = stmt.order_by('distance').limit(req.top_k)
     results = db.execute(stmt).all()
@@ -102,10 +113,10 @@ def chat_with_rag(req: ChatRequest, db: Session = Depends(get_db)):
 Your main role is to answer questions about Job Descriptions or CVs based on the provided Context.
 
 CRITICAL RULES:
-1. DO NOT invent, estimate, or calculate "% match" scores between a CV and a Job yourself.
-2. If the user asks "How much does my CV match this job?", asks for an exact score, or wants a CV evaluation against a Job, politely tell them to use the explicit "AI Matching" or "Job Recommendation" feature in the platform dashboard to get the exact score calculated by the core Skill Graph engine.
-3. Answer the user's questions strictly based on the retrieved context below.
-4. If you don't know the answer based on the context, just say that you don't know.
+1. You can analyze and evaluate the CV against the Job Description. If asked, you may provide an estimated "% match" score or qualitative assessment based on the provided context.
+2. When asked about improving a CV or missing skills, provide actionable advice, constructive feedback, and suggest a clear study path or learning resources to help the candidate meet the Job Requirements.
+3. Base your analysis primarily on the retrieved context below, but feel free to use your general knowledge of IT/Tech skills to infer relationships (e.g., knowing that React is a JS framework) and provide study paths.
+4. If the context does not contain a CV or a Job Description, kindly let the user know what is missing.
 
 Context:
 {context_block}

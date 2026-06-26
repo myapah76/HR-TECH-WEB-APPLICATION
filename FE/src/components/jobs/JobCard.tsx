@@ -4,6 +4,7 @@ import { MapPin, DollarSign, Calendar, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Job } from '@/src/types/job'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
+import { formatDate } from '@/src/lib/utils'
 
 interface JobCardProps {
   job: Job
@@ -68,7 +69,7 @@ export default function JobCard({ job }: JobCardProps) {
             {job.deadline && (
               <span className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-650 rounded-xl border border-slate-150 font-semibold">
                 <Calendar className="h-4 w-4 text-slate-400" />
-                <span>Hạn: {new Date(job.deadline).toLocaleDateString('vi-VN')}</span>
+                <span>Hạn: {formatDate(job.deadline)}</span>
               </span>
             )}
           </div>
@@ -95,7 +96,7 @@ export default function JobCard({ job }: JobCardProps) {
       {/* Right Side: Status and Favorites */}
       <div className="flex sm:flex-col justify-between items-center sm:items-end w-full sm:w-auto shrink-0 self-stretch mt-3 sm:mt-0 pt-3 sm:pt-0 border-t border-slate-100 sm:border-none">
         <div className="flex items-center gap-2.5">
-          {job.status === 'OPEN' ? (
+          {job.status === 'APPROVED' ? (
             <span className="text-[10px] font-black tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-200 px-3 py-1.5 rounded-xl uppercase leading-none shadow-xs">
               Đang tuyển
             </span>
@@ -107,7 +108,7 @@ export default function JobCard({ job }: JobCardProps) {
         </div>
 
         <span className="text-[11px] font-bold text-slate-450 tracking-wide mt-2 sm:mt-auto">
-          Đăng ngày: {new Date(job.createdAt).toLocaleDateString('vi-VN')}
+          Đăng ngày: {formatDate(job.createdAt)}
         </span>
       </div>
     </div>

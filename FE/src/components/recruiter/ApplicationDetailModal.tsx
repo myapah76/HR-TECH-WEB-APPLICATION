@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import {
   X,
   FileText,
@@ -28,31 +28,31 @@ const STATUS_CONFIG: Record<
   ApplicationStatus,
   { label: string; color: string; bg: string; border: string; dot: string }
 > = {
-  SUBMITTED: { label: 'Mới nộp', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-500' },
-  SCREENING: { label: 'Đang xét', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', dot: 'bg-amber-500' },
-  SCORED: { label: 'Đã chấm', color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200', dot: 'bg-violet-500' },
-  INTERVIEW: { label: 'Phỏng vấn', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200', dot: 'bg-indigo-500' },
-  OFFER: { label: 'Offer', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', dot: 'bg-emerald-500' },
-  REJECTED: { label: 'Từ chối', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200', dot: 'bg-rose-500' },
-  WITHDRAWN: { label: 'Đã rút', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200', dot: 'bg-slate-400' },
+  [ApplicationStatus.SUBMITTED]: { label: 'Mới nộp', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-500' },
+  [ApplicationStatus.SCREENING]: { label: 'Đang xét', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', dot: 'bg-amber-500' },
+  [ApplicationStatus.SCORED]: { label: 'Đã chấm', color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200', dot: 'bg-violet-500' },
+  [ApplicationStatus.INTERVIEW]: { label: 'Phỏng vấn', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200', dot: 'bg-indigo-500' },
+  [ApplicationStatus.OFFER]: { label: 'Offer', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', dot: 'bg-emerald-500' },
+  [ApplicationStatus.REJECTED]: { label: 'Từ chối', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200', dot: 'bg-rose-500' },
+  [ApplicationStatus.WITHDRAWN]: { label: 'Đã rút', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200', dot: 'bg-slate-400' },
 }
 
 const NEXT_ACTIONS: Partial<Record<ApplicationStatus, { status: ApplicationStatus; label: string; style: string }[]>> = {
-  SUBMITTED: [
-    { status: 'SCREENING', label: 'Chuyển Sàng lọc', style: 'bg-amber-500 hover:bg-amber-600 text-white' },
-    { status: 'REJECTED', label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
+  [ApplicationStatus.SUBMITTED]: [
+    { status: ApplicationStatus.SCREENING, label: 'Chuyển Sàng lọc', style: 'bg-amber-500 hover:bg-amber-600 text-white' },
+    { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
   ],
-  SCREENING: [
-    { status: 'INTERVIEW', label: 'Mời Phỏng vấn', style: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
-    { status: 'REJECTED', label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
+  [ApplicationStatus.SCREENING]: [
+    { status: ApplicationStatus.INTERVIEW, label: 'Mời Phỏng vấn', style: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
+    { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
   ],
-  SCORED: [
-    { status: 'INTERVIEW', label: 'Mời Phỏng vấn', style: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
-    { status: 'REJECTED', label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
+  [ApplicationStatus.SCORED]: [
+    { status: ApplicationStatus.INTERVIEW, label: 'Mời Phỏng vấn', style: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
+    { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
   ],
-  INTERVIEW: [
-    { status: 'OFFER', label: '✓ Gửi Offer', style: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
-    { status: 'REJECTED', label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
+  [ApplicationStatus.INTERVIEW]: [
+    { status: ApplicationStatus.OFFER, label: '✓ Gửi Offer', style: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
+    { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
   ],
 }
 
@@ -91,13 +91,26 @@ function ScoreRing({ score }: { score: number }) {
   )
 }
 
-function timeAgo(dateStr: string) {
+function calcTimeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
-  const m = Math.floor(diff / 60000)
-  if (m < 60) return `${m} phút trước`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h} giờ trước`
-  return `${Math.floor(h / 24)} ngày trước`
+  const seconds = Math.floor(diff / 1000)
+  if (seconds < 60) return `${seconds} giây trước`
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes} phút trước`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} giờ trước`
+  return `${Math.floor(hours / 24)} ngày trước`
+}
+
+function useRelativeTime(dateStr: string) {
+  const compute = useCallback(() => calcTimeAgo(dateStr), [dateStr])
+  const [label, setLabel] = useState(compute)
+  useEffect(() => {
+    setLabel(compute())
+    const id = setInterval(() => setLabel(compute()), 30_000)
+    return () => clearInterval(id)
+  }, [compute])
+  return label
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -111,6 +124,8 @@ export default function ApplicationDetailModal({ applicationId, onClose, onStatu
   const overlayRef = useRef<HTMLDivElement>(null)
   const { data: app, isLoading } = useGetApplicationDetail(applicationId)
   const { data: cvDetail, isLoading: isCvLoading } = useGetCvDetail(app?.cvId ?? '', !!app?.cvId)
+  // Hook ở component level (tuân thủ Rules of Hooks)
+  const relativeTime = useRelativeTime(app?.appliedAt ?? '')
 
   const handleViewCv = () => {
     if (cvDetail?.fileUrl) {
@@ -176,7 +191,7 @@ export default function ApplicationDetailModal({ applicationId, onClose, onStatu
                     </span>
                     <span className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
                       <Clock className="w-3.5 h-3.5" />
-                      {timeAgo(app.appliedAt)}
+                      {relativeTime}
                     </span>
                   </div>
                   {/* CV viewer button */}
@@ -291,19 +306,19 @@ export default function ApplicationDetailModal({ applicationId, onClose, onStatu
               )}
 
               {/* ── Completed states ─────────────────────────────────────────── */}
-              {app.status === 'OFFER' && (
+              {app.status === ApplicationStatus.OFFER && (
                 <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                   <p className="text-sm font-bold text-emerald-700">Đã gửi Offer cho ứng viên này</p>
                 </div>
               )}
-              {app.status === 'REJECTED' && (
+              {app.status === ApplicationStatus.REJECTED && (
                 <div className="flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-2xl p-4">
                   <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
                   <p className="text-sm font-bold text-rose-600">Hồ sơ đã bị từ chối</p>
                 </div>
               )}
-              {app.status === 'WITHDRAWN' && (
+              {app.status === ApplicationStatus.WITHDRAWN && (
                 <div className="flex items-center gap-3 bg-slate-100 border border-slate-200 rounded-2xl p-4">
                   <AlertCircle className="w-5 h-5 text-slate-500 shrink-0" />
                   <p className="text-sm font-bold text-slate-600">Ứng viên đã rút hồ sơ</p>

@@ -17,3 +17,28 @@ export interface PlanFeature {
   description: string
   quota: number
 }
+
+export interface SubFeatureRateUsageResponse {
+  resetType: 'DAILY' | 'WEEKLY'
+  capQuota: number
+  used: number
+  lastResetDate: string
+}
+
+export interface SubFeatureUsageResponse {
+  featureCode: string
+  featureName: string
+  quota: number
+  used: number
+  rateLimits: SubFeatureRateUsageResponse[]
+}
+
+export interface MySubscriptionResponse {
+  id: string
+  planId: string
+  planName: string
+  status: string
+  startDate: string
+  endDate: string
+  featuresUsage: SubFeatureUsageResponse[]
+}

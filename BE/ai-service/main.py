@@ -156,7 +156,7 @@ def api_candidate_matching_advice(req: AiMatchingAdviceRequest):
         )
         return AiMatchingAdviceResponse(
             improvement_tips=advice.get("improvement_tips", ""),
-            predicted_questions=advice.get("predicted_questions", [])
+            action_plan=advice.get("action_plan", [])
         )
     except Exception as e:
         import traceback

@@ -44,7 +44,7 @@ import sba301.hrtech.notification.abstractions.IEmailSender;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -370,7 +370,7 @@ public class CompanyServiceImpl implements ICompanyService {
                 .company(company)
                 .user(savedUser)
                 .companyRole(companyRole)
-                .joinedAt(LocalDateTime.now())
+                .joinedAt(Instant.now())
                 .membershipStatus(MembershipStatus.ACTIVE)
                 .build();
         CompanyMember savedMember = companyMemberRepository.save(companyMember);

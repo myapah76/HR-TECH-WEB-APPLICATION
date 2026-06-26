@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface CandidateSubFeatureUsageRepository extends JpaRepository<CandidateSubFeatureUsage, UUID> {
     Optional<CandidateSubFeatureUsage> findBySubscriptionIdAndFeatureCode(UUID subscriptionId, String featureCode);
+    java.util.List<CandidateSubFeatureUsage> findBySubscriptionId(UUID subscriptionId);
 }

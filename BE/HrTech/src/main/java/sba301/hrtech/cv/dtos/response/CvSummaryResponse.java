@@ -2,7 +2,7 @@ package sba301.hrtech.cv.dtos.response;
 
 import lombok.*;
 import sba301.hrtech.shared.enums.ExtractionStatus;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Getter
@@ -16,5 +16,5 @@ public class CvSummaryResponse {
     private String fileUrl;
     private Boolean isPrimary;
     private ExtractionStatus extractionStatus;
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 }

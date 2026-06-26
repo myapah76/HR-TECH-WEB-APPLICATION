@@ -32,6 +32,7 @@ import sba301.hrtech.skill.services.AiServiceClient;
 import sba301.hrtech.subscription.abstractions.services.ICreditService;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -121,17 +122,19 @@ public class ChatServiceImpl implements IChatService {
         chatMessageRepository.save(userMessage);
 
         // 2. Gọi RAG API
-        String documentId = null;
+        List<String> documentIds = new ArrayList<>();
         if (session.getJob() != null) {
-            documentId = session.getJob().getId().toString();
-        } else if (session.getCv() != null) {
-            documentId = session.getCv().getId().toString();
+            documentIds.add(session.getJob().getId().toString());
+        }
+        if (session.getCv() != null) {
+            documentIds.add(session.getCv().getId().toString());
         }
 
-        RagChatResponseDto aiResponse = aiServiceClient.chatWithRag(request.getContent(), documentId, 5);
+        RagChatResponseDto aiResponse = aiServiceClient.chatWithRag(request.getContent(), documentIds, 20);
 
         // 3. Lưu tin nhắn của AI
-        String aiContent = aiResponse != null ? aiResponse.getAnswer() : "Xin lỗi, hệ thống AI đang bận. Vui lòng thử lại sau.";
+        String aiContent = aiResponse != null ? aiResponse.getAnswer()
+                : "Xin lỗi, hệ thống AI đang bận. Vui lòng thử lại sau.";
         String citationsJson = null;
 
         if (aiResponse != null && aiResponse.getCitations() != null && !aiResponse.getCitations().isEmpty()) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronDown, ChevronUp, SlidersHorizontal, RotateCcw } from 'lucide-react'
+import { ChevronDown, ChevronUp, SlidersHorizontal, RotateCcw, Search } from 'lucide-react'
 import { useState } from 'react'
 
 interface JobFilterProps {
@@ -33,6 +33,8 @@ export default function JobFilter({
     technology: true,
   })
 
+  const [techSearch, setTechSearch] = useState('')
+
   const toggleSection = (section: keyof typeof openSections) => {
     setOpenSections((prev) => ({
       ...prev,
@@ -56,19 +58,24 @@ export default function JobFilter({
   ]
 
   const techOptions = [
-    'React',
-    'Node',
-    'TypeScript',
-    'AWS',
-    'Docker',
-    'Kubernetes',
-    'PostgreSQL',
-    'Go',
-    'Python',
+    'React', 'Vue', 'Angular', 'Next.js', 'Nuxt.js',
+    'Node.js', 'Express', 'NestJS', 'Spring Boot', 'Django', 'FastAPI', 'Laravel',
+    'TypeScript', 'JavaScript', 'Python', 'Java', 'Go', 'Rust', 'C#', 'C++', 'PHP', 'Ruby',
+    'React Native', 'Flutter', 'Swift', 'Kotlin',
+    'AWS', 'GCP', 'Azure', 'Docker', 'Kubernetes', 'Terraform', 'CI/CD',
+    'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Elasticsearch',
+    'GraphQL', 'REST API', 'gRPC', 'Kafka', 'RabbitMQ',
+    'Git', 'Linux', 'Nginx', 'Microservices',
   ]
 
+  const filteredTechs = techSearch.trim()
+    ? techOptions.filter((t) => t.toLowerCase().includes(techSearch.toLowerCase()))
+    : techOptions
+
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] sticky top-24 space-y-6">
+    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.02)] sticky top-24 max-h-[calc(100vh-7rem)] flex flex-col overflow-hidden">
+      {/* Scrollable content */}
+      <div className="overflow-y-auto flex-1 p-6 space-y-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent hover:scrollbar-thumb-slate-300">
       {/* HEADER */}
       <div className="flex items-center justify-between pb-4 border-b border-slate-100">
         <h2 className="font-black text-slate-800 text-sm tracking-wider flex items-center gap-2 uppercase">
@@ -203,35 +210,75 @@ export default function JobFilter({
           <span className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-800 transition-colors">
             Công nghệ / Kỹ năng
           </span>
-          {openSections.technology ? (
-            <ChevronUp className="w-4 h-4 text-slate-400" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-400" />
-          )}
+          <div className="flex items-center gap-2">
+            {selectedTechs.length > 0 && (
+              <span className="bg-blue-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full leading-none">
+                {selectedTechs.length}
+              </span>
+            )}
+            {openSections.technology ? (
+              <ChevronUp className="w-4 h-4 text-slate-400" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-slate-400" />
+            )}
+          </div>
         </button>
 
         {openSections.technology && (
-          <div className="flex flex-wrap gap-2 animate-fade-in">
-            {techOptions.map((tech) => {
-              const selected = selectedTechs.includes(tech)
-              return (
-                <button
-                  key={tech}
-                  type="button"
-                  onClick={() => onTechChange(tech)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-205 cursor-pointer ${
-                    selected
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/10'
-                      : 'bg-slate-50 hover:bg-slate-100 text-slate-650 hover:text-slate-850 border border-slate-200/60 hover:border-slate-300'
-                  }`}
-                >
-                  {tech}
-                </button>
-              )
-            })}
+          <div className="animate-fade-in space-y-3">
+            {/* Search input */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Tìm công nghệ..."
+                value={techSearch}
+                onChange={(e) => setTechSearch(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-slate-400"
+              />
+            </div>
+
+            {/* Selected tags shown first */}
+            {selectedTechs.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pb-2 border-b border-slate-100">
+                {selectedTechs.map((tech) => (
+                  <button
+                    key={tech}
+                    type="button"
+                    onClick={() => onTechChange(tech)}
+                    className="px-2.5 py-1 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-md shadow-blue-600/20 cursor-pointer flex items-center gap-1 transition-all hover:bg-blue-700"
+                  >
+                    {tech}
+                    <span className="text-blue-200 text-[10px] font-black">×</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* All tech tags */}
+            <div className="flex flex-wrap gap-2 max-h-52 overflow-y-auto pr-1">
+              {filteredTechs.map((tech) => {
+                const selected = selectedTechs.includes(tech)
+                if (selected) return null // already shown above
+                return (
+                  <button
+                    key={tech}
+                    type="button"
+                    onClick={() => onTechChange(tech)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer bg-slate-50 hover:bg-blue-50 text-slate-650 hover:text-blue-700 border border-slate-200/60 hover:border-blue-300"
+                  >
+                    {tech}
+                  </button>
+                )
+              })}
+              {filteredTechs.filter((t) => !selectedTechs.includes(t)).length === 0 && (
+                <p className="text-xs text-slate-400 italic">Không tìm thấy công nghệ phù hợp</p>
+              )}
+            </div>
           </div>
         )}
       </div>
+      </div>  {/* end scrollable */}
     </div>
   )
 }

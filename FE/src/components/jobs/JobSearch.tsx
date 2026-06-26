@@ -1,6 +1,7 @@
 'use client'
 
-import { Search, MapPin } from 'lucide-react'
+import { Search, MapPin, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface JobSearchProps {
   keyword?: string
@@ -10,13 +11,40 @@ interface JobSearchProps {
   onSearch?: () => void
 }
 
-export default function JobSearch({}: JobSearchProps) {
+export default function JobSearch({
+  keyword = '',
+  onKeywordChange,
+  location = '',
+  onLocationChange,
+  onSearch,
+}: JobSearchProps) {
+  const router = useRouter()
   const popularKeywords = ['React', 'Golang', 'Node.js', 'Remote', 'Senior']
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Cập nhật URL params
+    const params = new URLSearchParams()
+    if (keyword.trim()) params.set('keyword', keyword.trim())
+    if (location.trim()) params.set('location', location.trim())
+    const query = params.toString()
+    router.push(`/jobs${query ? `?${query}` : ''}`)
+    onSearch?.()
+  }
+
+  const handleTagClick = (tag: string) => {
+    onKeywordChange?.(tag)
+    const params = new URLSearchParams()
+    params.set('keyword', tag)
+    if (location.trim()) params.set('location', location.trim())
+    router.push(`/jobs?${params.toString()}`)
+    onSearch?.()
+  }
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4">
       <form
-        onSubmit={(e) => e.preventDefault()}
+        onSubmit={handleSubmit}
         className="w-full bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-[0_20px_50px_rgba(0,0,0,0.08)] flex flex-col md:flex-row overflow-hidden transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.12)] hover:border-slate-300 p-1.5 gap-1 md:gap-0"
       >
         {/* Keyword Search */}
@@ -24,9 +52,20 @@ export default function JobSearch({}: JobSearchProps) {
           <Search className="w-5 h-5 text-slate-400 mr-3 group-hover:text-blue-500 transition-colors shrink-0" />
           <input
             type="text"
+            value={keyword}
+            onChange={(e) => onKeywordChange?.(e.target.value)}
             placeholder="Chức danh, từ khóa hoặc tên công ty..."
             className="w-full outline-none bg-transparent text-slate-800 font-bold text-sm placeholder:text-slate-400 placeholder:font-medium"
           />
+          {keyword && (
+            <button
+              type="button"
+              onClick={() => onKeywordChange?.('')}
+              className="ml-2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Divider */}
@@ -37,9 +76,20 @@ export default function JobSearch({}: JobSearchProps) {
           <MapPin className="w-5 h-5 text-slate-400 mr-3 group-hover:text-blue-500 transition-colors shrink-0" />
           <input
             type="text"
+            value={location}
+            onChange={(e) => onLocationChange?.(e.target.value)}
             placeholder="Địa điểm hoặc Remote..."
             className="w-full outline-none bg-transparent text-slate-800 font-bold text-sm placeholder:text-slate-400 placeholder:font-medium"
           />
+          {location && (
+            <button
+              type="button"
+              onClick={() => onLocationChange?.('')}
+              className="ml-2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Search Button */}
@@ -59,6 +109,7 @@ export default function JobSearch({}: JobSearchProps) {
           <button
             key={tag}
             type="button"
+            onClick={() => handleTagClick(tag)}
             className="px-3 py-1 bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/5 rounded-full transition-all duration-200 cursor-pointer select-none text-white text-[11px]"
           >
             {tag}

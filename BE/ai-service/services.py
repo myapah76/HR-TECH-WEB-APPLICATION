@@ -481,6 +481,11 @@ def generate_matching_advice(cv_text: str, jd_text: str, missing_skills: list) -
     response = llm.invoke(prompt_value)
     try:
         content = response.content
+        if isinstance(content, list):
+            if len(content) > 0 and isinstance(content[0], dict) and "text" in content[0]:
+                content = "".join(b["text"] for b in content if "text" in b)
+            else:
+                return content
         if isinstance(content, str):
             content = content.strip()
             if content.startswith("```json"):
@@ -493,4 +498,4 @@ def generate_matching_advice(cv_text: str, jd_text: str, missing_skills: list) -
         return content
     except Exception as e:
         print(f"Error parsing matching advice: {e}")
-        return {"improvement_tips": "Rất tiếc, AI đang quá tải và không thể sinh lời khuyên lúc này.", "predicted_questions": []}
+        return {"improvement_tips": "Rất tiếc, AI đang quá tải và không thể sinh lời khuyên lúc này.", "action_plan": []}

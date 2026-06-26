@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useQueries } from '@tanstack/react-query'
 import {
   Users,
@@ -36,34 +36,62 @@ const STATUS_CONFIG: Record<
   ApplicationStatus,
   { label: string; color: string; bg: string; dot: string }
 > = {
-  SUBMITTED: { label: 'Mới nộp', color: 'text-blue-700', bg: 'bg-blue-50', dot: 'bg-blue-500' },
-  SCREENING: { label: 'Đang xét', color: 'text-amber-700', bg: 'bg-amber-50', dot: 'bg-amber-500' },
-  SCORED: { label: 'Đã chấm', color: 'text-violet-700', bg: 'bg-violet-50', dot: 'bg-violet-500' },
-  INTERVIEW: { label: 'Phỏng vấn', color: 'text-indigo-700', bg: 'bg-indigo-50', dot: 'bg-indigo-500' },
-  OFFER: { label: 'Offer', color: 'text-emerald-700', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
-  REJECTED: { label: 'Từ chối', color: 'text-rose-700', bg: 'bg-rose-50', dot: 'bg-rose-500' },
-  WITHDRAWN: { label: 'Đã rút', color: 'text-slate-600', bg: 'bg-slate-100', dot: 'bg-slate-400' },
+  [ApplicationStatus.SUBMITTED]: { label: 'Mới nộp', color: 'text-blue-700', bg: 'bg-blue-50', dot: 'bg-blue-500' },
+  [ApplicationStatus.SCREENING]: { label: 'Đang xét', color: 'text-amber-700', bg: 'bg-amber-50', dot: 'bg-amber-500' },
+  [ApplicationStatus.SCORED]: { label: 'Đã chấm', color: 'text-violet-700', bg: 'bg-violet-50', dot: 'bg-violet-500' },
+  [ApplicationStatus.INTERVIEW]: { label: 'Phỏng vấn', color: 'text-indigo-700', bg: 'bg-indigo-50', dot: 'bg-indigo-500' },
+  [ApplicationStatus.OFFER]: { label: 'Offer', color: 'text-emerald-700', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
+  [ApplicationStatus.REJECTED]: { label: 'Từ chối', color: 'text-rose-700', bg: 'bg-rose-50', dot: 'bg-rose-500' },
+  [ApplicationStatus.WITHDRAWN]: { label: 'Đã rút', color: 'text-slate-600', bg: 'bg-slate-100', dot: 'bg-slate-400' },
 }
 
 const FILTER_STATUS_OPTIONS: { value: ApplicationStatus | ''; label: string }[] = [
   { value: '', label: 'Tất cả trạng thái' },
-  { value: 'SUBMITTED', label: 'Mới nộp' },
-  { value: 'SCREENING', label: 'Đang xét' },
-  { value: 'SCORED', label: 'Đã chấm điểm AI' },
-  { value: 'INTERVIEW', label: 'Phỏng vấn' },
-  { value: 'OFFER', label: 'Offer' },
-  { value: 'REJECTED', label: 'Từ chối' },
-  { value: 'WITHDRAWN', label: 'Đã rút' },
+  { value: ApplicationStatus.SUBMITTED, label: 'Mới nộp' },
+  { value: ApplicationStatus.SCREENING, label: 'Đang xét' },
+  { value: ApplicationStatus.SCORED, label: 'Đã chấm điểm AI' },
+  { value: ApplicationStatus.INTERVIEW, label: 'Phỏng vấn' },
+  { value: ApplicationStatus.OFFER, label: 'Offer' },
+  { value: ApplicationStatus.REJECTED, label: 'Từ chối' },
+  { value: ApplicationStatus.WITHDRAWN, label: 'Đã rút' },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function timeAgo(dateStr: string) {
+function calcTimeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
-  const minutes = Math.floor(diff / 60000)
+  const seconds = Math.floor(diff / 1000)
+  if (seconds < 60) return `${seconds} giây trước`
+  const minutes = Math.floor(seconds / 60)
   if (minutes < 60) return `${minutes} phút trước`
   const hours = Math.floor(minutes / 60)
   if (hours < 24) return `${hours} giờ trước`
   return `${Math.floor(hours / 24)} ngày trước`
+}
+
+// Hook tự cập nhật thời gian real-time
+function useRelativeTime(dateStr: string) {
+  const compute = useCallback(() => calcTimeAgo(dateStr), [dateStr])
+  const [label, setLabel] = useState(compute)
+
+  useEffect(() => {
+    setLabel(compute())
+    // Cập nhật mỗi 30 giây
+    const id = setInterval(() => setLabel(compute()), 30_000)
+    return () => clearInterval(id)
+  }, [compute])
+
+  return label
+}
+
+// Component hiển thị thời gian real-time
+function RelativeTime({ dateStr }: { dateStr: string }) {
+  const label = useRelativeTime(dateStr)
+  return (
+    <span className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
+      <Clock className="w-3.5 h-3.5" />
+      {label}
+    </span>
+  )
 }
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
@@ -122,10 +150,7 @@ function ApplicationRow({
 
       {/* Applied */}
       <td className="px-4 py-4">
-        <span className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
-          <Clock className="w-3.5 h-3.5" />
-          {timeAgo(app.appliedAt)}
-        </span>
+        <RelativeTime dateStr={app.appliedAt} />
       </td>
 
       {/* Action */}
@@ -191,9 +216,9 @@ export default function HRApplicationsPage() {
   // ─── Derived stats ─────────────────────────────────────────────────────────
   const stats = {
     total: applications.length,
-    submitted: applications.filter((a) => a.status === 'SUBMITTED').length,
-    interview: applications.filter((a) => a.status === 'INTERVIEW').length,
-    offer: applications.filter((a) => a.status === 'OFFER').length,
+    submitted: applications.filter((a) => a.status === ApplicationStatus.SUBMITTED).length,
+    interview: applications.filter((a) => a.status === ApplicationStatus.INTERVIEW).length,
+    offer: applications.filter((a) => a.status === ApplicationStatus.OFFER).length,
   }
 
   // ─── Filter ─────────────────────────────────────────────────────────────────

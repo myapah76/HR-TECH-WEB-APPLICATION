@@ -22,7 +22,7 @@ import sba301.hrtech.skill.entities.SkillNode;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Component
@@ -166,7 +166,7 @@ public class MasterDataSeeder implements CommandLineRunner {
                 BigDecimal.valueOf(3000),
                 "FULL_TIME",
                 "MIDDLE",
-                LocalDate.now().plusDays(30),
+                Instant.now().plus(30, ChronoUnit.DAYS),
                 "Must have experience with: " + skills,
                 skillRequests
         );

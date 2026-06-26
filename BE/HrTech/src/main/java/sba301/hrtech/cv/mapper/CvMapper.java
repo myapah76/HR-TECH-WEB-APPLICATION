@@ -7,18 +7,16 @@ import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.cv.entities.CvSkill;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface CvMapper {
 
-        @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "instantToLocalDateTime")
+        @Mapping(target = "createdAt", source = "createdAt")
         CvSummaryResponse toSummaryResponse(Cv entity);
 
         @Mapping(target = "userId", source = "user.id")
-        @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "instantToLocalDateTime")
+        @Mapping(target = "createdAt", source = "createdAt")
         @Mapping(target = "cvSkills", source = "cvSkills")
         CvDetailResponse toDetailResponse(Cv entity);
 
@@ -26,13 +24,6 @@ public interface CvMapper {
         CvDetailResponse.CvSkillResponse toCvSkillResponse(CvSkill skill);
 
         List<CvDetailResponse.CvSkillResponse> toCvSkillResponseList(List<CvSkill> skills);
-
-        @Named("instantToLocalDateTime")
-        default LocalDateTime instantToLocalDateTime(Instant instant) {
-                if (instant == null)
-                        return null;
-                return instant.atZone(ZoneOffset.UTC).toLocalDateTime();
-        }
 
         // ── Helper
         @Named("enumToString")

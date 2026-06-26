@@ -144,7 +144,7 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
             list.add(CandidatePlanFeature.builder()
                     .plan(plan)
                     .feature(feature)
-                    .quota(featureRequest.quota())
+                    .totalQuota(featureRequest.quota())
                     .build());
         }
         candidatePlanFeatureRepository.saveAll(list);
@@ -160,7 +160,7 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
             list.add(CompanyPlanFeature.builder()
                     .plan(plan)
                     .feature(feature)
-                    .quota(featureRequest.quota())
+                    .totalQuota(featureRequest.quota())
                     .build());
         }
         companyPlanFeatureRepository.saveAll(list);

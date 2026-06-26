@@ -14,7 +14,7 @@ import sba301.hrtech.notification.abstractions.IEmailSender;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 
-import java.time.LocalDateTime;
+import java.time.Year;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -35,7 +35,7 @@ public class EmailSenderImpl implements IEmailSender {
         try {
             Context context = new Context();
             context.setVariable("otp", otp);
-            context.setVariable("year", LocalDateTime.now().getYear());
+            context.setVariable("year", Year.now().getValue());
             String html = templateEngine.process("email/otp", context);
             sendHtmlEmail(toEmail, "OTP Verification Code", html);
             return CompletableFuture.completedFuture(null);
@@ -50,7 +50,7 @@ public class EmailSenderImpl implements IEmailSender {
         try {
             Context context = new Context();
             context.setVariable("resetLink", resetLink);
-            context.setVariable("year", LocalDateTime.now().getYear());
+            context.setVariable("year", Year.now().getValue());
 
             String html = templateEngine.process("email/password-reset", context);
 
@@ -71,7 +71,7 @@ public class EmailSenderImpl implements IEmailSender {
             context.setVariable("fullName", fullName);
             context.setVariable("password", password);
             context.setVariable("companyName", companyName);
-            context.setVariable("year", LocalDateTime.now().getYear());
+            context.setVariable("year", Year.now().getValue());
 
             String html = templateEngine.process("email/welcome", context);
             sendHtmlEmail(toEmail, "Welcome to " + companyName, html);
