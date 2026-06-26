@@ -73,7 +73,9 @@ export default function JobFilter({
     : techOptions
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] sticky top-24 space-y-6">
+    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.02)] sticky top-24 max-h-[calc(100vh-7rem)] flex flex-col overflow-hidden">
+      {/* Scrollable content */}
+      <div className="overflow-y-auto flex-1 p-6 space-y-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent hover:scrollbar-thumb-slate-300">
       {/* HEADER */}
       <div className="flex items-center justify-between pb-4 border-b border-slate-100">
         <h2 className="font-black text-slate-800 text-sm tracking-wider flex items-center gap-2 uppercase">
@@ -276,6 +278,7 @@ export default function JobFilter({
           </div>
         )}
       </div>
+      </div>  {/* end scrollable */}
     </div>
   )
 }

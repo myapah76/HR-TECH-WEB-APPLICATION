@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import {
   X,
   FileText,
@@ -91,13 +91,26 @@ function ScoreRing({ score }: { score: number }) {
   )
 }
 
-function timeAgo(dateStr: string) {
+function calcTimeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
-  const m = Math.floor(diff / 60000)
-  if (m < 60) return `${m} phút trước`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h} giờ trước`
-  return `${Math.floor(h / 24)} ngày trước`
+  const seconds = Math.floor(diff / 1000)
+  if (seconds < 60) return `${seconds} giây trước`
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes} phút trước`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} giờ trước`
+  return `${Math.floor(hours / 24)} ngày trước`
+}
+
+function useRelativeTime(dateStr: string) {
+  const compute = useCallback(() => calcTimeAgo(dateStr), [dateStr])
+  const [label, setLabel] = useState(compute)
+  useEffect(() => {
+    setLabel(compute())
+    const id = setInterval(() => setLabel(compute()), 30_000)
+    return () => clearInterval(id)
+  }, [compute])
+  return label
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -111,6 +124,8 @@ export default function ApplicationDetailModal({ applicationId, onClose, onStatu
   const overlayRef = useRef<HTMLDivElement>(null)
   const { data: app, isLoading } = useGetApplicationDetail(applicationId)
   const { data: cvDetail, isLoading: isCvLoading } = useGetCvDetail(app?.cvId ?? '', !!app?.cvId)
+  // Hook ở component level (tuân thủ Rules of Hooks)
+  const relativeTime = useRelativeTime(app?.appliedAt ?? '')
 
   const handleViewCv = () => {
     if (cvDetail?.fileUrl) {
@@ -176,7 +191,7 @@ export default function ApplicationDetailModal({ applicationId, onClose, onStatu
                     </span>
                     <span className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
                       <Clock className="w-3.5 h-3.5" />
-                      {timeAgo(app.appliedAt)}
+                      {relativeTime}
                     </span>
                   </div>
                   {/* CV viewer button */}

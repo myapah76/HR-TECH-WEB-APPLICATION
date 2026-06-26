@@ -33,6 +33,7 @@ public class CvController {
     }
 
     @GetMapping("/{cvId}")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'RECRUITER')")
     public ResponseEntity<ApiResponse<CvDetailResponse>> getCvDetail(@PathVariable UUID cvId) {
         return ResponseEntity.ok(ApiResponse.success(ICvService.getCvById(cvId), "CV retrieved successfully"));
     }

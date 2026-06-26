@@ -99,7 +99,9 @@ public class CvServiceImpl implements ICvService {
                         "CV không tồn tại hoặc đã bị xóa"
                 ));
 
-        if (!cv.getUser().getId().equals(userId)) {
+        // RECRUITER (HR staff) có quyền xem CV của ứng viên để review đơn ứng tuyển
+        boolean isRecruiter = authUtils.hasRole("RECRUITER");
+        if (!isRecruiter && !cv.getUser().getId().equals(userId)) {
             throw new AppException(
                     ErrorCode.CV_ACCESS_DENIED,
                     "Bạn không có quyền xem CV này!"

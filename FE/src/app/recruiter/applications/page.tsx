@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useQueries } from '@tanstack/react-query'
 import {
   Users,
@@ -57,13 +57,41 @@ const FILTER_STATUS_OPTIONS: { value: ApplicationStatus | ''; label: string }[] 
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function timeAgo(dateStr: string) {
+function calcTimeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
-  const minutes = Math.floor(diff / 60000)
+  const seconds = Math.floor(diff / 1000)
+  if (seconds < 60) return `${seconds} giây trước`
+  const minutes = Math.floor(seconds / 60)
   if (minutes < 60) return `${minutes} phút trước`
   const hours = Math.floor(minutes / 60)
   if (hours < 24) return `${hours} giờ trước`
   return `${Math.floor(hours / 24)} ngày trước`
+}
+
+// Hook tự cập nhật thời gian real-time
+function useRelativeTime(dateStr: string) {
+  const compute = useCallback(() => calcTimeAgo(dateStr), [dateStr])
+  const [label, setLabel] = useState(compute)
+
+  useEffect(() => {
+    setLabel(compute())
+    // Cập nhật mỗi 30 giây
+    const id = setInterval(() => setLabel(compute()), 30_000)
+    return () => clearInterval(id)
+  }, [compute])
+
+  return label
+}
+
+// Component hiển thị thời gian real-time
+function RelativeTime({ dateStr }: { dateStr: string }) {
+  const label = useRelativeTime(dateStr)
+  return (
+    <span className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
+      <Clock className="w-3.5 h-3.5" />
+      {label}
+    </span>
+  )
 }
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
@@ -122,10 +150,7 @@ function ApplicationRow({
 
       {/* Applied */}
       <td className="px-4 py-4">
-        <span className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
-          <Clock className="w-3.5 h-3.5" />
-          {timeAgo(app.appliedAt)}
-        </span>
+        <RelativeTime dateStr={app.appliedAt} />
       </td>
 
       {/* Action */}
