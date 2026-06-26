@@ -7,7 +7,7 @@ from models import (
     MapRelationshipsRequest, MapRelationshipsResponse, 
     SkillRelationship,
     GenerateQuestionsRequest, InterviewQAItem, EvaluateSessionRequest,
-    EvaluateSessionResponse, DetailedFeedbackItem, AiMatchingAdviceRequest, AiMatchingAdviceResponse
+    EvaluateSessionResponse, AiMatchingAdviceRequest, AiMatchingAdviceResponse
 )
 from services import (
     extract_skills, extract_job_skills, download_and_extract_pdf_text,

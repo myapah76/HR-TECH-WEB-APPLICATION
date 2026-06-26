@@ -4,12 +4,9 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 
-import java.io.IOException;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,38 +16,45 @@ public class CloudinaryService {
 
     private final Cloudinary cloudinary;
 
-    public String uploadFile(MultipartFile file, String folderName) {
-        if (file == null || file.isEmpty()) {
-            throw new AppException(ErrorCode.EMPTY_FILE, "Uploaded file is empty.");
-        }
-
-        try {
-            Map<?, ?> options = ObjectUtils.asMap(
-                    "folder", folderName,
-                    "resource_type", "auto"
-            );
-            Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), options);
-            return (String) uploadResult.get("secure_url");
-        } catch (IOException e) {
-            throw new AppException(
-                    ErrorCode.FILE_UPLOAD_FAILED,
-                    "Failed to upload file to Cloudinary: " + e.getMessage()
-            );
-        }
-    }
-
     public void checkValidUrl(String url) {
-        Pattern pattern = Pattern.compile(".*/(?:image|raw|video)/upload/(?:v\\d+/)?(.+)\\.[^.]+$");
+        if (url == null || url.isBlank()) {
+            throw new AppException(ErrorCode.INVALID_CLOUDINARY_URL);
+        }
+
+        // Capture resource type (image, raw, video) as Group 1, and the file path as Group 2
+        Pattern pattern = Pattern.compile(".*/(image|raw|video)/upload/(?:v\\d+/)?([^?#]+)$");
         Matcher matcher = pattern.matcher(url);
 
         if (!matcher.matches()) {
             throw new AppException(ErrorCode.INVALID_CLOUDINARY_URL);
         }
-        String publicId = matcher.group(1);
+
+        String resourceType = matcher.group(1);
+        String publicId = getPublicId(matcher, resourceType);
+
         try {
-            cloudinary.api().resource(publicId, ObjectUtils.emptyMap());
+            cloudinary.api().resource(publicId, ObjectUtils.asMap("resource_type", resourceType));
         } catch (Exception e) {
             throw new AppException(ErrorCode.INVALID_CLOUDINARY_URL);
         }
+    }
+
+    private String getPublicId(Matcher matcher, String resourceType) {
+        String path = matcher.group(2);
+
+        String publicId;
+        if ("raw".equals(resourceType)) {
+            // In Cloudinary, public IDs of 'raw' files include their extension (e.g. "cvs/my_cv.pdf")
+            publicId = path;
+        } else {
+            // For 'image' and 'video', public IDs exclude the extension (e.g. "images/sample")
+            int lastDotIdx = path.lastIndexOf('.');
+            if (lastDotIdx != -1) {
+                publicId = path.substring(0, lastDotIdx);
+            } else {
+                publicId = path;
+            }
+        }
+        return publicId;
     }
 }
