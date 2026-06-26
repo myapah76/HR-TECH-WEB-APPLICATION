@@ -14,6 +14,7 @@ import {
   BarChart3,
   MessageSquare,
   Settings,
+  CreditCard,
 } from 'lucide-react'
 
 const recruiterNavItems = [
@@ -63,6 +64,11 @@ const recruiterNavItems = [
     icon: Settings,
     label: 'Cài đặt',
     path: '/recruiter/settings',
+  },
+  {
+    icon: CreditCard,
+    label: 'Gói & Thanh toán',
+    path: '/recruiter/billing',
   },
 ]
 

@@ -1,6 +1,6 @@
 package sba301.hrtech.application.dtos.response;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -23,5 +23,5 @@ public class ApplicationSummaryResponse {
     private UUID cvId;
     private String cvTitle;
     private ApplicationStatus status;
-    private LocalDateTime appliedAt;
+    private Instant appliedAt;
 }

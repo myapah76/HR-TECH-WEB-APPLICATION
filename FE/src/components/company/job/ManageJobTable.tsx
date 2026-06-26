@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { useUpdateJobStatusMutation } from '@/src/hooks/job'
 import { CompanyMemberResponse } from '@/src/types/company'
 import { Job } from '@/src/types/job'
+import { formatDate } from '@/src/lib/utils'
 
 interface ManageJobTableProps {
   jobs: Job[]
@@ -130,7 +131,7 @@ export default function ManageJobTable({
                 </td>
                 <td className="px-4 py-5 text-sm font-medium text-slate-600">
                   {job.createdAt
-                    ? new Date(job.createdAt).toLocaleDateString('vi-VN')
+                    ? formatDate(job.createdAt)
                     : 'Chưa cập nhật'}
                 </td>
                 <td className="px-6 py-5">
@@ -250,7 +251,7 @@ export default function ManageJobTable({
             {deadlineHasNotEnded && (
               <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
                 Cảnh báo: hạn tuyển dụng chưa kết thúc. Hạn hiện tại là{' '}
-                {new Date(jobToClose.deadline).toLocaleDateString('vi-VN')}.
+                {formatDate(jobToClose.deadline)}.
               </div>
             )}
 

@@ -4,6 +4,7 @@ import { MapPin, DollarSign, Calendar, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Job } from '@/src/types/job'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
+import { formatDate } from '@/src/lib/utils'
 
 interface JobCardProps {
   job: Job
@@ -68,7 +69,7 @@ export default function JobCard({ job }: JobCardProps) {
             {job.deadline && (
               <span className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-650 rounded-xl border border-slate-150 font-semibold">
                 <Calendar className="h-4 w-4 text-slate-400" />
-                <span>Hạn: {new Date(job.deadline).toLocaleDateString('vi-VN')}</span>
+                <span>Hạn: {formatDate(job.deadline)}</span>
               </span>
             )}
           </div>
@@ -107,7 +108,7 @@ export default function JobCard({ job }: JobCardProps) {
         </div>
 
         <span className="text-[11px] font-bold text-slate-450 tracking-wide mt-2 sm:mt-auto">
-          Đăng ngày: {new Date(job.createdAt).toLocaleDateString('vi-VN')}
+          Đăng ngày: {formatDate(job.createdAt)}
         </span>
       </div>
     </div>

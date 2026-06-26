@@ -2,7 +2,7 @@ package sba301.hrtech.job.dtos.response;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
+
 import java.util.List;
 import java.util.UUID;
 import sba301.hrtech.shared.enums.ExtractionStatus;
@@ -22,7 +22,7 @@ public record JobResponse(
         String jobType,
         String experienceLevel,
         String status,
-        LocalDate deadline,
+        Instant deadline,
         String requirements,
         ExtractionStatus extractionStatus,
         List<JobSkillResponse> skills,

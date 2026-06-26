@@ -15,6 +15,7 @@ import {
   MessageSquare,
   Brain,
   Star,
+  CreditCard,
 } from 'lucide-react'
 
 import { getMyApplications } from '@/src/services/application.service'
@@ -49,6 +50,11 @@ const candidateNavItems = [
     icon: MessageSquare,
     label: 'Mock Interview',
     path: '/candidate/mock-interview',
+  },
+  {
+    icon: CreditCard,
+    label: 'Quản lý dịch vụ',
+    path: '/candidate/billing',
   },
 ]
 

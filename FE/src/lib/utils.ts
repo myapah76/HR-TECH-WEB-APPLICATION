@@ -1,5 +1,7 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import dayjs from 'dayjs'
+import 'dayjs/locale/vi'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -17,4 +19,16 @@ export function checkCookiesEnabled() {
   } catch {
     return false
   }
+}
+
+dayjs.locale('vi')
+
+export function formatDate(dateStr: string | number | Date | null | undefined): string {
+  if (!dateStr) return ''
+  return dayjs(dateStr).format('DD/MM/YYYY')
+}
+
+export function formatDateTime(dateStr: string | number | Date | null | undefined): string {
+  if (!dateStr) return ''
+  return dayjs(dateStr).format('HH:mm - DD/MM/YYYY')
 }

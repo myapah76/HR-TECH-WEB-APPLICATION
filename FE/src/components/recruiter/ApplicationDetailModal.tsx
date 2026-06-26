@@ -28,31 +28,31 @@ const STATUS_CONFIG: Record<
   ApplicationStatus,
   { label: string; color: string; bg: string; border: string; dot: string }
 > = {
-  SUBMITTED: { label: 'Mới nộp', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-500' },
-  SCREENING: { label: 'Đang xét', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', dot: 'bg-amber-500' },
-  SCORED: { label: 'Đã chấm', color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200', dot: 'bg-violet-500' },
-  INTERVIEW: { label: 'Phỏng vấn', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200', dot: 'bg-indigo-500' },
-  OFFER: { label: 'Offer', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', dot: 'bg-emerald-500' },
-  REJECTED: { label: 'Từ chối', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200', dot: 'bg-rose-500' },
-  WITHDRAWN: { label: 'Đã rút', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200', dot: 'bg-slate-400' },
+  [ApplicationStatus.SUBMITTED]: { label: 'Mới nộp', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-500' },
+  [ApplicationStatus.SCREENING]: { label: 'Đang xét', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', dot: 'bg-amber-500' },
+  [ApplicationStatus.SCORED]: { label: 'Đã chấm', color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200', dot: 'bg-violet-500' },
+  [ApplicationStatus.INTERVIEW]: { label: 'Phỏng vấn', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200', dot: 'bg-indigo-500' },
+  [ApplicationStatus.OFFER]: { label: 'Offer', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', dot: 'bg-emerald-500' },
+  [ApplicationStatus.REJECTED]: { label: 'Từ chối', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200', dot: 'bg-rose-500' },
+  [ApplicationStatus.WITHDRAWN]: { label: 'Đã rút', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200', dot: 'bg-slate-400' },
 }
 
 const NEXT_ACTIONS: Partial<Record<ApplicationStatus, { status: ApplicationStatus; label: string; style: string }[]>> = {
-  SUBMITTED: [
-    { status: 'SCREENING', label: 'Chuyển Sàng lọc', style: 'bg-amber-500 hover:bg-amber-600 text-white' },
-    { status: 'REJECTED', label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
+  [ApplicationStatus.SUBMITTED]: [
+    { status: ApplicationStatus.SCREENING, label: 'Chuyển Sàng lọc', style: 'bg-amber-500 hover:bg-amber-600 text-white' },
+    { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
   ],
-  SCREENING: [
-    { status: 'INTERVIEW', label: 'Mời Phỏng vấn', style: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
-    { status: 'REJECTED', label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
+  [ApplicationStatus.SCREENING]: [
+    { status: ApplicationStatus.INTERVIEW, label: 'Mời Phỏng vấn', style: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
+    { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
   ],
-  SCORED: [
-    { status: 'INTERVIEW', label: 'Mời Phỏng vấn', style: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
-    { status: 'REJECTED', label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
+  [ApplicationStatus.SCORED]: [
+    { status: ApplicationStatus.INTERVIEW, label: 'Mời Phỏng vấn', style: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
+    { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
   ],
-  INTERVIEW: [
-    { status: 'OFFER', label: '✓ Gửi Offer', style: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
-    { status: 'REJECTED', label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
+  [ApplicationStatus.INTERVIEW]: [
+    { status: ApplicationStatus.OFFER, label: '✓ Gửi Offer', style: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
+    { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
   ],
 }
 
@@ -306,19 +306,19 @@ export default function ApplicationDetailModal({ applicationId, onClose, onStatu
               )}
 
               {/* ── Completed states ─────────────────────────────────────────── */}
-              {app.status === 'OFFER' && (
+              {app.status === ApplicationStatus.OFFER && (
                 <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                   <p className="text-sm font-bold text-emerald-700">Đã gửi Offer cho ứng viên này</p>
                 </div>
               )}
-              {app.status === 'REJECTED' && (
+              {app.status === ApplicationStatus.REJECTED && (
                 <div className="flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-2xl p-4">
                   <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
                   <p className="text-sm font-bold text-rose-600">Hồ sơ đã bị từ chối</p>
                 </div>
               )}
-              {app.status === 'WITHDRAWN' && (
+              {app.status === ApplicationStatus.WITHDRAWN && (
                 <div className="flex items-center gap-3 bg-slate-100 border border-slate-200 rounded-2xl p-4">
                   <AlertCircle className="w-5 h-5 text-slate-500 shrink-0" />
                   <p className="text-sm font-bold text-slate-600">Ứng viên đã rút hồ sơ</p>

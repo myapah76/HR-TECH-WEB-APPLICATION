@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 import sba301.hrtech.subscription.entities.CandidateSubscription;
 import sba301.hrtech.subscription.entities.enums.SubscriptionStatus;
 
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,6 +14,6 @@ public interface CandidateSubscriptionRepository extends JpaRepository<Candidate
     List<CandidateSubscription> findByUserIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
             UUID userId, 
             SubscriptionStatus status, 
-            LocalDate startDate,
-            LocalDate endDate);
+            Instant startDate,
+            Instant endDate);
 }

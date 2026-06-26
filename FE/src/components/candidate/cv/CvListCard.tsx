@@ -6,17 +6,8 @@ import { FileSearch, Loader2 } from 'lucide-react'
 import { CvSummaryResponse } from '@/src/types/cv'
 import { CvExtractionStatus } from '@/src/enums/cv.enum'
 
-interface CvListCardProps {
-  cvs: CvSummaryResponse[]
-  editingCvId: string | null
-  setEditingCvId: (id: string | null) => void
-  editTitle: string
-  setEditTitle: (title: string) => void
-  handleUpdateTitle: (id: string, oldTitle: string) => void
-  handleViewCv: (id: string) => void
-  handleSetPrimary: (id: string) => void
-  handleDelete: (id: string) => void
-}
+import { CvListCardProps } from '@/src/types/cv'
+import { formatDateTime } from '@/src/lib/utils'
 
 export function CvListCard({
   cvs,
@@ -119,8 +110,7 @@ export function CvListCard({
                   </div>
                 </div>
                 <p className="text-xs text-slate-500">
-                  Tải lên: {new Date(cv.createdAt).toLocaleDateString('vi-VN')} lúc{' '}
-                  {new Date(cv.createdAt).toLocaleTimeString('vi-VN')}
+                  Tải lên: {formatDateTime(cv.createdAt)}
                 </p>
               </div>
             ))}
