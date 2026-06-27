@@ -1,17 +1,17 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from models import (
-    EmbedRequest, EmbedResponse, EvaluateAnswerResponse, EvaluationAnswerRequest, ExtractedSkill, 
+    EvaluateAnswerResponse, EvaluationAnswerRequest, ExtractedSkill, 
     JobExtractionRequest, JobExtractionResponse, 
     ParseExtractRequest, ParseExtractResponse, 
     MapRelationshipsRequest, MapRelationshipsResponse, 
     SkillRelationship,
-    GenerateQuestionsRequest, InterviewQAItem, EvaluateSessionRequest,
+    GenerateQuestionsRequest, EvaluateSessionRequest,
     EvaluateSessionResponse, AiMatchingAdviceRequest, AiMatchingAdviceResponse
 )
 from services import (
     extract_skills, extract_job_skills, download_and_extract_pdf_text,
-    generate_interview_questions, evaluate_interview_session
+    generate_interview_questions, evaluate_interview_session, evaluate_audio_answer
 )
 from sqlalchemy import text
 from rag.database import Base, engine
@@ -118,8 +118,7 @@ def api_generate_questions(req: GenerateQuestionsRequest):
 @app.post("/api/ai/evaluate-answer", response_model=EvaluateAnswerResponse)
 def api_evaluate_answer(req: EvaluationAnswerRequest):
     try:
-        from services import evaluate_answer
-        evaluation = evaluate_answer(
+        evaluation = evaluate_audio_answer(
             cv_text=req.cv_text,
             jd_text=req.jd_text,
             question=req.question,
