@@ -9,6 +9,7 @@ public record MySubscriptionResponse(
     UUID id,
     UUID planId,
     String planName,
+    Long planPrice,
     SubscriptionStatus status,
     Instant startDate,
     Instant endDate,
