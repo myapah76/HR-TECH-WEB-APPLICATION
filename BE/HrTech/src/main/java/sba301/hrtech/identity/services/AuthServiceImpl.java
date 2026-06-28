@@ -40,10 +40,7 @@ import sba301.hrtech.notification.abstractions.cache.IRedisOtpService;
 import sba301.hrtech.shared.enums.OtpType;
 import sba301.hrtech.notification.dtos.OtpNotificationRequest;
 import sba301.hrtech.notification.dtos.OtpRequest;
-import sba301.hrtech.subscription.abstractions.services.ISubscriptionPlanService;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionService;
-import sba301.hrtech.subscription.entities.CandidateSubscriptionPlan;
-import sba301.hrtech.subscription.entities.CompanySubscriptionPlan;
 import sba301.hrtech.company.abstractions.services.ICompanyService;
 import org.springframework.context.annotation.Lazy;
 
@@ -70,7 +67,6 @@ public class AuthServiceImpl implements IAuthService {
     private final IRedisOtpService otpService;
     private final OtpAttemptTracker otpAttemptTracker;
     private final ISubscriptionService subscriptionService;
-    private final ISubscriptionPlanService subscriptionPlanService;
     private final @Lazy ICompanyService companyService;
 
     @Override
@@ -288,6 +284,11 @@ public class AuthServiceImpl implements IAuthService {
                     .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Role CANDIDATE not found"));
             user.get().setRole(role);
             user = Optional.ofNullable(userService.saveUserEntity(user.orElse(null)));
+
+            // Tự động tạo và kích hoạt gói Free cho candidate mới đăng ký qua Google
+            if (user.isPresent()) {
+                subscriptionService.createAndActivateFreeSubscription(user.get().getId());
+            }
         }
         
         if (user.get().getIsBlocked()) {
@@ -444,16 +445,12 @@ public class AuthServiceImpl implements IAuthService {
 
         user.setRole(role);
         userService.saveUserEntity(user);
-        Object subscriptionPlan = subscriptionPlanService.findByName("Free");
-        UUID planId = null;
-        if (subscriptionPlan instanceof CandidateSubscriptionPlan plan) {
-            planId = plan.getId();
-        } else if (subscriptionPlan instanceof CompanySubscriptionPlan plan) {
-            planId = plan.getId();
+
+        // Tự động tạo và kích hoạt gói Free cho candidate mới đăng ký
+        if ("CANDIDATE".equalsIgnoreCase(requestedRole)) {
+            subscriptionService.createAndActivateFreeSubscription(user.getId());
         }
-        if (planId != null) {
-            subscriptionService.createPendingSubscription(user.getId(), planId);
-        }
+
         redisTemplate.delete(key);
         otpAttemptTracker.resetAttempts(email);
 

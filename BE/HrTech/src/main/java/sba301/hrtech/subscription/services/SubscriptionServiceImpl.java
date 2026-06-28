@@ -17,6 +17,8 @@ import sba301.hrtech.subscription.abstractions.services.ISubscriptionPlanService
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionService;
 import sba301.hrtech.subscription.abstractions.repositories.CandidateSubFeatureRateUsageRepository;
 import sba301.hrtech.subscription.abstractions.repositories.CompanySubFeatureRateUsageRepository;
+import sba301.hrtech.subscription.abstractions.repositories.CandidateSubscriptionPlanRepository;
+import sba301.hrtech.subscription.abstractions.repositories.CompanySubscriptionPlanRepository;
 import sba301.hrtech.subscription.dtos.response.SubFeatureRateUsageResponse;
 import sba301.hrtech.subscription.entities.*;
 import sba301.hrtech.subscription.entities.enums.SubscriptionStatus;
@@ -45,6 +47,8 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
     private final CompanySubFeatureUsageRepository companySubFeatureUsageRepository;
     private final CandidateSubFeatureRateUsageRepository candidateSubFeatureRateUsageRepository;
     private final CompanySubFeatureRateUsageRepository companySubFeatureRateUsageRepository;
+    private final CandidateSubscriptionPlanRepository candidateSubscriptionPlanRepository;
+    private final CompanySubscriptionPlanRepository companySubscriptionPlanRepository;
     private final ICompanyService companyService;
     private final AuthUtils authUtils;
 
@@ -105,6 +109,7 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
                         sub.getId(),
                         sub.getPlan().getId(),
                         sub.getPlan().getName(),
+                        sub.getPlan().getPrice(),
                         sub.getStatus(),
                         sub.getStartDate(),
                         sub.getEndDate(),
@@ -134,6 +139,7 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
                             sub.getId(),
                             sub.getPlan().getId(),
                             sub.getPlan().getName(),
+                            sub.getPlan().getPrice(),
                             sub.getStatus(),
                             sub.getStartDate(),
                             sub.getEndDate(),
@@ -251,5 +257,62 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
                     .orElse("Unknown Plan");
         }
         return "Unknown Plan";
+    }
+
+    /**
+     * Tìm gói Free (price = 0) của Candidate, tạo và kích hoạt ngay.
+     * Idempotent: nếu user đã có subscription ACTIVE thì bỏ qua.
+     */
+    @Override
+    @Transactional
+    public void createAndActivateFreeSubscription(UUID userId) {
+        // Guard: không tạo trùng nếu đã có active sub
+        Instant now = Instant.now();
+        boolean alreadyActive = !candidateSubscriptionRepository
+                .findByUserIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        userId, SubscriptionStatus.ACTIVE, now, now)
+                .isEmpty();
+        if (alreadyActive) return;
+
+        // Tìm gói Free của Candidate (price = 0)
+        CandidateSubscriptionPlan freePlan = candidateSubscriptionPlanRepository
+                .findFirstByPriceAndIsActiveTrue(0L)
+                .orElse(null);
+        if (freePlan == null) return; // Không có gói Free → bỏ qua, không throw exception
+
+        User user = userService.getUserEntityById(userId);
+        CandidateSubscription sub = new CandidateSubscription();
+        sub.setUser(user);
+        sub.setPlan(freePlan);
+        sub.setStatus(SubscriptionStatus.ACTIVE);
+        sub.setStartDate(now);
+        // Free plan: durationDays có thể là 0 hoặc rất lớn → dùng 36500 (100 năm) nếu là 0
+        long duration = freePlan.getDurationDays() > 0 ? freePlan.getDurationDays() : 36500L;
+        sub.setEndDate(now.plus(duration, ChronoUnit.DAYS));
+        CandidateSubscription savedSub = candidateSubscriptionRepository.save(sub);
+
+        // Tạo usage records cho từng feature của gói Free
+        if (freePlan.getPlanFeatures() != null) {
+            for (CandidatePlanFeature pf : freePlan.getPlanFeatures()) {
+                CandidateSubFeatureUsage usage = CandidateSubFeatureUsage.builder()
+                        .subscription(savedSub)
+                        .feature(pf.getFeature())
+                        .totalQuota(pf.getTotalQuota())
+                        .totalUsed(0)
+                        .build();
+                CandidateSubFeatureUsage savedUsage = candidateSubFeatureUsageRepository.save(usage);
+
+                for (CandidatePlanFeatureRateLimit rl : pf.getRateLimits()) {
+                    CandidateSubFeatureRateUsage rateUsage = CandidateSubFeatureRateUsage.builder()
+                            .usage(savedUsage)
+                            .resetType(rl.getResetType())
+                            .capQuota(rl.getCapQuota())
+                            .used(0)
+                            .lastResetDate(now)
+                            .build();
+                    candidateSubFeatureRateUsageRepository.save(rateUsage);
+                }
+            }
+        }
     }
 }

@@ -11,9 +11,12 @@ import {
 } from '@/src/hooks/cv'
 import { useGetSavedJobs } from '@/src/hooks/job'
 import { usePremiumAiMatch } from '@/src/hooks/recommendation'
+import { useSubscriptionAccess } from '@/src/hooks/subscription'
 import { AiMatchHistoryResponse } from '@/src/types/recommendation'
 import { toast } from 'sonner'
 import { getErrorMessage } from '@/src/utils/get-error-message'
+import { FeatureGate } from '@/src/components/common/FeatureGate'
+import { ScanSearch } from 'lucide-react'
 
 // Import components
 import { CvUploadCard } from '@/src/components/candidate/cv/CvUploadCard'
@@ -22,6 +25,7 @@ import { CvListCard } from '@/src/components/candidate/cv/CvListCard'
 import { CvDetailModal } from '@/src/components/candidate/cv/CvDetailModal'
 
 export default function CandidateCvPage() {
+  const { hasPaidPlan, isLoading: isSubLoading } = useSubscriptionAccess()
   const { data: cvs = [], isLoading: loadingCvs } = useGetAllCvs()
   const { data: savedJobs = [], isLoading: loadingJobs } = useGetSavedJobs()
 
@@ -190,18 +194,27 @@ export default function CandidateCvPage() {
             isPending={uploadCvMutation.isPending}
           />
 
-          {/* AI MATCHING SECTION */}
-          <CvJobMatchCard
-            cvs={cvs}
-            savedJobs={savedJobs}
-            selectedCvId={selectedCvId}
-            setSelectedCvId={setSelectedCvId}
-            selectedJobId={selectedJobId}
-            setSelectedJobId={setSelectedJobId}
-            handleMatch={handleMatch}
-            isPending={calculateScoreMutation.isPending}
-            matchScore={matchScore}
-          />
+          {/* AI MATCHING SECTION – Premium feature */}
+          {!isSubLoading && !hasPaidPlan ? (
+            <FeatureGate
+              featureName="Chấm điểm Phù hợp (AI Matching)"
+              featureDescription="So sánh CV của bạn với công việc đã lưu và nhận điểm phù hợp chi tiết từ AI. Tính năng độc quyền cho gói trả phí."
+              showPreview={false}
+              icon={<ScanSearch className="w-10 h-10 text-white" />}
+            />
+          ) : (
+            <CvJobMatchCard
+              cvs={cvs}
+              savedJobs={savedJobs}
+              selectedCvId={selectedCvId}
+              setSelectedCvId={setSelectedCvId}
+              selectedJobId={selectedJobId}
+              setSelectedJobId={setSelectedJobId}
+              handleMatch={handleMatch}
+              isPending={calculateScoreMutation.isPending}
+              matchScore={matchScore}
+            />
+          )}
         </div>
 
         {/* CV LIST SECTION */}

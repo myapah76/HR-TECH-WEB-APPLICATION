@@ -37,6 +37,7 @@ export interface MySubscriptionResponse {
   id: string
   planId: string
   planName: string
+  planPrice: number
   status: string
   startDate: string
   endDate: string

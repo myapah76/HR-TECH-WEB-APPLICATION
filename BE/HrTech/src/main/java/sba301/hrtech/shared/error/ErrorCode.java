@@ -65,8 +65,6 @@ public enum ErrorCode {
     JOB_COMPANY_NOT_APPROVED(HttpStatus.FORBIDDEN, "Company is not approved"),
     JOB_PERMISSION_DENIED(HttpStatus.FORBIDDEN, "Permission denied"),
     JOB_SKILL_NOT_FOUND(HttpStatus.NOT_FOUND, "Job skill not found"),
-    ELASTIC_SEARCH_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Elastic search failed"),
-
 
     // Subscription
     SUBSCRIPTION_PLAN_NOT_FOUND(HttpStatus.NOT_FOUND, "Subscription plan not found"),

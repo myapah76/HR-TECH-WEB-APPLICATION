@@ -9,13 +9,17 @@ import {
 import { JobMatchingTaskResponse } from '@/src/types/recommendation'
 import { JobMatchingStatus } from '@/src/enums/recommendation.enum'
 import { Star } from 'lucide-react'
+import { useSubscriptionAccess } from '@/src/hooks/subscription'
+import { FeatureGate } from '@/src/components/common/FeatureGate'
 
 // Import newly refactored components
 import { JobMatchConfigCard } from '@/src/components/candidate/recommendation/JobMatchConfigCard'
 import { JobMatchProgressCard } from '@/src/components/candidate/recommendation/JobMatchProgressCard'
 import { JobMatchResultList } from '@/src/components/candidate/recommendation/JobMatchResultList'
 
+
 export default function RecommendJobsPage() {
+  const { hasPaidPlan, isLoading: isSubLoading } = useSubscriptionAccess()
   const { data: cvs = [], isLoading: loadingCvs } = useGetAllCvs()
 
   const uploadCvMutation = useUploadCv()
@@ -174,21 +178,9 @@ export default function RecommendJobsPage() {
     setTaskStatus(null)
   }
 
-  return (
-    <div className="space-y-8 animate-fade-in max-w-6xl mx-auto">
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-3">
-          <Star className="w-8 h-8 text-blue-600" />
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">
-            AI Cố vấn: Gợi ý Việc làm
-          </h1>
-        </div>
-        <p className="text-slate-500 font-medium">
-          Sử dụng công nghệ Graph & LLM để tìm kiếm và đề xuất những công việc phù hợp nhất với kỹ
-          năng trong CV của bạn.
-        </p>
-      </div>
-
+  // The gated feature body (forms, results)
+  const featureBody = (
+    <>
       {isDone && taskStatus?.recommendedJobs ? (
         /* RESULT UI */
         <JobMatchResultList
@@ -239,6 +231,38 @@ export default function RecommendJobsPage() {
       `,
         }}
       />
+    </>
+  )
+
+  return (
+    <div className="space-y-8 animate-fade-in max-w-6xl mx-auto">
+      {/* Page header – always visible */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <Star className="w-8 h-8 text-blue-600" />
+          <h1 className="text-3xl font-black tracking-tight text-slate-900">
+            AI Cố vấn: Gợi ý Việc làm
+          </h1>
+        </div>
+        <p className="text-slate-500 font-medium">
+          Sử dụng công nghệ Graph &amp; LLM để tìm kiếm và đề xuất những công việc phù hợp nhất với kỹ
+          năng trong CV của bạn.
+        </p>
+      </div>
+
+      {/* Feature gate: show upgrade prompt for free users */}
+      {!isSubLoading && !hasPaidPlan ? (
+        <FeatureGate
+          featureName="AI Gợi ý Việc làm"
+          featureDescription="Tính năng phân tích CV và gợi ý việc làm phù hợp sử dụng công nghệ Graph AI & LLM. Nâng cấp gói để nhận những gợi ý chính xác nhất cho sự nghiệp của bạn."
+          showPreview={false}
+        >
+          {featureBody}
+        </FeatureGate>
+      ) : (
+        featureBody
+      )}
     </div>
   )
 }
+

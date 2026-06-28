@@ -44,6 +44,7 @@ VALUES
     ('c1111111-0000-0000-0000-000000000001', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '11111111-1111-1111-1111-111111111111', 1,   NOW(), NOW()),  -- JOB_POSTING: 1
     ('c1111111-0000-0000-0000-000000000002', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '22222222-2222-2222-2222-222222222222', 100, NOW(), NOW()),  -- AI_CREDIT: 100
     ('c1111111-0000-0000-0000-000000000003', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '33333333-3333-3333-3333-333333333333', 1,   NOW(), NOW()),  -- APP_SCORING: access only
+    ('c1111111-0000-0000-0000-000000000004', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '77777777-7777-7777-7777-777777777777', 1,   NOW(), NOW()),  -- AI_CHATBOT: access only
 
     -- COMPANY: Tiêu Chuẩn
     ('c2222222-0000-0000-0000-000000000001', 'cccccccc-cccc-cccc-cccc-cccccccccccc', '11111111-1111-1111-1111-111111111111', 5,    NOW(), NOW()),  -- JOB_POSTING: 5
@@ -94,6 +95,7 @@ VALUES
     -- Cơ Bản (Free)
     ('a1111111-0000-0000-0000-000000000001', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '22222222-2222-2222-2222-222222222222', 50, NOW(), NOW()),   -- AI_CREDIT: 50
     ('a1111111-0000-0000-0000-000000000002', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '33333333-3333-3333-3333-333333333333', 1,  NOW(), NOW()),   -- APP_SCORING: access only
+    ('a1111111-0000-0000-0000-000000000003', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '77777777-7777-7777-7777-777777777777', 1,  NOW(), NOW()),   -- AI_CHATBOT: access only
 
     -- Cao Cấp
     ('a2222222-0000-0000-0000-000000000001', 'ffffffff-ffff-ffff-ffff-ffffffffffff', '22222222-2222-2222-2222-222222222222', 2000, NOW(), NOW()),  -- AI_CREDIT: 2000
@@ -109,7 +111,7 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO candidate_plan_feature_rate_limits (id, plan_feature_id, reset_type, cap_quota, created_at, updated_at)
 VALUES
     -- Cơ Bản: AI_CREDIT daily=5, weekly=35
-    ('e1111111-0001-0000-0000-000000000001', 'a1111111-0000-0000-0000-000000000001', 'DAILY',  5,   NOW(), NOW()),
+    ('e1111111-0001-0000-0000-000000000001', 'a1111111-0000-0000-0000-000000000001', 'DAILY',  15,   NOW(), NOW()),
     ('e1111111-0001-0000-0000-000000000002', 'a1111111-0000-0000-0000-000000000001', 'WEEKLY', 35,  NOW(), NOW()),
 
     -- Cao Cấp: AI_CREDIT daily=100, weekly=700
