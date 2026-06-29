@@ -1,27 +1,27 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, type FormEvent } from 'react'
 import {
   X,
   FileText,
   Briefcase,
   Clock,
   Brain,
-  Star,
   MessageSquare,
   Lightbulb,
-  ChevronDown,
   Loader2,
   CheckCircle2,
   XCircle,
   AlertCircle,
   ArrowRight,
   ExternalLink,
-  Download,
+  CalendarClock,
+  MapPin,
+  Link as LinkIcon,
 } from 'lucide-react'
 import { useGetApplicationDetail } from '@/src/hooks/application'
 import { useGetCvDetail } from '@/src/hooks/cv'
-import { ApplicationStatus } from '@/src/types'
+import { ApplicationStatus, ScheduleInterviewRequest } from '@/src/types'
 
 // ─── Status config ────────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<
@@ -31,9 +31,10 @@ const STATUS_CONFIG: Record<
   [ApplicationStatus.SUBMITTED]: { label: 'Mới nộp', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-500' },
   [ApplicationStatus.SCREENING]: { label: 'Đang xét', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', dot: 'bg-amber-500' },
   [ApplicationStatus.SCORED]: { label: 'Đã chấm', color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200', dot: 'bg-violet-500' },
-  [ApplicationStatus.INTERVIEW]: { label: 'Phỏng vấn', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200', dot: 'bg-indigo-500' },
+  [ApplicationStatus.PENDING_INTERVIEW_SCHEDULE]: { label: 'CHỜ LỊCH PHỎNG VẤN', color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-200', dot: 'bg-orange-500' },
+  [ApplicationStatus.INTERVIEW]: { label: 'PHỎNG VẤN', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200', dot: 'bg-indigo-500' },
   [ApplicationStatus.OFFER]: { label: 'Offer', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', dot: 'bg-emerald-500' },
-  [ApplicationStatus.REJECTED]: { label: 'Từ chối', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200', dot: 'bg-rose-500' },
+  [ApplicationStatus.REJECTED]: { label: 'TỪ CHỐI', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200', dot: 'bg-rose-500' },
   [ApplicationStatus.WITHDRAWN]: { label: 'Đã rút', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200', dot: 'bg-slate-400' },
 }
 
@@ -52,6 +53,10 @@ const NEXT_ACTIONS: Partial<Record<ApplicationStatus, { status: ApplicationStatu
   ],
   [ApplicationStatus.INTERVIEW]: [
     { status: ApplicationStatus.OFFER, label: '✓ Gửi Offer', style: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
+    { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
+  ],
+  [ApplicationStatus.PENDING_INTERVIEW_SCHEDULE]: [
+    { status: ApplicationStatus.INTERVIEW, label: 'Chuyển Phỏng vấn', style: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
     { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
   ],
 }
@@ -113,15 +118,36 @@ function useRelativeTime(dateStr: string) {
   return label
 }
 
+function toDateTimeLocalValue(dateStr?: string) {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  if (Number.isNaN(date.getTime())) return ''
+  const offsetMs = date.getTimezoneOffset() * 60_000
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16)
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 interface Props {
   applicationId: string
   onClose: () => void
   onStatusChange: (id: string, status: ApplicationStatus) => void
+  onScheduleInterview: (id: string, request: ScheduleInterviewRequest) => void
+  isSchedulingInterview?: boolean
 }
 
-export default function ApplicationDetailModal({ applicationId, onClose, onStatusChange }: Props) {
+export default function ApplicationDetailModal({
+  applicationId,
+  onClose,
+  onStatusChange,
+  onScheduleInterview,
+  isSchedulingInterview = false,
+}: Props) {
   const overlayRef = useRef<HTMLDivElement>(null)
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false)
+  const [interviewDateTime, setInterviewDateTime] = useState('')
+  const [interviewLocation, setInterviewLocation] = useState('')
+  const [interviewMeetingLink, setInterviewMeetingLink] = useState('')
+  const [interviewNote, setInterviewNote] = useState('')
   const { data: app, isLoading } = useGetApplicationDetail(applicationId)
   const { data: cvDetail, isLoading: isCvLoading } = useGetCvDetail(app?.cvId ?? '', !!app?.cvId)
   // Hook ở component level (tuân thủ Rules of Hooks)
@@ -142,6 +168,51 @@ export default function ApplicationDetailModal({ applicationId, onClose, onStatu
 
   const cfg = app ? STATUS_CONFIG[app.status] : null
   const nextActions = app ? (NEXT_ACTIONS[app.status] ?? []) : []
+
+  useEffect(() => {
+    if (app?.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE) {
+      setIsScheduleOpen(false)
+    }
+  }, [app?.status])
+
+  const openScheduleForm = (prefill = false) => {
+    if (prefill && app) {
+        setInterviewDateTime(
+            toDateTimeLocalValue(
+                app.candidatePreferredInterviewDateTime || app.interviewDateTime
+            )
+        )
+      setInterviewLocation(app.interviewLocation ?? '')
+      setInterviewMeetingLink(app.interviewMeetingLink ?? '')
+      setInterviewNote(app.interviewNote ?? '')
+    } else {
+      setInterviewDateTime('')
+      setInterviewLocation('')
+      setInterviewMeetingLink('')
+      setInterviewNote('')
+    }
+    setIsScheduleOpen(true)
+  }
+
+  const handleActionClick = (status: ApplicationStatus) => {
+    if (status === ApplicationStatus.INTERVIEW && app?.status !== ApplicationStatus.PENDING_INTERVIEW_SCHEDULE) {
+      openScheduleForm(false)
+      return
+    }
+    if (app) onStatusChange(app.id, status)
+  }
+
+  const handleScheduleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!app || !interviewDateTime || (!interviewLocation.trim() && !interviewMeetingLink.trim())) return
+
+    onScheduleInterview(app.id, {
+      interviewDateTime: new Date(interviewDateTime).toISOString(),
+      interviewLocation: interviewLocation.trim() || undefined,
+      interviewMeetingLink: interviewMeetingLink.trim() || undefined,
+      note: interviewNote.trim() || undefined,
+    })
+  }
 
   return (
     <div
@@ -294,7 +365,7 @@ export default function ApplicationDetailModal({ applicationId, onClose, onStatu
                       <button
                         key={action.status}
                         id={`action-${action.status.toLowerCase()}`}
-                        onClick={() => onStatusChange(app.id, action.status)}
+                        onClick={() => handleActionClick(action.status)}
                         className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-150 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 ${action.style}`}
                       >
                         {action.label}
@@ -302,6 +373,52 @@ export default function ApplicationDetailModal({ applicationId, onClose, onStatu
                       </button>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {app.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE && (
+                <div className="rounded-2xl border border-orange-100 bg-orange-50 p-4 space-y-2">
+                  <h3 className="flex items-center gap-2 text-xs font-black text-orange-700 uppercase tracking-wider">
+                    <CalendarClock className="w-3.5 h-3.5" />
+                    Lịch phỏng vấn đã gửi
+                  </h3>
+                  {app.interviewDateTime && (
+                    <p className="text-sm font-semibold text-slate-700">
+                      {new Date(app.interviewDateTime).toLocaleString('vi-VN')}
+                    </p>
+                  )}
+                  {app.interviewLocation && (
+                    <p className="flex items-center gap-2 text-sm text-slate-600">
+                      <MapPin className="w-4 h-4 text-orange-500" />
+                      {app.interviewLocation}
+                    </p>
+                  )}
+                  {app.interviewMeetingLink && (
+                    <p className="flex items-center gap-2 text-sm text-slate-600">
+                      <LinkIcon className="w-4 h-4 text-orange-500" />
+                      {app.interviewMeetingLink}
+                    </p>
+                  )}
+                  {app.candidateInterviewResponseMessage && (
+                    <div className="rounded-xl bg-white/70 border border-orange-100 p-3 space-y-1">
+                      {app.candidatePreferredInterviewDateTime && (
+                        <p className="text-sm font-semibold text-slate-700">
+                          Thời gian ứng viên đề xuất: {new Date(app.candidatePreferredInterviewDateTime).toLocaleString('vi-VN')}
+                        </p>
+                      )}
+                      <p className="text-sm font-medium text-rose-600">
+                        Lý do: {app.candidateInterviewResponseMessage}
+                      </p>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => openScheduleForm(true)}
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 transition-colors"
+                  >
+                    Đổi lịch phỏng vấn
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               )}
 
@@ -328,6 +445,94 @@ export default function ApplicationDetailModal({ applicationId, onClose, onStatu
           )}
         </div>
       </div>
+
+      {isScheduleOpen && app && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50">
+          <form
+            onSubmit={handleScheduleSubmit}
+            className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden"
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <h3 className="text-base font-black text-slate-900">Lên lịch phỏng vấn</h3>
+              <button
+                type="button"
+                onClick={() => setIsScheduleOpen(false)}
+                className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center"
+              >
+                <X className="w-4 h-4 text-slate-600" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <label className="block">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Thời gian phỏng vấn</span>
+                <input
+                  id="interview-date-time"
+                  type="datetime-local"
+                  required
+                  value={interviewDateTime}
+                  onChange={(e) => setInterviewDateTime(e.target.value)}
+                  className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Địa điểm</span>
+                <input
+                  id="interview-location"
+                  type="text"
+                  value={interviewLocation}
+                  onChange={(e) => setInterviewLocation(e.target.value)}
+                  placeholder="VD: Văn phòng công ty, tầng 5"
+                  className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Meeting link</span>
+                <input
+                  id="interview-meeting-link"
+                  type="url"
+                  value={interviewMeetingLink}
+                  onChange={(e) => setInterviewMeetingLink(e.target.value)}
+                  placeholder="https://meet.google.com/..."
+                  className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Ghi chú</span>
+                <textarea
+                  id="interview-note"
+                  value={interviewNote}
+                  onChange={(e) => setInterviewNote(e.target.value)}
+                  rows={3}
+                  placeholder="Thông tin cần chuẩn bị, người liên hệ..."
+                  className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 resize-none"
+                />
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-2 px-5 py-4 border-t border-slate-100 bg-slate-50">
+              <button
+                type="button"
+                onClick={() => setIsScheduleOpen(false)}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={isSchedulingInterview || !interviewDateTime || (!interviewLocation.trim() && !interviewMeetingLink.trim())}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isSchedulingInterview && <Loader2 className="w-4 h-4 animate-spin" />}
+                Gửi lịch phỏng vấn
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       <style>{`
         @keyframes slideUp {

@@ -8,25 +8,45 @@
 
     <h1 style="text-align:center; color:#4b2e2a;">HR Tech</h1>
 
-    <h2 style="color:#4b2e2a;">Interview Invitation</h2>
+    <h2 style="color:#4b2e2a;">Interview Schedule</h2>
 
     <p>Xin chào <span th:text="${fullName}"></span>,</p>
 
     <p>
         Hồ sơ ứng tuyển của bạn cho vị trí
         <b th:text="${jobTitle}"></b>
-        đã được chuyển sang vòng phỏng vấn.
+        đã được mời tham gia phỏng vấn. Vui lòng kiểm tra lịch bên dưới.
     </p>
 
-    <div style="text-align:center; margin:30px 0;">
-        <span style="background:#4b2e2a; color:white; padding:12px 20px;
-                     text-decoration:none; border-radius:8px; font-weight:bold;"
-              th:text="${newStatus}">
-            INTERVIEW
-        </span>
+    <div style="background:#f8f1e7; padding:18px; border-radius:12px; margin:24px 0;">
+        <p style="margin:6px 0;">
+            <b>Thời gian:</b>
+            <span th:text="${#temporals.format(interviewDateTime, 'HH:mm dd/MM/yyyy')}"></span>
+        </p>
+        <p style="margin:6px 0;" th:if="${interviewLocation != null}">
+            <b>Địa điểm:</b>
+            <span th:text="${interviewLocation}"></span>
+        </p>
+        <p style="margin:6px 0;" th:if="${interviewMeetingLink != null}">
+            <b>Meeting link:</b>
+            <a th:href="${interviewMeetingLink}" th:text="${interviewMeetingLink}" style="color:#4b2e2a;"></a>
+        </p>
+        <p style="margin:6px 0;" th:if="${note != null}">
+            <b>Ghi chú:</b>
+            <span th:text="${note}"></span>
+        </p>
     </div>
 
-    <p>Bộ phận tuyển dụng sẽ liên hệ với bạn để thông báo chi tiết lịch phỏng vấn.</p>
+    <div style="text-align:center; margin:30px 0;">
+        <a th:href="${acceptLink}"
+           style="background:#4b2e2a; color:white; padding:12px 20px; text-decoration:none; border-radius:8px; display:inline-block; margin:4px;">
+            Xác nhận lịch
+        </a>
+        <a th:href="${rejectLink}"
+           style="background:#fff; color:#4b2e2a; padding:12px 20px; text-decoration:none; border-radius:8px; border:1px solid #4b2e2a; display:inline-block; margin:4px;">
+            Yêu cầu đổi lịch
+        </a>
+    </div>
 
     <div th:replace="~{email/fragments/footer :: footer}"></div>
 

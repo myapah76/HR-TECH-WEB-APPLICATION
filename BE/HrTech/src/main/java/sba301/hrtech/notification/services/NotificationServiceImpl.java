@@ -50,7 +50,7 @@ public class NotificationServiceImpl implements INotificationService {
 
     @Override
     public void ApplicationStatusNotificationHandler(ApplicationStatusNotificationRequest request) {
-        if (!"INTERVIEW".equals(request.getNewStatus()) && !"OFFER".equals(request.getNewStatus())) {
+        if (!"PENDING_INTERVIEW_SCHEDULE".equals(request.getNewStatus()) && !"OFFER".equals(request.getNewStatus())) {
             return;
         }
 
@@ -60,7 +60,13 @@ public class NotificationServiceImpl implements INotificationService {
                             request.getEmail(),
                             request.getFullName(),
                             request.getJobTitle(),
-                            request.getNewStatus()
+                            request.getNewStatus(),
+                            request.getInterviewDateTime(),
+                            request.getInterviewLocation(),
+                            request.getInterviewMeetingLink(),
+                            request.getNote(),
+                            request.getAcceptLink(),
+                            request.getRejectLink()
                     )
                     .whenComplete((result, throwable) -> {
                         if (throwable != null) {
