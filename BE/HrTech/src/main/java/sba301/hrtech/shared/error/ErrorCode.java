@@ -74,6 +74,7 @@ public enum ErrorCode {
     HAS_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Payment error occurred"),
     ORDER_CODE_NOT_FOUND(HttpStatus.NOT_FOUND, "Order code not found"),
     WEBHOOK_NOT_FOUND(HttpStatus.NOT_FOUND, "Webhook not found"),
+    PAYMENT_VERIFICATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Payment verification failed"),
 
     // Feature
     FEATURE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Feature already exists"),

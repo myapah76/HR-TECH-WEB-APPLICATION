@@ -18,7 +18,7 @@ export default function Home() {
   const [location, setLocation] = useState(() => searchParams.get('location') ?? '')
 
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
-  const [salaryRange, setSalaryRange] = useState(0)
+  const [salaryRange, setSalaryRange] = useState(10000)
   const [selectedExp, setSelectedExp] = useState<string[]>([])
   const [selectedTechs, setSelectedTechs] = useState<string[]>([])
 
@@ -40,7 +40,7 @@ export default function Home() {
     jobType: selectedTypes.length === 1 ? selectedTypes[0] : undefined,
     // Backend nhận 1 giá trị experienceLevel, gửi phần tử đầu tiên nếu có
     experienceLevel: selectedExp.length === 1 ? selectedExp[0] : undefined,
-    salaryMax: salaryRange > 0 ? salaryRange : undefined,
+    salaryMax: salaryRange < 10000 ? salaryRange : undefined,
   })
 
   const allJobs = data?.content ?? []
@@ -65,7 +65,7 @@ export default function Home() {
 
   const handleClearAll = () => {
     setSelectedTypes([])
-    setSalaryRange(0)
+    setSalaryRange(10000)
     setSelectedExp([])
     setSelectedTechs([])
   }
