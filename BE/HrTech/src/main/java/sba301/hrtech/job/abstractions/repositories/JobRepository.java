@@ -42,8 +42,8 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
             AND (:location IS NULL OR LOWER(j.location) LIKE :location)
             AND (:experienceLevel IS NULL OR j.experienceLevel = :experienceLevel)
             AND (:jobType IS NULL OR j.jobType = :jobType)
-            AND (:salaryMin IS NULL OR j.salaryMin >= :salaryMin)
-            AND (:salaryMax IS NULL OR j.salaryMax <= :salaryMax)
+            AND (:salaryMin IS NULL OR j.salaryMax >= :salaryMin)
+            AND (:salaryMax IS NULL OR j.salaryMin <= :salaryMax)
 
       """)
   Page<Job> searchOpenJobs(

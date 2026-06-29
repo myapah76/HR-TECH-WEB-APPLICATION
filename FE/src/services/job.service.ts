@@ -52,8 +52,8 @@ export const searchJobs = async (params: JobSearchParams): Promise<PageResponse<
   if (location?.trim()) queryParams.set('location', location.trim())
   if (jobType) queryParams.set('jobType', jobType)
   if (experienceLevel) queryParams.set('experienceLevel', experienceLevel)
-  if (salaryMin !== undefined && salaryMin > 0) queryParams.set('salaryMin', String(salaryMin))
-  if (salaryMax !== undefined && salaryMax > 0) queryParams.set('salaryMax', String(salaryMax))
+  if (salaryMin !== undefined && salaryMin >= 0) queryParams.set('salaryMin', String(salaryMin))
+  if (salaryMax !== undefined && salaryMax >= 0) queryParams.set('salaryMax', String(salaryMax))
 
   const response = await axios.get(`${API_URL}/jobs/search?${queryParams.toString()}`)
   return response.data.data
