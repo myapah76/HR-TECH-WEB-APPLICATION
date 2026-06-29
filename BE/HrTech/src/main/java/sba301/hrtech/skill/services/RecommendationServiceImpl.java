@@ -74,14 +74,14 @@ public class RecommendationServiceImpl implements IRecommendationService {
     @Override
     @Transactional(readOnly = true)
     public List<JobRecommendationResponse> recommendJobsForCv(UUID cvId, int limit) {
-        UUID userId = authUtils.getCurrentUserId();
+        Cv cv = cvService.getCvEntityById(cvId);
+        UUID userId = cv.getUser().getId();
+        
         // Check Feature Access & Deduct Token
         if (!creditService.hasCandidateFeatureAccess(userId, "RECOMMEND_JOB")) {
             throw new AppException(ErrorCode.FORBIDDEN, "Gói của bạn không có tính năng Gợi ý Job (RECOMMEND_JOB). Vui lòng nâng cấp gói.");
         }
         creditService.deductCandidateQuota(userId, "AI_CREDIT", 50);
-
-        Cv cv = cvService.getCvEntityById(cvId);
 
         CvSkillContext ctx = buildCvSkillContext(cv);
         List<Job> allJobs = jobService.getAllJobEntities();

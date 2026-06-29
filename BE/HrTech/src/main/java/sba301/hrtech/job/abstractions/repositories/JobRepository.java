@@ -23,6 +23,8 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
 
   List<Job> findByCompanyIdAndDeletedFalse(UUID companyId);
 
+  List<Job> findByStatusAndDeadlineLessThanEqualAndDeletedFalse(JobStatus status, Instant deadline);
+
   List<Job> findByCompanyIdAndStatusAndDeletedFalse(UUID companyId, JobStatus status);
 
   List<Job> findByCompanyIdAndCreatedByIdAndDeletedFalse(UUID companyId, UUID createdById);
