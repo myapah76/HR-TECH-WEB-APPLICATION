@@ -13,5 +13,7 @@ public record MySubscriptionResponse(
     SubscriptionStatus status,
     Instant startDate,
     Instant endDate,
+    Integer aiCreditBalance,
+    Integer jobPostBalance,
     List<SubFeatureUsageResponse> featuresUsage
 ) {}

@@ -16,8 +16,4 @@ public interface CandidateSubscriptionRepository extends JpaRepository<Candidate
             SubscriptionStatus status, 
             Instant startDate,
             Instant endDate);
-
-    List<CandidateSubscription> findByStatusAndTrimQuotaAtLessThanEqualAndIsQuotaTrimmedFalse(
-            SubscriptionStatus status,
-            Instant trimQuotaAt);
 }

@@ -23,6 +23,9 @@ import sba301.hrtech.notification.dtos.OtpNotificationRequest;
 import sba301.hrtech.notification.dtos.OtpRequest;
 import sba301.hrtech.shared.enums.OtpType;
 import sba301.hrtech.identity.services.cache.OtpAttemptTracker;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import sba301.hrtech.subscription.abstractions.services.ISubscriptionService;
 import org.springframework.data.redis.core.RedisTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -35,8 +38,6 @@ import sba301.hrtech.company.entities.enums.CompanySize;
 import sba301.hrtech.company.entities.enums.CompanyStatus;
 import sba301.hrtech.company.entities.enums.MembershipStatus;
 import sba301.hrtech.company.mapper.CompanyMapper;
-import sba301.hrtech.identity.abstractions.repositories.RoleRepository;
-import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.dtos.user.CustomUserDetails;
 import sba301.hrtech.identity.entities.Role;
 import sba301.hrtech.identity.entities.User;
@@ -67,6 +68,10 @@ public class CompanyServiceImpl implements ICompanyService {
     private final OtpAttemptTracker otpAttemptTracker;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
+
+    @Autowired
+    @Lazy
+    private ISubscriptionService subscriptionService;
 
     private User getCurrentUser() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -207,6 +212,9 @@ public class CompanyServiceImpl implements ICompanyService {
                 .membershipStatus(MembershipStatus.ACTIVE)
                 .build();
         companyMemberRepository.save(ownerMember);
+
+        // Auto-subscribe new company to Free plan
+        subscriptionService.createAndActivateFreeCompanySubscription(savedCompany.getId(), savedUser.getId());
 
         // 5. Cleanup Redis and Reset Attempts
         redisTemplate.delete(key);

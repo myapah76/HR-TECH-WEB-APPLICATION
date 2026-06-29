@@ -19,6 +19,10 @@ import sba301.hrtech.job.dtos.request.JobSkillRequest;
 import sba301.hrtech.job.dtos.response.JobResponse;
 import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
 import sba301.hrtech.skill.entities.SkillNode;
+import sba301.hrtech.subscription.abstractions.services.ISubscriptionService;
+import sba301.hrtech.subscription.entities.enums.SubscriptionType;
+import sba301.hrtech.subscription.entities.CandidateSubscription;
+import sba301.hrtech.subscription.entities.CompanySubscription;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -36,6 +40,7 @@ public class MasterDataSeeder implements CommandLineRunner {
     private final IJobService jobService;
     private final SkillNodeRepository skillNodeRepository;
     private final ISavedJobService savedJobService;
+    private final ISubscriptionService subscriptionService;
 
     @Override
     public void run(String... args) throws Exception {
@@ -52,6 +57,9 @@ public class MasterDataSeeder implements CommandLineRunner {
         Optional<User> hrmgrOpt = userRepository.findByEmail("hrmgr1@hrtech.com");
         Optional<User> hrmgr2Opt = userRepository.findByEmail("hrmgr2@hrtech.com");
         Optional<User> candidateOpt = userRepository.findByEmail("candidate1@hrtech.com");
+        Optional<User> candidate2Opt = userRepository.findByEmail("candidate2@hrtech.com");
+        Optional<User> owner1Opt = userRepository.findByEmail("owner1@hrtech.com");
+        Optional<User> owner2Opt = userRepository.findByEmail("owner2@hrtech.com");
 
         if (hrUserOpt.isEmpty() || hrUser2Opt.isEmpty() || hrmgrOpt.isEmpty() || hrmgr2Opt.isEmpty() || candidateOpt.isEmpty()) {
             log.warn("Required users not found. Please ensure users are seeded first.");
@@ -63,6 +71,9 @@ public class MasterDataSeeder implements CommandLineRunner {
         User hrmgr = hrmgrOpt.get();
         User hrmgr2 = hrmgr2Opt.get();
         User candidate = candidateOpt.get();
+        User candidate2 = candidate2Opt.orElse(null);
+        User owner1 = owner1Opt.orElse(null);
+        User owner2 = owner2Opt.orElse(null);
 
         List<Company> companies = companyRepository.findAll();
         if (companies.isEmpty()) {
@@ -71,6 +82,43 @@ public class MasterDataSeeder implements CommandLineRunner {
         }
         Company company1 = companies.get(0);
         Company company2 = companies.size() > 1 ? companies.get(1) : company1;
+
+        // Auto-subscribe users/companies to Free plans (correct registration flow)
+        subscriptionService.createAndActivateFreeSubscription(candidate.getId());
+        if (candidate2 != null) {
+            subscriptionService.createAndActivateFreeSubscription(candidate2.getId());
+        }
+        if (owner1 != null) {
+            subscriptionService.createAndActivateFreeCompanySubscription(company1.getId(), owner1.getId());
+        }
+        if (owner2 != null) {
+            subscriptionService.createAndActivateFreeCompanySubscription(company2.getId(), owner2.getId());
+        }
+
+        // Upgrade candidate1 to Cao Cấp
+        Object candPending = subscriptionService.createPendingSubscription(candidate.getId(), UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
+        if (candPending instanceof CandidateSubscription cSub) {
+            subscriptionService.activateSubscription(cSub.getId(), SubscriptionType.CANDIDATE);
+        }
+
+        // Upgrade companies to Chuyên Nghiệp
+        if (owner1 != null) {
+            Object comp1Pending = subscriptionService.createPendingSubscription(owner1.getId(), UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd"));
+            if (comp1Pending instanceof CompanySubscription cSub) {
+                subscriptionService.activateSubscription(cSub.getId(), SubscriptionType.COMPANY);
+            }
+        }
+        if (owner2 != null) {
+            Object comp2Pending = subscriptionService.createPendingSubscription(owner2.getId(), UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd"));
+            if (comp2Pending instanceof CompanySubscription cSub) {
+                subscriptionService.activateSubscription(cSub.getId(), SubscriptionType.COMPANY);
+            }
+        }
+
+        // Refresh references after balances are added to DB
+        company1 = companyRepository.findById(company1.getId()).get();
+        company2 = companyRepository.findById(company2.getId()).get();
+        candidate = userRepository.findById(candidate.getId()).get();
 
         // 2. Seed Jobs (Mock HR)
         

@@ -161,11 +161,14 @@ function PricingContent() {
       // Premium Plan
       if (isCurrent) {
         subInfoText = `Hết hạn ngày ${formattedEndDate}`
-        if (remainingDays > 30) {
+        const isWalletEmpty =
+          (currentSubscription?.aiCreditBalance || 0) <= 0 &&
+          (currentSubscription?.jobPostBalance || 0) <= 0
+        if (remainingDays > 0 && !isWalletEmpty) {
           buttonText = 'Đang sử dụng'
           isButtonDisabled = true
         } else {
-          // remainingDays <= 30
+          // remainingDays <= 0 or Wallet Empty
           buttonText = 'Gia hạn ngay'
           isButtonDisabled = false
           showRenewButton = true

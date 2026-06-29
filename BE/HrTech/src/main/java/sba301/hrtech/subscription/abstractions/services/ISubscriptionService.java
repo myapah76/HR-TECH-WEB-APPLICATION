@@ -12,4 +12,5 @@ public interface ISubscriptionService {
     void activateSubscription(UUID subscriptionId, SubscriptionType type);
     String getSubscriptionPlanName(UUID subscriptionId, SubscriptionType type);
     void createAndActivateFreeSubscription(UUID userId);
+    void createAndActivateFreeCompanySubscription(UUID companyId, UUID userId);
 }

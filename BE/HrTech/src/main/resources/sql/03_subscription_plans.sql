@@ -23,7 +23,8 @@ INSERT INTO candidate_subscription_plans
 (id, name, description, price, duration_days, is_active, created_at, updated_at, is_deleted)
 VALUES
     ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'Cơ Bản', 'Gói miễn phí cho ứng viên tìm việc', 0, 30, true, NOW(), NOW(), false),
-    ('ffffffff-ffff-ffff-ffff-ffffffffffff', 'Cao Cấp', 'Gói thành viên cao cấp: Trải nghiệm toàn bộ sức mạnh AI', 100000, 30, true, NOW(), NOW(), false)
+    ('ffffffff-ffff-ffff-ffff-ffffffffffff', 'Cao Cấp', 'Gói thành viên cao cấp: Trải nghiệm toàn bộ sức mạnh AI', 2000, 30, true, NOW(), NOW(), false),
+    ('99999999-9999-9999-9999-999999999999', 'Chuyên Nghiệp', 'Gói tối thượng cho người tìm việc: Mở khoá tất cả tính năng', 5000, 30, true, NOW(), NOW(), false)
 ON CONFLICT (id) DO UPDATE
 SET name = EXCLUDED.name, description = EXCLUDED.description;
 
@@ -102,7 +103,14 @@ VALUES
     ('a2222222-0000-0000-0000-000000000002', 'ffffffff-ffff-ffff-ffff-ffffffffffff', '33333333-3333-3333-3333-333333333333', 1,    NOW(), NOW()),  -- APP_SCORING: access only
     ('a2222222-0000-0000-0000-000000000003', 'ffffffff-ffff-ffff-ffff-ffffffffffff', '44444444-4444-4444-4444-444444444444', 1,    NOW(), NOW()),  -- AI_MATCHING: access only
     ('a2222222-0000-0000-0000-000000000004', 'ffffffff-ffff-ffff-ffff-ffffffffffff', '55555555-5555-5555-5555-555555555555', 1,    NOW(), NOW()),  -- RECOMMEND_JOB: access only
-    ('a2222222-0000-0000-0000-000000000005', 'ffffffff-ffff-ffff-ffff-ffffffffffff', '77777777-7777-7777-7777-777777777777', 1,    NOW(), NOW())   -- AI_CHATBOT: access only
+    ('a2222222-0000-0000-0000-000000000005', 'ffffffff-ffff-ffff-ffff-ffffffffffff', '77777777-7777-7777-7777-777777777777', 1,    NOW(), NOW()),   -- AI_CHATBOT: access only
+
+    -- Chuyên Nghiệp
+    ('a3333333-0000-0000-0000-000000000001', '99999999-9999-9999-9999-999999999999', '22222222-2222-2222-2222-222222222222', 5000, NOW(), NOW()),  -- AI_CREDIT: 5000
+    ('a3333333-0000-0000-0000-000000000002', '99999999-9999-9999-9999-999999999999', '33333333-3333-3333-3333-333333333333', 1,    NOW(), NOW()),  -- APP_SCORING: access only
+    ('a3333333-0000-0000-0000-000000000003', '99999999-9999-9999-9999-999999999999', '44444444-4444-4444-4444-444444444444', 1,    NOW(), NOW()),  -- AI_MATCHING: access only
+    ('a3333333-0000-0000-0000-000000000004', '99999999-9999-9999-9999-999999999999', '55555555-5555-5555-5555-555555555555', 1,    NOW(), NOW()),  -- RECOMMEND_JOB: access only
+    ('a3333333-0000-0000-0000-000000000005', '99999999-9999-9999-9999-999999999999', '77777777-7777-7777-7777-777777777777', 1,    NOW(), NOW())   -- AI_CHATBOT: access only
 ON CONFLICT (id) DO NOTHING;
 
 -- =====================================================================
@@ -116,5 +124,9 @@ VALUES
 
     -- Cao Cấp: AI_CREDIT daily=100, weekly=700
     ('e2222222-0001-0000-0000-000000000001', 'a2222222-0000-0000-0000-000000000001', 'DAILY',  100, NOW(), NOW()),
-    ('e2222222-0001-0000-0000-000000000002', 'a2222222-0000-0000-0000-000000000001', 'WEEKLY', 700, NOW(), NOW())
+    ('e2222222-0001-0000-0000-000000000002', 'a2222222-0000-0000-0000-000000000001', 'WEEKLY', 700, NOW(), NOW()),
+
+    -- Chuyên Nghiệp: AI_CREDIT daily=150, weekly=1000
+    ('e3333333-0001-0000-0000-000000000001', 'a3333333-0000-0000-0000-000000000001', 'DAILY',  150, NOW(), NOW()),
+    ('e3333333-0001-0000-0000-000000000002', 'a3333333-0000-0000-0000-000000000001', 'WEEKLY', 1000, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;

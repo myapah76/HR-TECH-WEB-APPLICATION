@@ -66,6 +66,9 @@ public class User extends SoftDeleteEntity {
     @Column(name = "require_password_change")
     private Boolean requirePasswordChange = false;
 
+    @Column(name = "ai_credit_balance", nullable = false)
+    private Integer aiCreditBalance = 0;
+
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;

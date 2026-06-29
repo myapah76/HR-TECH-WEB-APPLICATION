@@ -16,8 +16,4 @@ public interface CompanySubscriptionRepository extends JpaRepository<CompanySubs
             SubscriptionStatus status, 
             Instant startDate,
             Instant endDate);
-
-    List<CompanySubscription> findByStatusAndTrimQuotaAtLessThanEqualAndIsQuotaTrimmedFalse(
-            SubscriptionStatus status,
-            Instant trimQuotaAt);
 }

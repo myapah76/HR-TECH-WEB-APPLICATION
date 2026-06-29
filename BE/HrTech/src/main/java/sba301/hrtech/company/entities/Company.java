@@ -63,4 +63,10 @@ public class Company extends SoftDeleteEntity {
 
     @Column(name = "parent_to_child_weight")
     private Double parentToChildWeight;
+
+    @Column(name = "ai_credit_balance", nullable = false)
+    private Integer aiCreditBalance = 0;
+
+    @Column(name = "job_post_balance", nullable = false)
+    private Integer jobPostBalance = 0;
 }

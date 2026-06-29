@@ -7,22 +7,26 @@ import org.springframework.transaction.annotation.Transactional;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.company.abstractions.services.ICompanyService;
+import sba301.hrtech.company.abstractions.repositories.CompanyRepository;
 import sba301.hrtech.company.entities.CompanyMember;
 import sba301.hrtech.subscription.abstractions.services.ICreditService;
 import sba301.hrtech.subscription.abstractions.repositories.CandidateSubscriptionRepository;
 import sba301.hrtech.subscription.abstractions.repositories.CompanySubscriptionRepository;
-import sba301.hrtech.subscription.abstractions.repositories.CandidateSubFeatureUsageRepository;
-import sba301.hrtech.subscription.abstractions.repositories.CompanySubFeatureUsageRepository;
-import sba301.hrtech.subscription.abstractions.repositories.CandidateSubFeatureRateUsageRepository;
-import sba301.hrtech.subscription.abstractions.repositories.CompanySubFeatureRateUsageRepository;
 import sba301.hrtech.subscription.entities.CandidateSubscription;
 import sba301.hrtech.subscription.entities.CompanySubscription;
-import sba301.hrtech.subscription.entities.CandidateSubFeatureUsage;
-import sba301.hrtech.subscription.entities.CompanySubFeatureUsage;
-import sba301.hrtech.subscription.entities.CandidateSubFeatureRateUsage;
-import sba301.hrtech.subscription.entities.CompanySubFeatureRateUsage;
 import sba301.hrtech.subscription.entities.enums.ResetType;
 import sba301.hrtech.subscription.entities.enums.SubscriptionStatus;
+import sba301.hrtech.subscription.abstractions.repositories.CandidateFeatureRateUsageRepository;
+import sba301.hrtech.subscription.abstractions.repositories.CompanyFeatureRateUsageRepository;
+import sba301.hrtech.subscription.entities.CandidateFeatureRateUsage;
+import sba301.hrtech.subscription.entities.CompanyFeatureRateUsage;
+import sba301.hrtech.identity.abstractions.services.IUserService;
+import sba301.hrtech.company.entities.Company;
+import sba301.hrtech.identity.entities.User;
+import sba301.hrtech.subscription.entities.CandidatePlanFeature;
+import sba301.hrtech.subscription.entities.CompanyPlanFeature;
+import sba301.hrtech.subscription.entities.CandidatePlanFeatureRateLimit;
+import sba301.hrtech.subscription.entities.CompanyPlanFeatureRateLimit;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -37,11 +41,11 @@ public class CreditServiceImpl implements ICreditService {
 
     private final CandidateSubscriptionRepository candidateSubscriptionRepository;
     private final CompanySubscriptionRepository companySubscriptionRepository;
-    private final CandidateSubFeatureUsageRepository candidateSubFeatureUsageRepository;
-    private final CompanySubFeatureUsageRepository companySubFeatureUsageRepository;
-    private final CandidateSubFeatureRateUsageRepository candidateSubFeatureRateUsageRepository;
-    private final CompanySubFeatureRateUsageRepository companySubFeatureRateUsageRepository;
+    private final CandidateFeatureRateUsageRepository CandidateFeatureRateUsageRepository;
+    private final CompanyFeatureRateUsageRepository companyFeatureRateUsageRepository;
+    private final IUserService userService;
     private final ICompanyService companyService;
+    private final CompanyRepository companyRepository;
 
     // ─── Candidate ────────────────────────────────────────────────────────────
 
@@ -49,72 +53,109 @@ public class CreditServiceImpl implements ICreditService {
     @Transactional
     public void deductCandidateQuota(UUID userId, String featureCode, int amount) {
         log.info("Deducting {} {} quota for candidate {}", amount, featureCode, userId);
+        User user = userService.getUserEntityById(userId);
 
-        List<CandidateSubscription> activeSubscriptions = candidateSubscriptionRepository
-                .findByUserIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                        userId, SubscriptionStatus.ACTIVE, Instant.now(), Instant.now());
-
-        boolean success = false;
-        for (CandidateSubscription sub : activeSubscriptions) {
-            Optional<CandidateSubFeatureUsage> usageOpt = candidateSubFeatureUsageRepository
-                    .findBySubscriptionIdAndFeatureCode(sub.getId(), featureCode);
-
-            if (usageOpt.isEmpty()) continue;
-            CandidateSubFeatureUsage usage = usageOpt.get();
-
-            // Check total pool
-            if (usage.getTotalQuota() - usage.getTotalUsed() < amount) continue;
-
-            // Fetch & check rate usages
-            List<CandidateSubFeatureRateUsage> rateUsages =
-                    candidateSubFeatureRateUsageRepository.findByUsageId(usage.getId());
-
-            boolean allRatesPassed = true;
-            for (CandidateSubFeatureRateUsage ru : rateUsages) {
-                resetCandidateRateUsageIfNeeded(ru, sub);
-                if (ru.getCapQuota() - ru.getUsed() < amount) {
-                    allRatesPassed = false;
-                    break;
-                }
+        if ("AI_CREDIT".equals(featureCode)) {
+            if (user.getAiCreditBalance() < amount) {
+                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA, "You do not have enough AI Credits.");
             }
-            if (!allRatesPassed) continue;
-
-            // All checks passed — deduct
-            usage.setTotalUsed(usage.getTotalUsed() + amount);
-            candidateSubFeatureUsageRepository.save(usage);
-
-            for (CandidateSubFeatureRateUsage ru : rateUsages) {
-                ru.setUsed(ru.getUsed() + amount);
-                candidateSubFeatureRateUsageRepository.save(ru);
-            }
-
-            success = true;
-            log.info("Successfully deducted {} {} for candidate {}.", amount, featureCode, userId);
-            break;
+            user.setAiCreditBalance(user.getAiCreditBalance() - amount);
+            userService.saveUserEntity(user);
+            return;
         }
 
-        if (!success) {
-            log.warn("Candidate {} does not have enough {} quota (total or rate limited)", userId, featureCode);
-            throw new AppException(ErrorCode.INSUFFICIENT_QUOTA,
-                    "You do not have enough quota for this feature. Please upgrade your subscription.");
+        // For non-token features that consume AI_CREDIT
+        List<CandidateSubscription> activeSubs = candidateSubscriptionRepository
+                .findByUserIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        userId, SubscriptionStatus.ACTIVE, Instant.now(), Instant.now());
+        
+        if (activeSubs.isEmpty()) {
+            throw new AppException(ErrorCode.FORBIDDEN, "No active subscription.");
+        }
+        
+        CandidateSubscription sub = activeSubs.getFirst();
+        CandidatePlanFeature targetPf = null;
+        for (CandidatePlanFeature pf : sub.getPlan().getPlanFeatures()) {
+            if (pf.getFeature().getCode().equals(featureCode)) {
+                targetPf = pf;
+                break;
+            }
+        }
+        
+        if (targetPf == null) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Feature not included in your active plan.");
+        }
+
+        final CandidatePlanFeature finalTargetPf = targetPf;
+        for (CandidatePlanFeatureRateLimit rl : finalTargetPf.getRateLimits()) {
+            Optional<CandidateFeatureRateUsage> rateUsageOpt = CandidateFeatureRateUsageRepository
+                    .findByUserIdAndFeatureCodeAndResetType(userId, featureCode, rl.getResetType());
+            
+            CandidateFeatureRateUsage rateUsage = rateUsageOpt.orElseGet(() -> 
+                CandidateFeatureRateUsage.builder()
+                        .user(user)
+                        .feature(finalTargetPf.getFeature())
+                        .resetType(rl.getResetType())
+                        .used(0)
+                        .lastResetDate(Instant.now())
+                        .build()
+            );
+
+            if (isResetNeeded(rateUsage.getLastResetDate(), rateUsage.getResetType(), sub.getStartDate())) {
+                rateUsage.setUsed(0);
+                rateUsage.setLastResetDate(Instant.now());
+            }
+
+            if (rateUsage.getUsed() + amount > rl.getCapQuota()) {
+                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA, "Rate limit exceeded for " + rl.getResetType());
+            }
+
+            rateUsage.setUsed(rateUsage.getUsed() + amount);
+            CandidateFeatureRateUsageRepository.save(rateUsage);
         }
     }
 
     @Override
     @Transactional(readOnly = true)
     public boolean hasCandidateFeatureAccess(UUID userId, String featureCode) {
-        List<CandidateSubscription> activeSubscriptions = candidateSubscriptionRepository
+        User user = userService.getUserEntityById(userId);
+
+        if ("AI_CREDIT".equals(featureCode)) {
+            return user.getAiCreditBalance() > 0;
+        }
+
+        List<CandidateSubscription> activeSubs = candidateSubscriptionRepository
                 .findByUserIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                         userId, SubscriptionStatus.ACTIVE, Instant.now(), Instant.now());
-
-        for (CandidateSubscription sub : activeSubscriptions) {
-            Optional<CandidateSubFeatureUsage> usageOpt = candidateSubFeatureUsageRepository
-                    .findBySubscriptionIdAndFeatureCode(sub.getId(), featureCode);
-            if (usageOpt.isPresent() && usageOpt.get().getTotalQuota() > 0) {
-                return true;
+        
+        if (activeSubs.isEmpty()) return false;
+        
+        CandidateSubscription sub = activeSubs.getFirst();
+        CandidatePlanFeature targetPf = null;
+        for (CandidatePlanFeature pf : sub.getPlan().getPlanFeatures()) {
+            if (pf.getFeature().getCode().equals(featureCode)) {
+                targetPf = pf;
+                break;
             }
         }
-        return false;
+        
+        if (targetPf == null) return false;
+        
+        for (CandidatePlanFeatureRateLimit rl : targetPf.getRateLimits()) {
+            Optional<CandidateFeatureRateUsage> rateUsageOpt = CandidateFeatureRateUsageRepository
+                    .findByUserIdAndFeatureCodeAndResetType(userId, featureCode, rl.getResetType());
+            if (rateUsageOpt.isPresent()) {
+                CandidateFeatureRateUsage rateUsage = rateUsageOpt.get();
+                if (isResetNeeded(rateUsage.getLastResetDate(), rateUsage.getResetType(), sub.getStartDate())) {
+                    continue; 
+                }
+                if (rateUsage.getUsed() >= rl.getCapQuota()) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
     }
 
     // ─── Company ──────────────────────────────────────────────────────────────
@@ -123,129 +164,131 @@ public class CreditServiceImpl implements ICreditService {
     @Transactional
     public void deductCompanyFeatureQuota(UUID userId, String featureCode, int amount) {
         log.info("Deducting {} {} quota for company member {}", amount, featureCode, userId);
-
         CompanyMember member = companyService.getMemberEntityByUserId(userId);
-        UUID companyId = member.getCompany().getId();
+        Company company = member.getCompany();
 
-        List<CompanySubscription> activeSubscriptions = companySubscriptionRepository
-                .findByCompanyIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                        companyId, SubscriptionStatus.ACTIVE, Instant.now(), Instant.now());
-
-        boolean success = false;
-        for (CompanySubscription sub : activeSubscriptions) {
-            Optional<CompanySubFeatureUsage> usageOpt = companySubFeatureUsageRepository
-                    .findBySubscriptionIdAndFeatureCode(sub.getId(), featureCode);
-
-            if (usageOpt.isEmpty()) continue;
-            CompanySubFeatureUsage usage = usageOpt.get();
-
-            // Check total pool
-            if (usage.getTotalQuota() - usage.getTotalUsed() < amount) continue;
-
-            // Fetch & check rate usages
-            List<CompanySubFeatureRateUsage> rateUsages =
-                    companySubFeatureRateUsageRepository.findByUsageId(usage.getId());
-
-            boolean allRatesPassed = true;
-            for (CompanySubFeatureRateUsage ru : rateUsages) {
-                resetCompanyRateUsageIfNeeded(ru, sub);
-                if (ru.getCapQuota() - ru.getUsed() < amount) {
-                    allRatesPassed = false;
-                    break;
-                }
+        if ("AI_CREDIT".equals(featureCode)) {
+            if (company.getAiCreditBalance() < amount) {
+                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA, "Not enough AI Credits.");
             }
-            if (!allRatesPassed) continue;
-
-            // All checks passed — deduct
-            usage.setTotalUsed(usage.getTotalUsed() + amount);
-            companySubFeatureUsageRepository.save(usage);
-
-            for (CompanySubFeatureRateUsage ru : rateUsages) {
-                ru.setUsed(ru.getUsed() + amount);
-                companySubFeatureRateUsageRepository.save(ru);
+            company.setAiCreditBalance(company.getAiCreditBalance() - amount);
+            companyRepository.save(company);
+            return;
+        } else if ("JOB_POSTING".equals(featureCode)) {
+            if (company.getJobPostBalance() < amount) {
+                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA, "Not enough Job Post balance.");
             }
-
-            success = true;
-            log.info("Successfully deducted {} {} for company {}.", amount, featureCode, companyId);
-            break;
+            company.setJobPostBalance(company.getJobPostBalance() - amount);
+            companyRepository.save(company);
+            return;
         }
 
-        if (!success) {
-            log.warn("Company {} does not have enough {} quota (total or rate limited)", companyId, featureCode);
-            throw new AppException(ErrorCode.INSUFFICIENT_QUOTA,
-                    "Your company does not have enough quota for this feature. Please upgrade your subscription.");
+        List<CompanySubscription> activeSubs = companySubscriptionRepository
+                .findByCompanyIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        company.getId(), SubscriptionStatus.ACTIVE, Instant.now(), Instant.now());
+        
+        if (activeSubs.isEmpty()) {
+            throw new AppException(ErrorCode.FORBIDDEN, "No active subscription.");
+        }
+        
+        CompanySubscription sub = activeSubs.getFirst();
+        CompanyPlanFeature targetPf = null;
+        for (CompanyPlanFeature pf : sub.getPlan().getPlanFeatures()) {
+            if (pf.getFeature().getCode().equals(featureCode)) {
+                targetPf = pf;
+                break;
+            }
+        }
+        
+        if (targetPf == null) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Feature not included in plan.");
+        }
+
+        final CompanyPlanFeature finalTargetPf = targetPf;
+        for (CompanyPlanFeatureRateLimit rl : finalTargetPf.getRateLimits()) {
+            Optional<CompanyFeatureRateUsage> rateUsageOpt = companyFeatureRateUsageRepository
+                    .findByCompanyIdAndFeatureCodeAndResetType(company.getId(), featureCode, rl.getResetType());
+            
+            CompanyFeatureRateUsage rateUsage = rateUsageOpt.orElseGet(() -> 
+                CompanyFeatureRateUsage.builder()
+                        .company(company)
+                        .feature(finalTargetPf.getFeature())
+                        .resetType(rl.getResetType())
+                        .used(0)
+                        .lastResetDate(Instant.now())
+                        .build()
+            );
+
+            if (isResetNeeded(rateUsage.getLastResetDate(), rateUsage.getResetType(), sub.getStartDate())) {
+                rateUsage.setUsed(0);
+                rateUsage.setLastResetDate(Instant.now());
+            }
+
+            if (rateUsage.getUsed() + amount > rl.getCapQuota()) {
+                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA, "Rate limit exceeded for " + rl.getResetType());
+            }
+
+            rateUsage.setUsed(rateUsage.getUsed() + amount);
+            companyFeatureRateUsageRepository.save(rateUsage);
         }
     }
 
     @Override
     @Transactional(readOnly = true)
-    public boolean hasCompanyFeatureAccess(UUID userId, String featureCode) {
-        CompanyMember member = companyService.getMemberEntityByUserId(userId);
-        UUID companyId = member.getCompany().getId();
+    public boolean hasCompanyFeatureAccess(UUID companyId, String featureCode) {
+        Company company = companyRepository.findById(companyId).orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Company not found"));
 
-        List<CompanySubscription> activeSubscriptions = companySubscriptionRepository
+        if ("AI_CREDIT".equals(featureCode)) {
+            return company.getAiCreditBalance() > 0;
+        } else if ("JOB_POSTING".equals(featureCode)) {
+            return company.getJobPostBalance() > 0;
+        }
+
+        List<CompanySubscription> activeSubs = companySubscriptionRepository
                 .findByCompanyIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                         companyId, SubscriptionStatus.ACTIVE, Instant.now(), Instant.now());
-
-        for (CompanySubscription sub : activeSubscriptions) {
-            Optional<CompanySubFeatureUsage> usageOpt = companySubFeatureUsageRepository
-                    .findBySubscriptionIdAndFeatureCode(sub.getId(), featureCode);
-            if (usageOpt.isPresent() && usageOpt.get().getTotalQuota() > 0) {
-                return true;
+        
+        if (activeSubs.isEmpty()) return false;
+        
+        CompanySubscription sub = activeSubs.getFirst();
+        CompanyPlanFeature targetPf = null;
+        for (CompanyPlanFeature pf : sub.getPlan().getPlanFeatures()) {
+            if (pf.getFeature().getCode().equals(featureCode)) {
+                targetPf = pf;
+                break;
             }
         }
-        return false;
+        
+        if (targetPf == null) return false;
+        
+        for (CompanyPlanFeatureRateLimit rl : targetPf.getRateLimits()) {
+            Optional<CompanyFeatureRateUsage> rateUsageOpt = companyFeatureRateUsageRepository
+                    .findByCompanyIdAndFeatureCodeAndResetType(companyId, featureCode, rl.getResetType());
+            if (rateUsageOpt.isPresent()) {
+                CompanyFeatureRateUsage rateUsage = rateUsageOpt.get();
+                if (isResetNeeded(rateUsage.getLastResetDate(), rateUsage.getResetType(), sub.getStartDate())) {
+                    continue;
+                }
+                if (rateUsage.getUsed() >= rl.getCapQuota()) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
     }
 
-    // ─── Private Reset Helpers ─────────────────────────────────────────────────
-
-    private void resetCandidateRateUsageIfNeeded(CandidateSubFeatureRateUsage ru, CandidateSubscription sub) {
+    private boolean isResetNeeded(Instant lastResetDate, ResetType resetType, Instant subStartDate) {
         Instant now = Instant.now();
-        Instant lastReset = ru.getLastResetDate();
-        boolean shouldReset = false;
 
-        if (lastReset == null) {
-            shouldReset = true;
-        } else if (ru.getResetType() == ResetType.DAILY) {
-            shouldReset = now.truncatedTo(ChronoUnit.DAYS).isAfter(lastReset.truncatedTo(ChronoUnit.DAYS));
-        } else if (ru.getResetType() == ResetType.WEEKLY) {
-            long currentWeek = ChronoUnit.DAYS.between(
-                    sub.getStartDate().truncatedTo(ChronoUnit.DAYS),
-                    now.truncatedTo(ChronoUnit.DAYS)) / 7;
-            long lastResetWeek = ChronoUnit.DAYS.between(
-                    sub.getStartDate().truncatedTo(ChronoUnit.DAYS),
-                    lastReset.truncatedTo(ChronoUnit.DAYS)) / 7;
-            shouldReset = currentWeek > lastResetWeek;
+        // 1. Nếu startDate của Subscription mới diễn ra SAU lastResetDate
+        if (subStartDate.isAfter(lastResetDate)) {
+            return true;
         }
 
-        if (shouldReset) {
-            ru.setUsed(0);
-            ru.setLastResetDate(now);
-        }
-    }
-
-    private void resetCompanyRateUsageIfNeeded(CompanySubFeatureRateUsage ru, CompanySubscription sub) {
-        Instant now = Instant.now();
-        Instant lastReset = ru.getLastResetDate();
-        boolean shouldReset = false;
-
-        if (lastReset == null) {
-            shouldReset = true;
-        } else if (ru.getResetType() == ResetType.DAILY) {
-            shouldReset = now.truncatedTo(ChronoUnit.DAYS).isAfter(lastReset.truncatedTo(ChronoUnit.DAYS));
-        } else if (ru.getResetType() == ResetType.WEEKLY) {
-            long currentWeek = ChronoUnit.DAYS.between(
-                    sub.getStartDate().truncatedTo(ChronoUnit.DAYS),
-                    now.truncatedTo(ChronoUnit.DAYS)) / 7;
-            long lastResetWeek = ChronoUnit.DAYS.between(
-                    sub.getStartDate().truncatedTo(ChronoUnit.DAYS),
-                    lastReset.truncatedTo(ChronoUnit.DAYS)) / 7;
-            shouldReset = currentWeek > lastResetWeek;
-        }
-
-        if (shouldReset) {
-            ru.setUsed(0);
-            ru.setLastResetDate(now);
-        }
+        return switch (resetType) {
+            case DAILY -> ChronoUnit.DAYS.between(lastResetDate, now) >= 1;
+            case WEEKLY -> ChronoUnit.DAYS.between(lastResetDate, now) >= 7;
+        };
     }
 }
