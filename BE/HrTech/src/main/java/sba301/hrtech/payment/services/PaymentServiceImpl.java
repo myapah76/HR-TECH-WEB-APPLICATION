@@ -24,7 +24,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import vn.payos.PayOS;
 import vn.payos.model.v2.paymentRequests.PaymentLink;
-import vn.payos.model.v2.paymentRequests.PaymentLinkItem;
 import vn.payos.model.v2.paymentRequests.PaymentLinkStatus;
 import vn.payos.model.webhooks.Webhook;
 
@@ -75,18 +74,11 @@ public class PaymentServiceImpl implements IPaymentService {
         payment.setAmount(price);
         payment.setSubscriptionId(subscriptionId);
         payment.setSubscriptionType(type);
+        payment.setStatus(PaymentStatus.PENDING);
         payment.setUser(user);
+        paymentRepository.save(payment);
 
-        if (price == 0) {
-            payment.setStatus(PaymentStatus.PAID);
-            paymentRepository.save(payment);
-            subscriptionService.activateSubscription(payment.getSubscriptionId(), payment.getSubscriptionType());
-            return new CreatePaymentResponse("http://localhost:3000/pricing?status=PAID", "FREE_" + payment.getOrderCode());
-        } else {
-            payment.setStatus(PaymentStatus.PENDING);
-            paymentRepository.save(payment);
-            return payOSService.createPaymentLink(payment.getOrderCode(), payment.getAmount(), name);
-        }
+        return payOSService.createPaymentLink(payment.getOrderCode(), payment.getAmount(), name);
     }
 
     @Transactional
