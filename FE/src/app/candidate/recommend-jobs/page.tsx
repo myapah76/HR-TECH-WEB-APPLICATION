@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useGetAllCvs, useUploadCv } from '@/src/hooks/cv'
 import {
   useStartJobMatching,
@@ -19,6 +20,7 @@ import { JobMatchResultList } from '@/src/components/candidate/recommendation/Jo
 
 
 export default function RecommendJobsPage() {
+  const queryClient = useQueryClient()
   const { hasPaidPlan, isLoading: isSubLoading } = useSubscriptionAccess()
   const { data: cvs = [], isLoading: loadingCvs } = useGetAllCvs()
 
@@ -43,28 +45,11 @@ export default function RecommendJobsPage() {
 
   // Process states
   const [isStarting, setIsStarting] = useState(false)
-  const [taskId, setTaskId] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') return sessionStorage.getItem('rec_taskId')
-    return null
-  })
+  const [taskId, setTaskId] = useState<string | null>(null)
 
-  const { data: polledStatus } = useGetJobMatchingStatus(taskId, !!taskId)
+  const { data: taskStatus } = useGetJobMatchingStatus(taskId, !!taskId)
 
-  const [taskStatus, setTaskStatus] = useState<JobMatchingTaskResponse | null>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem('rec_taskStatus')
-      if (saved) {
-        try {
-          return JSON.parse(saved)
-        } catch (e) {
-          return null
-        }
-      }
-    }
-    return null
-  })
-
-  // Persist states
+  // Persist states for CV inputs only
   useEffect(() => {
     sessionStorage.setItem('rec_cvMode', cvMode)
   }, [cvMode])
@@ -74,29 +59,6 @@ export default function RecommendJobsPage() {
       sessionStorage.setItem('rec_selectedCvId', selectedCvId)
     }
   }, [selectedCvId])
-
-  useEffect(() => {
-    if (taskId) {
-      sessionStorage.setItem('rec_taskId', taskId)
-    } else {
-      sessionStorage.removeItem('rec_taskId')
-    }
-  }, [taskId])
-
-  useEffect(() => {
-    if (taskStatus) {
-      sessionStorage.setItem('rec_taskStatus', JSON.stringify(taskStatus))
-    } else {
-      sessionStorage.removeItem('rec_taskStatus')
-    }
-  }, [taskStatus])
-
-  // Update status from polling
-  useEffect(() => {
-    if (polledStatus) {
-      setTaskStatus(polledStatus)
-    }
-  }, [polledStatus])
 
   useEffect(() => {
     if (cvs.length > 0 && !selectedCvId) {
@@ -152,7 +114,7 @@ export default function RecommendJobsPage() {
     startJobMatchingMutation.mutate(id, {
       onSuccess: ({ taskId: newTaskId }) => {
         setTaskId(newTaskId)
-        setTaskStatus({
+        queryClient.setQueryData(['jobMatchingStatus', newTaskId], {
           taskId: newTaskId,
           status: JobMatchingStatus.PENDING,
           message: 'Đang khởi tạo tiến trình AI...',
@@ -174,8 +136,10 @@ export default function RecommendJobsPage() {
   const isDone = taskStatus?.status === JobMatchingStatus.DONE
 
   const handleReset = () => {
+    if (taskId) {
+      queryClient.removeQueries({ queryKey: ['jobMatchingStatus', taskId] })
+    }
     setTaskId(null)
-    setTaskStatus(null)
   }
 
   // The gated feature body (forms, results)
@@ -214,6 +178,7 @@ export default function RecommendJobsPage() {
           <JobMatchProgressCard
             isProcessActive={isProcessActive}
             taskStatus={taskStatus}
+            onReset={handleReset}
           />
         </div>
       )}

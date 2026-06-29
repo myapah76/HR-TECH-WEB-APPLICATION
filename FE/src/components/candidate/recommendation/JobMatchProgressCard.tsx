@@ -14,9 +14,10 @@ import { JobMatchingStatus } from '@/src/enums/recommendation.enum'
 interface JobMatchProgressCardProps {
   isProcessActive: boolean
   taskStatus: JobMatchingTaskResponse | null
+  onReset?: () => void
 }
 
-export function JobMatchProgressCard({ isProcessActive, taskStatus }: JobMatchProgressCardProps) {
+export function JobMatchProgressCard({ isProcessActive, taskStatus, onReset }: JobMatchProgressCardProps) {
   if (!isProcessActive) return null
 
   const getStatusIcon = (status: JobMatchingStatus | undefined) => {
