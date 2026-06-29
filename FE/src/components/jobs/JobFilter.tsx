@@ -157,7 +157,7 @@ export default function JobFilter({
             <div className="flex justify-between items-center text-xs font-bold text-slate-500">
               <span>$0</span>
               <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-xs font-extrabold border border-blue-100">
-                Lên tới ${salaryRange.toLocaleString()}
+                Lên tới ${salaryRange.toLocaleString()}${salaryRange === 10000 ? '+' : ''}
               </span>
               <span>$10,000+</span>
             </div>
