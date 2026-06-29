@@ -14,7 +14,7 @@ import { usePremiumAiMatch } from '@/src/hooks/recommendation'
 import { useSubscriptionAccess } from '@/src/hooks/subscription'
 import { AiMatchHistoryResponse } from '@/src/types/recommendation'
 import { toast } from 'sonner'
-import { getErrorMessage } from '@/src/utils/get-error-message'
+import { getErrorMessage } from '@/src/utils'
 import { FeatureGate } from '@/src/components/common/FeatureGate'
 import { ScanSearch } from 'lucide-react'
 

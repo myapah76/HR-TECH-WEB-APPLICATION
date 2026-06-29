@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { refreshToken, logout } from '@/src/services/auth.service'
 import { useRouter } from 'next/navigation'
-import { checkCookiesEnabled } from '@/src/lib/utils'
+import { checkCookiesEnabled } from '@/src/utils'
 import Loading from '@/src/app/loading'
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {

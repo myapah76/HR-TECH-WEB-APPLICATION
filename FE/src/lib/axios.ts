@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { useAuthStore } from '../stores/auth.store'
-import { checkCookiesEnabled } from './utils'
+import { checkCookiesEnabled } from '../utils'
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,

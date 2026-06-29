@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { uploadCv } from '@/src/services/cv.service'
-import { uploadToCloudinary } from '@/src/utils/cloudinary'
+import { uploadToCloudinary } from '@/src/utils'
 
 export const useUploadCv = () => {
   const queryClient = useQueryClient()

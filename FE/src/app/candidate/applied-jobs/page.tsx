@@ -12,7 +12,7 @@ import { useGetJobs } from '@/src/hooks/job'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import { ApplicationMatchModal } from '@/src/components/candidate/application/ApplicationMatchModal'
 import { useState } from 'react'
-import { formatDate } from '@/src/lib/utils'
+import { formatDate, formatSalary } from '@/src/utils'
 
 const statusConfig: Record<string, { label: string; bg: string; text: string; border: string }> = {
   SUBMITTED: {
@@ -135,10 +135,7 @@ export default function AppliedJobsPage() {
               border: 'border-slate-200/40',
             }
 
-            const salaryText =
-              jobDetail?.salaryMin && jobDetail?.salaryMax
-                ? `$${jobDetail.salaryMin.toLocaleString()} – $${jobDetail.salaryMax.toLocaleString()}`
-                : 'Thỏa thuận'
+            const salaryText = formatSalary(jobDetail?.salaryMin, jobDetail?.salaryMax)
 
             return (
               <div

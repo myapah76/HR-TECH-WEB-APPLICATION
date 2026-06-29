@@ -7,7 +7,7 @@ import { CvSummaryResponse } from '@/src/types/cv'
 import { CvExtractionStatus } from '@/src/enums/cv.enum'
 
 import { CvListCardProps } from '@/src/types/cv'
-import { formatDateTime } from '@/src/lib/utils'
+import { formatDateTime } from '@/src/utils'
 
 export function CvListCard({
   cvs,

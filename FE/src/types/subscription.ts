@@ -1,4 +1,4 @@
-import { SubscriptionType } from '@/src/enums/subcriptionPlan.enum'
+import { SubscriptionType } from '@/src/enums/subscriptionPlan.enum'
 
 export interface SubscriptionPlanResponse {
   id: string

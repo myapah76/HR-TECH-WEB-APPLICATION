@@ -5,7 +5,7 @@ import { MySubscriptionResponse } from '@/src/types/subscription'
 import Link from 'next/link'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { RoleUser } from '@/src/enums/role.enum'
-import { formatDate } from '@/src/lib/utils'
+import { formatDate } from '@/src/utils'
 import dayjs from 'dayjs'
 
 interface CurrentPlanCardProps {

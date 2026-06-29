@@ -1,3 +1,6 @@
+import { JobStatus, JobType, ExperienceLevel } from '@/src/enums/job.enum';
+export { JobStatus, JobType, ExperienceLevel };
+
 export interface JobSkill {
   id: string;
   skillNeo4jId: string;
@@ -24,9 +27,9 @@ export interface Job {
   salaryMin: number;
   salaryMax: number;
 
-  jobType: string;
-  experienceLevel: string;
-  status: string;
+  jobType: JobType;
+  experienceLevel: ExperienceLevel;
+  status: JobStatus;
 
   deadline: string;
 
@@ -54,9 +57,9 @@ export interface CreateJobRequest {
   location?: string;
   salaryMin?: number;
   salaryMax?: number;
-  jobType?: string;
-  experienceLevel?: string;
+  jobType?: string; // Payload can still accept string for flexibility
+  experienceLevel?: string; // Payload can still accept string for flexibility
   deadline?: string;
   requirements?: string;
   skills?: JobSkillRequest[];
-}
+}

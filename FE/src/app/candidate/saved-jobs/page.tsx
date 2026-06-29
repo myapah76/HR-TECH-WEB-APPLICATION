@@ -6,6 +6,7 @@ import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import { toast } from 'sonner'
 import { useGetSavedJobs, useUnsaveJob } from '@/src/hooks/job'
 import Loading from '@/src/app/loading'
+import { formatSalary } from '@/src/utils'
 
 export default function SavedJobsPage() {
   // Lấy danh sách công việc đã lưu từ Backend
@@ -58,10 +59,7 @@ export default function SavedJobsPage() {
           </div>
         ) : (
           savedJobs.map((job) => {
-            const salaryText =
-              job.salaryMin && job.salaryMax
-                ? `$${job.salaryMin.toLocaleString()} – $${job.salaryMax.toLocaleString()}`
-                : 'Thỏa thuận'
+            const salaryText = formatSalary(job.salaryMin, job.salaryMax)
 
             return (
               <div

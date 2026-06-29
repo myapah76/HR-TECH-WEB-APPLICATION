@@ -16,7 +16,13 @@ import { useGetJobById, useUpdateJobMutation } from '@/src/hooks/job'
 import { jobSchema, JobFormData } from '@/src/schemas/job.schema'
 import { Job } from '@/src/types/job'
 import { Skill } from '@/src/types/skill'
-import { formatDateForInput } from '@/src/utils/format-date'
+import { formatDateForInput } from '@/src/utils'
+import {
+  JobType,
+  ExperienceLevel,
+  JOB_TYPE_LABELS,
+  EXPERIENCE_LEVEL_LABELS,
+} from '@/src/enums/job.enum'
 
 export default function UpdateJobPage() {
   const { jobId } = useParams<{ jobId: string }>()
@@ -138,8 +144,11 @@ function UpdateJobForm({ job }: { job: Job }) {
                   {...register('jobType')}
                 >
                   <option value="">-- Chọn hình thức --</option>
-                  <option value="FULL_TIME">Toàn thời gian (Full-time)</option>
-                  <option value="PART_TIME">Bán thời gian (Part-time)</option>
+                  {Object.values(JobType).map((type) => (
+                    <option key={type} value={type}>
+                      {JOB_TYPE_LABELS[type]} ({type})
+                    </option>
+                  ))}
                 </select>
                 {errors.jobType && (
                   <p className="text-red-500 text-xs mt-1">{errors.jobType.message}</p>
@@ -155,11 +164,11 @@ function UpdateJobForm({ job }: { job: Job }) {
                   {...register('experienceLevel')}
                 >
                   <option value="">-- Chọn cấp bậc --</option>
-                  <option value="INTERN">Thực tập sinh (Intern)</option>
-                  <option value="FRESHER">Mới tốt nghiệp (Fresher)</option>
-                  <option value="JUNIOR">Junior</option>
-                  <option value="MIDDLE">Middle</option>
-                  <option value="SENIOR">Senior</option>
+                  {Object.values(ExperienceLevel).map((level) => (
+                    <option key={level} value={level}>
+                      {EXPERIENCE_LEVEL_LABELS[level]} ({level})
+                    </option>
+                  ))}
                 </select>
                 {errors.experienceLevel && (
                   <p className="text-red-500 text-xs mt-1">{errors.experienceLevel.message}</p>

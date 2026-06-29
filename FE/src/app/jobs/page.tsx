@@ -17,9 +17,9 @@ export default function Home() {
   const [keyword, setKeyword] = useState(() => searchParams.get('keyword') ?? '')
   const [location, setLocation] = useState(() => searchParams.get('location') ?? '')
 
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([])
-  const [salaryRange, setSalaryRange] = useState(10000)
-  const [selectedExp, setSelectedExp] = useState<string[]>([])
+  const [selectedType, setSelectedType] = useState<string | null>(null)
+  const [salaryRange, setSalaryRange] = useState(100000000)
+  const [selectedExp, setSelectedExp] = useState<string | null>(null)
   const [selectedTechs, setSelectedTechs] = useState<string[]>([])
 
   const [currentPage, setCurrentPage] = useState(1)
@@ -29,18 +29,16 @@ export default function Home() {
   // Reset về page 1 bất cứ khi nào filter thay đổi
   useEffect(() => {
     setCurrentPage(1)
-  }, [keyword, location, selectedTypes, salaryRange, selectedExp, selectedTechs])
+  }, [keyword, location, selectedType, salaryRange, selectedExp, selectedTechs])
 
   const { data, isLoading } = useSearchJobs({
     page: currentPage - 1,
     size: PAGE_SIZE,
     keyword: keyword || undefined,
     location: location || undefined,
-    // Backend nhận 1 giá trị jobType, gửi phần tử đầu tiên nếu có
-    jobType: selectedTypes.length === 1 ? selectedTypes[0] : undefined,
-    // Backend nhận 1 giá trị experienceLevel, gửi phần tử đầu tiên nếu có
-    experienceLevel: selectedExp.length === 1 ? selectedExp[0] : undefined,
-    salaryMax: salaryRange < 10000 ? salaryRange : undefined,
+    jobType: selectedType || undefined,
+    experienceLevel: selectedExp || undefined,
+    salaryMax: salaryRange < 100000000 ? salaryRange : undefined,
   })
 
   const allJobs = data?.content ?? []
@@ -51,12 +49,10 @@ export default function Home() {
     selectedTechs.length === 0
       ? allJobs
       : allJobs.filter((job) =>
-        selectedTechs.every((tech) =>
-          job.skills?.some(
-            (s) => s.skillName.toLowerCase() === tech.toLowerCase()
+          selectedTechs.every((tech) =>
+            job.skills?.some((s) => s.skillName.toLowerCase() === tech.toLowerCase())
           )
         )
-      )
 
   const totalResults = selectedTechs.length > 0 ? jobs.length : (data?.totalElements ?? 0)
 
@@ -64,9 +60,9 @@ export default function Home() {
     arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]
 
   const handleClearAll = () => {
-    setSelectedTypes([])
-    setSalaryRange(10000)
-    setSelectedExp([])
+    setSelectedType(null)
+    setSalaryRange(100000000)
+    setSelectedExp(null)
     setSelectedTechs([])
   }
 
@@ -101,12 +97,12 @@ export default function Home() {
         <div className="flex gap-12">
           <aside className="w-75 shrink-0">
             <JobFilter
-              selectedTypes={selectedTypes}
-              onTypeChange={(type) => setSelectedTypes((prev) => toggleInArray(prev, type))}
+              selectedType={selectedType}
+              onTypeChange={setSelectedType}
               salaryRange={salaryRange}
               onSalaryChange={setSalaryRange}
               selectedExp={selectedExp}
-              onExpChange={(exp) => setSelectedExp((prev) => toggleInArray(prev, exp))}
+              onExpChange={setSelectedExp}
               selectedTechs={selectedTechs}
               onTechChange={(tech) => setSelectedTechs((prev) => toggleInArray(prev, tech))}
               onClearAll={handleClearAll}
