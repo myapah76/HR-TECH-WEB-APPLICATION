@@ -10,6 +10,7 @@ import sba301.hrtech.notification.abstractions.cache.IRedisOtpService;
 import sba301.hrtech.notification.abstractions.cache.IRedisRateLimitService;
 import sba301.hrtech.notification.abstractions.INotificationService;
 import sba301.hrtech.notification.abstractions.IEmailSender;
+import sba301.hrtech.notification.dtos.ApplicationStatusNotificationRequest;
 import sba301.hrtech.notification.dtos.OtpNotificationRequest;
 
 @Service
@@ -45,5 +46,37 @@ public class NotificationServiceImpl implements INotificationService {
 
         //MARK AS PROCESSED
         idempotencyService.markProcessed(request.getId());
+    }
+
+    @Override
+    public void ApplicationStatusNotificationHandler(ApplicationStatusNotificationRequest request) {
+        if (!"INTERVIEW".equals(request.getNewStatus()) && !"OFFER".equals(request.getNewStatus())) {
+            return;
+        }
+
+        try {
+            emailSender
+                    .sendApplicationStatusUpdateEmailAsync(
+                            request.getEmail(),
+                            request.getFullName(),
+                            request.getJobTitle(),
+                            request.getNewStatus()
+                    )
+                    .whenComplete((result, throwable) -> {
+                        if (throwable != null) {
+                            log.error("Failed to send {} email for application {} to {}",
+                                    request.getNewStatus(),
+                                    request.getApplicationId(),
+                                    request.getEmail(),
+                                    throwable);
+                        }
+                    });
+        } catch (Exception e) {
+            log.error("Failed to dispatch {} email for application {} to {}",
+                    request.getNewStatus(),
+                    request.getApplicationId(),
+                    request.getEmail(),
+                    e);
+        }
     }
 }

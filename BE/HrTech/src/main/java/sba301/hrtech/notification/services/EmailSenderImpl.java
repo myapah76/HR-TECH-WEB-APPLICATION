@@ -83,6 +83,38 @@ public class EmailSenderImpl implements IEmailSender {
         }
     }
 
+    @Override
+    @Async
+    public CompletableFuture<Void> sendApplicationStatusUpdateEmailAsync(String toEmail, String fullName, String jobTitle, String newStatus) {
+        try {
+            Context context = new Context();
+            context.setVariable("fullName", fullName);
+            context.setVariable("jobTitle", jobTitle);
+            context.setVariable("newStatus", newStatus);
+            context.setVariable("year", Year.now().getValue());
+
+            String templateName = switch (newStatus) {
+                case "INTERVIEW" -> "email/application-interview";
+                case "OFFER" -> "email/application-offer";
+                default -> throw new IllegalArgumentException("Unsupported application status email: " + newStatus);
+            };
+
+            String subject = switch (newStatus) {
+                case "INTERVIEW" -> "Interview Invitation - " + jobTitle;
+                case "OFFER" -> "Job Offer - " + jobTitle;
+                default -> "Application Status Update - " + jobTitle;
+            };
+
+            String html = templateEngine.process(templateName, context);
+            sendHtmlEmail(toEmail, subject, html);
+
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            log.error("Failed to send application status update email to {}", toEmail, e);
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
     private void sendHtmlEmail(String to, String subject, String html) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

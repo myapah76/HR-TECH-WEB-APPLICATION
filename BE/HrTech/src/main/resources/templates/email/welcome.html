@@ -17,6 +17,7 @@
         <p>Best regards,<br>The HR-TECH Team</p>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
         <p style="font-size: 0.8em; color: #777;">&copy; <span th:text="${year}"></span> HR-TECH. All rights reserved.</p>
+        <div th:replace="~{email/fragments/footer :: footer}"></div>
     </div>
 </body>
 </html>

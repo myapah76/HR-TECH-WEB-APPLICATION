@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import sba301.hrtech.application.abstractions.repositories.ApplicationRepository;
 import sba301.hrtech.application.abstractions.repositories.ApplicationScoreRepository;
 import sba301.hrtech.application.abstractions.services.ApplicationService;
@@ -30,6 +32,8 @@ import sba301.hrtech.application.abstractions.repositories.SkillMatchRepository;
 import sba301.hrtech.application.entities.SkillMatch;
 import sba301.hrtech.application.entities.enums.MatchStatus;
 import sba301.hrtech.application.entities.enums.MatchType;
+import sba301.hrtech.notification.abstractions.INotificationService;
+import sba301.hrtech.notification.dtos.ApplicationStatusNotificationRequest;
 import sba301.hrtech.skill.dtos.response.SkillMatchDetail;
 import sba301.hrtech.subscription.abstractions.services.ICreditService;
 import java.math.BigDecimal;
@@ -53,6 +57,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final ApplicationMapper applicationMapper;
     private final IRecommendationService recommendationService;
     private final ICreditService creditService;
+    private final INotificationService notificationService;
 
     @Override
     public ApplicationSummaryResponse submitApplication(UUID userId, SubmitApplicationRequest request) {
@@ -142,7 +147,50 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         application.setStatus(newStatus);
         application = applicationRepository.save(application);
+
+        notifyCandidateAfterStatusCommit(application, newStatus);
+
         return applicationMapper.toSummaryResponse(application);
+    }
+
+    private void notifyCandidateAfterStatusCommit(Application application, ApplicationStatus newStatus) {
+        if (newStatus != ApplicationStatus.INTERVIEW && newStatus != ApplicationStatus.OFFER) {
+            return;
+        }
+
+        ApplicationStatusNotificationRequest notificationRequest = new ApplicationStatusNotificationRequest(
+                application.getUser().getEmail(),
+                buildFullName(application.getUser()),
+                application.getJob().getTitle(),
+                newStatus.name(),
+                application.getId().toString()
+        );
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    notificationService.ApplicationStatusNotificationHandler(notificationRequest);
+                }
+            });
+            return;
+        }
+
+        notificationService.ApplicationStatusNotificationHandler(notificationRequest);
+    }
+
+    private String buildFullName(User user) {
+        String firstName = user.getFirstName() == null ? "" : user.getFirstName().trim();
+        String lastName = user.getLastName() == null ? "" : user.getLastName().trim();
+        String fullName = (firstName + " " + lastName).trim();
+
+        if (!fullName.isBlank()) {
+            return fullName;
+        }
+        if (user.getUsername() != null && !user.getUsername().isBlank()) {
+            return user.getUsername();
+        }
+        return user.getEmail();
     }
 
     @Override
