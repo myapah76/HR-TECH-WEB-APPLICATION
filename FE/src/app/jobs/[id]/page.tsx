@@ -85,7 +85,12 @@ export default function JobDetailPage() {
   const { data: appliedJobs = [] } = useGetMyApplications(isCandidate)
 
   const isSaved = savedJobs.some((j) => j.id === jobId)
-  const hasApplied = appliedJobs.some((app) => app.jobId === jobId)
+  const hasApplied = appliedJobs.some(
+    (app) =>
+      app.jobId === jobId &&
+      app.status !== 'REJECTED' &&
+      app.status !== 'WITHDRAWN'
+  )
 
   // Pre-select primary CV at render time
   const primaryCv = cvs.find((c) => c.isPrimary)

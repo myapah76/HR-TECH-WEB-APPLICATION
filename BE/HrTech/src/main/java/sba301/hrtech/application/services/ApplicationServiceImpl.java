@@ -84,7 +84,10 @@ public class ApplicationServiceImpl implements ApplicationService {
             throw new AppException( ErrorCode.JOB_PERMISSION_DENIED, "CV does not belong to user");
         }
 
-        if (applicationRepository.existsByUserIdAndJobId(userId, job.getId())) {
+        if (applicationRepository.existsByUserIdAndJobIdAndStatusNotIn(
+                userId,
+                job.getId(),
+                List.of(ApplicationStatus.REJECTED, ApplicationStatus.WITHDRAWN))) {
             throw new AppException(ErrorCode.INVALID_INPUT, "Already applied to this job");
         }
 
