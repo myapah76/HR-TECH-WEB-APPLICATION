@@ -24,4 +24,5 @@ public class ApplicationSummaryResponse {
     private String cvTitle;
     private ApplicationStatus status;
     private Instant appliedAt;
+    private Instant interviewDateTime;
 }

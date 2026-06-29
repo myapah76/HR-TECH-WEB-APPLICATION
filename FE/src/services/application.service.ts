@@ -4,6 +4,8 @@ import {
   ApplicationSummaryResponse,
   ApplicationDetailResponse,
   ApplicationStatus,
+  RejectInterviewScheduleRequest,
+  ScheduleInterviewRequest,
   SubmitApplicationRequest,
 } from '../types'
 
@@ -28,6 +30,35 @@ export const updateApplicationStatus = async (
 ): Promise<ApplicationSummaryResponse> => {
   const response = await api.put<ApiResponse<ApplicationSummaryResponse>>(
     `/applications/${id}/status?status=${status}`
+  )
+  return response.data.data
+}
+
+export const scheduleInterview = async (
+  id: string,
+  request: ScheduleInterviewRequest
+): Promise<ApplicationSummaryResponse> => {
+  const response = await api.put<ApiResponse<ApplicationSummaryResponse>>(
+    `/applications/${id}/interview-schedule`,
+    request
+  )
+  return response.data.data
+}
+
+export const rejectInterviewSchedule = async (
+  token: string,
+  request: RejectInterviewScheduleRequest
+): Promise<ApplicationSummaryResponse> => {
+  const response = await api.post<ApiResponse<ApplicationSummaryResponse>>(
+    `/applications/interview-schedule/reject?token=${encodeURIComponent(token)}`,
+    request
+  )
+  return response.data.data
+}
+
+export const acceptInterviewSchedule = async (token: string): Promise<ApplicationSummaryResponse> => {
+  const response = await api.post<ApiResponse<ApplicationSummaryResponse>>(
+    `/applications/interview-schedule/accept?token=${encodeURIComponent(token)}`
   )
   return response.data.data
 }

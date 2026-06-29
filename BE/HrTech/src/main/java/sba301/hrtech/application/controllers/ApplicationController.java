@@ -5,6 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.application.abstractions.services.ApplicationService;
+import sba301.hrtech.application.dtos.request.CandidateInterviewResponseRequest;
+import sba301.hrtech.application.dtos.request.ScheduleInterviewRequest;
 import sba301.hrtech.application.dtos.request.SubmitApplicationRequest;
 import sba301.hrtech.application.dtos.response.ApplicationDetailResponse;
 import sba301.hrtech.application.dtos.response.ApplicationSummaryResponse;
@@ -65,6 +67,33 @@ public class ApplicationController {
             @PathVariable UUID id,
             @RequestParam ApplicationStatus status) {
         return ResponseEntity.ok(ApiResponse.success(applicationService.updateStatus(id, status)));
+    }
+
+    @PutMapping("/{id}/interview-schedule")
+    @PreAuthorize("@companySecurity.isApplicationOwnerOrManagerOrHr(#id)")
+    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> scheduleInterview(
+            @PathVariable UUID id,
+            @Valid @RequestBody ScheduleInterviewRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                applicationService.scheduleInterview(id, request),
+                "Lên lịch phỏng vấn thành công"));
+    }
+
+    @GetMapping("/interview-schedule/accept")
+    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> acceptInterviewSchedule(
+            @RequestParam String token) {
+        return ResponseEntity.ok(ApiResponse.success(
+                applicationService.acceptInterviewSchedule(token),
+                "Đã xác nhận lịch phỏng vấn"));
+    }
+
+    @PostMapping("/interview-schedule/reject")
+    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> rejectInterviewSchedule(
+            @RequestParam String token,
+            @Valid @RequestBody CandidateInterviewResponseRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                applicationService.rejectInterviewSchedule(token, request),
+                "Đã ghi nhận yêu cầu đổi lịch phỏng vấn"));
     }
 
     @GetMapping("/jobs/{jobId}")

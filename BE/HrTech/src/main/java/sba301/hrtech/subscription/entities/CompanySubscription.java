@@ -44,4 +44,11 @@ public class CompanySubscription extends SoftDeleteEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plan_id", nullable = false)
     private CompanySubscriptionPlan plan;
+
+    @Column(name = "trim_quota_at")
+    private Instant trimQuotaAt;
+
+    @Column(name = "is_quota_trimmed", nullable = false)
+    @Builder.Default
+    private Boolean isQuotaTrimmed = false;
 }

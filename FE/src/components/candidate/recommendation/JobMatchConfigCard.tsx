@@ -3,7 +3,9 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/src/components/ui/ca
 import { Button } from '@/src/components/ui/button'
 import { Input } from '@/src/components/ui/input'
 import { Label } from '@/src/components/ui/label'
-import { FileText, Star, Loader2 } from 'lucide-react'
+import { FileText, Star, Loader2, RotateCcw } from 'lucide-react'
+import { JobMatchingTaskResponse } from '@/src/types/recommendation'
+import { JobMatchingStatus } from '@/src/enums/recommendation.enum'
 
 interface JobMatchConfigCardProps {
   cvMode: 'existing' | 'new'
@@ -20,6 +22,8 @@ interface JobMatchConfigCardProps {
   handleStartProcess: () => void
   isStarting: boolean
   isProcessActive: boolean
+  taskStatus: JobMatchingTaskResponse | null
+  onReset: () => void
 }
 
 export function JobMatchConfigCard({
@@ -36,7 +40,9 @@ export function JobMatchConfigCard({
   handleFileChange,
   handleStartProcess,
   isStarting,
-  isProcessActive
+  isProcessActive,
+  taskStatus,
+  onReset
 }: JobMatchConfigCardProps) {
   return (
     <Card
@@ -137,6 +143,17 @@ export function JobMatchConfigCard({
             )}
             {isStarting || isProcessActive ? 'ĐANG PHÂN TÍCH...' : 'BẮT ĐẦU TÌM KIẾM BẰNG AI'}
           </Button>
+
+          {isProcessActive && (
+            <Button
+              variant="outline"
+              onClick={onReset}
+              className="w-full mt-4 border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-rose-600 font-bold py-6 text-lg transition-all shadow-sm flex items-center justify-center gap-2"
+            >
+              <RotateCcw className="w-5 h-5" />
+              ĐÓNG / THỬ LẠI
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

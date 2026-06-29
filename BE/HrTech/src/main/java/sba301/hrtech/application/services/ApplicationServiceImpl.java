@@ -2,11 +2,16 @@ package sba301.hrtech.application.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import sba301.hrtech.application.abstractions.repositories.ApplicationRepository;
 import sba301.hrtech.application.abstractions.repositories.ApplicationScoreRepository;
 import sba301.hrtech.application.abstractions.services.ApplicationService;
+import sba301.hrtech.application.dtos.request.CandidateInterviewResponseRequest;
+import sba301.hrtech.application.dtos.request.ScheduleInterviewRequest;
 import sba301.hrtech.application.dtos.request.SubmitApplicationRequest;
 import sba301.hrtech.application.dtos.response.ApplicationDetailResponse;
 import sba301.hrtech.application.dtos.response.ApplicationSummaryResponse;
@@ -30,10 +35,15 @@ import sba301.hrtech.application.abstractions.repositories.SkillMatchRepository;
 import sba301.hrtech.application.entities.SkillMatch;
 import sba301.hrtech.application.entities.enums.MatchStatus;
 import sba301.hrtech.application.entities.enums.MatchType;
+import sba301.hrtech.notification.abstractions.INotificationService;
+import sba301.hrtech.notification.dtos.ApplicationStatusNotificationRequest;
 import sba301.hrtech.skill.dtos.response.SkillMatchDetail;
 import sba301.hrtech.subscription.abstractions.services.ICreditService;
+import java.net.URLEncoder;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -53,6 +63,10 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final ApplicationMapper applicationMapper;
     private final IRecommendationService recommendationService;
     private final ICreditService creditService;
+    private final INotificationService notificationService;
+
+    @Value("${app.frontend-base-url:http://localhost:3000}")
+    private String frontendBaseUrl;
 
     @Override
     public ApplicationSummaryResponse submitApplication(UUID userId, SubmitApplicationRequest request) {
@@ -142,7 +156,160 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         application.setStatus(newStatus);
         application = applicationRepository.save(application);
+
+        notifyCandidateAfterStatusCommit(application, newStatus);
+
         return applicationMapper.toSummaryResponse(application);
+    }
+
+    private void notifyCandidateAfterStatusCommit(Application application, ApplicationStatus newStatus) {
+        if (newStatus != ApplicationStatus.OFFER) {
+            return;
+        }
+
+        ApplicationStatusNotificationRequest notificationRequest = new ApplicationStatusNotificationRequest(
+                application.getUser().getEmail(),
+                buildFullName(application.getUser()),
+                application.getJob().getTitle(),
+                newStatus.name(),
+                application.getId().toString(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    notificationService.ApplicationStatusNotificationHandler(notificationRequest);
+                }
+            });
+            return;
+        }
+
+        notificationService.ApplicationStatusNotificationHandler(notificationRequest);
+    }
+
+    @Override
+    public ApplicationSummaryResponse scheduleInterview(UUID applicationId, ScheduleInterviewRequest request) {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Application not found"));
+
+        String token = UUID.randomUUID().toString();
+        application.setStatus(ApplicationStatus.PENDING_INTERVIEW_SCHEDULE);
+        application.setInterviewDateTime(request.interviewDateTime());
+        application.setInterviewLocation(normalizeBlank(request.interviewLocation()));
+        application.setInterviewMeetingLink(normalizeBlank(request.interviewMeetingLink()));
+        application.setInterviewNote(normalizeBlank(request.note()));
+        application.setInterviewResponseToken(token);
+        application.setInterviewResponseTokenExpiresAt(Instant.now().plus(7, ChronoUnit.DAYS));
+        application.setInterviewAcceptedAt(null);
+        application.setCandidateInterviewResponseMessage(null);
+        application.setCandidatePreferredInterviewDateTime(null);
+
+        application = applicationRepository.save(application);
+
+        notifyInterviewScheduleAfterCommit(application);
+
+        return applicationMapper.toSummaryResponse(application);
+    }
+
+    @Override
+    public ApplicationSummaryResponse acceptInterviewSchedule(String token) {
+        Application application = findApplicationByValidInterviewToken(token);
+
+        application.setStatus(ApplicationStatus.INTERVIEW);
+        application.setInterviewAcceptedAt(Instant.now());
+        application.setCandidateInterviewResponseMessage(null);
+        application.setCandidatePreferredInterviewDateTime(null);
+
+        return applicationMapper.toSummaryResponse(applicationRepository.save(application));
+    }
+
+    @Override
+    public ApplicationSummaryResponse rejectInterviewSchedule(String token, CandidateInterviewResponseRequest request) {
+        Application application = findApplicationByValidInterviewToken(token);
+
+        application.setStatus(ApplicationStatus.PENDING_INTERVIEW_SCHEDULE);
+        application.setInterviewAcceptedAt(null);
+        application.setCandidatePreferredInterviewDateTime(request.preferredInterviewDateTime());
+        application.setCandidateInterviewResponseMessage(normalizeBlank(request.reason()));
+
+        return applicationMapper.toSummaryResponse(applicationRepository.save(application));
+    }
+
+    private void notifyInterviewScheduleAfterCommit(Application application) {
+        String acceptLink = frontendBaseUrl + "/interview-schedule/accept?token="
+                + URLEncoder.encode(application.getInterviewResponseToken(), StandardCharsets.UTF_8);
+        String rejectLink = frontendBaseUrl + "/interview-schedule/reject?token="
+                + URLEncoder.encode(application.getInterviewResponseToken(), StandardCharsets.UTF_8);
+
+        ApplicationStatusNotificationRequest notificationRequest = new ApplicationStatusNotificationRequest(
+                application.getUser().getEmail(),
+                buildFullName(application.getUser()),
+                application.getJob().getTitle(),
+                ApplicationStatus.PENDING_INTERVIEW_SCHEDULE.name(),
+                application.getId().toString(),
+                application.getInterviewDateTime(),
+                application.getInterviewLocation(),
+                application.getInterviewMeetingLink(),
+                application.getInterviewNote(),
+                acceptLink,
+                rejectLink
+        );
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    notificationService.ApplicationStatusNotificationHandler(notificationRequest);
+                }
+            });
+            return;
+        }
+
+        notificationService.ApplicationStatusNotificationHandler(notificationRequest);
+    }
+
+    private Application findApplicationByValidInterviewToken(String token) {
+        Application application = applicationRepository.findByInterviewResponseToken(token)
+                .orElseThrow(() -> new AppException(ErrorCode.TOKEN_INVALID, "Invalid interview response token"));
+
+        if (application.getInterviewResponseTokenExpiresAt() == null
+                || application.getInterviewResponseTokenExpiresAt().isBefore(Instant.now())) {
+            throw new AppException(ErrorCode.TOKEN_EXPIRED, "Interview response token expired");
+        }
+
+        if (application.getStatus() != ApplicationStatus.PENDING_INTERVIEW_SCHEDULE) {
+            throw new AppException(ErrorCode.JOB_INVALID_STATUS, "Application is not waiting for interview schedule response");
+        }
+
+        return application;
+    }
+
+    private String normalizeBlank(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private String buildFullName(User user) {
+        String firstName = user.getFirstName() == null ? "" : user.getFirstName().trim();
+        String lastName = user.getLastName() == null ? "" : user.getLastName().trim();
+        String fullName = (firstName + " " + lastName).trim();
+
+        if (!fullName.isBlank()) {
+            return fullName;
+        }
+        if (user.getUsername() != null && !user.getUsername().isBlank()) {
+            return user.getUsername();
+        }
+        return user.getEmail();
     }
 
     @Override

@@ -19,6 +19,7 @@ public interface ApplicationMapper {
     @Mapping(target = "cvId", source = "cv.id")
     @Mapping(target = "cvTitle", source = "cv.title")
     @Mapping(target = "appliedAt", source = "appliedAt")
+    @Mapping(target = "interviewDateTime", source = "interviewDateTime")
     ApplicationSummaryResponse toSummaryResponse(Application entity);
 
     @Mapping(target = "jobId", source = "job.id")
@@ -26,6 +27,12 @@ public interface ApplicationMapper {
     @Mapping(target = "cvId", source = "cv.id")
     @Mapping(target = "cvTitle", source = "cv.title")
     @Mapping(target = "appliedAt", source = "appliedAt")
+    @Mapping(target = "interviewDateTime", source = "interviewDateTime")
+    @Mapping(target = "interviewLocation", source = "interviewLocation")
+    @Mapping(target = "interviewMeetingLink", source = "interviewMeetingLink")
+    @Mapping(target = "interviewNote", source = "interviewNote")
+    @Mapping(target = "candidateInterviewResponseMessage", source = "candidateInterviewResponseMessage")
+    @Mapping(target = "candidatePreferredInterviewDateTime", source = "candidatePreferredInterviewDateTime")
     @Mapping(target = "overallScore", source = "applicationScore.overallScore")
     @Mapping(target = "grade", source = "applicationScore.grade", qualifiedByName = "enumToString")
     @Mapping(target = "aiSummary", source = "applicationScore.aiSummary")

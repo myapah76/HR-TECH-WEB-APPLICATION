@@ -1,8 +1,8 @@
 -- Seed User Subscriptions to bypass quota error for HR users
-INSERT INTO company_subscriptions (id, created_at, updated_at, is_deleted, start_date, end_date, status, company_id, purchased_by, plan_id)
+INSERT INTO company_subscriptions (id, created_at, updated_at, is_deleted, start_date, end_date, status, company_id, purchased_by, plan_id, is_quota_trimmed)
 VALUES
-    ('50000000-0000-0000-0000-000000000001', NOW(), NOW(), false, NOW() - INTERVAL '1 day', NOW() + INTERVAL '30 days', 'ACTIVE', 'c0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000007', 'dddddddd-dddd-dddd-dddd-dddddddddddd'),
-    ('50000000-0000-0000-0000-000000000002', NOW(), NOW(), false, NOW() - INTERVAL '1 day', NOW() + INTERVAL '30 days', 'ACTIVE', 'c0000000-0000-0000-0000-000000000002', 'b0000000-0000-0000-0000-000000000008', 'dddddddd-dddd-dddd-dddd-dddddddddddd')
+    ('50000000-0000-0000-0000-000000000001', NOW(), NOW(), false, NOW() - INTERVAL '1 day', NOW() + INTERVAL '30 days', 'ACTIVE', 'c0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000007', 'dddddddd-dddd-dddd-dddd-dddddddddddd', false),
+    ('50000000-0000-0000-0000-000000000002', NOW(), NOW(), false, NOW() - INTERVAL '1 day', NOW() + INTERVAL '30 days', 'ACTIVE', 'c0000000-0000-0000-0000-000000000002', 'b0000000-0000-0000-0000-000000000008', 'dddddddd-dddd-dddd-dddd-dddddddddddd', false)
 ON CONFLICT (id) DO NOTHING;
 
 -- Xóa dữ liệu rate usage cũ để tránh lỗi Foreign Key khi ghi đè
@@ -51,4 +51,52 @@ VALUES
     -- AI Credit (usage: 00000012) -> Pro Plan: daily=750, weekly=4500
     ('70000000-0000-0000-0000-000000000013', NOW(), NOW(), false, '60000000-0000-0000-0000-000000000012', 'DAILY', 750, 0, NOW() - INTERVAL '1 day'),
     ('70000000-0000-0000-0000-000000000014', NOW(), NOW(), false, '60000000-0000-0000-0000-000000000012', 'WEEKLY', 4500, 0, NOW() - INTERVAL '1 day')
+ON CONFLICT (id) DO NOTHING;
+
+-- =====================================================================
+-- CANDIDATE SUBSCRIPTIONS
+-- =====================================================================
+
+INSERT INTO candidate_subscriptions (id, created_at, updated_at, is_deleted, start_date, end_date, status, user_id, plan_id, is_quota_trimmed)
+VALUES
+    ('80000000-0000-0000-0000-000000000001', NOW(), NOW(), false, NOW() - INTERVAL '1 day', NOW() + INTERVAL '30 days', 'ACTIVE', 'b0000000-0000-0000-0000-000000000009', 'ffffffff-ffff-ffff-ffff-ffffffffffff', false),
+    ('80000000-0000-0000-0000-000000000002', NOW(), NOW(), false, NOW() - INTERVAL '1 day', NOW() + INTERVAL '30 days', 'ACTIVE', 'b0000000-0000-0000-0000-000000000010', 'ffffffff-ffff-ffff-ffff-ffffffffffff', false)
+ON CONFLICT (id) DO NOTHING;
+
+-- Xóa dữ liệu rate usage cũ để tránh lỗi Foreign Key khi ghi đè
+DELETE FROM candidate_sub_feature_rate_usages WHERE usage_id IN (
+    '90000000-0000-0000-0000-000000000001', '90000000-0000-0000-0000-000000000011'
+);
+
+-- Xóa dữ liệu usage cũ của seed data để ghi đè (tránh conflict nếu đổi logic)
+DELETE FROM candidate_sub_feature_usages WHERE subscription_id IN ('80000000-0000-0000-0000-000000000001', '80000000-0000-0000-0000-000000000002');
+
+INSERT INTO candidate_sub_feature_usages (id, created_at, updated_at, is_deleted, subscription_id, feature_id, total_quota, total_used)
+VALUES
+    -- Candidate 1 (Cao Cấp Plan: ffffffff-ffff-ffff-ffff-ffffffffffff)
+    ('90000000-0000-0000-0000-000000000001', NOW(), NOW(), false, '80000000-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 2000, 0), -- AI Credit
+    ('90000000-0000-0000-0000-000000000002', NOW(), NOW(), false, '80000000-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333', 1, 0),    -- App Scoring
+    ('90000000-0000-0000-0000-000000000003', NOW(), NOW(), false, '80000000-0000-0000-0000-000000000001', '44444444-4444-4444-4444-444444444444', 1, 0),    -- AI Matching
+    ('90000000-0000-0000-0000-000000000004', NOW(), NOW(), false, '80000000-0000-0000-0000-000000000001', '55555555-5555-5555-5555-555555555555', 1, 0),    -- Rcm Job
+    ('90000000-0000-0000-0000-000000000005', NOW(), NOW(), false, '80000000-0000-0000-0000-000000000001', '77777777-7777-7777-7777-777777777777', 1, 0),    -- Chatbot
+    
+    -- Candidate 2 (Cao Cấp Plan)
+    ('90000000-0000-0000-0000-000000000011', NOW(), NOW(), false, '80000000-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222', 2000, 0), -- AI Credit
+    ('90000000-0000-0000-0000-000000000012', NOW(), NOW(), false, '80000000-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', 1, 0),    -- App Scoring
+    ('90000000-0000-0000-0000-000000000013', NOW(), NOW(), false, '80000000-0000-0000-0000-000000000002', '44444444-4444-4444-4444-444444444444', 1, 0),    -- AI Matching
+    ('90000000-0000-0000-0000-000000000014', NOW(), NOW(), false, '80000000-0000-0000-0000-000000000002', '55555555-5555-5555-5555-555555555555', 1, 0),    -- Rcm Job
+    ('90000000-0000-0000-0000-000000000015', NOW(), NOW(), false, '80000000-0000-0000-0000-000000000002', '77777777-7777-7777-7777-777777777777', 1, 0)     -- Chatbot
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO candidate_sub_feature_rate_usages (id, created_at, updated_at, is_deleted, usage_id, reset_type, cap_quota, used, last_reset_date)
+VALUES
+    -- Candidate 1
+    -- AI Credit (usage: 00000001) -> Cao Cấp Plan: daily=100, weekly=700
+    ('a0000000-0000-0000-0000-000000000001', NOW(), NOW(), false, '90000000-0000-0000-0000-000000000001', 'DAILY', 100, 0, NOW() - INTERVAL '1 day'),
+    ('a0000000-0000-0000-0000-000000000002', NOW(), NOW(), false, '90000000-0000-0000-0000-000000000001', 'WEEKLY', 700, 0, NOW() - INTERVAL '1 day'),
+
+    -- Candidate 2
+    -- AI Credit (usage: 00000011) -> Cao Cấp Plan: daily=100, weekly=700
+    ('a0000000-0000-0000-0000-000000000011', NOW(), NOW(), false, '90000000-0000-0000-0000-000000000011', 'DAILY', 100, 0, NOW() - INTERVAL '1 day'),
+    ('a0000000-0000-0000-0000-000000000012', NOW(), NOW(), false, '90000000-0000-0000-0000-000000000011', 'WEEKLY', 700, 0, NOW() - INTERVAL '1 day')
 ON CONFLICT (id) DO NOTHING;
