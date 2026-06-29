@@ -21,7 +21,7 @@ import {
   useSubmitInterviewAnswer,
   useSubmitAndEvaluateInterview,
 } from '@/src/hooks/interview'
-import { uploadToCloudinary } from '@/src/utils/cloudinary'
+import { uploadToCloudinary } from '@/src/utils'
 
 export default function MockInterviewPracticePage() {
   const router = useRouter()

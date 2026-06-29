@@ -15,7 +15,7 @@ import {
   SetupPasswordRequest,
 } from '@/src/types/auth'
 import { ApiResponse } from '@/src/types/api'
-import { checkCookiesEnabled } from '../lib/utils'
+import { checkCookiesEnabled } from '../utils'
 
 export const loginWithGoogle = async (data: GoogleLoginRequest): Promise<ApiResponse<GoogleLoginResponse>> => {
   const headers = {

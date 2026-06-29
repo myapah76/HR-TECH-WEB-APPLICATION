@@ -172,12 +172,14 @@ export default function RecommendJobsPage() {
             handleStartProcess={handleStartProcess}
             isStarting={isStarting}
             isProcessActive={isProcessActive}
+            taskStatus={taskStatus || null}
+            onReset={handleReset}
           />
 
           {/* Right: Visual Mockup */}
           <JobMatchProgressCard
             isProcessActive={isProcessActive}
-            taskStatus={taskStatus}
+            taskStatus={taskStatus || null}
             onReset={handleReset}
           />
         </div>

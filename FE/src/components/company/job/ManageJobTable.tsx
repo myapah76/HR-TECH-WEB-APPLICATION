@@ -8,35 +8,18 @@ import { toast } from 'sonner'
 import { useUpdateJobStatusMutation } from '@/src/hooks/job'
 import { CompanyMemberResponse } from '@/src/types/company'
 import { Job } from '@/src/types/job'
-import { formatDate } from '@/src/lib/utils'
+import { formatDate } from '@/src/utils'
+import {
+  JobStatus,
+  JOB_TYPE_LABELS,
+  JOB_STATUS_LABELS,
+  JOB_STATUS_STYLES,
+} from '@/src/enums/job.enum'
 
 interface ManageJobTableProps {
   jobs: Job[]
   currentUserId?: string
   companyRole?: CompanyMemberResponse['role']
-}
-
-const jobTypeLabels: Record<string, string> = {
-  FULL_TIME: 'Toàn thời gian',
-  PART_TIME: 'Bán thời gian',
-}
-
-const statusStyles: Record<string, string> = {
-  APPROVED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  OPEN: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  CLOSED: 'bg-slate-100 text-slate-600 border-slate-200',
-  DRAFT: 'bg-amber-50 text-amber-700 border-amber-200',
-  PENDING_APPROVAL: 'bg-blue-50 text-blue-700 border-blue-200',
-  REJECTED: 'bg-red-50 text-red-700 border-red-200',
-}
-
-const statusLabels: Record<string, string> = {
-  APPROVED: 'Đã duyệt',
-  OPEN: 'Đang tuyển',
-  CLOSED: 'Đã đóng',
-  DRAFT: 'Bản nháp',
-  PENDING_APPROVAL: 'Chờ duyệt',
-  REJECTED: 'Bị từ chối',
 }
 
 export default function ManageJobTable({
@@ -97,10 +80,10 @@ export default function ManageJobTable({
                 job.createdById?.toLowerCase() === currentUserId?.toLowerCase()
                 const isManager = companyRole === 'HR_MANAGER'
                 const isHr = companyRole === 'HR'
-                const canSubmit = job.status === 'DRAFT' && (isJobCreator || isHr)
-                const canEdit = job.status === 'DRAFT'
-                const canClose = job.status !== 'CLOSED' && (isJobCreator || isManager)
-                const canReview = job.status === 'PENDING_APPROVAL' && isManager
+                const canSubmit = job.status === JobStatus.DRAFT && (isJobCreator || isHr)
+                const canEdit = job.status === JobStatus.DRAFT
+                const canClose = job.status !== JobStatus.CLOSED && (isJobCreator || isManager)
+                const canReview = job.status === JobStatus.PENDING_APPROVAL && isManager
               return (
                 <tr key={job.id} className="transition-colors hover:bg-slate-50/70">
                 <td className="px-6 py-5">
@@ -118,15 +101,15 @@ export default function ManageJobTable({
                   </span>
                 </td>
                 <td className="px-4 py-5 text-sm font-semibold text-slate-600">
-                  {jobTypeLabels[job.jobType] || job.jobType || 'Chưa cập nhật'}
+                  {JOB_TYPE_LABELS[job.jobType] || job.jobType || 'Chưa cập nhật'}
                 </td>
                 <td className="px-4 py-5">
                   <span
                     className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${
-                      statusStyles[job.status] || statusStyles.CLOSED
+                      JOB_STATUS_STYLES[job.status] || JOB_STATUS_STYLES[JobStatus.CLOSED]
                     }`}
                   >
-                    {statusLabels[job.status] || job.status || 'Chưa xác định'}
+                    {JOB_STATUS_LABELS[job.status] || job.status || 'Chưa xác định'}
                   </span>
                 </td>
                 <td className="px-4 py-5 text-sm font-medium text-slate-600">

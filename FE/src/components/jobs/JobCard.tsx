@@ -4,7 +4,8 @@ import { MapPin, DollarSign, Calendar, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Job } from '@/src/types/job'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
-import { formatDate } from '@/src/lib/utils'
+import { formatDate, formatSalary } from '@/src/utils'
+import { JOB_TYPE_LABELS, EXPERIENCE_LEVEL_LABELS } from '@/src/enums/job.enum'
 
 interface JobCardProps {
   job: Job
@@ -12,11 +13,6 @@ interface JobCardProps {
 
 export default function JobCard({ job }: JobCardProps) {
   const router = useRouter()
-
-  const formatSalary = (min: number, max: number) => {
-    if (!min && !max) return 'Thỏa thuận'
-    return `$${min.toLocaleString()} - $${max.toLocaleString()}`
-  }
 
   return (
     <div
@@ -39,13 +35,13 @@ export default function JobCard({ job }: JobCardProps) {
               </span>
               {job.jobType && (
                 <span className="text-xs font-black px-2.5 py-0.75 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-100/50">
-                  {job.jobType}
+                  {JOB_TYPE_LABELS[job.jobType] || job.jobType}
                 </span>
               )}
               {job.experienceLevel && (
                 <span className="text-xs font-black px-2.5 py-0.75 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100/50 flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
-                  {job.experienceLevel}
+                  {EXPERIENCE_LEVEL_LABELS[job.experienceLevel] || job.experienceLevel}
                 </span>
               )}
             </div>

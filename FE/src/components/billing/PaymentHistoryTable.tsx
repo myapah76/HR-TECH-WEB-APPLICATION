@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { PaymentResponse } from '@/src/types/payment'
-import { formatDateTime } from '@/src/lib/utils'
+import { formatDateTime } from '@/src/utils'
 import { useVerifyPaymentMutation } from '@/src/hooks/payment'
 import Loading from '@/src/app/loading'
 

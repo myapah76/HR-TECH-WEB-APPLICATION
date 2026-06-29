@@ -5,7 +5,7 @@ import { Sparkles } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { RoleUser } from '@/src/enums/role.enum'
-import { SubscriptionType } from '@/src/enums/subcriptionPlan.enum'
+import { SubscriptionType } from '@/src/enums/subscriptionPlan.enum'
 import { toast } from 'sonner'
 import {
   useAllActiveSubscriptionPlansQuery,
@@ -13,7 +13,7 @@ import {
   useMyCurrentSubscriptionQuery,
 } from '@/src/hooks/subscription'
 import { refreshToken } from '@/src/services/auth.service'
-import { getErrorMessage } from '@/src/utils/get-error-message'
+import { getErrorMessage } from '@/src/utils'
 import dayjs from 'dayjs'
 import { useMyPaymentHistoryQuery, useVerifyPaymentMutation } from '@/src/hooks/payment'
 import { PricingHeader } from '@/src/components/pricing/PricingHeader'
@@ -54,7 +54,7 @@ function PricingContent() {
       },
       onSettled: () => {
         setIsVerifying(false)
-      }
+      },
     })
   }
 
@@ -243,11 +243,7 @@ function PricingContent() {
       <div className="relative z-10 pt-20 px-4 sm:px-6 lg:px-8">
         <PricingHeader />
 
-        <PricingTabs
-          activeTab={activeTab}
-          onChange={setActiveTab}
-          showTabs={showTabs}
-        />
+        <PricingTabs activeTab={activeTab} onChange={setActiveTab} showTabs={showTabs} />
 
         {hasPendingPayment && (
           <div className="max-w-4xl mx-auto mb-12 bg-amber-50 border border-amber-200/80 rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-amber-900 relative z-10 shadow-xs">
@@ -257,7 +253,10 @@ function PricingContent() {
               </div>
               <div>
                 <p className="font-extrabold text-sm">Bạn đang có giao dịch đang chờ xử lý</p>
-                <p className="text-xs text-amber-700 mt-0.5">Nếu đã chuyển khoản thành công trên PayOS nhưng gói dịch vụ chưa kích hoạt, vui lòng bấm nút bên cạnh để cập nhật tức thì.</p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  Nếu đã chuyển khoản thành công trên PayOS nhưng gói dịch vụ chưa kích hoạt, vui
+                  lòng bấm nút bên cạnh để cập nhật tức thì.
+                </p>
               </div>
             </div>
             <button
@@ -306,11 +305,7 @@ function PricingContent() {
 
         <PricingStats />
 
-        <PricingFaq
-          faqs={faqs}
-          openFaq={openFaq}
-          onToggleFaq={setOpenFaq}
-        />
+        <PricingFaq faqs={faqs} openFaq={openFaq} onToggleFaq={setOpenFaq} />
       </div>
     </div>
   )

@@ -42,23 +42,12 @@ import { useAuthStore } from '@/src/stores/auth.store'
 import { RoleUser } from '@/src/enums/role.enum'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import Loading from '@/src/app/loading'
-import { formatDate } from '@/src/lib/utils'
-
-const statusLabels: Record<string, string> = {
-  DRAFT: 'Bản nháp',
-  PENDING_APPROVAL: 'Chờ duyệt',
-  APPROVED: 'Đã duyệt',
-  REJECTED: 'Bị từ chối',
-  CLOSED: 'Đã đóng',
-}
-
-const statusStyles: Record<string, string> = {
-  DRAFT: 'bg-amber-50 text-amber-700 border-amber-200',
-  PENDING_APPROVAL: 'bg-blue-50 text-blue-700 border-blue-200',
-  APPROVED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  REJECTED: 'bg-rose-50 text-rose-700 border-rose-200',
-  CLOSED: 'bg-slate-100 text-slate-600 border-slate-200',
-}
+import { formatDate, formatSalary } from '@/src/utils'
+import {
+  JobStatus,
+  JOB_STATUS_LABELS,
+  JOB_STATUS_STYLES,
+} from '@/src/enums/job.enum'
 
 export default function JobDetailPage() {
   const params = useParams()
@@ -230,11 +219,6 @@ export default function JobDetailPage() {
     ? job.description.split('\n').filter((line) => line.trim())
     : []
 
-  const formatSalary = (min: number, max: number) => {
-    if (!min && !max) return 'Thỏa thuận'
-    return `$${min.toLocaleString()} - $${max.toLocaleString()}`
-  }
-
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans">
       {/* Back Button */}
@@ -278,10 +262,10 @@ export default function JobDetailPage() {
                     )}
                     <span
                       className={`text-[10px] font-black tracking-widest border px-2.5 py-0.75 rounded-lg uppercase leading-none ${
-                        statusStyles[job.status] || statusStyles.CLOSED
+                        JOB_STATUS_STYLES[job.status] || JOB_STATUS_STYLES[JobStatus.CLOSED]
                       }`}
                     >
-                      {statusLabels[job.status] || job.status}
+                      {JOB_STATUS_LABELS[job.status] || job.status}
                     </span>
                   </div>
 
@@ -313,7 +297,7 @@ export default function JobDetailPage() {
 
               {/* Action Buttons Row */}
               <div className="flex flex-wrap items-center gap-3 mt-8 pt-6 border-t border-slate-100">
-                {isHrManager && job.status === 'PENDING_APPROVAL' && (
+                {isHrManager && job.status === JobStatus.PENDING_APPROVAL && (
                   <div className="flex items-center gap-3 mr-auto">
                     <button
                       type="button"
@@ -357,7 +341,7 @@ export default function JobDetailPage() {
                       }
                       setIsApplyModalOpen(true)
                     }}
-                    disabled={job.status !== 'APPROVED' && job.status !== 'OPEN'}
+                    disabled={job.status !== JobStatus.APPROVED && job.status !== JobStatus.OPEN}
                     className={`flex-1 min-w-50 font-black text-sm py-4 rounded-2xl transition-all duration-300 shadow-md active:scale-98 cursor-pointer uppercase tracking-wider flex items-center justify-center gap-2 ${
                       hasApplied
                         ? 'bg-slate-100 border border-slate-200 text-slate-400 hover:scale-100 hover:shadow-md'

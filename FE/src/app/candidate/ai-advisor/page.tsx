@@ -17,7 +17,7 @@ import { Send, Plus, MessageSquare, X, Bot, User as UserIcon, Loader2 } from 'lu
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { toast } from 'sonner'
-import { formatDate } from '@/src/lib/utils'
+import { formatDate } from '@/src/utils'
 
 export default function AiAdvisorPage() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)

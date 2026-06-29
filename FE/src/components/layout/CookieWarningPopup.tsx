@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { checkCookiesEnabled } from '@/src/lib/utils'
+import { checkCookiesEnabled } from '@/src/utils'
 
 export function CookieWarningPopup() {
   const [show, setShow] = useState(false)
