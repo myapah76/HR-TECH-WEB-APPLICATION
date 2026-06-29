@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(AppException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAppException(
+    public ResponseEntity<ApiResponse<Object>> handleAppException(
             AppException ex,
             HttpServletRequest request
     ) {
@@ -25,7 +25,8 @@ public class GlobalExceptionHandler {
                 errorCode.getStatusCode(),
                 ex.getMessage(),
                 errorCode,
-                request.getRequestURI()
+                request.getRequestURI(),
+                ex.getData()
         );
     }
 
@@ -96,12 +97,24 @@ public class GlobalExceptionHandler {
             ErrorCode code,
             String path
     ) {
-        ApiResponse<Void> error = ApiResponse.failed(
-                status.value(),
-                message,
-                code.name(),
-                path
-        );
+        return buildError(status, message, code, path, null);
+    }
+
+    private <T> ResponseEntity<ApiResponse<T>> buildError(
+            HttpStatus status,
+            String message,
+            ErrorCode code,
+            String path,
+            T data
+    ) {
+        ApiResponse<T> error = ApiResponse.<T>builder()
+                .code(status.value())
+                .message(message)
+                .errorCode(code.name())
+                .path(path)
+                .timestamp(java.time.Instant.now())
+                .data(data)
+                .build();
         return new ResponseEntity<>(error, status);
     }
 }

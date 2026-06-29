@@ -95,7 +95,6 @@ export default function RecommendJobsPage() {
           },
           onError: (error) => {
             console.error('Failed to upload new CV', error)
-            alert('Lỗi khi tải lên CV mới')
             setIsStarting(false)
           },
         }

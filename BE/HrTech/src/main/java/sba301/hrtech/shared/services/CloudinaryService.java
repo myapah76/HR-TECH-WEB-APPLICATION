@@ -16,7 +16,7 @@ public class CloudinaryService {
 
     private final Cloudinary cloudinary;
 
-    public void checkValidUrl(String url) {
+    public String checkValidUrl(String url) {
         if (url == null || url.isBlank()) {
             throw new AppException(ErrorCode.INVALID_CLOUDINARY_URL);
         }
@@ -33,7 +33,9 @@ public class CloudinaryService {
         String publicId = getPublicId(matcher, resourceType);
 
         try {
-            cloudinary.api().resource(publicId, ObjectUtils.asMap("resource_type", resourceType));
+            var apiResult = cloudinary.api().resource(publicId, ObjectUtils.asMap("resource_type", resourceType));
+            Object etagObj = apiResult.get("etag");
+            return etagObj != null ? etagObj.toString() : null;
         } catch (Exception e) {
             throw new AppException(ErrorCode.INVALID_CLOUDINARY_URL);
         }

@@ -32,6 +32,9 @@ public class Cv extends SoftDeleteEntity {
     @Column(name = "file_url")
     private String fileUrl;
 
+    @Column(name = "file_hash")
+    private String fileHash;
+
     @Column(name = "parsed_content", columnDefinition = "text")
     private String parsedContent;
 

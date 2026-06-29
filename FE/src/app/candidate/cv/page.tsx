@@ -112,9 +112,6 @@ export default function CandidateCvPage() {
             { duration: 5000 }
           )
         },
-        onError: (error) => {
-          toast.error(getErrorMessage(error))
-        },
       }
     )
   }
@@ -125,11 +122,7 @@ export default function CandidateCvPage() {
 
   const handleDelete = (id: string) => {
     if (confirm('Bạn có chắc chắn muốn xóa CV này không?')) {
-      deleteCvMutation.mutate(id, {
-        onError: (error) => {
-          toast.error(getErrorMessage(error))
-        },
-      })
+      deleteCvMutation.mutate(id)
     }
   }
 
@@ -144,7 +137,6 @@ export default function CandidateCvPage() {
         onSuccess: () => setEditingCvId(null),
         onError: (error) => {
           console.error('Failed to update title', error)
-          alert('Lỗi cập nhật tên CV')
         },
       }
     )

@@ -99,6 +99,7 @@ public enum ErrorCode {
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "File upload failed"),
     CV_EMPTY(HttpStatus.BAD_REQUEST, "CV content is empty"),
     EMPTY_FILE(HttpStatus.BAD_REQUEST, "Uploaded file is empty"),
+    CV_ALREADY_EXISTS(HttpStatus.CONFLICT, "Hồ sơ này đã được tải lên trước đó"),
 
     // OTP
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Unauthorized access"),

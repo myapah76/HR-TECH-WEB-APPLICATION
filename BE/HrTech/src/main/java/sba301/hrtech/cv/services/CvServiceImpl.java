@@ -3,11 +3,7 @@ package sba301.hrtech.cv.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.web.multipart.MultipartFile;
 import sba301.hrtech.cv.dtos.request.CreateCvRequest;
-import sba301.hrtech.identity.abstractions.repositories.UserRepository;
 import sba301.hrtech.identity.abstractions.services.IUserService;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.cv.abstractions.repositories.CvRepository;
@@ -17,19 +13,19 @@ import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.cv.entities.CvSkill;
 import sba301.hrtech.shared.enums.ExtractionStatus;
 import java.time.Instant;
-import sba301.hrtech.shared.enums.ExtractionStatus;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.shared.services.CloudinaryService;
 import org.springframework.context.ApplicationEventPublisher;
 import sba301.hrtech.shared.events.CvExtractionRequestedEvent;
-
 import sba301.hrtech.identity.utils.AuthUtils;
 import sba301.hrtech.cv.mapper.CvMapper;
 import sba301.hrtech.cv.dtos.response.CvDetailResponse;
 import sba301.hrtech.cv.dtos.response.CvSummaryResponse;
-import java.util.stream.Collectors;
 
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.List;
 import java.util.UUID;
 
@@ -49,8 +45,24 @@ public class CvServiceImpl implements ICvService {
     @Override
     public CvSummaryResponse createCv(CreateCvRequest request) {
         User user = authUtils.getCurrentUser();
-        // Validate the file URL using CloudinaryService
-        cloudinaryService.checkValidUrl(request.getFileUrl());
+        // Validate the file URL using CloudinaryService and get file hash (MD5)
+        String fileHash = cloudinaryService.checkValidUrl(request.getFileUrl());
+
+        // Check if CV with the same content hash already exists for this user
+        Optional<Cv> duplicateCv = cvRepository.findByUserIdAndFileHash(user.getId(), fileHash);
+        if (duplicateCv.isPresent()) {
+            Cv existing = duplicateCv.get();
+            Map<String, Object> errorData = Map.of(
+                "duplicateCvId", existing.getId(),
+                "title", existing.getTitle()
+            );
+            throw new AppException(
+                ErrorCode.CV_ALREADY_EXISTS,
+                "Hồ sơ này đã được tải lên trước đó",
+                errorData
+            );
+        }
+
         // Check if this is the first CV for the user
         boolean isFirstCv = cvRepository.findByUserId(user.getId()).isEmpty();
 
@@ -58,6 +70,7 @@ public class CvServiceImpl implements ICvService {
                 .user(user)
                 .title(request.getTitle())
                 .fileUrl(request.getFileUrl())
+                .fileHash(fileHash)
                 .extractionStatus(ExtractionStatus.PENDING)
                 .isPrimary(isFirstCv)
                 .build();
