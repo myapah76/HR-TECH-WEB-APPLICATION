@@ -205,7 +205,10 @@ public class AuthServiceImpl implements IAuthService {
     public TokenPair login(LoginRequest request) {
 
         Optional<User> user = userService.getUserEntityByEmail(request.getEmail());
-        if (user.isPresent() && user.get().getIsBlocked()) {
+        if (!user.isPresent()){
+            throw new AppException(ErrorCode.USER_NOT_FOUND, request.getEmail() + "is not register");
+        }
+        if (user.get().getIsBlocked()) {
             throw new AppException(ErrorCode.USER_ALREADY_REGISTERED, "User is blocked");
         }
         if (!passwordEncoder.matches(request.getPassword(), user.orElse(new User()).getPassword())) {
