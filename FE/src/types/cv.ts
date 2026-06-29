@@ -8,6 +8,11 @@ export interface CvSummaryResponse {
   createdAt: string;
 }
 
+export interface UploadCvRequest {
+  title: string
+  fileUrl: string
+}
+
 export interface CvDetailResponse extends CvSummaryResponse {
   fileUrl?: string;
   parsedContent?: string;
