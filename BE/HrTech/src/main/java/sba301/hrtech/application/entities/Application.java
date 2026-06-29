@@ -46,6 +46,33 @@ public class Application extends SoftDeleteEntity {
     @Column(name = "applied_at")
     private Instant appliedAt;
 
+    @Column(name = "interview_date_time")
+    private Instant interviewDateTime;
+
+    @Column(name = "interview_location")
+    private String interviewLocation;
+
+    @Column(name = "interview_meeting_link")
+    private String interviewMeetingLink;
+
+    @Column(name = "interview_note", columnDefinition = "TEXT")
+    private String interviewNote;
+
+    @Column(name = "interview_response_token", unique = true)
+    private String interviewResponseToken;
+
+    @Column(name = "interview_response_token_expires_at")
+    private Instant interviewResponseTokenExpiresAt;
+
+    @Column(name = "interview_accepted_at")
+    private Instant interviewAcceptedAt;
+
+    @Column(name = "candidate_interview_response_message", columnDefinition = "TEXT")
+    private String candidateInterviewResponseMessage;
+
+    @Column(name = "candidate_preferred_interview_date_time")
+    private Instant candidatePreferredInterviewDateTime;
+
     @OneToOne(mappedBy = "application", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private ApplicationScore applicationScore;
 }

@@ -21,6 +21,12 @@ public class ApplicationDetailResponse {
     private String coverLetter;
     private ApplicationStatus status;
     private Instant appliedAt;
+    private Instant interviewDateTime;
+    private String interviewLocation;
+    private String interviewMeetingLink;
+    private String interviewNote;
+    private String candidateInterviewResponseMessage;
+    private Instant candidatePreferredInterviewDateTime;
 
     // Thông tin AI chấm điểm
     private BigDecimal overallScore;

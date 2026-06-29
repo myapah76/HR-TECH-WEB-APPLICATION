@@ -8,6 +8,7 @@ export interface ApplicationSummaryResponse {
   cvTitle: string;
   status: ApplicationStatus;
   appliedAt: string;
+  interviewDateTime?: string;
 }
 
 export interface ApplicationDetailResponse {
@@ -19,6 +20,12 @@ export interface ApplicationDetailResponse {
   coverLetter?: string;
   status: ApplicationStatus;
   appliedAt: string;
+  interviewDateTime?: string;
+  interviewLocation?: string;
+  interviewMeetingLink?: string;
+  interviewNote?: string;
+  candidateInterviewResponseMessage?: string;
+  candidatePreferredInterviewDateTime?: string;
   overallScore?: number;
   grade?: string;
   aiSummary?: string;
@@ -33,6 +40,18 @@ export interface SubmitApplicationRequest {
 
 export interface UpdateApplicationStatusRequest {
   status: ApplicationStatus;
+}
+
+export interface ScheduleInterviewRequest {
+  interviewDateTime: string;
+  interviewLocation?: string;
+  interviewMeetingLink?: string;
+  note?: string;
+}
+
+export interface RejectInterviewScheduleRequest {
+  preferredInterviewDateTime: string;
+  reason: string;
 }
 
 // --- Component Props ---

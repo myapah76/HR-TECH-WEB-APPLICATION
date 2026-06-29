@@ -15,6 +15,8 @@ import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 
 import java.time.Year;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -79,6 +81,55 @@ public class EmailSenderImpl implements IEmailSender {
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
             log.error("Failed to send welcome email to {}", toEmail, e);
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    @Override
+    @Async
+    public CompletableFuture<Void> sendApplicationStatusUpdateEmailAsync(
+            String toEmail,
+            String fullName,
+            String jobTitle,
+            String newStatus,
+            Instant interviewDateTime,
+            String interviewLocation,
+            String interviewMeetingLink,
+            String note,
+            String acceptLink,
+            String rejectLink) {
+        try {
+            Context context = new Context();
+            context.setVariable("fullName", fullName);
+            context.setVariable("jobTitle", jobTitle);
+            context.setVariable("newStatus", newStatus);
+            context.setVariable("interviewDateTime",
+                    interviewDateTime == null ? null : interviewDateTime.atZone(ZoneId.systemDefault()).toLocalDateTime());
+            context.setVariable("interviewLocation", interviewLocation);
+            context.setVariable("interviewMeetingLink", interviewMeetingLink);
+            context.setVariable("note", note);
+            context.setVariable("acceptLink", acceptLink);
+            context.setVariable("rejectLink", rejectLink);
+            context.setVariable("year", Year.now().getValue());
+
+            String templateName = switch (newStatus) {
+                case "PENDING_INTERVIEW_SCHEDULE" -> "email/application-interview";
+                case "OFFER" -> "email/application-offer";
+                default -> throw new IllegalArgumentException("Unsupported application status email: " + newStatus);
+            };
+
+            String subject = switch (newStatus) {
+                case "PENDING_INTERVIEW_SCHEDULE" -> "Interview Schedule - " + jobTitle;
+                case "OFFER" -> "Job Offer - " + jobTitle;
+                default -> "Application Status Update - " + jobTitle;
+            };
+
+            String html = templateEngine.process(templateName, context);
+            sendHtmlEmail(toEmail, subject, html);
+
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            log.error("Failed to send application status update email to {}", toEmail, e);
             return CompletableFuture.failedFuture(e);
         }
     }

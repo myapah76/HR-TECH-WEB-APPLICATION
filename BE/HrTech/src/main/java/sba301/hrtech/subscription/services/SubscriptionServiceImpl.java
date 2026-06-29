@@ -27,7 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import sba301.hrtech.subscription.dtos.response.MySubscriptionResponse;
@@ -159,12 +161,29 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
             CandidateSubscription sub = candidateSubscriptionRepository.findById(subscriptionId)
                     .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Candidate Sub not found"));
 
+            Instant newEndDate = now.plus(sub.getPlan().getDurationDays(), ChronoUnit.DAYS);
+            Map<UUID, Integer> remainingQuotas = new HashMap<>();
+            Instant trimQuotaAt = null;
+
             // CLEAN SLATE: Cancel all currently active subscriptions for this user
             List<CandidateSubscription> activeSubs = candidateSubscriptionRepository
                     .findByUserIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                             sub.getUser().getId(), SubscriptionStatus.ACTIVE, now, now);
             for (CandidateSubscription activeSub : activeSubs) {
                 if (!activeSub.getId().equals(sub.getId())) {
+                    if (activeSub.getPlan().getId().equals(sub.getPlan().getId())) {
+                        if (activeSub.getEndDate().isAfter(now)) {
+                            newEndDate = activeSub.getEndDate().plus(sub.getPlan().getDurationDays(), ChronoUnit.DAYS);
+                            trimQuotaAt = activeSub.getEndDate();
+                        }
+                        List<CandidateSubFeatureUsage> oldUsages = candidateSubFeatureUsageRepository.findBySubscriptionId(activeSub.getId());
+                        for (CandidateSubFeatureUsage oldUsage : oldUsages) {
+                            int remaining = oldUsage.getTotalQuota() - oldUsage.getTotalUsed();
+                            if (remaining > 0) {
+                                remainingQuotas.put(oldUsage.getFeature().getId(), remaining);
+                            }
+                        }
+                    }
                     activeSub.setStatus(SubscriptionStatus.CANCELLED);
                     candidateSubscriptionRepository.save(activeSub);
                 }
@@ -172,15 +191,20 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
 
             sub.setStatus(SubscriptionStatus.ACTIVE);
             sub.setStartDate(now);
-            sub.setEndDate(now.plus(sub.getPlan().getDurationDays(), ChronoUnit.DAYS));
+            sub.setEndDate(newEndDate);
+            if (trimQuotaAt != null) {
+                sub.setTrimQuotaAt(trimQuotaAt);
+                sub.setIsQuotaTrimmed(false);
+            }
             candidateSubscriptionRepository.save(sub);
 
             if (sub.getPlan().getPlanFeatures() != null) {
                 for (CandidatePlanFeature pf : sub.getPlan().getPlanFeatures()) {
+                    int extraQuota = remainingQuotas.getOrDefault(pf.getFeature().getId(), 0);
                     CandidateSubFeatureUsage usage = CandidateSubFeatureUsage.builder()
                             .subscription(sub)
                             .feature(pf.getFeature())
-                            .totalQuota(pf.getTotalQuota())
+                            .totalQuota(pf.getTotalQuota() + extraQuota)
                             .totalUsed(0)
                             .build();
                     candidateSubFeatureUsageRepository.save(usage);
@@ -203,12 +227,29 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
             CompanySubscription sub = companySubscriptionRepository.findById(subscriptionId)
                     .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Company Sub not found"));
 
+            Instant newEndDate = now.plus(sub.getPlan().getDurationDays(), ChronoUnit.DAYS);
+            Map<UUID, Integer> remainingQuotas = new HashMap<>();
+            Instant trimQuotaAt = null;
+
             // CLEAN SLATE: Cancel all currently active subscriptions for this company
             List<CompanySubscription> activeSubs = companySubscriptionRepository
                     .findByCompanyIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                             sub.getCompany().getId(), SubscriptionStatus.ACTIVE, now, now);
             for (CompanySubscription activeSub : activeSubs) {
                 if (!activeSub.getId().equals(sub.getId())) {
+                    if (activeSub.getPlan().getId().equals(sub.getPlan().getId())) {
+                        if (activeSub.getEndDate().isAfter(now)) {
+                            newEndDate = activeSub.getEndDate().plus(sub.getPlan().getDurationDays(), ChronoUnit.DAYS);
+                            trimQuotaAt = activeSub.getEndDate();
+                        }
+                        List<CompanySubFeatureUsage> oldUsages = companySubFeatureUsageRepository.findBySubscriptionId(activeSub.getId());
+                        for (CompanySubFeatureUsage oldUsage : oldUsages) {
+                            int remaining = oldUsage.getTotalQuota() - oldUsage.getTotalUsed();
+                            if (remaining > 0) {
+                                remainingQuotas.put(oldUsage.getFeature().getId(), remaining);
+                            }
+                        }
+                    }
                     activeSub.setStatus(SubscriptionStatus.CANCELLED);
                     companySubscriptionRepository.save(activeSub);
                 }
@@ -216,15 +257,20 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
 
             sub.setStatus(SubscriptionStatus.ACTIVE);
             sub.setStartDate(now);
-            sub.setEndDate(now.plus(sub.getPlan().getDurationDays(), ChronoUnit.DAYS));
+            sub.setEndDate(newEndDate);
+            if (trimQuotaAt != null) {
+                sub.setTrimQuotaAt(trimQuotaAt);
+                sub.setIsQuotaTrimmed(false);
+            }
             companySubscriptionRepository.save(sub);
 
             if (sub.getPlan().getPlanFeatures() != null) {
                 for (CompanyPlanFeature pf : sub.getPlan().getPlanFeatures()) {
+                    int extraQuota = remainingQuotas.getOrDefault(pf.getFeature().getId(), 0);
                     CompanySubFeatureUsage usage = CompanySubFeatureUsage.builder()
                             .subscription(sub)
                             .feature(pf.getFeature())
-                            .totalQuota(pf.getTotalQuota())
+                            .totalQuota(pf.getTotalQuota() + extraQuota)
                             .totalUsed(0)
                             .build();
                     companySubFeatureUsageRepository.save(usage);

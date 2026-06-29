@@ -23,12 +23,13 @@ import {
 } from 'lucide-react'
 import {
   useGetApplicationsByJob,
+  useScheduleInterview,
   useUpdateApplicationStatus,
 } from '@/src/hooks/application'
 import { getApplicationsByJob } from '@/src/services/application.service'
 import { useGetManageJobs } from '@/src/hooks/job'
 import { useGetMyCompany } from '@/src/hooks/company'
-import { ApplicationStatus, ApplicationSummaryResponse } from '@/src/types'
+import { ApplicationStatus, ApplicationSummaryResponse, ScheduleInterviewRequest } from '@/src/types'
 import ApplicationDetailModal from '@/src/components/recruiter/ApplicationDetailModal'
 
 // ─── Status config ────────────────────────────────────────────────────────────
@@ -39,9 +40,10 @@ const STATUS_CONFIG: Record<
   [ApplicationStatus.SUBMITTED]: { label: 'Mới nộp', color: 'text-blue-700', bg: 'bg-blue-50', dot: 'bg-blue-500' },
   [ApplicationStatus.SCREENING]: { label: 'Đang xét', color: 'text-amber-700', bg: 'bg-amber-50', dot: 'bg-amber-500' },
   [ApplicationStatus.SCORED]: { label: 'Đã chấm', color: 'text-violet-700', bg: 'bg-violet-50', dot: 'bg-violet-500' },
-  [ApplicationStatus.INTERVIEW]: { label: 'Phỏng vấn', color: 'text-indigo-700', bg: 'bg-indigo-50', dot: 'bg-indigo-500' },
+  [ApplicationStatus.PENDING_INTERVIEW_SCHEDULE]: { label: 'CHỜ LỊCH PHỎNG VẤN', color: 'text-orange-700', bg: 'bg-orange-50', dot: 'bg-orange-500' },
+  [ApplicationStatus.INTERVIEW]: { label: 'PHỎNG VẤN', color: 'text-indigo-700', bg: 'bg-indigo-50', dot: 'bg-indigo-500' },
   [ApplicationStatus.OFFER]: { label: 'Offer', color: 'text-emerald-700', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
-  [ApplicationStatus.REJECTED]: { label: 'Từ chối', color: 'text-rose-700', bg: 'bg-rose-50', dot: 'bg-rose-500' },
+  [ApplicationStatus.REJECTED]: { label: 'TỪ CHỐI', color: 'text-rose-700', bg: 'bg-rose-50', dot: 'bg-rose-500' },
   [ApplicationStatus.WITHDRAWN]: { label: 'Đã rút', color: 'text-slate-600', bg: 'bg-slate-100', dot: 'bg-slate-400' },
 }
 
@@ -50,6 +52,7 @@ const FILTER_STATUS_OPTIONS: { value: ApplicationStatus | ''; label: string }[] 
   { value: ApplicationStatus.SUBMITTED, label: 'Mới nộp' },
   { value: ApplicationStatus.SCREENING, label: 'Đang xét' },
   { value: ApplicationStatus.SCORED, label: 'Đã chấm điểm AI' },
+  { value: ApplicationStatus.PENDING_INTERVIEW_SCHEDULE, label: 'Chờ lịch phỏng vấn' },
   { value: ApplicationStatus.INTERVIEW, label: 'Phỏng vấn' },
   { value: ApplicationStatus.OFFER, label: 'Offer' },
   { value: ApplicationStatus.REJECTED, label: 'Từ chối' },
@@ -212,12 +215,15 @@ export default function HRApplicationsPage() {
   const isAppsLoading = selectedJobId ? isSingleJobLoading : isAllAppsLoading
 
   const updateStatus = useUpdateApplicationStatus()
+  const scheduleInterview = useScheduleInterview()
 
   // ─── Derived stats ─────────────────────────────────────────────────────────
   const stats = {
     total: applications.length,
     submitted: applications.filter((a) => a.status === ApplicationStatus.SUBMITTED).length,
-    interview: applications.filter((a) => a.status === ApplicationStatus.INTERVIEW).length,
+    interview: applications.filter((a) =>
+      a.status === ApplicationStatus.INTERVIEW || a.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE
+    ).length,
     offer: applications.filter((a) => a.status === ApplicationStatus.OFFER).length,
   }
 
@@ -236,6 +242,19 @@ export default function HRApplicationsPage() {
     if (selectedApp?.id === id) {
       setSelectedApp({ ...selectedApp, status })
     }
+  }
+
+  const handleScheduleInterview = (id: string, request: ScheduleInterviewRequest) => {
+    scheduleInterview.mutate(
+      { id, request },
+      {
+        onSuccess: (updated) => {
+          if (selectedApp?.id === id) {
+            setSelectedApp({ ...selectedApp, ...updated })
+          }
+        },
+      }
+    )
   }
 
   return (
@@ -423,6 +442,8 @@ export default function HRApplicationsPage() {
           applicationId={selectedApp.id}
           onClose={() => setSelectedApp(null)}
           onStatusChange={handleStatusUpdate}
+          onScheduleInterview={handleScheduleInterview}
+          isSchedulingInterview={scheduleInterview.isPending}
         />
       )}
     </div>
