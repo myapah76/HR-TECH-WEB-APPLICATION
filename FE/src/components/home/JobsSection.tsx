@@ -1,72 +1,127 @@
 "use client";
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
-import { ArrowRight, ChevronLeft, ChevronRight, DollarSign, MapPin } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, DollarSign, MapPin, Loader2 } from 'lucide-react';
 import { useState } from 'react';
-import { ALL_NUMERIC_PAGES_JOBS } from '@/src/data';
+import { useSearchJobs } from '@/src/hooks/job';
 import { Job } from '@/src/types';
+import { formatSalary } from '@/src/utils/salary';
 
 interface JobsSectionProps {
-  jobs: Job[];
   searchKeyword: string;
   searchLocation: string;
   onJobSelect: (job: Job) => void;
   onViewAllLatestClick: () => void;
+}
+
+const mapBackendJobToUiJob = (bj: any): Job => {
+  const colors = [
+    'bg-blue-650',
+    'bg-emerald-600',
+    'bg-rose-600',
+    'bg-amber-600',
+    'bg-purple-650',
+    'bg-indigo-650',
+  ];
+  const colorIndex = bj.companyName ? bj.companyName.charCodeAt(0) % colors.length : 0;
+  const logoBg = colors[colorIndex];
+
+  const companyInitials = bj.companyName
+    ? bj.companyName
+        .split(' ')
+        .filter((w: string) => w.length > 0)
+        .slice(0, 2)
+        .map((w: string) => w[0].toUpperCase())
+        .join('')
+    : '??';
+
+  const salaryText = formatSalary(bj.salaryMin, bj.salaryMax);
+  const skillsArray = bj.skills ? bj.skills.map((sk: any) => sk.skillName) : [];
+
+  const tags: string[] = [];
+  if (bj.jobType) {
+    const typeLabel = bj.jobType === 'FULL_TIME' ? 'Fulltime' : bj.jobType === 'PART_TIME' ? 'Parttime' : bj.jobType;
+    tags.push(typeLabel);
+  }
+  const createdDate = new Date(bj.createdAt);
+  const today = new Date();
+  const diffDays = Math.ceil(Math.abs(today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays <= 7) {
+    tags.push('MỚI');
   }
 
-export default function JobsSection({ jobs, searchKeyword, searchLocation, onJobSelect, onViewAllLatestClick }: JobsSectionProps) {
-  const [activeTab, setActiveTab] = useState<'featured' | 'vip' | 'headhunter'>('featured');
-  const [currentPage, setCurrentPage] = useState<number>(8); // Default active page is 8 as shown in screenshot
+  return {
+    id: bj.id,
+    title: bj.title,
+    company: bj.companyName,
+    logo: bj.companyLogoUrl || companyInitials,
+    logoBg,
+    salary: salaryText,
+    location: bj.location,
+    tags,
+    type: 'featured',
+    description: bj.description || '',
+    requirements: bj.requirements ? bj.requirements.split('\n').filter((l: string) => l.trim().length > 0) : [],
+    benefits: [],
+    postedAt: bj.createdAt ? `${diffDays} ngày trước` : 'Mới cập nhật',
+    skills: skillsArray,
+  };
+};
 
-  // Filter jobs based on active tab AND search keywords
-  const getFilteredJobs = () => {
-    let result = [...jobs];
+const JobCardSkeleton = () => (
+  <div className="bg-white border border-slate-200/80 p-5 rounded-2xl flex gap-4 items-start animate-pulse h-40">
+    <div className="h-13 w-13 rounded-2xl bg-slate-100 shrink-0" />
+    <div className="flex-1 space-y-3">
+      <div className="h-4 bg-slate-100 rounded-md w-3/4" />
+      <div className="h-3 bg-slate-100 rounded-md w-1/2" />
+      <div className="h-6 bg-slate-105 rounded-lg w-1/3 mt-4" />
+      <div className="flex gap-2 mt-3">
+        <div className="h-5 bg-slate-100 rounded-md w-16" />
+        <div className="h-5 bg-slate-100 rounded-md w-16" />
+      </div>
+    </div>
+  </div>
+);
 
-    // Search query filtering
-    if (searchKeyword.trim() !== '') {
-      const kw = searchKeyword.toLowerCase();
-      result = result.filter(
-        (j) =>
-          j.title.toLowerCase().includes(kw) ||
-          j.company.toLowerCase().includes(kw) ||
-          j.skills.some((sk) => sk.toLowerCase().includes(kw))
-      );
-    }
+export default function JobsSection({ searchKeyword, searchLocation, onJobSelect, onViewAllLatestClick }: JobsSectionProps) {
+  const [activeTab, setActiveTab] = useState<'featured' | 'vip'>('featured');
+  const [currentPage, setCurrentPage] = useState<number>(0); // 0-indexed for backend API
 
-    if (searchLocation.trim() !== '') {
-      const loc = searchLocation.toLowerCase();
-      result = result.filter((j) => j.location.toLowerCase().includes(loc));
-    }
-
-    // Checking if we are on a numeric page change (4, 5, 6, etc.) instead of the default 8
-    if (currentPage !== 8 && ALL_NUMERIC_PAGES_JOBS[currentPage]) {
-      return ALL_NUMERIC_PAGES_JOBS[currentPage];
-    }
-
-    // Filter by Tab Type (only if the user is not actively searching everything, which should override tabs matching criteria)
-    if (searchKeyword.trim() === '' && searchLocation.trim() === '') {
-      result = result.filter((j) => j.type === activeTab);
-    }
-
-    return result;
+  // Build API search criteria based on current inputs and active tab
+  const params: any = {
+    page: currentPage,
+    size: 6, // 6 jobs per page
+    keyword: searchKeyword.trim() ? searchKeyword.trim() : undefined,
+    location: searchLocation.trim() ? searchLocation.trim() : undefined,
   };
 
-  const filteredJobs = getFilteredJobs();
+  // If activeTab is 'vip', we query jobs with salary >= 1000 USD
+  if (activeTab === 'vip') {
+    params.salaryMin = 1000;
+  }
 
-  // Pagination click handler
+  const { data, isLoading } = useSearchJobs(params);
+  const backendJobs = data?.content || [];
+  const totalPages = data?.totalPages || 1;
+
+  // Convert backend jobs to UI format
+  const mappedJobs = backendJobs.map(mapBackendJobToUiJob);
+
+  // Tab switching handler
+  const handleTabChange = (tab: 'featured' | 'vip') => {
+    setActiveTab(tab);
+    setCurrentPage(0); // Reset page on tab change
+  };
+
+  // Pagination page click
   const handlePageSelect = (page: number) => {
     setCurrentPage(page);
-    // Scroll smoothly to start of jobs section
     const sec = document.getElementById('all-jobs-feed');
     if (sec) {
       sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
-  const pageNumbers = [4, 5, 6, 7, 8, 9, 10];
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i);
 
   return (
     <section className="bg-slate-50/30 py-16 scroll-mt-20" id="all-jobs-feed">
@@ -76,9 +131,9 @@ export default function JobsSection({ jobs, searchKeyword, searchLocation, onJob
         <div className="border-b border-slate-200/80 mb-8" id="jobs-tabs-container">
           <div className="flex space-x-8 overflow-x-auto scrollbar-hide" id="jobs-tabs-row">
             <button
-              onClick={() => { setActiveTab('featured'); setCurrentPage(8); }}
+              onClick={() => handleTabChange('featured')}
               className={`pb-4 text-sm font-extrabold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
-                activeTab === 'featured' && currentPage === 8
+                activeTab === 'featured'
                   ? 'border-blue-600 text-blue-650' 
                   : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
               }`}
@@ -87,9 +142,9 @@ export default function JobsSection({ jobs, searchKeyword, searchLocation, onJob
               {'Việc Làm Nổi Bật'}
             </button>
             <button
-              onClick={() => { setActiveTab('vip'); setCurrentPage(8); }}
+              onClick={() => handleTabChange('vip')}
               className={`pb-4 text-sm font-extrabold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
-                activeTab === 'vip' && currentPage === 8
+                activeTab === 'vip'
                   ? 'border-blue-600 text-blue-650' 
                   : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
               }`}
@@ -97,33 +152,37 @@ export default function JobsSection({ jobs, searchKeyword, searchLocation, onJob
             >
               {'Việc Làm VIP ($1000+)'}
             </button>
-            <button
-              onClick={() => { setActiveTab('headhunter'); setCurrentPage(8); }}
-              className={`pb-4 text-sm font-extrabold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
-                activeTab === 'headhunter' && currentPage === 8
-                  ? 'border-blue-600 text-blue-650' 
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
-              }`}
-              id="tab-headhunter"
-            >
-              {'Việc Làm Từ Top Headhunter'}
-            </button>
           </div>
         </div>
 
         {/* Jobs Feed Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5.5" id="jobs-cards-grid">
-          {filteredJobs.length > 0 ? (
-            filteredJobs.map((job: Job) => (
+          {isLoading ? (
+            Array.from({ length: 6 }).map((_, idx) => (
+              <JobCardSkeleton key={idx} />
+            ))
+          ) : mappedJobs.length > 0 ? (
+            mappedJobs.map((job: Job) => (
               <div
                 key={job.id}
                 onClick={() => onJobSelect(job)}
                 className="group relative bg-white/80 backdrop-blur-xs border border-slate-200/80 hover:border-blue-400 hover:bg-white p-5 rounded-2xl shadow-xs hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex gap-4 items-start active:scale-99"
                 id={`job-feed-card-${job.id}`}
               >
-                {/* Logo with Dynamic Initial background color */}
-                <div className={`h-13 w-13 rounded-2xl text-white font-extrabold text-base flex items-center justify-center shrink-0 shadow-inner transition-transform group-hover:scale-105 ${job.logoBg}`} id={`job-logo-${job.id}`}>
-                  {job.logo}
+                {/* Logo with Initials or Image Logo */}
+                <div className="h-13 w-13 rounded-2xl overflow-hidden shrink-0 shadow-inner transition-transform group-hover:scale-105 border border-slate-100 flex items-center justify-center bg-white" id={`job-logo-${job.id}`}>
+                  {job.logo && (job.logo.startsWith('http') || job.logo.startsWith('/')) ? (
+                    <img
+                      src={job.logo}
+                      alt={job.company}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-contain p-1"
+                    />
+                  ) : (
+                    <div className={`w-full h-full text-white font-extrabold text-base flex items-center justify-center ${job.logoBg}`}>
+                      {job.logo}
+                    </div>
+                  )}
                 </div>
 
                 {/* Info Container */}
@@ -133,9 +192,9 @@ export default function JobsSection({ jobs, searchKeyword, searchLocation, onJob
                       {job.title}
                     </h3>
                     
-                    {/* Unique badge tags match screenshot styles */}
+                    {/* Unique badge tags */}
                     <div className="flex gap-1 shrink-0">
-                      {job.tags?.map((tag: string, idx: number) => (
+                      {job.tags?.map((tag: string) => (
                         <span 
                           key={tag} 
                           className={`text-[9px] font-extrabold px-2.5 py-0.75 rounded-md uppercase tracking-wider ${
@@ -147,7 +206,7 @@ export default function JobsSection({ jobs, searchKeyword, searchLocation, onJob
                           }`}
                           id={`job-tag-${tag}-${job.id}`}
                         >
-                          {tag === 'MỚI' ? ('MỚI') : tag}
+                          {tag}
                         </span>
                       ))}
                     </div>
@@ -189,44 +248,45 @@ export default function JobsSection({ jobs, searchKeyword, searchLocation, onJob
 
         {/* Dynamic Pagination & CTA row */}
         <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-250/20 pt-8" id="pagination-panel">
-          
-          {/* Real paginator control */}
-          <div className="flex items-center gap-1.5" id="paginator-controls">
-            <button 
-              onClick={() => handlePageSelect(Math.max(4, currentPage - 1))}
-              disabled={currentPage === 4}
-              className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-2xs hover:scale-102 cursor-pointer bg-white"
-              id="paginator-prev"
-            >
-              <ChevronLeft className="h-4 w-4 text-slate-600" />
-            </button>
-            
-            {pageNumbers.map((page) => (
-              <button
-                key={page}
-                onClick={() => handlePageSelect(page)}
-                className={`h-9 w-9 text-xs font-bold rounded-xl border transition-all cursor-pointer hover:scale-102 ${
-                  currentPage === page 
-                    ? 'bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-500/20' 
-                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
-                }`}
-                id={`paginator-btn-${page}`}
+          {totalPages > 1 ? (
+            /* Real paginator control */
+            <div className="flex items-center gap-1.5" id="paginator-controls">
+              <button 
+                onClick={() => handlePageSelect(Math.max(0, currentPage - 1))}
+                disabled={currentPage === 0}
+                className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-2xs hover:scale-102 cursor-pointer bg-white"
+                id="paginator-prev"
               >
-                {page}
+                <ChevronLeft className="h-4 w-4 text-slate-600" />
               </button>
-            ))}
+              
+              {pageNumbers.map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageSelect(page)}
+                  className={`h-9 w-9 text-xs font-bold rounded-xl border transition-all cursor-pointer hover:scale-102 ${
+                    currentPage === page 
+                      ? 'bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-500/20' 
+                      : 'border-slate-200 text-slate-650 bg-white hover:bg-slate-50'
+                  }`}
+                  id={`paginator-btn-${page}`}
+                >
+                  {page + 1}
+                </button>
+              ))}
 
-            <span className="text-slate-400 px-1 font-bold">...</span>
-
-            <button 
-              onClick={() => handlePageSelect(Math.min(10, currentPage + 1))}
-              disabled={currentPage === 10}
-              className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-2xs hover:scale-102 cursor-pointer bg-white"
-              id="paginator-next"
-            >
-              <ChevronRight className="h-4 w-4 text-slate-600" />
-            </button>
-          </div>
+              <button 
+                onClick={() => handlePageSelect(Math.min(totalPages - 1, currentPage + 1))}
+                disabled={currentPage === totalPages - 1}
+                className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-2xs hover:scale-102 cursor-pointer bg-white"
+                id="paginator-next"
+              >
+                <ChevronRight className="h-4 w-4 text-slate-600" />
+              </button>
+            </div>
+          ) : (
+            <div />
+          )}
 
           <button
             onClick={onViewAllLatestClick}
@@ -236,9 +296,7 @@ export default function JobsSection({ jobs, searchKeyword, searchLocation, onJob
             <span>{'Xem việc làm mới cập nhật'}</span>
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </button>
-
         </div>
-
       </div>
     </section>
   );
