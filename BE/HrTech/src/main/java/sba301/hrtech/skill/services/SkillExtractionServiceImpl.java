@@ -6,30 +6,17 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sba301.hrtech.cv.abstractions.services.ICvService;
-
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.cv.entities.CvSkill;
 import sba301.hrtech.job.abstractions.services.IJobService;
-
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.job.entities.JobSkill;
-import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.enums.ExtractionStatus;
 import sba301.hrtech.shared.enums.SkillLevel;
-import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
+import sba301.hrtech.skill.abstractions.repositories.RoleAliasRepository;
 import sba301.hrtech.skill.abstractions.services.ISkillExtractionService;
-import sba301.hrtech.skill.dtos.response.CvExtractionResponse;
-
-import sba301.hrtech.skill.dtos.response.JobExtractResponseDto;
-import sba301.hrtech.skill.dtos.response.JobExtractionResponse;
-import sba301.hrtech.skill.dtos.response.ExtractedSkillDto;
-import sba301.hrtech.skill.dtos.response.ParseExtractResponseDto;
-import sba301.hrtech.skill.dtos.response.SkillProcessResult;
-import sba301.hrtech.skill.dtos.response.MapRelationshipsResponseDto;
-import sba301.hrtech.skill.dtos.response.SkillRelationshipDto;
-import sba301.hrtech.skill.dtos.response.SkillRelationDetail;
-import sba301.hrtech.skill.dtos.response.SkillResponse;
+import sba301.hrtech.skill.dtos.response.*;
 import sba301.hrtech.skill.entities.SkillNode;
 import sba301.hrtech.skill.mapper.SkillMapper;
 
@@ -43,10 +30,9 @@ import java.util.concurrent.CompletableFuture;
 public class SkillExtractionServiceImpl implements ISkillExtractionService {
 
     private final ICvService cvService;
-    
     private final IJobService jobService;
-    
     private final SkillNodeRepository skillNodeRepository;
+    private final RoleAliasRepository roleAliasRepository;
     private final AiServiceClient aiServiceClient;
     private final SkillMapper skillMapper;
 
@@ -119,6 +105,8 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
                         .build());
             }
 
+            aiExtracted = filterAndValidateSkills(aiExtracted);
+
             int matchedCount = 0;
             int newCount = 0;
             List<SkillResponse> extractedSkills = new ArrayList<>();
@@ -129,12 +117,19 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
                 if (extracted.getName() == null || extracted.getName().isBlank()) {
                     continue;
                 }
+                // Filter out garbage names: single chars, special chars only, numbers-only
+                if (!isValidSkillName(extracted.getName())) {
+                    log.debug("Skipping invalid skill name: '{}'", extracted.getName());
+                    continue;
+                }
 
                 SkillProcessResult result = processAndGetSkillNode(extracted.getName());
                 SkillNode skillNode = result.skillNode();
 
-                if (result.isNew()) {
-                    newCount++;
+                if (result.isNew() || skillNode.getRoles() == null || skillNode.getRoles().isEmpty()) {
+                    if (result.isNew()) {
+                        newCount++;
+                    }
                     newlyCreatedSkills.add(skillNode.getName());
                 } else {
                     matchedCount++;
@@ -252,6 +247,8 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
                         .build());
             }
 
+            aiExtracted = filterAndValidateSkills(aiExtracted);
+
             Set<String> existingSkillNeo4jIds = new HashSet<>();
             for (JobSkill js : job.getJobSkills()) {
                 existingSkillNeo4jIds.add(js.getSkillNeo4jId());
@@ -266,12 +263,19 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
                 if (extracted.getName() == null || extracted.getName().isBlank()) {
                     continue;
                 }
+                // Filter out garbage names: single chars, special chars only, numbers-only
+                if (!isValidSkillName(extracted.getName())) {
+                    log.debug("Skipping invalid skill name: '{}'", extracted.getName());
+                    continue;
+                }
 
                 SkillProcessResult result = processAndGetSkillNode(extracted.getName());
                 SkillNode skillNode = result.skillNode();
                 
-                if (result.isNew()) {
-                    newCount++;
+                if (result.isNew() || skillNode.getRoles() == null || skillNode.getRoles().isEmpty()) {
+                    if (result.isNew()) {
+                        newCount++;
+                    }
                     newlyCreatedSkills.add(skillNode.getName());
                 } else {
                     matchedCount++;
@@ -319,20 +323,52 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
         try {
             log.info("Triggering background relationship mapping for {} new skills", newSkills.size());
             List<String> allDbSkills = skillNodeRepository.findAllNames();
+            List<String> canonicalRoles = roleAliasRepository.findDistinctCanonicalRoles();
             
-            MapRelationshipsResponseDto response = aiServiceClient.mapRelationships(newSkills, allDbSkills);
+            MapRelationshipsResponseDto response = aiServiceClient.mapRelationships(newSkills, allDbSkills, canonicalRoles);
             if (response != null && response.getRelationships() != null) {
                 for (SkillRelationshipDto rel : response.getRelationships()) {
                     String newSkill = rel.getNewSkill();
+                    
+                    // === STEP 1: Always save roles, regardless of whether there are relationships ===
+                    Optional<SkillNode> nodeOpt = skillNodeRepository.findByNameIgnoreCase(newSkill);
+                    if (nodeOpt.isPresent()) {
+                        SkillNode node = nodeOpt.get();
+                        List<String> suggestedRoles = rel.getSuggestedRoles();
+                        // Only update if AI returned valid roles; never overwrite with empty
+                        if (suggestedRoles != null && !suggestedRoles.isEmpty()) {
+                            // Normalize to lowercase to ensure consistent matching in Neo4j
+                            List<String> normalizedRoles = suggestedRoles.stream()
+                                    .map(r -> r.trim().toLowerCase())
+                                    .distinct()
+                                    .toList();
+                            node.setRoles(normalizedRoles);
+                            skillNodeRepository.save(node);
+                            log.info("Saved roles {} to skill '{}'", normalizedRoles, newSkill);
+                        } else {
+                            log.warn("AI returned empty roles for skill '{}', skipping role update", newSkill);
+                        }
+                    }
+
+                    // === STEP 2: Create direct (1-hop) relationships, with duplicate guard ===
                     if (rel.getRelations() != null) {
                         for (SkillRelationDetail detail : rel.getRelations()) {
                             String target = detail.getTarget();
                             String type = detail.getType();
-                            if (target == null || type == null) continue;
+                            if (target == null || type == null || target.equalsIgnoreCase(newSkill)) continue;
+
+                            // Guard: skip if any relationship already exists between the two nodes
+                            Boolean alreadyLinked = skillNodeRepository.anyRelationshipExistsByName(newSkill, target);
+                            if (Boolean.TRUE.equals(alreadyLinked)) {
+                                log.debug("Relationship between '{}' and '{}' already exists, skipping", newSkill, target);
+                                continue;
+                            }
 
                             if ("CHILD_TO_PARENT".equals(type)) {
+                                // new_skill is the child → target is the parent
                                 skillNodeRepository.createPendingParentOfByName(target, newSkill);
                             } else if ("PARENT_TO_CHILD".equals(type)) {
+                                // new_skill is the parent → target is the child
                                 skillNodeRepository.createPendingParentOfByName(newSkill, target);
                             } else if ("RELATED_TO".equals(type)) {
                                 skillNodeRepository.createPendingRelatedToByName(newSkill, target);
@@ -384,5 +420,67 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
             log.warn("Unknown skill level '{}', defaulting to BEGINNER", level);
             return SkillLevel.BEGINNER;
         }
+    }
+
+    /**
+     * Filters a list of extracted skills, checks Neo4j for existence, and calls AI 
+     * to validate any newly discovered skills to ensure they are real IT skills.
+     */
+    private List<ExtractedSkillDto> filterAndValidateSkills(List<ExtractedSkillDto> rawSkills) {
+        List<ExtractedSkillDto> validCandidates = new ArrayList<>();
+        List<String> toValidate = new ArrayList<>();
+        Map<String, ExtractedSkillDto> nameToDtoMap = new HashMap<>();
+
+        for (ExtractedSkillDto extracted : rawSkills) {
+            String name = extracted.getName();
+            if (name == null || name.isBlank() || !isValidSkillName(name)) {
+                continue;
+            }
+            name = name.trim();
+            nameToDtoMap.put(name, extracted);
+
+            Optional<SkillNode> existing = skillNodeRepository.findByNameIgnoreCase(name);
+            if (existing.isPresent()) {
+                validCandidates.add(extracted);
+            } else {
+                toValidate.add(name);
+            }
+        }
+
+        if (!toValidate.isEmpty()) {
+            try {
+                ValidateSkillsResponse aiResponse = aiServiceClient.validateSkills(toValidate);
+                    
+                if (aiResponse != null && aiResponse.getValidSkills() != null) {
+                    for (String validName : aiResponse.getValidSkills()) {
+                        ExtractedSkillDto dto = nameToDtoMap.get(validName);
+                        if (dto != null) {
+                            validCandidates.add(dto);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Failed to validate new skills with AI: {}", e.getMessage(), e);
+                // Strict approach: if AI fails, we drop the new skills.
+            }
+        }
+        return validCandidates;
+    }
+
+    /**
+     * Guards against garbage skill names extracted by AI.
+     * Rules:
+     *  - Must be at least 2 characters long (e.g. rejects "r", "c", "j", "-", "•")
+     *  - Must contain at least one letter (rejects purely numeric or punctuation)
+     *
+     * Note: Short but valid skills like "Go", "C#", "C++" pass because they contain letters
+     * and are >= 2 chars. Single-char extractions like "r" (R language) are unfortunately
+     * ambiguous and filtered out to avoid graph pollution.
+     */
+    private boolean isValidSkillName(String name) {
+        String trimmed = name.trim();
+        if (trimmed.length() < 2) return false;
+        // Must contain at least one letter
+        return trimmed.chars().anyMatch(Character::isLetter);
     }
 }

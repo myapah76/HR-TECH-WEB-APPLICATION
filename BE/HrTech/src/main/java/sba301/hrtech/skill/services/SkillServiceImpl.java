@@ -6,7 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
+import sba301.hrtech.skill.abstractions.repositories.RoleAliasRepository;
 import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
+import sba301.hrtech.skill.entities.RoleAlias;
 import sba301.hrtech.skill.abstractions.services.ISkillService;
 import sba301.hrtech.skill.dtos.request.CreateSkillRequest;
 import sba301.hrtech.skill.dtos.request.UpdateSkillRequest;
@@ -19,6 +21,7 @@ import sba301.hrtech.skill.mapper.SkillMapper;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -27,6 +30,7 @@ import java.util.UUID;
 public class SkillServiceImpl implements ISkillService {
 
     private final SkillNodeRepository skillNodeRepository;
+    private final RoleAliasRepository roleAliasRepository;
     private final SkillMapper skillMapper;
 
     @Override
@@ -38,8 +42,9 @@ public class SkillServiceImpl implements ISkillService {
 
         SkillNode skillNode = SkillNode.builder()
                 .id(UUID.randomUUID().toString())
-                .name(request.getName())
+                .name(request.getName().trim().toLowerCase())
                 .description(request.getDescription())
+                .roles(request.getRoles() != null ? request.getRoles() : new ArrayList<>())
                 .isVerified(true) // Admin-created skills are auto-verified
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
@@ -55,10 +60,13 @@ public class SkillServiceImpl implements ISkillService {
         SkillNode skillNode = findSkillOrThrow(id);
 
         if (request.getName() != null && !request.getName().isBlank()) {
-            skillNode.setName(request.getName());
+            skillNode.setName(request.getName().trim().toLowerCase());
         }
         if (request.getDescription() != null) {
             skillNode.setDescription(request.getDescription());
+        }
+        if (request.getRoles() != null) {
+            skillNode.setRoles(request.getRoles());
         }
 
         skillNode.setUpdatedAt(Instant.now());
@@ -90,7 +98,15 @@ public class SkillServiceImpl implements ISkillService {
 
     @Override
     public List<SkillResponse> searchSkills(String keyword) {
-        List<SkillNode> skills = skillNodeRepository.searchByKeyword(keyword);
+        String safeKeyword = keyword != null ? keyword.trim() : "";
+        String canonicalRole = safeKeyword;
+        
+        Optional<RoleAlias> alias = roleAliasRepository.findByAliasIgnoreCase(safeKeyword);
+        if (alias.isPresent()) {
+            canonicalRole = alias.get().getCanonicalRole();
+        }
+
+        List<SkillNode> skills = skillNodeRepository.searchByKeywordAndRole(safeKeyword, canonicalRole);
         return skillMapper.toResponseList(skills);
     }
 

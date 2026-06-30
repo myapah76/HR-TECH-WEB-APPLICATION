@@ -37,6 +37,10 @@ public class SkillNode {
     @Property("updated_at")
     private Instant updatedAt;
 
+    @Property("roles")
+    @Builder.Default
+    private List<String> roles = new ArrayList<>();
+
     // === Neo4j Relationships ===
 
     @Relationship(type = "RELATED_TO", direction = Relationship.Direction.OUTGOING)

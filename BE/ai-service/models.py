@@ -31,6 +31,7 @@ class ParseExtractResponse(BaseModel):
 class MapRelationshipsRequest(BaseModel):
     new_skills: List[str]
     db_skills: List[str]
+    roles: List[str] = []
 
 class SkillRelationDetail(BaseModel):
     target: str
@@ -38,6 +39,7 @@ class SkillRelationDetail(BaseModel):
 
 class SkillRelationship(BaseModel):
     new_skill: str
+    suggested_roles: List[str] = []
     relations: List[SkillRelationDetail]
 
 class MapRelationshipsResponse(BaseModel):
@@ -89,3 +91,9 @@ class AiMatchingAdviceRequest(BaseModel):
 class AiMatchingAdviceResponse(BaseModel):
     improvement_tips: str
     action_plan: List[str]
+# --- AI Skill Validation ---
+class ValidateSkillsRequest(BaseModel):
+    skills: List[str]
+
+class ValidateSkillsResponse(BaseModel):
+    valid_skills: List[str]

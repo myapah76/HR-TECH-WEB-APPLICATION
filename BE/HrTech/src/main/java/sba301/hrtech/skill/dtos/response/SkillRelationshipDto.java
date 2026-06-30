@@ -13,6 +13,9 @@ public class SkillRelationshipDto {
     @JsonProperty("new_skill")
     private String newSkill;
     
+    @JsonProperty("suggested_roles")
+    private List<String> suggestedRoles;
+
     @JsonProperty("relations")
     private List<SkillRelationDetail> relations;
 }

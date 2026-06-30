@@ -8,10 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import sba301.hrtech.chat.dtos.response.RagChatResponseDto;
-import sba301.hrtech.skill.dtos.response.AiMatchingAdviceResponseDto;
-import sba301.hrtech.skill.dtos.response.ParseExtractResponseDto;
-import sba301.hrtech.skill.dtos.response.JobExtractResponseDto;
-import sba301.hrtech.skill.dtos.response.MapRelationshipsResponseDto;
+import sba301.hrtech.skill.dtos.request.ValidateSkillsRequest;
+import sba301.hrtech.skill.dtos.response.*;
 
 import java.util.*;
 
@@ -98,8 +96,8 @@ public class AiServiceClient {
      * Calls Python AI service to map relationships between new skills and DB
      * skills.
      */
-    public MapRelationshipsResponseDto mapRelationships(List<String> newSkills, List<String> dbSkills) {
-        if (newSkills == null || newSkills.isEmpty() || dbSkills == null || dbSkills.isEmpty()) {
+    public MapRelationshipsResponseDto mapRelationships(List<String> newSkills, List<String> dbSkills, List<String> roles) {
+        if (newSkills == null || newSkills.isEmpty()) {
             return null;
         }
 
@@ -108,7 +106,8 @@ public class AiServiceClient {
 
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("new_skills", newSkills);
-            requestBody.put("db_skills", dbSkills);
+            requestBody.put("db_skills", dbSkills != null ? dbSkills : new ArrayList<>());
+            requestBody.put("roles", roles != null ? roles : new ArrayList<>());
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -213,7 +212,7 @@ public class AiServiceClient {
         return null;
     }
 
-    public sba301.hrtech.skill.dtos.response.AiMatchingAdviceResponseDto getMatchingAdvice(String cvText, String jdText, List<String> missingSkills) {
+    public AiMatchingAdviceResponseDto getMatchingAdvice(String cvText, String jdText, List<String> missingSkills) {
         if (missingSkills == null) {
             missingSkills = new ArrayList<>();
         }
@@ -240,5 +239,28 @@ public class AiServiceClient {
             log.error("AI service get matching advice error: {}", e.getMessage(), e);
         }
         return null;
+    }
+    /**
+     * Validates a list of new skills by calling the AI service.
+     */
+    public ValidateSkillsResponse validateSkills(List<String> skills) {
+        if (skills == null || skills.isEmpty()) {
+            return ValidateSkillsResponse.builder().validSkills(new ArrayList<>()).build();
+        }
+        try {
+            String url = aiServiceUrl + "/api/validate-skills";
+            
+            ValidateSkillsRequest requestBody = ValidateSkillsRequest.builder().skills(skills).build();
+                
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<ValidateSkillsRequest> request = new HttpEntity<>(requestBody, headers);
+            
+            ResponseEntity<ValidateSkillsResponse> response = restTemplate.postForEntity(url, request, ValidateSkillsResponse.class);
+            return response.getBody();
+        } catch (Exception e) {
+            log.error("AI service skill validation error: {}", e.getMessage(), e);
+            return ValidateSkillsResponse.builder().validSkills(new ArrayList<>()).build();
+        }
     }
 }

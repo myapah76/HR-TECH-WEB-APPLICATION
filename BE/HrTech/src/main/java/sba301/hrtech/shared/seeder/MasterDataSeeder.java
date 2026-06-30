@@ -129,9 +129,9 @@ public class MasterDataSeeder implements CommandLineRunner {
                 createJobRequest("Mobile App Developer", "Flutter, Dart, Firebase, iOS, Android", company1.getId()),
                 createJobRequest("DevOps Engineer", "Docker, Kubernetes, AWS, CI/CD", company1.getId()),
                 createJobRequest("Data Analyst", "Python, SQL, Tableau, Excel", company1.getId()),
-                createJobRequest("QA Engineer", "Selenium, Cypress, Testing, Automation", company1.getId()),
+                createJobRequest("QA Engineer", "Selenium, Cypress, Postman, Jest", company1.getId()),
                 createJobRequest("UI/UX Designer", "Figma, Sketch, Adobe XD, Design", company1.getId()),
-                createJobRequest("System Administrator", "Linux, Networking, Bash, Windows Server", company1.getId()),
+                createJobRequest("System Administrator", "Linux, Networking, Bash, Git", company1.getId()),
                 createJobRequest("AI Engineer", "Python, TensorFlow, PyTorch, Machine Learning", company1.getId())
         );
 
@@ -140,12 +140,12 @@ public class MasterDataSeeder implements CommandLineRunner {
                 createJobRequest("Android Developer", "Kotlin, Java, Android Studio, Mobile", company2.getId()),
                 createJobRequest("Backend Engineer", "Golang, PostgreSQL, Redis, Microservices", company2.getId()),
                 createJobRequest("Frontend Engineer", "Vue.js, Javascript, Tailwind, CSS", company2.getId()),
-                createJobRequest("Cloud Architect", "Azure, AWS, Architecture, System Design", company2.getId()),
-                createJobRequest("Machine Learning Engineer", "Python, Scikit-Learn, Keras, Data Science", company2.getId()),
+                createJobRequest("Cloud Architect", "Azure, AWS, Docker, Kubernetes", company2.getId()),
+                createJobRequest("Machine Learning Engineer", "Python, Scikit-Learn, Keras, Pandas", company2.getId()),
                 createJobRequest("Database Administrator", "Oracle, SQL Server, MySQL, Performance Tuning", company2.getId()),
                 createJobRequest("Security Engineer", "Cybersecurity, Penetration Testing, OWASP", company2.getId()),
-                createJobRequest("Product Manager", "Agile, Scrum, Leadership, Product Strategy", company2.getId()),
-                createJobRequest("Data Scientist", "Python, R, Statistics, Data Mining", company2.getId())
+                createJobRequest("Product Manager", "Agile, Scrum, Jira, Confluence", company2.getId()),
+                createJobRequest("Data Scientist", "Python, Rlang, SQL, Pandas", company2.getId())
         );
 
         List<UUID> createdJobIds1 = new ArrayList<>();

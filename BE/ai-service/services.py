@@ -1,5 +1,6 @@
 import os
 import json
+import time
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
 from dotenv import load_dotenv
@@ -50,6 +51,23 @@ llm = ChatGoogleGenerativeAI(
     response_mime_type="application/json"
 )
 
+def invoke_llm_with_retry(prompt_value):
+    max_attempts = 5
+    base_delay = 5  # seconds
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return llm.invoke(prompt_value)
+        except Exception as e:
+            err_msg = str(e)
+            if "RESOURCE_EXHAUSTED" in err_msg or "429" in err_msg:
+                if attempt == max_attempts:
+                    raise e
+                sleep_time = base_delay * (2 ** (attempt - 1))
+                print(f"Gemini API rate limit hit (429). Retrying in {sleep_time}s... (Attempt {attempt}/{max_attempts})")
+                time.sleep(sleep_time)
+            else:
+                raise e
+
 
 
 # --- Prompts ---
@@ -57,24 +75,52 @@ EXTRACTION_PROMPT = PromptTemplate.from_template("""
 You are an advanced skill extraction engine for IT/Tech recruitment.
 Analyze the following CV/resume text and extract all technical and professional skills mentioned.
 
-CRITICAL RULES FOR SKILL NAMES:
-1. ONLY extract skills that are relevant to the IT/Technology field (including programming, frameworks, tools, methodologies, and IT-related soft skills like Agile, Leadership, Communication). DO NOT extract completely unrelated skills (e.g., Accounting, Cooking).
-2. All extracted skill names MUST be returned in a strictly normalized format: all lowercase, no spaces, no dots, no dashes, and no special characters. 
-   Examples:
-   - "React" or "ReactJS" -> "react"
-   - "Node.js" -> "nodejs"
-   - "Vue.js" -> "vuejs"
-   - "C++" -> "c++" (Keep '+' or '#' for C++, C# as they are distinct IT entities, but remove spaces and dots)
-   - "Amazon Web Services" -> "amazonwebservices"
-   - "React Native" -> "reactnative"
-3. Normalize well-known IT abbreviations to their full standard names before applying the formatting rule. Examples:
-   - "AWS" -> "amazonwebservices"
-   - "K8s" -> "kubernetes"
-   - "GCP" -> "googlecloudplatform"
-4. Determine proficiency level from context: BEGINNER, INTERMEDIATE, ADVANCED, EXPERT. If unclear, omit or assume INTERMEDIATE.
+WHAT TO EXTRACT:
+- Programming languages (e.g., java, python, go, kotlin, c++, c#)
+- Frameworks & libraries (e.g., springboot, react, django, nestjs, flutter)
+- Databases (e.g., postgresql, mysql, mongodb, redis, elasticsearch)
+- Tools & platforms (e.g., docker, kubernetes, git, jenkins, aws, gcp)
+- IT methodologies (e.g., agile, scrum, cicd, restapi, microservices)
+- IT-relevant soft skills ONLY if explicitly stated in a tech context (e.g., teamwork, problemsolving, communication)
 
-Return ONLY a valid JSON array with no extra text. Example:
-[{{ "name": "java", "level": "ADVANCED" }}, {{ "name": "react", "level": "INTERMEDIATE" }}, {{ "name": "nodejs", "level": "EXPERT" }}]
+WHAT NOT TO EXTRACT:
+- Single-character names: NEVER output a name with only 1 character. "R" language must be written as "rlang". "C" language must be "clanguage".
+- Generic academic terms: "mathematics", "physics", "english", "statistics" (unless it's a specific tool like "rstudio")
+- Completely non-IT skills: "cooking", "accounting", "marketing", "driving license"
+- Vague filler words: "experience", "knowledge", "understanding", "familiar", "ability"
+- Job titles or roles: "developer", "engineer", "manager", "intern", "fresher"
+- Company names or product names that are not skills: "google", "apple", "facebook"
+- Section headers, bullet symbols, or formatting artifacts: "-", "•", ":", "|"
+
+NORMALIZATION RULES (apply strictly before outputting):
+1. All lowercase, remove spaces, dots, and dashes EXCEPT for "+" and "#" in language names.
+   - "React", "ReactJS", "React.js" → "react"
+   - "Node.js" → "nodejs"
+   - "Vue.js" → "vuejs"
+   - "Spring Boot" → "springboot"
+   - "React Native" → "reactnative"
+   - "Amazon Web Services" → "amazonwebservices"
+   - "C++" → "c++" (keep ++)
+   - "C#" → "c#" (keep #)
+   - "R" (the statistical language) → "rlang"
+   - "C" (the language) → "clanguage"
+2. Expand common abbreviations to their full normalized form:
+   - "AWS" → "amazonwebservices"
+   - "GCP" → "googlecloudplatform"
+   - "K8s" → "kubernetes"
+   - "CI/CD" → "cicd"
+   - "REST" → "restapi"
+   - "ML" → "machinelearning"
+   - "AI" → "artificialintelligence"
+3. Deduplicate: if two names normalize to the same string, only output it once.
+4. MINIMUM LENGTH: every output name must be at least 2 characters after normalization.
+
+PROFICIENCY LEVEL:
+- Infer from context: BEGINNER, INTERMEDIATE, ADVANCED, EXPERT.
+- If unclear, use INTERMEDIATE.
+
+Return ONLY a valid JSON array with no extra text. Format:
+[{{ "name": "java", "level": "ADVANCED" }}, {{ "name": "react", "level": "INTERMEDIATE" }}]
 
 If no skills are found, return: []
 
@@ -89,7 +135,7 @@ def extract_skills(cv_text: str) -> list:
         return []
     
     prompt_value = EXTRACTION_PROMPT.format_prompt(cv_text=cv_text)
-    response = llm.invoke(prompt_value)
+    response = invoke_llm_with_retry(prompt_value)
     
     try:
         result_content = response.content
@@ -117,25 +163,53 @@ def extract_skills(cv_text: str) -> list:
 
 JOB_EXTRACTION_PROMPT = PromptTemplate.from_template("""
 You are an advanced skill extraction engine for IT/Tech recruitment.
-Analyze the following Job Description and Requirements to extract all technical and professional skills mentioned.
+Analyze the following Job Description and Requirements to extract all technical and professional skills required or preferred.
 
-CRITICAL RULES FOR SKILL NAMES:
-1. ONLY extract skills that are relevant to the IT/Technology field (including programming, frameworks, tools, methodologies, and IT-related soft skills like Agile, Leadership, Communication). DO NOT extract completely unrelated skills (e.g., Accounting, Cooking).
-2. All extracted skill names MUST be returned in a strictly normalized format: all lowercase, no spaces, no dots, no dashes, and no special characters. 
-   Examples:
-   - "React" or "ReactJS" -> "react"
-   - "Node.js" -> "nodejs"
-   - "Vue.js" -> "vuejs"
-   - "C++" -> "c++" (Keep '+' or '#' for C++, C# as they are distinct IT entities, but remove spaces and dots)
-   - "Amazon Web Services" -> "amazonwebservices"
-   - "React Native" -> "reactnative"
-3. Normalize well-known IT abbreviations to their full standard names before applying the formatting rule. Examples:
-   - "AWS" -> "amazonwebservices"
-   - "K8s" -> "kubernetes"
-   - "GCP" -> "googlecloudplatform"
-4. Determine required proficiency level from context: BEGINNER, INTERMEDIATE, ADVANCED, EXPERT. If unspecified, assume INTERMEDIATE.
+WHAT TO EXTRACT:
+- Programming languages (e.g., java, python, go, kotlin, c++, c#)
+- Frameworks & libraries (e.g., springboot, react, django, nestjs, flutter)
+- Databases (e.g., postgresql, mysql, mongodb, redis, elasticsearch)
+- Tools & platforms (e.g., docker, kubernetes, git, jenkins, aws, gcp)
+- IT methodologies (e.g., agile, scrum, cicd, restapi, microservices)
+- IT-relevant soft skills ONLY if explicitly stated in a tech context (e.g., teamwork, problemsolving, communication)
 
-Return ONLY a valid JSON array with no extra text. Example:
+WHAT NOT TO EXTRACT:
+- Single-character names: NEVER output a name with only 1 character. "R" language must be written as "rlang". "C" language must be "clanguage".
+- Generic academic terms: "mathematics", "physics", "english", "statistics"
+- Completely non-IT skills: "cooking", "accounting", "marketing", "driving license"
+- Vague filler words: "experience", "knowledge", "understanding", "familiar", "ability", "proficient"
+- Job titles or roles: "developer", "engineer", "manager", "intern", "fresher", "senior", "junior"
+- Company names that are not skills: "google", "apple", "facebook"
+- Section headers, bullet symbols, or formatting artifacts: "-", "•", ":", "|"
+- Salary, years of experience, or contract terms
+
+NORMALIZATION RULES (apply strictly before outputting):
+1. All lowercase, remove spaces, dots, and dashes EXCEPT for "+" and "#" in language names.
+   - "React", "ReactJS", "React.js" → "react"
+   - "Node.js" → "nodejs"
+   - "Spring Boot" → "springboot"
+   - "React Native" → "reactnative"
+   - "Amazon Web Services" → "amazonwebservices"
+   - "C++" → "c++" (keep ++)
+   - "C#" → "c#" (keep #)
+   - "R" (the statistical language) → "rlang"
+   - "C" (the language) → "clanguage"
+2. Expand common abbreviations to their full normalized form:
+   - "AWS" → "amazonwebservices"
+   - "GCP" → "googlecloudplatform"
+   - "K8s" → "kubernetes"
+   - "CI/CD" → "cicd"
+   - "REST" → "restapi"
+   - "ML" → "machinelearning"
+   - "AI" → "artificialintelligence"
+3. Deduplicate: if two names normalize to the same string, only output it once.
+4. MINIMUM LENGTH: every output name must be at least 2 characters after normalization.
+
+PROFICIENCY LEVEL:
+- Infer required level from context: BEGINNER, INTERMEDIATE, ADVANCED, EXPERT.
+- If unspecified, use INTERMEDIATE.
+
+Return ONLY a valid JSON array with no extra text. Format:
 [{{ "name": "java", "level": "ADVANCED" }}, {{ "name": "nodejs", "level": "INTERMEDIATE" }}]
 
 If no skills are found, return: []
@@ -155,7 +229,7 @@ def extract_job_skills(description: str, requirements: str = "") -> list:
         return []
     
     prompt_value = JOB_EXTRACTION_PROMPT.format_prompt(description=description, requirements=requirements)
-    response = llm.invoke(prompt_value)
+    response = invoke_llm_with_retry(prompt_value)
     
     try:
         result_content = response.content
@@ -185,34 +259,69 @@ def extract_job_skills(description: str, requirements: str = "") -> list:
 MAP_RELATIONSHIPS_PROMPT = PromptTemplate.from_template("""
 You are an expert IT Skill Taxonomy System.
 You are given a list of ALL existing IT skills in our database (`db_skills`) and a list of newly extracted skills (`new_skills`).
-Your task is to identify relationships between each new skill and the existing db_skills.
+Your task is to:
+1. Identify relationships between each new skill and the existing `db_skills` according to the rules below.
+2. Recommend the most appropriate IT job roles ("suggested_roles") for each new skill from the following list of canonical roles:
+   {roles}
 
-Relationship Rules:
-1. CHILD_TO_PARENT: If the `new_skill` is a child, subset, framework, or specific tool that belongs to a parent `db_skill` (e.g., spring is CHILD_TO_PARENT of java).
-2. PARENT_TO_CHILD: If the `new_skill` is a parent, category, or language that encompasses a specific child `db_skill` (e.g., java is PARENT_TO_CHILD of springboot).
-3. RELATED_TO: If the `new_skill` and `db_skill` are related siblings, alternatives, or often used together but don't have a strict parent-child hierarchy (e.g., react and nodejs).
-- Do NOT include synonyms. We assume skill names are already normalized.
+CRITICAL ROLE RECOMMENDATION RULE:
+- Every skill in `new_skills` MUST belong to at least one role from the provided list. Choose the most relevant role(s).
+- Do NOT return an empty array for `suggested_roles` under any circumstances.
+- Use this guide to assign roles correctly:
+  * backend: server-side languages & frameworks (java, python, springboot, django, nodejs, php, dotnet, express)
+  * frontend: client-side technologies (react, vuejs, angular, html, css, javascript, typescript)
+  * fullstack: skills used across both sides (nextjs, nuxtjs, graphql, restapi)
+  * mobile: mobile app development (flutter, reactnative, swift, kotlin, android, ios)
+  * devops: infrastructure, cloud & CI/CD (docker, kubernetes, aws, gcp, jenkins, terraform, cicd, linux, bash)
+  * data: data processing & analytics (sql, postgresql, mongodb, spark, kafka, airflow, dbt, powerbi, tableau)
+  * ai: machine learning & AI (tensorflow, pytorch, scikitlearn, huggingface, langchain, opencv, nlp)
+  * qa: testing tools & practices (selenium, jest, cypress, jmeter, postman, testng)
+  * security: security tools & practices (owasp, burpsuite, wireshark, penetration testing, cryptography)
+  * design: UI/UX & visual tools (figma, adobexd, sketch, photoshop, illustrator)
+  * ba: requirement & product management (jira, confluence, trello, notion, agile, scrum)
+  * game: game development (unity, unreal, godot, opengl, gamedev)
+  * embedded: low-level & hardware (arduino, raspberrypi, rtos, firmware, c, assembly)
+  * tools: cross-functional tools used across many roles that do NOT fit cleanly into one category above
+    Examples of 'tools': git, github, gitlab, bitbucket, vscode, intellij, bash, powershell, npm, maven, gradle, swagger
+  * If a skill fits multiple roles equally (e.g., postgresql fits both 'backend' and 'data'), assign both.
+
+Relationship Rules & Domain Mapping:
+1. CHILD_TO_PARENT: If the `new_skill` is a child, subset, framework, or specific tool that DIRECTLY belongs to a parent `db_skill` (e.g., springboot is CHILD_TO_PARENT of java). Only use this for the IMMEDIATE parent, not a grandparent.
+2. PARENT_TO_CHILD: If the `new_skill` is a parent, category, or language that DIRECTLY encompasses a specific child `db_skill` (e.g., java is PARENT_TO_CHILD of springboot). Only use this for IMMEDIATE children, not grandchildren.
+3. RELATED_TO: If the `new_skill` and `db_skill` are siblings, alternatives, or often used together in the same technology stack, and do NOT have a direct parent-child hierarchy.
+
+CRITICAL RELATIONSHIP RULES:
+- Only output DIRECT (1-hop) relationships. Do NOT create relationships that are already implied by transitivity.
+- Choose at most ONE relationship type between any two specific skills.
 - Only output the exact skill names from the provided `db_skills` array. Do not invent new skills.
-- CRITICAL RULE: Choose at most ONE strongest and most accurate relationship type between any two skills. Do NOT output multiple relationship types for the same target skill.
+- Do NOT include synonyms. We assume skill names are already normalized.
+- Aggressively scan `db_skills` for any skills sharing a domain, framework family, or technology stack with `new_skill`. Be thorough but only for DIRECT relationships.
 
 Return ONLY a valid JSON array of objects. Example format:
 [
   {{
     "new_skill": "nextjs",
+    "suggested_roles": ["frontend", "fullstack"],
     "relations": [
       {{ "target": "react", "type": "CHILD_TO_PARENT" }},
       {{ "target": "nodejs", "type": "RELATED_TO" }}
     ]
   }},
   {{
+    "new_skill": "git",
+    "suggested_roles": ["tools"],
+    "relations": []
+  }},
+  {{
     "new_skill": "java",
+    "suggested_roles": ["backend"],
     "relations": [
       {{ "target": "springboot", "type": "PARENT_TO_CHILD" }}
     ]
   }}
 ]
 
-If no relations are found for a new skill, set its "relations" to an empty array: [].
+If no relations are found for a new skill, set its "relations" to [].
 Make sure the returned JSON is valid.
 
 New Skills:
@@ -222,16 +331,17 @@ All DB Skills:
 {db_skills}
 """)
 
-def map_relationships_with_full_db(new_skills: list[str], db_skills: list[str]) -> list:
+def map_relationships_with_full_db(new_skills: list[str], db_skills: list[str], roles: list[str]) -> list:
     """Maps relationships between new skills and the full DB of skills using Gemini."""
-    if not new_skills or not db_skills:
+    if not new_skills:
         return []
     
     prompt_value = MAP_RELATIONSHIPS_PROMPT.format_prompt(
         new_skills=json.dumps(new_skills), 
-        db_skills=json.dumps(db_skills)
+        db_skills=json.dumps(db_skills),
+        roles=json.dumps(roles)
     )
-    response = llm.invoke(prompt_value)
+    response = invoke_llm_with_retry(prompt_value)
     
     try:
         result_content = response.content
@@ -293,7 +403,7 @@ def generate_interview_questions(
         target_role = target_role,
         num_questions = num_questions
     )
-    response = llm.invoke(interview_questions_prompt)
+    response = invoke_llm_with_retry(interview_questions_prompt)
 
     try:
         content = response.content
@@ -363,7 +473,7 @@ def evaluate_audio_answer(cv_text: str, jd_text: str, question: str, audio_url: 
             ]
         )
         # 4. Gọi LLM
-        res = llm.invoke([message])
+        res = invoke_llm_with_retry([message])
         content = res.content
         if isinstance(content, str):
             content = content.strip()
@@ -426,7 +536,7 @@ def evaluate_interview_session(
         jd_text = jd_text if jd_text else "Not provided",
         transcript_text = transcript_text
     )
-    response = llm.invoke(interview_evaluation_prompt)
+    response = invoke_llm_with_retry(interview_evaluation_prompt)
     try:
         content = response.content
         if isinstance(content, str):
@@ -478,7 +588,7 @@ def generate_matching_advice(cv_text: str, jd_text: str, missing_skills: list) -
         jd_text=jd_text if jd_text else "Not provided",
         missing_skills=", ".join(missing_skills) if missing_skills else "None"
     )
-    response = llm.invoke(prompt_value)
+    response = invoke_llm_with_retry(prompt_value)
     try:
         content = response.content
         if isinstance(content, list):
@@ -499,3 +609,47 @@ def generate_matching_advice(cv_text: str, jd_text: str, missing_skills: list) -
     except Exception as e:
         print(f"Error parsing matching advice: {e}")
         return {"improvement_tips": "Rất tiếc, AI đang quá tải và không thể sinh lời khuyên lúc này.", "action_plan": []}
+
+VALIDATE_SKILLS_PROMPT = PromptTemplate.from_template("""
+You are an expert IT taxonomist.
+You are given a list of extracted skill strings that are NOT in our database yet.
+Some might be real IT skills (e.g. "python", "react", "docker", "aws"), while others might be fake, garbage text, misspelled, generic soft skills, or non-IT terms (e.g. "cooking", "experience", "xyz123tech", "good", "knowledge").
+
+Your task is to filter the list and return ONLY the strings that represent actual, recognized IT technologies, programming languages, frameworks, tools, or IT methodologies.
+DO NOT normalize or change the spelling of the valid skills, return them exactly as provided in the input list.
+
+Input skills to validate:
+{skills}
+
+Return ONLY a valid JSON array of strings containing the valid skills. Do NOT wrap it in extra markdown format like ``json.
+If none are valid, return: []
+""")
+
+def validate_it_skills(skills: list[str]) -> list[str]:
+    if not skills:
+        return []
+    prompt_value = VALIDATE_SKILLS_PROMPT.format_prompt(skills=json.dumps(skills))
+    response = invoke_llm_with_retry(prompt_value)
+    try:
+        content = response.content
+        if isinstance(content, list):
+            if len(content) > 0 and isinstance(content[0], dict) and "text" in content[0]:
+                content = "".join(b["text"] for b in content if "text" in b)
+            else:
+                return content
+        if isinstance(content, str):
+            content = content.strip()
+            if content.startswith("```json"):
+                content = content[7:]
+            elif content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            parsed = json.loads(content.strip())
+            if isinstance(parsed, list):
+                return parsed
+        return []
+    except Exception as e:
+        print(f"Error parsing validation response: {e}")
+        return []
+

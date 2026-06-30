@@ -38,13 +38,16 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
             AND j.status = sba301.hrtech.job.entities.enums.JobStatus.APPROVED
             AND (:keyword IS NULL OR LOWER(j.title) LIKE :keyword
                                 OR LOWER(j.description) LIKE :keyword
-                                OR LOWER(c.name) LIKE :keyword)
+                                OR LOWER(c.name) LIKE :keyword
+                                OR (:hasSkills = true AND j.id IN (
+                                    SELECT js.job.id FROM JobSkill js
+                                    WHERE js.skillNeo4jId IN :skillIds
+                                )))
             AND (:location IS NULL OR LOWER(j.location) LIKE :location)
             AND (:experienceLevel IS NULL OR j.experienceLevel = :experienceLevel)
             AND (:jobType IS NULL OR j.jobType = :jobType)
             AND (:salaryMin IS NULL OR j.salaryMax >= :salaryMin)
             AND (:salaryMax IS NULL OR j.salaryMin <= :salaryMax)
-
       """)
   Page<Job> searchOpenJobs(
       @Param("keyword") String keyword,
@@ -53,6 +56,8 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
       @Param("jobType") JobType jobType,
       @Param("salaryMin") BigDecimal salaryMin,
       @Param("salaryMax") BigDecimal salaryMax,
+      @Param("hasSkills") boolean hasSkills,
+      @Param("skillIds") List<String> skillIds,
       Pageable pageable);
 
   @Query("SELECT j FROM Job j WHERE j.deleted = false AND j.extractionStatus IN :statuses AND j.updatedAt < :threshold")

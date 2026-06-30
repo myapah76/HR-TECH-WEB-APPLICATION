@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -18,4 +19,5 @@ public class SkillResponse {
     private String description;
     private Boolean isVerified;
     private Instant createdAt;
+    private List<String> roles;
 }

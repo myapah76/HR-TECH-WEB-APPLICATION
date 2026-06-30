@@ -7,8 +7,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import sba301.hrtech.identity.dtos.user.CustomUserDetails;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.company.abstractions.repositories.CompanyMemberRepository;
@@ -32,12 +30,16 @@ import sba301.hrtech.shared.enums.ExtractionStatus;
 import sba301.hrtech.shared.exceptions.AppException;
 import org.springframework.context.ApplicationEventPublisher;
 import sba301.hrtech.shared.events.JobExtractionRequestedEvent;
-
 import sba301.hrtech.subscription.abstractions.services.ICreditService;
+import sba301.hrtech.skill.abstractions.repositories.RoleAliasRepository;
+import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
+import sba301.hrtech.skill.entities.RoleAlias;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -53,6 +55,8 @@ public class JobServiceImpl implements IJobService {
     private final JobMapper jobMapper;
     private final JobValidator jobValidator;
     private final ICreditService creditService;
+    private final RoleAliasRepository roleAliasRepository;
+    private final SkillNodeRepository skillNodeRepository;
 
     @Override
     @Transactional
@@ -233,8 +237,36 @@ public class JobServiceImpl implements IJobService {
             }
         }
 
-        String keywordParam = criteria.keyword() != null ? "%" + criteria.keyword().toLowerCase() + "%" : null;
-        String locationParam = criteria.location() != null ? "%" + criteria.location().toLowerCase() + "%" : null;
+        // 1. Normalize keyword using the database role_aliases table
+        String keyword = criteria.keyword();
+        String normalizedRole = null;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String trimmedLower = keyword.trim().toLowerCase();
+            normalizedRole = roleAliasRepository.findByAliasIgnoreCase(trimmedLower)
+                    .map(RoleAlias::getCanonicalRole)
+                    .orElse(trimmedLower);
+        }
+
+        // 2. Fetch skill IDs matching the normalized role or skill name
+        Set<String> skillIds = new HashSet<>();
+        if (normalizedRole != null) {
+            // Find by role tag
+            List<String> idsByRole = skillNodeRepository.findIdsByRole(normalizedRole);
+            if (idsByRole != null) {
+                skillIds.addAll(idsByRole);
+            }
+            // Find by skill name (substring match)
+            List<String> idsByName = skillNodeRepository.findIdsByNameContaining(keyword.trim());
+            if (idsByName != null) {
+                skillIds.addAll(idsByName);
+            }
+        }
+
+        boolean hasSkills = !skillIds.isEmpty();
+        List<String> skillIdsList = hasSkills ? new ArrayList<>(skillIds) : null;
+
+        String keywordParam = keyword != null && !keyword.trim().isEmpty() ? "%" + keyword.trim().toLowerCase() + "%" : null;
+        String locationParam = criteria.location() != null && !criteria.location().trim().isEmpty() ? "%" + criteria.location().trim().toLowerCase() + "%" : null;
 
         return jobRepository.searchOpenJobs(
                 keywordParam,
@@ -243,6 +275,8 @@ public class JobServiceImpl implements IJobService {
                 jobType,
                 criteria.salaryMin(),
                 criteria.salaryMax(),
+                hasSkills,
+                skillIdsList,
                 pageable).map(jobMapper::toResponse);
     }
 

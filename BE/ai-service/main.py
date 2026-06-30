@@ -7,11 +7,13 @@ from models import (
     MapRelationshipsRequest, MapRelationshipsResponse, 
     SkillRelationship,
     GenerateQuestionsRequest, EvaluateSessionRequest,
-    EvaluateSessionResponse, AiMatchingAdviceRequest, AiMatchingAdviceResponse
+    EvaluateSessionResponse, AiMatchingAdviceRequest, AiMatchingAdviceResponse,
+    ValidateSkillsRequest, ValidateSkillsResponse
 )
 from services import (
     extract_skills, extract_job_skills, download_and_extract_pdf_text,
-    generate_interview_questions, evaluate_interview_session, evaluate_audio_answer
+    generate_interview_questions, evaluate_interview_session, evaluate_audio_answer,
+    validate_it_skills
 )
 from sqlalchemy import text
 from rag.database import Base, engine
@@ -24,9 +26,7 @@ with engine.connect() as conn:
 
 Base.metadata.create_all(bind=engine)
 
-
 app = FastAPI(title="HrTech AI Microservice", version="1.0.0")
-
 # Allow Java backend to communicate easily
 app.add_middleware(
     CORSMiddleware,
@@ -85,14 +85,15 @@ def api_parse_and_extract_cv(req: ParseExtractRequest):
 def api_map_relationships(req: MapRelationshipsRequest):
     try:
         from services import map_relationships_with_full_db
-        relationships_data = map_relationships_with_full_db(req.new_skills, req.db_skills)
+        relationships_data = map_relationships_with_full_db(req.new_skills, req.db_skills, req.roles)
         
         parsed_rels = []
         for r in relationships_data:
             if "new_skill" in r and "relations" in r:
                 from models import SkillRelationDetail
                 relations_details = [SkillRelationDetail(target=rel["target"], type=rel["type"]) for rel in r["relations"] if "target" in rel and "type" in rel]
-                parsed_rels.append(SkillRelationship(new_skill=r["new_skill"], relations=relations_details))
+                suggested_roles = r.get("suggested_roles", [])
+                parsed_rels.append(SkillRelationship(new_skill=r["new_skill"], suggested_roles=suggested_roles, relations=relations_details))
                 
         return MapRelationshipsResponse(relationships=parsed_rels)
     except Exception as e:
@@ -165,3 +166,14 @@ def api_candidate_matching_advice(req: AiMatchingAdviceRequest):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+@app.post("/api/validate-skills", response_model=ValidateSkillsResponse)
+def api_validate_skills(req: ValidateSkillsRequest):
+    try:
+        valid_skills = validate_it_skills(req.skills)
+        return ValidateSkillsResponse(valid_skills=valid_skills)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
