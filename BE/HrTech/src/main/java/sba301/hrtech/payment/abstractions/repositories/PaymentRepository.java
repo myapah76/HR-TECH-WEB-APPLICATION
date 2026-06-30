@@ -15,9 +15,9 @@ import java.util.UUID;
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     Optional<Payment> findByOrderCode(Long orderCode);
-
     List<Payment> findAllByStatusAndCreatedAtAfter(PaymentStatus status, Instant dateTime);
-
     Page<Payment> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
+    boolean existsByUserIdAndStatus(UUID userId, PaymentStatus status);
+    Optional<Payment> findFirstByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, PaymentStatus status);
 }
 

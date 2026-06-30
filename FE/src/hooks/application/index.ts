@@ -8,3 +8,5 @@ export * from './useUpdateApplicationStatus'
 export * from './useScheduleInterview'
 export * from './useRejectInterviewSchedule'
 export * from './useAcceptInterviewSchedule'
+export * from './useGetCompanyApplications'
+

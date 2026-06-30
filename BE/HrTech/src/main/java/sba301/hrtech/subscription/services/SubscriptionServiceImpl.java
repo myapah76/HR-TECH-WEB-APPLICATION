@@ -53,66 +53,6 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
     private final CompanyRepository companyRepository;
     private final AuthUtils authUtils;
 
-    @Override
-    @Transactional
-    public Object createPendingSubscription(UUID userId, UUID planId) {
-        User user = userService.getUserEntityById(userId);
-        Object planObj = subscriptionPlanService.getById(planId);
-        Instant now = Instant.now();
-
-        if (planObj instanceof CandidateSubscriptionPlan plan) {
-            // Check renewal rules
-            List<CandidateSubscription> activeSubs = candidateSubscriptionRepository
-                    .findByUserIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                            userId, SubscriptionStatus.ACTIVE, now, now);
-            if (!activeSubs.isEmpty()) {
-                CandidateSubscription activeSub = activeSubs.get(0);
-                if (plan.getPrice() <= activeSub.getPlan().getPrice()) {
-                    if (activeSub.getEndDate().isAfter(now) && user.getAiCreditBalance() > 0) {
-                        throw new AppException(ErrorCode.FORBIDDEN_ACTION,
-                                "Bạn chỉ có thể mua/gia hạn khi gói hiện tại hết hạn hoặc hết Token");
-                    }
-                }
-            }
-
-            CandidateSubscription subscription = new CandidateSubscription();
-            subscription.setUser(user);
-            subscription.setPlan(plan);
-            subscription.setStatus(SubscriptionStatus.PENDING);
-            return candidateSubscriptionRepository.save(subscription);
-        } else if (planObj instanceof CompanySubscriptionPlan plan) {
-            CompanyMember member = companyService.getMemberEntityByUserId(userId);
-            if (member.getCompanyRole() != CompanyRole.OWNER) {
-                throw new AppException(ErrorCode.FORBIDDEN_ACTION,
-                        "Only company owner can purchase a subscription plan");
-            }
-
-            Company company = member.getCompany();
-            // Check renewal rules
-            List<CompanySubscription> activeSubs = companySubscriptionRepository
-                    .findByCompanyIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                            company.getId(), SubscriptionStatus.ACTIVE, now, now);
-            if (!activeSubs.isEmpty()) {
-                CompanySubscription activeSub = activeSubs.get(0);
-                if (plan.getPrice() <= activeSub.getPlan().getPrice()) {
-                    if (activeSub.getEndDate().isAfter(now)
-                            && (company.getAiCreditBalance() > 0 || company.getJobPostBalance() > 0)) {
-                        throw new AppException(ErrorCode.FORBIDDEN_ACTION,
-                                "Bạn chỉ có thể mua/gia hạn khi gói hiện tại hết hạn hoặc hết Token");
-                    }
-                }
-            }
-
-            CompanySubscription subscription = new CompanySubscription();
-            subscription.setCompany(company);
-            subscription.setPurchasedBy(user);
-            subscription.setPlan(plan);
-            subscription.setStatus(SubscriptionStatus.PENDING);
-            return companySubscriptionRepository.save(subscription);
-        }
-
-        throw new AppException(ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND, "Subscription plan not found");
-    }
 
     @Override
     @Transactional(readOnly = true)
@@ -176,98 +116,6 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
         return null;
     }
 
-    @Override
-    @Transactional
-    public void activateSubscription(UUID subscriptionId, SubscriptionType type) {
-        Instant now = Instant.now();
-
-        if (type == SubscriptionType.CANDIDATE) {
-            CandidateSubscription sub = candidateSubscriptionRepository.findById(subscriptionId)
-                    .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Candidate Sub not found"));
-
-            Instant newEndDate = now.plus(sub.getPlan().getDurationDays(), ChronoUnit.DAYS);
-
-            // Cancel all currently active subscriptions for this user
-            List<CandidateSubscription> activeSubs = candidateSubscriptionRepository
-                    .findByUserIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                            sub.getUser().getId(), SubscriptionStatus.ACTIVE, now, now);
-            for (CandidateSubscription activeSub : activeSubs) {
-                if (!activeSub.getId().equals(sub.getId())) {
-                    if (activeSub.getPlan().getId().equals(sub.getPlan().getId())) {
-                        if (activeSub.getEndDate().isAfter(now)) {
-                            newEndDate = activeSub.getEndDate().plus(sub.getPlan().getDurationDays(), ChronoUnit.DAYS);
-                        }
-                    }
-                    activeSub.setStatus(SubscriptionStatus.CANCELLED);
-                    candidateSubscriptionRepository.save(activeSub);
-                }
-            }
-
-            sub.setStatus(SubscriptionStatus.ACTIVE);
-            sub.setStartDate(now);
-            sub.setEndDate(newEndDate);
-            candidateSubscriptionRepository.save(sub);
-
-            // Add Tokens to Wallet
-            if (sub.getPlan().getPlanFeatures() != null) {
-                User user = sub.getUser();
-                boolean walletChanged = false;
-                for (CandidatePlanFeature pf : sub.getPlan().getPlanFeatures()) {
-                    if ("AI_CREDIT".equals(pf.getFeature().getCode())) {
-                        user.setAiCreditBalance(user.getAiCreditBalance() + pf.getTotalQuota());
-                        walletChanged = true;
-                    }
-                }
-                if (walletChanged) {
-                    userService.saveUserEntity(user);
-                }
-            }
-        } else if (type == SubscriptionType.COMPANY) {
-            CompanySubscription sub = companySubscriptionRepository.findById(subscriptionId)
-                    .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Company Sub not found"));
-
-            Instant newEndDate = now.plus(sub.getPlan().getDurationDays(), ChronoUnit.DAYS);
-
-            // Cancel all currently active subscriptions for this company
-            List<CompanySubscription> activeSubs = companySubscriptionRepository
-                    .findByCompanyIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                            sub.getCompany().getId(), SubscriptionStatus.ACTIVE, now, now);
-            for (CompanySubscription activeSub : activeSubs) {
-                if (!activeSub.getId().equals(sub.getId())) {
-                    if (activeSub.getPlan().getId().equals(sub.getPlan().getId())) {
-                        if (activeSub.getEndDate().isAfter(now)) {
-                            newEndDate = activeSub.getEndDate().plus(sub.getPlan().getDurationDays(), ChronoUnit.DAYS);
-                        }
-                    }
-                    activeSub.setStatus(SubscriptionStatus.CANCELLED);
-                    companySubscriptionRepository.save(activeSub);
-                }
-            }
-
-            sub.setStatus(SubscriptionStatus.ACTIVE);
-            sub.setStartDate(now);
-            sub.setEndDate(newEndDate);
-            companySubscriptionRepository.save(sub);
-
-            // Add Tokens to Wallet
-            if (sub.getPlan().getPlanFeatures() != null) {
-                Company company = sub.getCompany();
-                boolean walletChanged = false;
-                for (CompanyPlanFeature pf : sub.getPlan().getPlanFeatures()) {
-                    if ("AI_CREDIT".equals(pf.getFeature().getCode())) {
-                        company.setAiCreditBalance(company.getAiCreditBalance() + pf.getTotalQuota());
-                        walletChanged = true;
-                    } else if ("JOB_POSTING".equals(pf.getFeature().getCode())) {
-                        company.setJobPostBalance(company.getJobPostBalance() + pf.getTotalQuota());
-                        walletChanged = true;
-                    }
-                }
-                if (walletChanged) {
-                    companyRepository.save(company);
-                }
-            }
-        }
-    }
 
     @Override
     public String getSubscriptionPlanName(UUID subscriptionId, SubscriptionType type) {
@@ -380,6 +228,150 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
             }
             if (walletChanged) {
                 companyRepository.save(company);
+            }
+        }
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public void checkRenewalEligibility(UUID userId, UUID planId) {
+        User user = userService.getUserEntityById(userId);
+        Object planObj = subscriptionPlanService.getById(planId);
+        Instant now = Instant.now();
+
+        if (planObj instanceof CandidateSubscriptionPlan plan) {
+            List<CandidateSubscription> activeSubs = candidateSubscriptionRepository
+                    .findByUserIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                            userId, SubscriptionStatus.ACTIVE, now, now);
+            if (!activeSubs.isEmpty()) {
+                CandidateSubscription activeSub = activeSubs.get(0);
+                if (plan.getPrice() <= activeSub.getPlan().getPrice()) {
+                    if (activeSub.getEndDate().isAfter(now) && user.getAiCreditBalance() > 0) {
+                        throw new AppException(ErrorCode.FORBIDDEN_ACTION,
+                                "Bạn chỉ có thể mua/gia hạn khi gói hiện tại hết hạn hoặc hết Token");
+                    }
+                }
+            }
+        } else if (planObj instanceof CompanySubscriptionPlan plan) {
+            CompanyMember member = companyService.getMemberEntityByUserId(userId);
+            if (member.getCompanyRole() != CompanyRole.OWNER) {
+                throw new AppException(ErrorCode.FORBIDDEN_ACTION,
+                        "Only company owner can purchase a subscription plan");
+            }
+
+            Company company = member.getCompany();
+            List<CompanySubscription> activeSubs = companySubscriptionRepository
+                    .findByCompanyIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                            company.getId(), SubscriptionStatus.ACTIVE, now, now);
+            if (!activeSubs.isEmpty()) {
+                CompanySubscription activeSub = activeSubs.get(0);
+                if (plan.getPrice() <= activeSub.getPlan().getPrice()) {
+                    if (activeSub.getEndDate().isAfter(now)
+                            && (company.getAiCreditBalance() > 0 || company.getJobPostBalance() > 0)) {
+                        throw new AppException(ErrorCode.FORBIDDEN_ACTION,
+                                "Bạn chỉ có thể mua/gia hạn khi gói hiện tại hết hạn hoặc hết Token");
+                    }
+                }
+            }
+        } else {
+            throw new AppException(ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND, "Subscription plan not found");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void createAndActivateSubscription(UUID userId, UUID planId, SubscriptionType type) {
+        Instant now = Instant.now();
+        Object planObj = subscriptionPlanService.getById(planId);
+
+        if (type == SubscriptionType.CANDIDATE && planObj instanceof CandidateSubscriptionPlan plan) {
+            User user = userService.getUserEntityById(userId);
+
+            Instant newEndDate = now.plus(plan.getDurationDays(), ChronoUnit.DAYS);
+
+            // Hủy tất cả các gói cước đang ACTIVE cùng loại
+            List<CandidateSubscription> activeSubs = candidateSubscriptionRepository
+                    .findByUserIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                            userId, SubscriptionStatus.ACTIVE, now, now);
+            for (CandidateSubscription activeSub : activeSubs) {
+                if (activeSub.getPlan().getId().equals(plan.getId())) {
+                    if (activeSub.getEndDate().isAfter(now)) {
+                        newEndDate = activeSub.getEndDate().plus(plan.getDurationDays(), ChronoUnit.DAYS);
+                    }
+                }
+                activeSub.setStatus(SubscriptionStatus.CANCELLED);
+                candidateSubscriptionRepository.save(activeSub);
+            }
+
+            // Tạo mới Subscription với trạng thái ACTIVE trực tiếp
+            CandidateSubscription sub = new CandidateSubscription();
+            sub.setUser(user);
+            sub.setPlan(plan);
+            sub.setStatus(SubscriptionStatus.ACTIVE);
+            sub.setStartDate(now);
+            sub.setEndDate(newEndDate);
+            candidateSubscriptionRepository.save(sub);
+
+            // Nạp Token vào ví của User
+            if (plan.getPlanFeatures() != null) {
+                boolean walletChanged = false;
+                for (CandidatePlanFeature pf : plan.getPlanFeatures()) {
+                    if ("AI_CREDIT".equals(pf.getFeature().getCode())) {
+                        user.setAiCreditBalance(user.getAiCreditBalance() + pf.getTotalQuota());
+                        walletChanged = true;
+                    }
+                }
+                if (walletChanged) {
+                    userService.saveUserEntity(user);
+                }
+            }
+        } else if (type == SubscriptionType.COMPANY && planObj instanceof CompanySubscriptionPlan plan) {
+            CompanyMember member = companyService.getMemberEntityByUserId(userId);
+            Company company = member.getCompany();
+            User user = userService.getUserEntityById(userId);
+
+            Instant newEndDate = now.plus(plan.getDurationDays(), ChronoUnit.DAYS);
+
+            // Hủy tất cả các gói cước đang ACTIVE của công ty
+            List<CompanySubscription> activeSubs = companySubscriptionRepository
+                    .findByCompanyIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                            company.getId(), SubscriptionStatus.ACTIVE, now, now);
+            for (CompanySubscription activeSub : activeSubs) {
+                if (activeSub.getPlan().getId().equals(plan.getId())) {
+                    if (activeSub.getEndDate().isAfter(now)) {
+                        newEndDate = activeSub.getEndDate().plus(plan.getDurationDays(), ChronoUnit.DAYS);
+                    }
+                }
+                activeSub.setStatus(SubscriptionStatus.CANCELLED);
+                companySubscriptionRepository.save(activeSub);
+            }
+
+            // Tạo mới Subscription với trạng thái ACTIVE trực tiếp
+            CompanySubscription sub = new CompanySubscription();
+            sub.setCompany(company);
+            sub.setPurchasedBy(user);
+            sub.setPlan(plan);
+            sub.setStatus(SubscriptionStatus.ACTIVE);
+            sub.setStartDate(now);
+            sub.setEndDate(newEndDate);
+            companySubscriptionRepository.save(sub);
+
+            // Nạp Token vào ví của công ty
+            if (plan.getPlanFeatures() != null) {
+                boolean walletChanged = false;
+                for (CompanyPlanFeature pf : plan.getPlanFeatures()) {
+                    if ("AI_CREDIT".equals(pf.getFeature().getCode())) {
+                        company.setAiCreditBalance(company.getAiCreditBalance() + pf.getTotalQuota());
+                        walletChanged = true;
+                    } else if ("JOB_POSTING".equals(pf.getFeature().getCode())) {
+                        company.setJobPostBalance(company.getJobPostBalance() + pf.getTotalQuota());
+                        walletChanged = true;
+                    }
+                }
+                if (walletChanged) {
+                    companyRepository.save(company);
+                }
             }
         }
     }

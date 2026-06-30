@@ -11,7 +11,7 @@ export default function CandidateBillingPage() {
   const { user } = useAuthStore()
   
   const { data: subRes, isLoading: isSubLoading } = useMyCurrentSubscriptionQuery(!!user)
-  const { data: paymentRes, isLoading: isPaymentLoading } = useMyPaymentHistoryQuery(0, 50) // Load max 50 recent payments for now
+  const { data: paymentRes, isLoading: isPaymentLoading, refetch } = useMyPaymentHistoryQuery(0, 50) // Load max 50 recent payments for now
 
   return (
     <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
@@ -24,7 +24,7 @@ export default function CandidateBillingPage() {
 
       <div className="mt-12">
         <h2 className="text-xl font-bold text-slate-800 mb-6">Lịch sử giao dịch</h2>
-        <PaymentHistoryTable payments={paymentRes?.data?.content || []} isLoading={isPaymentLoading} />
+        <PaymentHistoryTable payments={paymentRes?.data?.content || []} isLoading={isPaymentLoading} refetchHistory={refetch} />
       </div>
     </div>
   )

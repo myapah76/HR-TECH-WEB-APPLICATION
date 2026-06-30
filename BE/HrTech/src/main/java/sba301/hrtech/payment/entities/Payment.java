@@ -24,13 +24,13 @@ public class Payment extends BaseEntity {
 
     private Long amount;
 
-    private String paymentLinkId;
+    private String checkoutUrl;
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus status;
 
-    @Column(name = "subscription_id")
-    private UUID subscriptionId;
+    @Column(name = "subscription_plan_id")
+    private UUID subscriptionPlanId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "subscription_type")

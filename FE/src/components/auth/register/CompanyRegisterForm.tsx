@@ -27,6 +27,7 @@ import { useRegisterCompany } from '@/src/hooks/auth'
 import { OtpType } from '@/src/enums/otp.enum'
 import { toast } from 'sonner'
 import { uploadFile } from '@/src/services/upload.service'
+import { uploadToCloudinary } from '@/src/utils/cloudinary'
 
 export function CompanyRegisterForm() {
   const router = useRouter()
@@ -56,10 +57,7 @@ export function CompanyRegisterForm() {
       let logoUrl = undefined
 
       if (logoFile) {
-        const uploadRes = await uploadFile(logoFile)
-        if (uploadRes?.data) {
-          logoUrl = uploadRes.data
-        }
+        logoUrl = await uploadToCloudinary(logoFile, 'hrtech/companies')
       }
 
       registerCompanyMutation.mutate(

@@ -4,4 +4,5 @@ export interface PaymentResponse {
   status: 'PENDING' | 'PAID' | 'CANCELLED'
   subscriptionName: string
   createdAt: string
+  checkoutUrl?: string
 }

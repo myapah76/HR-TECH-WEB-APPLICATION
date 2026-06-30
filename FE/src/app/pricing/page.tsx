@@ -21,6 +21,7 @@ import { PricingTabs } from '@/src/components/pricing/PricingTabs'
 import { PricingCard, PricingPackage } from '@/src/components/pricing/PricingCard'
 import { PricingStats } from '@/src/components/pricing/PricingStats'
 import { PricingFaq } from '@/src/components/pricing/PricingFaq'
+import { CheckoutModal } from '@/src/components/pricing/CheckoutModal'
 
 function PricingContent() {
   const { user, setAuth } = useAuthStore()
@@ -37,28 +38,69 @@ function PricingContent() {
   const { data: currentSubRes, isLoading: isSubLoading } = useMyCurrentSubscriptionQuery(!!user)
   const currentSubscription = currentSubRes?.data
 
-  const { data: paymentHistoryRes } = useMyPaymentHistoryQuery(0, 10, !!user)
+  const { data: paymentHistoryRes, refetch: refetchHistory } = useMyPaymentHistoryQuery(0, 10, !!user)
+  const verifyMutation = useVerifyPaymentMutation()
   const payments = paymentHistoryRes?.data?.content || []
   const pendingPayment = payments.find((p) => p.status === 'PENDING')
   const hasPendingPayment = !!pendingPayment
-  const pendingOrderCode = pendingPayment?.orderCode
 
-  const verifyMutation = useVerifyPaymentMutation()
-  const [isVerifying, setIsVerifying] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedPackage, setSelectedPackage] = useState<PricingPackage | null>(null)
+  const [checkoutUrl, setCheckoutUrl] = useState<string>('')
+  const [isCreatingLink, setIsCreatingLink] = useState(false)
+  const [activePaymentOrderCode, setActivePaymentOrderCode] = useState<number | null>(null)
 
-  const handleVerify = (orderCode: number) => {
-    setIsVerifying(true)
-    verifyMutation.mutate(orderCode, {
-      onSuccess: (res) => {
-        toast.success(res.message || 'Xác thực thanh toán thành công!')
-      },
-      onSettled: () => {
-        setIsVerifying(false)
-      },
-    })
+  const handleVerify = () => {
+    router.replace('/candidate/billing')
   }
 
   const plans = res?.data || []
+
+  // Polling payment history when the checkout modal is open
+  useEffect(() => {
+    if (!isModalOpen) return
+
+    const interval = setInterval(() => {
+      refetchHistory()
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [isModalOpen, refetchHistory])
+
+  // Track and set active pending payment ID when checkout modal is opened
+  useEffect(() => {
+    if (isModalOpen && !activePaymentOrderCode && payments.length > 0) {
+      const pending = payments.find((p) => p.status === 'PENDING')
+      if (pending) {
+        setActivePaymentOrderCode(pending.orderCode)
+      }
+    }
+  }, [isModalOpen, payments, activePaymentOrderCode])
+
+  // Automatically close modal and activate package when active payment shifts to PAID
+  useEffect(() => {
+    if (!isModalOpen || !activePaymentOrderCode) return
+
+    const activePayment = payments.find((p) => p.orderCode === activePaymentOrderCode)
+    if (activePayment && activePayment.status === 'PAID') {
+      const handleSuccess = async () => {
+        setIsModalOpen(false)
+        setActivePaymentOrderCode(null)
+        toast.success('Thanh toán thành công! Đang kích hoạt gói dịch vụ...')
+        try {
+          const res = await refreshToken()
+          setAuth({
+            user: res.data.userResponse,
+            accessToken: res.data.accessToken,
+          })
+          toast.success('Gói dịch vụ đã được kích hoạt thành công!')
+        } catch (err) {
+          toast.error(getErrorMessage(err))
+        }
+      }
+      handleSuccess()
+    }
+  }, [payments, activePaymentOrderCode, isModalOpen, setAuth])
 
   useEffect(() => {
     const handlePaymentResult = async () => {
@@ -68,6 +110,9 @@ function PricingContent() {
 
       if (status === 'PAID' || (code === '00' && cancel === 'false')) {
         toast.success('Thanh toán thành công! Đang kích hoạt gói dịch vụ...')
+        
+        // Cập nhật lại lịch sử thanh toán trên UI
+        refetchHistory()
 
         // Remove query parameters from URL to avoid repeating the toast on refresh
         const newUrl = window.location.pathname
@@ -87,13 +132,25 @@ function PricingContent() {
       } else if (status === 'CANCELLED' || cancel === 'true') {
         toast.error('Thanh toán đã bị hủy hoặc thất bại.')
 
+        // Đối soát trực tiếp để backend giải phóng trạng thái pending cũ của user
+        const orderCode = searchParams.get('orderCode')
+        if (orderCode) {
+          verifyMutation.mutate(Number(orderCode), {
+            onSettled: () => {
+              refetchHistory()
+            }
+          })
+        } else {
+          refetchHistory()
+        }
+
         const newUrl = window.location.pathname
         window.history.replaceState({}, '', newUrl)
       }
     }
 
     handlePaymentResult()
-  }, [searchParams, setAuth])
+  }, [searchParams, setAuth, refetchHistory, verifyMutation])
 
   const handleSubscribe = (packageId: string) => {
     if (!user) {
@@ -101,16 +158,27 @@ function PricingContent() {
       router.push('/login')
       return
     }
-    paymentMutation.mutate(packageId, {
-      onSuccess: (res) => {
-        if (res.data?.checkoutUrl) {
-          toast.success('Đang khởi tạo liên kết thanh toán...')
-          window.location.href = res.data.checkoutUrl
-        } else {
-          toast.error('Không tìm thấy liên kết thanh toán!')
-        }
-      },
-    })
+
+    const pkg = packages.find((p) => p.id === packageId)
+    if (pkg) {
+      setSelectedPackage(pkg)
+      setIsModalOpen(true)
+      setIsCreatingLink(true)
+      setCheckoutUrl('')
+
+      paymentMutation.mutate(packageId, {
+        onSuccess: (res) => {
+          if (res.data?.checkoutUrl) {
+            setCheckoutUrl(res.data.checkoutUrl)
+          } else {
+            toast.error('Không tìm thấy liên kết thanh toán!')
+          }
+        },
+        onSettled: () => {
+          setIsCreatingLink(false)
+        },
+      })
+    }
   }
 
   const hrPackages = plans.filter((p) => p.subscriptionType === SubscriptionType.COMPANY)
@@ -258,18 +326,14 @@ function PricingContent() {
                 <p className="font-extrabold text-sm">Bạn đang có giao dịch đang chờ xử lý</p>
                 <p className="text-xs text-amber-700 mt-0.5">
                   Nếu đã chuyển khoản thành công trên PayOS nhưng gói dịch vụ chưa kích hoạt, vui
-                  lòng bấm nút bên cạnh để cập nhật tức thì.
+                  lòng bấm nút bên cạnh để cập nhật.
                 </p>
               </div>
             </div>
             <button
-              onClick={() => handleVerify(pendingOrderCode!)}
-              disabled={isVerifying}
+              onClick={() => handleVerify()}
               className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-5 py-3 rounded-xl cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 transition-colors shrink-0 shadow-xs"
             >
-              {isVerifying ? (
-                <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin"></span>
-              ) : null}
               Xác nhận thanh toán
             </button>
           </div>
@@ -309,6 +373,16 @@ function PricingContent() {
         <PricingStats />
 
         <PricingFaq faqs={faqs} openFaq={openFaq} onToggleFaq={setOpenFaq} />
+
+        {selectedPackage && (
+          <CheckoutModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            pkg={selectedPackage}
+            checkoutUrl={checkoutUrl}
+            isCreatingLink={isCreatingLink}
+          />
+        )}
       </div>
     </div>
   )

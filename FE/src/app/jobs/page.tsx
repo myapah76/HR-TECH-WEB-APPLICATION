@@ -18,7 +18,7 @@ export default function Home() {
   const [location, setLocation] = useState(() => searchParams.get('location') ?? '')
 
   const [selectedType, setSelectedType] = useState<string | null>(null)
-  const [salaryRange, setSalaryRange] = useState(100000000)
+  const [salaryRange, setSalaryRange] = useState<[number, number]>([0, 100000000])
   const [selectedExp, setSelectedExp] = useState<string | null>(null)
   const [selectedTechs, setSelectedTechs] = useState<string[]>([])
 
@@ -38,7 +38,8 @@ export default function Home() {
     location: location || undefined,
     jobType: selectedType || undefined,
     experienceLevel: selectedExp || undefined,
-    salaryMax: salaryRange < 100000000 ? salaryRange : undefined,
+    salaryMin: salaryRange[0] > 0 ? salaryRange[0] : undefined,
+    salaryMax: salaryRange[1] < 100000000 ? salaryRange[1] : undefined,
   })
 
   const allJobs = data?.content ?? []
@@ -61,7 +62,7 @@ export default function Home() {
 
   const handleClearAll = () => {
     setSelectedType(null)
-    setSalaryRange(100000000)
+    setSalaryRange([0, 100000000])
     setSelectedExp(null)
     setSelectedTechs([])
   }

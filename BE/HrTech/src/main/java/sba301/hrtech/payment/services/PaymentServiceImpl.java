@@ -24,7 +24,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import vn.payos.PayOS;
 import vn.payos.model.v2.paymentRequests.PaymentLink;
-import vn.payos.model.v2.paymentRequests.PaymentLinkItem;
 import vn.payos.model.v2.paymentRequests.PaymentLinkStatus;
 import vn.payos.model.webhooks.Webhook;
 
@@ -48,45 +47,75 @@ public class PaymentServiceImpl implements IPaymentService {
     @Transactional
     public CreatePaymentResponse createPayment(CreatePaymentRequest request) {
         User user = authUtils.getCurrentUser();
+
+        // handle pending payment
+        var pendingPaymentOpt = paymentRepository.findFirstByUserIdAndStatusOrderByCreatedAtDesc(user.getId(), PaymentStatus.PENDING);
+        if (pendingPaymentOpt.isPresent()) {
+            Payment pendingPayment = pendingPaymentOpt.get();
+            try {
+                // Kiểm tra trạng thái thực tế của đơn hàng này trên PayOS
+                PaymentLink paymentInfo = payOS.paymentRequests().get(pendingPayment.getOrderCode());
+                PaymentLinkStatus payosStatus = paymentInfo.getStatus();
+
+                if (payosStatus == PaymentLinkStatus.PAID) {
+                    // Nếu trên PayOS đã được thanh toán -> trả lỗi
+                    throw new AppException(ErrorCode.PAYMENT_ALREADY_PAID);
+                } else if (payosStatus == PaymentLinkStatus.PENDING) {
+                    // Nếu trên PayOS vẫn đang pending -> Kiểm tra xem subscriptionPlanId có trùng với đơn hàng cũ không
+                    UUID pendingPlanId = pendingPayment.getSubscriptionPlanId();
+                    if (pendingPlanId != null && pendingPlanId.equals(request.subscriptionPlanId())) {
+                        return new CreatePaymentResponse(pendingPayment.getCheckoutUrl());
+                    } else {
+                        throw new AppException(ErrorCode.EXIST_ANOTHER_PENDING_PAYMENT);
+                    }
+                } else {
+                    // Nếu trên PayOS đã bị hủy hoặc hết hạn -> Cập nhật trạng thái để giải phóng khóa
+                    pendingPayment.setStatus(PaymentStatus.CANCELLED);
+                    paymentRepository.save(pendingPayment);
+                }
+            } catch (AppException e) {
+                throw e;
+            } catch (Exception e) {
+                // Nếu không tìm thấy đơn hàng trên PayOS hoặc có lỗi kết nối, giải phóng đơn hàng cũ để cho phép tạo mới
+                pendingPayment.setStatus(PaymentStatus.CANCELLED);
+                paymentRepository.save(pendingPayment);
+            }
+        }
+
+        // Kiểm tra tính hợp lệ của việc gia hạn/mua gói cước trước khi cho phép tạo QR thanh toán
+        subscriptionService.checkRenewalEligibility(user.getId(), request.subscriptionPlanId());
+
         Object planObj = subscriptionPlanService.getById(request.subscriptionPlanId());
 
         Long price = 0L;
         String name = "";
         SubscriptionType type = null;
-        UUID subscriptionId = null;
-
-        Object subscriptionObj = subscriptionService.createPendingSubscription(user.getId(),
-                request.subscriptionPlanId());
 
         if (planObj instanceof CandidateSubscriptionPlan plan) {
             price = plan.getPrice();
             name = plan.getName();
             type = SubscriptionType.CANDIDATE;
-            subscriptionId = ((CandidateSubscription) subscriptionObj).getId();
         } else if (planObj instanceof CompanySubscriptionPlan plan) {
             price = plan.getPrice();
             name = plan.getName();
             type = SubscriptionType.COMPANY;
-            subscriptionId = ((CompanySubscription) subscriptionObj).getId();
         }
 
         Payment payment = new Payment();
         payment.setOrderCode(System.currentTimeMillis());
         payment.setAmount(price);
-        payment.setSubscriptionId(subscriptionId);
+        payment.setSubscriptionPlanId(request.subscriptionPlanId());
         payment.setSubscriptionType(type);
+        payment.setStatus(PaymentStatus.PENDING);
         payment.setUser(user);
 
-        if (price == 0) {
-            payment.setStatus(PaymentStatus.PAID);
-            paymentRepository.save(payment);
-            subscriptionService.activateSubscription(payment.getSubscriptionId(), payment.getSubscriptionType());
-            return new CreatePaymentResponse("http://localhost:3000/pricing?status=PAID", "FREE_" + payment.getOrderCode());
-        } else {
-            payment.setStatus(PaymentStatus.PENDING);
-            paymentRepository.save(payment);
-            return payOSService.createPaymentLink(payment.getOrderCode(), payment.getAmount(), name);
-        }
+        CreatePaymentResponse paymentResponse = payOSService
+                .createPaymentLink(payment.getOrderCode(), payment.getAmount(), name);
+        payment.setCheckoutUrl(paymentResponse.checkoutUrl());
+
+        paymentRepository.save(payment);
+
+        return paymentResponse;
     }
 
     @Transactional
@@ -108,9 +137,14 @@ public class PaymentServiceImpl implements IPaymentService {
                 return;
 
             payment.setStatus(PaymentStatus.PAID);
-            payment.setPaymentLinkId(data.getPaymentLinkId());
 
-            subscriptionService.activateSubscription(payment.getSubscriptionId(), payment.getSubscriptionType());
+            if (payment.getSubscriptionPlanId() != null) {
+                subscriptionService.createAndActivateSubscription(
+                        payment.getUser().getId(),
+                        payment.getSubscriptionPlanId(),
+                        payment.getSubscriptionType()
+                );
+            }
 
             paymentRepository.save(payment);
         } catch (Exception e) {
@@ -128,14 +162,23 @@ public class PaymentServiceImpl implements IPaymentService {
             processVerification(payment);
         }
 
-        String subName = subscriptionService.getSubscriptionPlanName(payment.getSubscriptionId(),
-                payment.getSubscriptionType());
+        Object planObj = payment.getSubscriptionPlanId() != null
+                ? subscriptionPlanService.getById(payment.getSubscriptionPlanId())
+                : null;
+        String subName = "";
+        if (planObj instanceof CandidateSubscriptionPlan plan) {
+            subName = plan.getName();
+        } else if (planObj instanceof CompanySubscriptionPlan plan) {
+            subName = plan.getName();
+        }
+
         return new PaymentResponse(
                 payment.getOrderCode(),
                 payment.getAmount(),
                 payment.getStatus(),
                 subName,
-                payment.getCreatedAt());
+                payment.getCreatedAt(),
+                payment.getCheckoutUrl());
     }
 
     @Override
@@ -159,14 +202,22 @@ public class PaymentServiceImpl implements IPaymentService {
         UUID userId = authUtils.getCurrentUserId();
         return paymentRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
                 .map(payment -> {
-                    String subName = subscriptionService.getSubscriptionPlanName(payment.getSubscriptionId(),
-                            payment.getSubscriptionType());
+                    Object planObj = payment.getSubscriptionPlanId() != null
+                            ? subscriptionPlanService.getById(payment.getSubscriptionPlanId())
+                            : null;
+                    String subName = "";
+                    if (planObj instanceof CandidateSubscriptionPlan plan) {
+                        subName = plan.getName();
+                    } else if (planObj instanceof CompanySubscriptionPlan plan) {
+                        subName = plan.getName();
+                    }
                     return new PaymentResponse(
                             payment.getOrderCode(),
                             payment.getAmount(),
                             payment.getStatus(),
                             subName,
-                            payment.getCreatedAt());
+                            payment.getCreatedAt(),
+                            payment.getCheckoutUrl());
                 });
     }
 
@@ -177,8 +228,13 @@ public class PaymentServiceImpl implements IPaymentService {
 
             if (status == PaymentLinkStatus.PAID) {
                 payment.setStatus(PaymentStatus.PAID);
-                payment.setPaymentLinkId(paymentInfo.getId());
-                subscriptionService.activateSubscription(payment.getSubscriptionId(), payment.getSubscriptionType());
+                if (payment.getSubscriptionPlanId() != null) {
+                    subscriptionService.createAndActivateSubscription(
+                            payment.getUser().getId(),
+                            payment.getSubscriptionPlanId(),
+                            payment.getSubscriptionType()
+                    );
+                }
             } else if (status == PaymentLinkStatus.CANCELLED) {
                 payment.setStatus(PaymentStatus.CANCELLED);
             }
