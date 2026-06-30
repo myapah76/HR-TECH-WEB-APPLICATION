@@ -46,6 +46,11 @@ export default function PostJobPage() {
       salaryMax: undefined,
     },
   })
+    const toInstantDeadline = (deadline?: string) => {
+        if (!deadline) return deadline
+        if (deadline.includes('T')) return deadline
+        return `${deadline}T00:00:00Z`
+    }
 
   const onSubmit = (data: JobFormData) => {
     if (!myCompany?.id) {
@@ -64,6 +69,7 @@ export default function PostJobPage() {
       ...data,
       companyId,
       skills,
+        deadline: toInstantDeadline(data.deadline),
     }
 
     createJobMutation.mutate(payload, {

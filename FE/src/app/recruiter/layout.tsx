@@ -1,9 +1,11 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { RoleUser } from '@/src/enums/role.enum'
 import Sidebar from '@/src/components/layout/Sidebar'
+import { useGetCompanyApplicationCount } from '@/src/hooks/application'
+import { useGetMyCompany } from '@/src/hooks/company'
 import {
   LayoutDashboard,
   PlusCircle,
@@ -11,8 +13,6 @@ import {
   Search,
   Users,
   Building2,
-  BarChart3,
-  MessageSquare,
   Settings,
   CreditCard,
 } from 'lucide-react'
@@ -42,23 +42,11 @@ const recruiterNavItems = [
     icon: Users,
     label: 'Đơn ứng tuyển',
     path: '/recruiter/applications',
-    badge: 12,
   },
   {
     icon: Building2,
     label: 'Hồ sơ công ty',
     path: '/recruiter/profile',
-  },
-  {
-    icon: BarChart3,
-    label: 'Thống kê',
-    path: '/recruiter/analytics',
-  },
-  {
-    icon: MessageSquare,
-    label: 'Tin nhắn',
-    path: '/recruiter/messages',
-    badge: 4,
   },
   {
     icon: Settings,
@@ -75,6 +63,18 @@ const recruiterNavItems = [
 export default function RecruiterLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { user, isInitialized } = useAuthStore()
+  const { data: myCompany } = useGetMyCompany(isInitialized && !!user)
+  const { data: applicationCount } = useGetCompanyApplicationCount(myCompany?.id)
+
+  const navItems = useMemo(
+    () =>
+      recruiterNavItems.map((item) =>
+        item.path === '/recruiter/applications'
+          ? { ...item, badge: applicationCount ?? 0 }
+          : item
+      ),
+    [applicationCount]
+  )
 
   useEffect(() => {
     if (!isInitialized) return
@@ -94,7 +94,7 @@ export default function RecruiterLayout({ children }: { children: React.ReactNod
   return (
     <div className="bg-slate-50/50 flex flex-col min-h-[calc(100vh-64px)]" id="recruiter-root">
       <div className="flex flex-1">
-        <Sidebar items={recruiterNavItems} title="Nhà tuyển dụng" accentColor="emerald" />
+        <Sidebar items={navItems} title="Nhà tuyển dụng" accentColor="emerald" />
         <main className="flex-1 p-6 lg:p-8 overflow-auto" id="recruiter-content">
           {children}
         </main>

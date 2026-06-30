@@ -38,16 +38,17 @@ public class CompanyJobController {
             @PathVariable UUID companyId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String jobType,
+            @RequestParam(required = false) String jobLevel,
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "10") Integer size) {
         // Validate page and size
         if (page < 0) page = 0;
         if (size <= 0) size = 10;
         if (size > 100) size = 100; // Max 100 items per page
-        
+
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(ApiResponse.success(
-                jobService.getCompanyJobsWithFilters(companyId, status, jobType, pageable)));
+                jobService.getCompanyJobsWithFilters(companyId, status, jobType,jobLevel, pageable)));
     }
 
     @GetMapping("/{companyId}/jobs/manage")

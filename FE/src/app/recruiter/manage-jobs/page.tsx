@@ -5,26 +5,40 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import ManageJobTable from '@/src/components/company/job/ManageJobTable'
+import {
+  ExperienceLevel,
+  JobStatus,
+  JobType,
+  EXPERIENCE_LEVEL_LABELS,
+  JOB_STATUS_LABELS,
+  JOB_TYPE_LABELS,
+} from '@/src/enums/job.enum'
 import { useGetCompanyMembers, useGetMyCompany } from '@/src/hooks/company'
 import { useGetManageJobs } from '@/src/hooks/job'
 import { useAuthStore } from '@/src/stores/auth.store'
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Tất cả trạng thái' },
-  { value: 'DRAFT', label: 'Bản nháp' },
-  { value: 'PENDING_APPROVAL', label: 'Chờ duyệt' },
-  { value: 'APPROVED', label: 'Đã duyệt' },
-  { value: 'REJECTED', label: 'Bị từ chối' },
-  { value: 'CLOSED', label: 'Đã đóng' },
+  ...Object.values(JobStatus).map((status) => ({
+    value: status,
+    label: JOB_STATUS_LABELS[status],
+  })),
 ]
 
 const JOB_TYPE_OPTIONS = [
   { value: '', label: 'Tất cả hình thức' },
-  { value: 'FULL_TIME', label: 'Toàn thời gian' },
-  { value: 'PART_TIME', label: 'Bán thời gian' },
-  { value: 'CONTRACT', label: 'Hợp đồng' },
-  { value: 'INTERNSHIP', label: 'Thực tập' },
-  { value: 'REMOTE', label: 'Từ xa' },
+  ...Object.values(JobType).map((type) => ({
+    value: type,
+    label: JOB_TYPE_LABELS[type],
+  })),
+]
+
+const EXPERIENCE_LEVEL_OPTIONS = [
+  { value: '', label: 'Tất cả cấp bậc' },
+  ...Object.values(ExperienceLevel).map((level) => ({
+    value: level,
+    label: EXPERIENCE_LEVEL_LABELS[level],
+  })),
 ]
 
 const PAGE_SIZE = 10
@@ -33,6 +47,7 @@ export default function ManageJobPage() {
   const [page, setPage] = useState(0)
   const [status, setStatus] = useState('')
   const [jobType, setJobType] = useState('')
+  const [experienceLevel, setExperienceLevel] = useState('')
   const { user } = useAuthStore()
 
   const {
@@ -48,6 +63,7 @@ export default function ManageJobPage() {
   } = useGetManageJobs(myCompany?.id, {
     status: status || undefined,
     jobType: jobType || undefined,
+    experienceLevel: experienceLevel || undefined,
     page,
     size: PAGE_SIZE,
   })
@@ -64,10 +80,15 @@ export default function ManageJobPage() {
   const totalPages = pageData?.totalPages ?? 0
   const totalElements = pageData?.totalElements ?? 0
 
-  const handleFilterChange = (newStatus: string, newJobType: string) => {
+  const handleFilterChange = (
+    newStatus: string,
+    newJobType: string,
+    newExperienceLevel: string
+  ) => {
     setPage(0)
     setStatus(newStatus)
     setJobType(newJobType)
+    setExperienceLevel(newExperienceLevel)
   }
 
   return (
@@ -97,7 +118,7 @@ export default function ManageJobPage() {
         <select
           id="filter-status"
           value={status}
-          onChange={(e) => handleFilterChange(e.target.value, jobType)}
+          onChange={(e) => handleFilterChange(e.target.value, jobType, experienceLevel)}
           className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
         >
           {STATUS_OPTIONS.map((opt) => (
@@ -110,7 +131,7 @@ export default function ManageJobPage() {
         <select
           id="filter-job-type"
           value={jobType}
-          onChange={(e) => handleFilterChange(status, e.target.value)}
+          onChange={(e) => handleFilterChange(status, e.target.value, experienceLevel)}
           className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
         >
           {JOB_TYPE_OPTIONS.map((opt) => (
@@ -120,10 +141,23 @@ export default function ManageJobPage() {
           ))}
         </select>
 
-        {(status || jobType) && (
+        <select
+          id="filter-experience-level"
+          value={experienceLevel}
+          onChange={(e) => handleFilterChange(status, jobType, e.target.value)}
+          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+        >
+          {EXPERIENCE_LEVEL_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
+        {(status || jobType || experienceLevel) && (
           <button
             type="button"
-            onClick={() => handleFilterChange('', '')}
+            onClick={() => handleFilterChange('', '', '')}
             className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-500 shadow-xs transition-colors hover:border-rose-300 hover:text-rose-600"
           >
             Xóa bộ lọc
@@ -188,11 +222,11 @@ export default function ManageJobPage() {
           <Briefcase className="mx-auto h-10 w-10 text-slate-300" />
           <h2 className="mt-4 text-lg font-bold text-slate-900">Chưa có tin tuyển dụng</h2>
           <p className="mt-1 text-sm text-slate-500">
-            {status || jobType
+            {status || jobType || experienceLevel
               ? 'Không tìm thấy tin tuyển dụng với bộ lọc hiện tại.'
               : 'Tạo tin tuyển dụng đầu tiên để bắt đầu tìm kiếm ứng viên.'}
           </p>
-          {!status && !jobType && (
+          {!status && !jobType && !experienceLevel && (
             <Link
               href="/recruiter/post-job"
               className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700"

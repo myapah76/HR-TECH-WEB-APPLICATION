@@ -43,7 +43,7 @@ public interface IJobService {
 
     List<JobResponse> getMyJobs(UUID companyId);
 
-    Page<JobResponse> getCompanyJobsWithFilters(UUID companyId, String status, String jobType, Pageable pageable);
+    Page<JobResponse> getCompanyJobsWithFilters(UUID companyId, String status, String jobType, String jobLevel,Pageable pageable);
 
     Job getJobEntityById(UUID jobId);
     List<Job> findStuckJobs(List<ExtractionStatus> statuses, Instant threshold);
