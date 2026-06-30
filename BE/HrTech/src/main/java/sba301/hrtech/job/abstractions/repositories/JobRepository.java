@@ -68,11 +68,13 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
             AND j.company.id = :companyId
             AND (:status IS NULL OR j.status = :status)
             AND (:jobType IS NULL OR j.jobType = :jobType)
+            AND (:jobLevel IS NULL OR j.experienceLevel = :jobLevel)
           ORDER BY j.createdAt DESC
       """)
   Page<Job> findCompanyJobsWithFilters(
       @Param("companyId") UUID companyId,
       @Param("status") JobStatus status,
       @Param("jobType") JobType jobType,
+      @Param("jobLevel") ExperienceLevel jobLevel,
       Pageable pageable);
 }

@@ -8,6 +8,7 @@ import {
   ScheduleInterviewRequest,
   SubmitApplicationRequest,
 } from '../types'
+import { getManageJobs } from './job.service'
 
 export const getMyApplications = async (): Promise<ApplicationSummaryResponse[]> => {
   const response = await api.get<ApiResponse<ApplicationSummaryResponse[]>>('/applications')
@@ -17,6 +18,25 @@ export const getMyApplications = async (): Promise<ApplicationSummaryResponse[]>
 export const getApplicationsByJob = async (jobId: string): Promise<ApplicationSummaryResponse[]> => {
   const response = await api.get<ApiResponse<ApplicationSummaryResponse[]>>(`/applications/jobs/${jobId}`)
   return response.data.data
+}
+
+export const getCompanyApplicationCount = async (companyId: string): Promise<number> => {
+  const firstPage = await getManageJobs(companyId, { page: 0, size: 100 })
+  const jobs = [...firstPage.content]
+
+  for (let page = 1; page < firstPage.totalPages; page += 1) {
+    const nextPage = await getManageJobs(companyId, { page, size: 100 })
+    jobs.push(...nextPage.content)
+  }
+
+  const applicationsByJob = await Promise.all(
+    jobs.map((job) => getApplicationsByJob(job.id))
+  )
+  const applicationIds = new Set(
+    applicationsByJob.flat().map((application) => application.id)
+  )
+
+  return applicationIds.size
 }
 
 export const getApplicationDetail = async (id: string): Promise<ApplicationDetailResponse> => {

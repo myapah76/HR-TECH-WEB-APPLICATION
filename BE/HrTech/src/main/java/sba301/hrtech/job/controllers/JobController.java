@@ -60,7 +60,7 @@ public class JobController {
     }
 
     @PostMapping
-    @PreAuthorize("@companySecurity.hasRole(#request.companyId, 'OWNER', 'HR_MANAGER', 'HR')")
+    @PreAuthorize("@companySecurity.hasRole(#p0.companyId(), 'OWNER', 'HR_MANAGER', 'HR')")
     public ResponseEntity<ApiResponse<JobResponse>> createJob(@Valid @RequestBody JobRequest request) {
         JobResponse response = jobService.createJob(request);
         return ResponseEntity

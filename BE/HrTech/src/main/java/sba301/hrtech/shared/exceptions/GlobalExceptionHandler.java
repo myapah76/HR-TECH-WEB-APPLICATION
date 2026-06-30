@@ -1,8 +1,11 @@
 package sba301.hrtech.shared.exceptions;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.expression.spel.SpelEvaluationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +16,7 @@ import org.springframework.security.access.AccessDeniedException;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(AppException.class)
@@ -49,20 +53,32 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleAll(
-            Exception ex,
+    @ExceptionHandler(SpelEvaluationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleSpelEvaluation(
+            SpelEvaluationException ex,
             HttpServletRequest request
     ) {
+        log.error("Security expression evaluation failed for request {}", request.getRequestURI(), ex);
         return buildError(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "Internal server error",
-                ErrorCode.INTERNAL_ERROR,
+                HttpStatus.FORBIDDEN,
+                "Bạn không có quyền truy cập tài nguyên này!",
+                ErrorCode.FORBIDDEN,
                 request.getRequestURI()
         );
     }
 
-
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthorizationDenied(
+            AuthorizationDeniedException ex,
+            HttpServletRequest request
+    ) {
+        return buildError(
+                HttpStatus.FORBIDDEN,
+                "Bạn không có quyền truy cập tài nguyên này!",
+                ErrorCode.FORBIDDEN,
+                request.getRequestURI()
+        );
+    }
 
     @ExceptionHandler(MissingRequestCookieException.class)
     public ResponseEntity<ApiResponse<Void>> handleMissingCookie(
@@ -87,6 +103,20 @@ public class GlobalExceptionHandler {
                 HttpStatus.FORBIDDEN,
                 "Bạn không có quyền truy cập tài nguyên này!",
                 ErrorCode.FORBIDDEN,
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<Void>> handleAll(
+            Exception ex,
+            HttpServletRequest request
+    ) {
+        log.error("Unhandled exception for request {}", request.getRequestURI(), ex);
+        return buildError(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Internal server error",
+                ErrorCode.INTERNAL_ERROR,
                 request.getRequestURI()
         );
     }

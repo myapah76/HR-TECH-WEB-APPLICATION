@@ -303,7 +303,7 @@ public class JobServiceImpl implements IJobService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<JobResponse> getCompanyJobsWithFilters(UUID companyId, String status, String jobType, Pageable pageable) {
+    public Page<JobResponse> getCompanyJobsWithFilters(UUID companyId, String status, String jobType, String jobLevel, Pageable pageable) {
         jobValidator.validateCompanyApproved(companyId);
 
         Object principal = SecurityContextHolder.getContext().getAuthentication() != null
@@ -336,7 +336,15 @@ public class JobServiceImpl implements IJobService {
             }
         }
 
-        return jobRepository.findCompanyJobsWithFilters(companyId, jobStatusEnum, jobTypeEnum, pageable)
+        ExperienceLevel jobLevelEnum = null;
+        if (jobLevel != null) {
+            try {
+                jobLevelEnum = ExperienceLevel.valueOf(jobLevel.toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                // Invalid jobLevel, treat as null (no filter)
+            }
+        }
+        return jobRepository.findCompanyJobsWithFilters(companyId, jobStatusEnum, jobTypeEnum, jobLevelEnum, pageable)
                 .map(jobMapper::toResponse);
     }
 

@@ -18,6 +18,7 @@ export interface PageResponse<T> {
 export interface ManageJobsParams {
   status?: string
   jobType?: string
+  experienceLevel?: string
   page?: number
   size?: number
 }
@@ -83,6 +84,37 @@ export const getManageJobs = async (
   companyId: string,
   params?: ManageJobsParams
 ): Promise<PageResponse<Job>> => {
+  if (params?.experienceLevel) {
+    const { page = 0, size = 10, experienceLevel, ...serverParams } = params
+    const firstPage = await api.get<ApiResponse<PageResponse<Job>>>(
+      `/companies/${companyId}/jobs`,
+      { params: { ...serverParams, page: 0, size: 100 } }
+    )
+    const allJobs = [...firstPage.data.data.content]
+
+    for (let nextPage = 1; nextPage < firstPage.data.data.totalPages; nextPage += 1) {
+      const response = await api.get<ApiResponse<PageResponse<Job>>>(
+        `/companies/${companyId}/jobs`,
+        { params: { ...serverParams, page: nextPage, size: 100 } }
+      )
+      allJobs.push(...response.data.data.content)
+    }
+
+    const filteredJobs = allJobs.filter((job) => job.experienceLevel === experienceLevel)
+    const start = page * size
+
+    return {
+      ...firstPage.data.data,
+      content: filteredJobs.slice(start, start + size),
+      totalElements: filteredJobs.length,
+      totalPages: Math.ceil(filteredJobs.length / size),
+      size,
+      number: page,
+      first: page === 0,
+      last: page >= Math.max(Math.ceil(filteredJobs.length / size) - 1, 0),
+    }
+  }
+
   const response = await api.get<ApiResponse<PageResponse<Job>>>(
     `/companies/${companyId}/jobs`,
     { params }

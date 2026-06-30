@@ -124,7 +124,7 @@ export default function Sidebar({ items, title, accentColor = 'blue' }: SidebarP
               {!collapsed && (
                 <>
                   <span className="truncate">{item.label}</span>
-                  {item.badge !== undefined && item.badge > 0 && (
+                  {item.badge !== undefined && (
                     <span
                       className={`ml-auto ${colors.bg} ${colors.text} text-[10px] font-black px-1.5 py-0.5 rounded-md min-w-5 text-center`}
                     >
@@ -133,7 +133,7 @@ export default function Sidebar({ items, title, accentColor = 'blue' }: SidebarP
                   )}
                 </>
               )}
-              {collapsed && item.badge !== undefined && item.badge > 0 && (
+              {collapsed && item.badge !== undefined && (
                 <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[8px] font-black h-4 w-4 rounded-full flex items-center justify-center">
                   {item.badge > 9 ? '9+' : item.badge}
                 </span>
