@@ -9,3 +9,8 @@ export const searchSkills = async (keyword: string): Promise<Skill[]> => {
   })
   return response.data.data
 }
+
+export const getSkills = async (): Promise<Skill[]> => {
+  const response = await api.get<ApiResponse<Skill[]>>(`/skills`)
+  return response.data.data
+}
