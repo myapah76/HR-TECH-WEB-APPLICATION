@@ -1,4 +1,4 @@
-        'use client'
+'use client'
 
 import Link from 'next/link'
 import StatCard from '@/src/components/ui/StatCard'
@@ -16,26 +16,67 @@ import {
   Zap,
 } from 'lucide-react'
 import { useAuthStore } from '@/src/stores/auth.store'
+import { useGetMyCompany } from '@/src/hooks/company'
+import { useGetManageJobs } from '@/src/hooks/job'
+import { useGetCompanyApplications } from '@/src/hooks/application'
+
+const getRelativeTime = (dateStr: string | number | Date) => {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  if (diffMs < 0) return 'Vừa xong'
+  
+  const diffMins = Math.floor(diffMs / (1000 * 60))
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffMins < 60) return `${Math.max(1, diffMins)} phút`
+  if (diffHours < 24) return `${diffHours} giờ`
+  return `${diffDays} ngày`
+}
 
 export default function RecruiterDashboardPage() {
   const { user } = useAuthStore()
+  const { data: myCompany } = useGetMyCompany()
+  const companyId = myCompany?.id
 
-  const recentActivities = [
-    { action: '5 ứng viên mới ứng tuyển Golang Dev', time: '1 giờ trước', status: 'new' },
-    { action: 'Tin tuyển dụng React Native đã hết hạn', time: '3 giờ trước', status: 'expired' },
-    {
-      action: 'Ứng viên Nguyễn Hoàng Nam phù hợp A.I 95%',
-      time: '1 ngày trước',
-      status: 'ai_match',
-    },
-    { action: 'Đã cập nhật thông tin công ty thành công', time: '2 ngày trước', status: 'update' },
-  ]
+  // Fetch company jobs to count active ones
+  const { data: jobsPage } = useGetManageJobs(companyId, { page: 0, size: 100 })
+  const jobs = jobsPage?.content || []
+  const activeJobsCount = jobs.filter((j: any) => j.status === 'OPEN' || j.status === 'APPROVED').length
+
+  // Fetch all company applications
+  const { data: applications = [] } = useGetCompanyApplications(companyId, !!companyId)
+
+  // Map activities dynamically from applications
+  const recentActivities = [...applications]
+    .sort((a: any, b: any) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime())
+    .slice(0, 4)
+    .map((app: any) => ({
+      action: `Hồ sơ ${app.cvTitle} ứng tuyển vị trí ${app.jobTitle}`,
+      time: `${getRelativeTime(app.appliedAt)} trước`,
+      status: app.status === 'SUBMITTED' ? 'new' : app.status === 'OFFER' ? 'offer' : 'ai_match',
+    }))
+
+  // Calculate hiring pipeline count and percentages
+  const totalApps = applications.length
+  const stageCounts = {
+    submitted: applications.filter((a: any) => a.status === 'SUBMITTED').length,
+    screening: applications.filter((a: any) => a.status === 'SCREENING' || a.status === 'SCORED').length,
+    interview: applications.filter((a: any) => a.status === 'INTERVIEW' || a.status === 'PENDING_INTERVIEW_SCHEDULE').length,
+    offer: applications.filter((a: any) => a.status === 'OFFER').length,
+  }
+
+  const getPercentage = (count: number) => {
+    if (totalApps === 0) return 0
+    return Math.round((count / totalApps) * 100)
+  }
 
   const candidatePipeline = [
-    { stage: 'Ứng tuyển mới', count: 18, percentage: 38, color: 'bg-blue-500' },
-    { stage: 'Sàng lọc CV', count: 12, percentage: 25, color: 'bg-amber-500' },
-    { stage: 'Phỏng vấn', count: 9, percentage: 19, color: 'bg-indigo-500' },
-    { stage: 'Nhận việc (Offer)', count: 8, percentage: 18, color: 'bg-emerald-500' },
+    { stage: 'Ứng tuyển mới', count: stageCounts.submitted, percentage: getPercentage(stageCounts.submitted), color: 'bg-blue-500' },
+    { stage: 'Sàng lọc CV', count: stageCounts.screening, percentage: getPercentage(stageCounts.screening), color: 'bg-amber-500' },
+    { stage: 'Phỏng vấn', count: stageCounts.interview, percentage: getPercentage(stageCounts.interview), color: 'bg-indigo-500' },
+    { stage: 'Nhận việc (Offer)', count: stageCounts.offer, percentage: getPercentage(stageCounts.offer), color: 'bg-emerald-500' },
   ]
 
   return (
@@ -61,8 +102,8 @@ export default function RecruiterDashboardPage() {
 
       {/* Stat Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Briefcase} label="Tin đang tuyển" value={8} change={25} color="blue" />
-        <StatCard icon={Users} label="Đơn ứng tuyển" value={47} change={18} color="emerald" />
+        <StatCard icon={Briefcase} label="Tin đang tuyển" value={activeJobsCount} color="blue" />
+        <StatCard icon={Users} label="Đơn ứng tuyển" value={totalApps} color="emerald" />
         <StatCard icon={Eye} label="Lượt xem tin" value="2.4K" change={12} color="violet" />
         <StatCard icon={TrendingUp} label="Tỷ lệ tuyển" value="68%" change={5} color="amber" />
       </div>
@@ -74,49 +115,45 @@ export default function RecruiterDashboardPage() {
           <div className="bg-white rounded-2xl border border-slate-200/60 p-6 shadow-xs">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-black text-slate-900">Hoạt động gần đây</h2>
-              <Link
-                href="/recruiter/applications"
-                className="text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-colors"
-              >
-                Xem tất cả <ArrowRight className="h-4 w-4" />
-              </Link>
             </div>
             <div className="space-y-3.5">
-              {recentActivities.map((r, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-all duration-200"
-                >
+              {recentActivities.length > 0 ? (
+                recentActivities.map((r, i) => (
                   <div
-                    className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${
-                      r.status === 'new'
-                        ? 'bg-blue-50 text-blue-600'
-                        : r.status === 'expired'
-                          ? 'bg-rose-50 text-rose-600'
-                          : r.status === 'ai_match'
-                            ? 'bg-violet-50 text-violet-600'
-                            : 'bg-slate-100 text-slate-650'
-                    }`}
+                    key={i}
+                    className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-all duration-200"
                   >
-                    {r.status === 'new' ? (
-                      <Users className="h-5 w-5" />
-                    ) : r.status === 'expired' ? (
-                      <Briefcase className="h-5 w-5" />
-                    ) : r.status === 'ai_match' ? (
-                      <Brain className="h-5 w-5" />
-                    ) : (
-                      <Zap className="h-5 w-5" />
-                    )}
+                    <div
+                      className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${
+                        r.status === 'new'
+                          ? 'bg-blue-50 text-blue-600'
+                          : r.status === 'offer'
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : 'bg-violet-50 text-violet-600'
+                      }`}
+                    >
+                      {r.status === 'new' ? (
+                        <Users className="h-5 w-5" />
+                      ) : r.status === 'offer' ? (
+                        <Zap className="h-5 w-5" />
+                      ) : (
+                        <Brain className="h-5 w-5" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-slate-800 truncate">{r.action}</p>
+                      <p className="text-xs text-slate-400 font-bold flex items-center gap-1 mt-0.5">
+                        <Clock className="h-4 w-4" />
+                        {r.time}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-slate-800 truncate">{r.action}</p>
-                    <p className="text-xs text-slate-400 font-bold flex items-center gap-1 mt-0.5">
-                      <Clock className="h-4 w-4" />
-                      {r.time}
-                    </p>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-sm font-semibold text-slate-405">
+                  Chưa có hoạt động gần đây
                 </div>
-              ))}
+              )}
             </div>
           </div>
 

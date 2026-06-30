@@ -1,13 +1,13 @@
 import { api } from '@/src/lib/axios'
-import { ApiResponse } from '../types/api'
 import {
-  ApplicationSummaryResponse,
-  ApplicationDetailResponse,
-  ApplicationStatus,
-  RejectInterviewScheduleRequest,
-  ScheduleInterviewRequest,
-  SubmitApplicationRequest,
+    ApplicationDetailResponse,
+    ApplicationStatus,
+    ApplicationSummaryResponse,
+    RejectInterviewScheduleRequest,
+    ScheduleInterviewRequest,
+    SubmitApplicationRequest,
 } from '../types'
+import { ApiResponse } from '../types/api'
 import { getManageJobs } from './job.service'
 
 export const getMyApplications = async (): Promise<ApplicationSummaryResponse[]> => {
@@ -20,7 +20,7 @@ export const getApplicationsByJob = async (jobId: string): Promise<ApplicationSu
   return response.data.data
 }
 
-export const getCompanyApplicationCount = async (companyId: string): Promise<number> => {
+export const getCompanyApplications = async (companyId: string): Promise<ApplicationSummaryResponse[]> => {
   const firstPage = await getManageJobs(companyId, { page: 0, size: 100 })
   const jobs = [...firstPage.content]
 
@@ -32,10 +32,12 @@ export const getCompanyApplicationCount = async (companyId: string): Promise<num
   const applicationsByJob = await Promise.all(
     jobs.map((job) => getApplicationsByJob(job.id))
   )
-  const applicationIds = new Set(
-    applicationsByJob.flat().map((application) => application.id)
-  )
+  return applicationsByJob.flat()
+}
 
+export const getCompanyApplicationCount = async (companyId: string): Promise<number> => {
+  const apps = await getCompanyApplications(companyId)
+  const applicationIds = new Set(apps.map((application) => application.id))
   return applicationIds.size
 }
 
