@@ -48,7 +48,7 @@ function PricingContent() {
   const [selectedPackage, setSelectedPackage] = useState<PricingPackage | null>(null)
   const [checkoutUrl, setCheckoutUrl] = useState<string>('')
   const [isCreatingLink, setIsCreatingLink] = useState(false)
-  const [activePaymentId, setActivePaymentId] = useState<string | null>(null)
+  const [activePaymentOrderCode, setActivePaymentOrderCode] = useState<number | null>(null)
 
   const handleVerify = () => {
     router.replace('/candidate/billing')
@@ -69,23 +69,23 @@ function PricingContent() {
 
   // Track and set active pending payment ID when checkout modal is opened
   useEffect(() => {
-    if (isModalOpen && !activePaymentId && payments.length > 0) {
+    if (isModalOpen && !activePaymentOrderCode && payments.length > 0) {
       const pending = payments.find((p) => p.status === 'PENDING')
       if (pending) {
-        setActivePaymentId(pending.id)
+        setActivePaymentOrderCode(pending.orderCode)
       }
     }
-  }, [isModalOpen, payments, activePaymentId])
+  }, [isModalOpen, payments, activePaymentOrderCode])
 
   // Automatically close modal and activate package when active payment shifts to PAID
   useEffect(() => {
-    if (!isModalOpen || !activePaymentId) return
+    if (!isModalOpen || !activePaymentOrderCode) return
 
-    const activePayment = payments.find((p) => p.id === activePaymentId)
+    const activePayment = payments.find((p) => p.orderCode === activePaymentOrderCode)
     if (activePayment && activePayment.status === 'PAID') {
       const handleSuccess = async () => {
         setIsModalOpen(false)
-        setActivePaymentId(null)
+        setActivePaymentOrderCode(null)
         toast.success('Thanh toán thành công! Đang kích hoạt gói dịch vụ...')
         try {
           const res = await refreshToken()
@@ -100,7 +100,7 @@ function PricingContent() {
       }
       handleSuccess()
     }
-  }, [payments, activePaymentId, isModalOpen, setAuth])
+  }, [payments, activePaymentOrderCode, isModalOpen, setAuth])
 
   useEffect(() => {
     const handlePaymentResult = async () => {
