@@ -62,8 +62,7 @@ public class PaymentServiceImpl implements IPaymentService {
                     throw new AppException(ErrorCode.PAYMENT_ALREADY_PAID);
                 } else if (payosStatus == PaymentLinkStatus.PENDING) {
                     // Nếu trên PayOS vẫn đang pending -> Kiểm tra xem subscriptionPlanId có trùng với đơn hàng cũ không
-                    UUID pendingPlanId = subscriptionService.getSubscriptionPlanId(
-                            pendingPayment.getSubscriptionId(), pendingPayment.getSubscriptionType());
+                    UUID pendingPlanId = pendingPayment.getSubscriptionPlanId();
                     if (pendingPlanId != null && pendingPlanId.equals(request.subscriptionPlanId())) {
                         return new CreatePaymentResponse(pendingPayment.getCheckoutUrl());
                     } else {
@@ -79,40 +78,38 @@ public class PaymentServiceImpl implements IPaymentService {
             } catch (Exception e) {
                 // Nếu không tìm thấy đơn hàng trên PayOS hoặc có lỗi kết nối, giải phóng đơn hàng cũ để cho phép tạo mới
                 pendingPayment.setStatus(PaymentStatus.CANCELLED);
+                paymentRepository.save(pendingPayment);
             }
         }
-        // Tạo đơn hàng mới
+
+        // Kiểm tra tính hợp lệ của việc gia hạn/mua gói cước trước khi cho phép tạo QR thanh toán
+        subscriptionService.checkRenewalEligibility(user.getId(), request.subscriptionPlanId());
+
         Object planObj = subscriptionPlanService.getById(request.subscriptionPlanId());
 
         Long price = 0L;
         String name = "";
         SubscriptionType type = null;
-        UUID subscriptionId = null;
-
-        Object subscriptionObj = subscriptionService.createPendingSubscription(user.getId(),
-                request.subscriptionPlanId());
 
         if (planObj instanceof CandidateSubscriptionPlan plan) {
             price = plan.getPrice();
             name = plan.getName();
             type = SubscriptionType.CANDIDATE;
-            subscriptionId = ((CandidateSubscription) subscriptionObj).getId();
         } else if (planObj instanceof CompanySubscriptionPlan plan) {
             price = plan.getPrice();
             name = plan.getName();
             type = SubscriptionType.COMPANY;
-            subscriptionId = ((CompanySubscription) subscriptionObj).getId();
         }
 
         Payment payment = new Payment();
         payment.setOrderCode(System.currentTimeMillis());
         payment.setAmount(price);
-        payment.setSubscriptionId(subscriptionId);
+        payment.setSubscriptionPlanId(request.subscriptionPlanId());
         payment.setSubscriptionType(type);
         payment.setStatus(PaymentStatus.PENDING);
         payment.setUser(user);
 
-        CreatePaymentResponse paymentResponse =  payOSService
+        CreatePaymentResponse paymentResponse = payOSService
                 .createPaymentLink(payment.getOrderCode(), payment.getAmount(), name);
         payment.setCheckoutUrl(paymentResponse.checkoutUrl());
 
@@ -141,7 +138,13 @@ public class PaymentServiceImpl implements IPaymentService {
 
             payment.setStatus(PaymentStatus.PAID);
 
-            subscriptionService.activateSubscription(payment.getSubscriptionId(), payment.getSubscriptionType());
+            if (payment.getSubscriptionPlanId() != null) {
+                subscriptionService.createAndActivateSubscription(
+                        payment.getUser().getId(),
+                        payment.getSubscriptionPlanId(),
+                        payment.getSubscriptionType()
+                );
+            }
 
             paymentRepository.save(payment);
         } catch (Exception e) {
@@ -159,8 +162,16 @@ public class PaymentServiceImpl implements IPaymentService {
             processVerification(payment);
         }
 
-        String subName = subscriptionService.getSubscriptionPlanName(payment.getSubscriptionId(),
-                payment.getSubscriptionType());
+        Object planObj = payment.getSubscriptionPlanId() != null
+                ? subscriptionPlanService.getById(payment.getSubscriptionPlanId())
+                : null;
+        String subName = "";
+        if (planObj instanceof CandidateSubscriptionPlan plan) {
+            subName = plan.getName();
+        } else if (planObj instanceof CompanySubscriptionPlan plan) {
+            subName = plan.getName();
+        }
+
         return new PaymentResponse(
                 payment.getOrderCode(),
                 payment.getAmount(),
@@ -191,8 +202,15 @@ public class PaymentServiceImpl implements IPaymentService {
         UUID userId = authUtils.getCurrentUserId();
         return paymentRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
                 .map(payment -> {
-                    String subName = subscriptionService.getSubscriptionPlanName(payment.getSubscriptionId(),
-                            payment.getSubscriptionType());
+                    Object planObj = payment.getSubscriptionPlanId() != null
+                            ? subscriptionPlanService.getById(payment.getSubscriptionPlanId())
+                            : null;
+                    String subName = "";
+                    if (planObj instanceof CandidateSubscriptionPlan plan) {
+                        subName = plan.getName();
+                    } else if (planObj instanceof CompanySubscriptionPlan plan) {
+                        subName = plan.getName();
+                    }
                     return new PaymentResponse(
                             payment.getOrderCode(),
                             payment.getAmount(),
@@ -210,7 +228,13 @@ public class PaymentServiceImpl implements IPaymentService {
 
             if (status == PaymentLinkStatus.PAID) {
                 payment.setStatus(PaymentStatus.PAID);
-                subscriptionService.activateSubscription(payment.getSubscriptionId(), payment.getSubscriptionType());
+                if (payment.getSubscriptionPlanId() != null) {
+                    subscriptionService.createAndActivateSubscription(
+                            payment.getUser().getId(),
+                            payment.getSubscriptionPlanId(),
+                            payment.getSubscriptionType()
+                    );
+                }
             } else if (status == PaymentLinkStatus.CANCELLED) {
                 payment.setStatus(PaymentStatus.CANCELLED);
             }

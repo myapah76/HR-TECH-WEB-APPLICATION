@@ -96,23 +96,14 @@ public class MasterDataSeeder implements CommandLineRunner {
         }
 
         // Upgrade candidate1 to Cao Cấp
-        Object candPending = subscriptionService.createPendingSubscription(candidate.getId(), UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
-        if (candPending instanceof CandidateSubscription cSub) {
-            subscriptionService.activateSubscription(cSub.getId(), SubscriptionType.CANDIDATE);
-        }
+        subscriptionService.createAndActivateSubscription(candidate.getId(), UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"), SubscriptionType.CANDIDATE);
 
         // Upgrade companies to Chuyên Nghiệp
         if (owner1 != null) {
-            Object comp1Pending = subscriptionService.createPendingSubscription(owner1.getId(), UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd"));
-            if (comp1Pending instanceof CompanySubscription cSub) {
-                subscriptionService.activateSubscription(cSub.getId(), SubscriptionType.COMPANY);
-            }
+            subscriptionService.createAndActivateSubscription(owner1.getId(), UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd"), SubscriptionType.COMPANY);
         }
         if (owner2 != null) {
-            Object comp2Pending = subscriptionService.createPendingSubscription(owner2.getId(), UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd"));
-            if (comp2Pending instanceof CompanySubscription cSub) {
-                subscriptionService.activateSubscription(cSub.getId(), SubscriptionType.COMPANY);
-            }
+            subscriptionService.createAndActivateSubscription(owner2.getId(), UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd"), SubscriptionType.COMPANY);
         }
 
         // Refresh references after balances are added to DB
