@@ -8,12 +8,13 @@ import {
   JOB_TYPE_LABELS,
   EXPERIENCE_LEVEL_LABELS,
 } from '@/src/enums/job.enum'
+import { useGetSkills } from '@/src/hooks/skill'
 
 interface JobFilterProps {
   selectedType: string | null
   onTypeChange: (type: string | null) => void
-  salaryRange: number
-  onSalaryChange: (val: number) => void
+  salaryRange: [number, number]
+  onSalaryChange: (val: [number, number]) => void
   selectedExp: string | null
   onExpChange: (exp: string | null) => void
   selectedTechs: string[]
@@ -69,16 +70,86 @@ export default function JobFilter({
     { id: ExperienceLevel.SENIOR, label: `${EXPERIENCE_LEVEL_LABELS[ExperienceLevel.SENIOR]} (5+ năm)` },
   ]
 
-  const techOptions = [
-    'React', 'Vue', 'Angular', 'Next.js', 'Nuxt.js',
-    'Node.js', 'Express', 'NestJS', 'Spring Boot', 'Django', 'FastAPI', 'Laravel',
-    'TypeScript', 'JavaScript', 'Python', 'Java', 'Go', 'Rust', 'C#', 'C++', 'PHP', 'Ruby',
-    'React Native', 'Flutter', 'Swift', 'Kotlin',
-    'AWS', 'GCP', 'Azure', 'Docker', 'Kubernetes', 'Terraform', 'CI/CD',
-    'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Elasticsearch',
-    'GraphQL', 'REST API', 'gRPC', 'Kafka', 'RabbitMQ',
-    'Git', 'Linux', 'Nginx', 'Microservices',
-  ]
+  const { data: skillsData } = useGetSkills()
+
+  const capitalizeSkill = (str: string) => {
+    if (!str) return ''
+    const specialCases: Record<string, string> = {
+      react: 'React',
+      javascript: 'JavaScript',
+      typescript: 'TypeScript',
+      html: 'HTML',
+      css: 'CSS',
+      springboot: 'Spring Boot',
+      mysql: 'MySQL',
+      restapi: 'REST API',
+      nodejs: 'Node.js',
+      mongodb: 'MongoDB',
+      express: 'Express',
+      flutter: 'Flutter',
+      dart: 'Dart',
+      firebase: 'Firebase',
+      ios: 'iOS',
+      android: 'Android',
+      docker: 'Docker',
+      kubernetes: 'Kubernetes',
+      aws: 'AWS',
+      cicd: 'CI/CD',
+      python: 'Python',
+      sql: 'SQL',
+      tableau: 'Tableau',
+      excel: 'Excel',
+      selenium: 'Selenium',
+      cypress: 'Cypress',
+      testing: 'Testing',
+      automation: 'Automation',
+      figma: 'Figma',
+      sketch: 'Sketch',
+      adobexd: 'Adobe XD',
+      design: 'Design',
+      linux: 'Linux',
+      networking: 'Networking',
+      bash: 'Bash',
+      windowsserver: 'Windows Server',
+      tensorflow: 'TensorFlow',
+      pytorch: 'PyTorch',
+      machinelearning: 'Machine Learning',
+      swift: 'Swift',
+      objectivec: 'Objective-C',
+      xcode: 'Xcode',
+      kotlin: 'Kotlin',
+      golang: 'Golang',
+      postgresql: 'PostgreSQL',
+      redis: 'Redis',
+      microservices: 'Microservices',
+      vuejs: 'Vue.js',
+      tailwind: 'Tailwind',
+      azure: 'Azure',
+      architecture: 'Architecture',
+      systemdesign: 'System Design',
+      scikitlearn: 'Scikit-Learn',
+      keras: 'Keras',
+      datascience: 'Data Science',
+      oracle: 'Oracle',
+      sqlserver: 'SQL Server',
+      performancetuning: 'Performance Tuning',
+      cybersecurity: 'Cybersecurity',
+      penetrationtesting: 'Penetration Testing',
+      owasp: 'OWASP',
+      agile: 'Agile',
+      scrum: 'Scrum',
+      leadership: 'Leadership',
+      productstrategy: 'Product Strategy',
+      r: 'R',
+      statistics: 'Statistics',
+      datamining: 'Data Mining',
+    }
+    const key = str.toLowerCase()
+    if (specialCases[key]) return specialCases[key]
+    return str.charAt(0).toUpperCase() + str.slice(1)
+  }
+
+  const techOptions = skillsData ? skillsData.map((skill) => capitalizeSkill(skill.name)) : []
 
   const filteredTechs = techSearch.trim()
     ? techOptions.filter((t) => t.toLowerCase().includes(techSearch.toLowerCase()))
@@ -147,7 +218,7 @@ export default function JobFilter({
           className="flex items-center justify-between w-full mb-4 text-left cursor-pointer"
         >
           <span className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-800 transition-colors">
-            Mức lương tối đa
+            Mức lương mong muốn
           </span>
           {openSections.salary ? (
             <ChevronUp className="w-4 h-4 text-slate-400" />
@@ -157,20 +228,71 @@ export default function JobFilter({
         </button>
 
         {openSections.salary && (
-          <div className="space-y-4 animate-fade-in">
-            <input
-              type="range"
-              min={0}
-              max={100000000}
-              step={5000000}
-              value={salaryRange}
-              onChange={(e) => onSalaryChange(Number(e.target.value))}
-              className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-650"
-            />
+          <div className="space-y-4 animate-fade-in select-none">
+            <div className="relative h-6 flex items-center">
+              {/* Background Track */}
+              <div className="absolute w-full h-1.5 bg-slate-100 rounded-lg" />
+              {/* Highlighted active track */}
+              <div
+                className="absolute h-1.5 bg-blue-600 rounded-lg"
+                style={{
+                  left: `${(salaryRange[0] / 100000000) * 100}%`,
+                  width: `${((salaryRange[1] - salaryRange[0]) / 100000000) * 100}%`,
+                }}
+              />
+              {/* Min slider */}
+              <input
+                type="range"
+                min={0}
+                max={100000000}
+                step={5000000}
+                value={salaryRange[0]}
+                onChange={(e) => {
+                  const val = Math.min(Number(e.target.value), salaryRange[1] - 5000000)
+                  onSalaryChange([val, salaryRange[1]])
+                }}
+                className="absolute w-full h-1.5 appearance-none bg-transparent pointer-events-none outline-none
+                           [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none 
+                           [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full 
+                           [&::-webkit-slider-thumb]:bg-blue-650 [&::-webkit-slider-thumb]:cursor-pointer 
+                           [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:transition-all
+                           [&::-webkit-slider-thumb]:hover:scale-110
+                           [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:border-none 
+                           [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full 
+                           [&::-moz-range-thumb]:bg-blue-650 [&::-moz-range-thumb]:cursor-pointer 
+                           [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:transition-all
+                           [&::-moz-range-thumb]:hover:scale-110"
+                style={{ zIndex: salaryRange[0] > 50000000 ? 5 : 4 }}
+              />
+              {/* Max slider */}
+              <input
+                type="range"
+                min={0}
+                max={100000000}
+                step={5000000}
+                value={salaryRange[1]}
+                onChange={(e) => {
+                  const val = Math.max(Number(e.target.value), salaryRange[0] + 5000000)
+                  onSalaryChange([salaryRange[0], val])
+                }}
+                className="absolute w-full h-1.5 appearance-none bg-transparent pointer-events-none outline-none
+                           [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none 
+                           [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full 
+                           [&::-webkit-slider-thumb]:bg-blue-650 [&::-webkit-slider-thumb]:cursor-pointer 
+                           [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:transition-all
+                           [&::-webkit-slider-thumb]:hover:scale-110
+                           [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:border-none 
+                           [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full 
+                           [&::-moz-range-thumb]:bg-blue-650 [&::-moz-range-thumb]:cursor-pointer 
+                           [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:transition-all
+                           [&::-moz-range-thumb]:hover:scale-110"
+                style={{ zIndex: salaryRange[0] > 50000000 ? 4 : 5 }}
+              />
+            </div>
             <div className="flex justify-between items-center text-xs font-bold text-slate-500">
               <span>0đ</span>
               <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-xs font-extrabold border border-blue-100">
-                Lên tới {formatSalaryLimit(salaryRange)}
+                {formatSalaryLimit(salaryRange[0])} - {formatSalaryLimit(salaryRange[1])}
               </span>
               <span>100tr+</span>
             </div>
