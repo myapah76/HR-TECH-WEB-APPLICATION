@@ -47,6 +47,41 @@ public class PaymentServiceImpl implements IPaymentService {
     @Transactional
     public CreatePaymentResponse createPayment(CreatePaymentRequest request) {
         User user = authUtils.getCurrentUser();
+
+        // handle pending payment
+        var pendingPaymentOpt = paymentRepository.findFirstByUserIdAndStatusOrderByCreatedAtDesc(user.getId(), PaymentStatus.PENDING);
+        if (pendingPaymentOpt.isPresent()) {
+            Payment pendingPayment = pendingPaymentOpt.get();
+            try {
+                // Kiểm tra trạng thái thực tế của đơn hàng này trên PayOS
+                PaymentLink paymentInfo = payOS.paymentRequests().get(pendingPayment.getOrderCode());
+                PaymentLinkStatus payosStatus = paymentInfo.getStatus();
+
+                if (payosStatus == PaymentLinkStatus.PAID) {
+                    // Nếu trên PayOS đã được thanh toán -> trả lỗi
+                    throw new AppException(ErrorCode.PAYMENT_ALREADY_PAID);
+                } else if (payosStatus == PaymentLinkStatus.PENDING) {
+                    // Nếu trên PayOS vẫn đang pending -> Kiểm tra xem subscriptionPlanId có trùng với đơn hàng cũ không
+                    UUID pendingPlanId = subscriptionService.getSubscriptionPlanId(
+                            pendingPayment.getSubscriptionId(), pendingPayment.getSubscriptionType());
+                    if (pendingPlanId != null && pendingPlanId.equals(request.subscriptionPlanId())) {
+                        return new CreatePaymentResponse(pendingPayment.getCheckoutUrl());
+                    } else {
+                        throw new AppException(ErrorCode.EXIST_ANOTHER_PENDING_PAYMENT);
+                    }
+                } else {
+                    // Nếu trên PayOS đã bị hủy hoặc hết hạn -> Cập nhật trạng thái để giải phóng khóa
+                    pendingPayment.setStatus(PaymentStatus.CANCELLED);
+                    paymentRepository.save(pendingPayment);
+                }
+            } catch (AppException e) {
+                throw e;
+            } catch (Exception e) {
+                // Nếu không tìm thấy đơn hàng trên PayOS hoặc có lỗi kết nối, giải phóng đơn hàng cũ để cho phép tạo mới
+                pendingPayment.setStatus(PaymentStatus.CANCELLED);
+            }
+        }
+        // Tạo đơn hàng mới
         Object planObj = subscriptionPlanService.getById(request.subscriptionPlanId());
 
         Long price = 0L;
@@ -76,9 +111,14 @@ public class PaymentServiceImpl implements IPaymentService {
         payment.setSubscriptionType(type);
         payment.setStatus(PaymentStatus.PENDING);
         payment.setUser(user);
+
+        CreatePaymentResponse paymentResponse =  payOSService
+                .createPaymentLink(payment.getOrderCode(), payment.getAmount(), name);
+        payment.setCheckoutUrl(paymentResponse.checkoutUrl());
+
         paymentRepository.save(payment);
 
-        return payOSService.createPaymentLink(payment.getOrderCode(), payment.getAmount(), name);
+        return paymentResponse;
     }
 
     @Transactional
@@ -100,7 +140,6 @@ public class PaymentServiceImpl implements IPaymentService {
                 return;
 
             payment.setStatus(PaymentStatus.PAID);
-            payment.setPaymentLinkId(data.getPaymentLinkId());
 
             subscriptionService.activateSubscription(payment.getSubscriptionId(), payment.getSubscriptionType());
 
@@ -127,7 +166,8 @@ public class PaymentServiceImpl implements IPaymentService {
                 payment.getAmount(),
                 payment.getStatus(),
                 subName,
-                payment.getCreatedAt());
+                payment.getCreatedAt(),
+                payment.getCheckoutUrl());
     }
 
     @Override
@@ -158,7 +198,8 @@ public class PaymentServiceImpl implements IPaymentService {
                             payment.getAmount(),
                             payment.getStatus(),
                             subName,
-                            payment.getCreatedAt());
+                            payment.getCreatedAt(),
+                            payment.getCheckoutUrl());
                 });
     }
 
@@ -169,7 +210,6 @@ public class PaymentServiceImpl implements IPaymentService {
 
             if (status == PaymentLinkStatus.PAID) {
                 payment.setStatus(PaymentStatus.PAID);
-                payment.setPaymentLinkId(paymentInfo.getId());
                 subscriptionService.activateSubscription(payment.getSubscriptionId(), payment.getSubscriptionType());
             } else if (status == PaymentLinkStatus.CANCELLED) {
                 payment.setStatus(PaymentStatus.CANCELLED);

@@ -43,7 +43,7 @@ public class PayOSServiceImpl implements IPayOSService {
             CreatePaymentLinkResponse response =
                     payOS.paymentRequests().create(request);
 
-            return new CreatePaymentResponse(response.getCheckoutUrl(), response.getPaymentLinkId());
+            return new CreatePaymentResponse(response.getCheckoutUrl());
         } catch (Exception e) {
             throw new AppException(
                     ErrorCode.HAS_ERROR,

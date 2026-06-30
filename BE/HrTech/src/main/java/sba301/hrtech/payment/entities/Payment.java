@@ -24,7 +24,7 @@ public class Payment extends BaseEntity {
 
     private Long amount;
 
-    private String paymentLinkId;
+    private String checkoutUrl;
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus status;

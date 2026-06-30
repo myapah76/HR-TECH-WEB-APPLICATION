@@ -8,5 +8,6 @@ public record PaymentResponse(
     Long amount,
     PaymentStatus status,
     String subscriptionName,
-    Instant createdAt
+    Instant createdAt,
+    String checkoutUrl
 ) {}

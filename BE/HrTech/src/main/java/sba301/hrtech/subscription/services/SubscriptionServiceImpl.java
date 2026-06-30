@@ -383,4 +383,18 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
             }
         }
     }
+
+    @Override
+    public UUID getSubscriptionPlanId(UUID subscriptionId, SubscriptionType type) {
+        if (type == SubscriptionType.CANDIDATE) {
+            return candidateSubscriptionRepository.findById(subscriptionId)
+                    .map(sub -> sub.getPlan().getId())
+                    .orElse(null);
+        } else if (type == SubscriptionType.COMPANY) {
+            return companySubscriptionRepository.findById(subscriptionId)
+                    .map(sub -> sub.getPlan().getId())
+                    .orElse(null);
+        }
+        return null;
+    }
 }

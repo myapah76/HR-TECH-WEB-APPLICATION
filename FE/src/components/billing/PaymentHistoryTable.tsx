@@ -5,26 +5,61 @@ import { PaymentResponse } from '@/src/types/payment'
 import { formatDateTime } from '@/src/utils'
 import { useVerifyPaymentMutation } from '@/src/hooks/payment'
 import Loading from '@/src/app/loading'
+import { CheckoutModal } from '@/src/components/pricing/CheckoutModal'
 
 import { toast } from 'sonner'
 
 interface PaymentHistoryTableProps {
   payments: PaymentResponse[]
   isLoading: boolean
+  refetchHistory?: () => void
 }
 
 export const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({
   payments,
   isLoading,
+  refetchHistory,
 }) => {
   const { mutate, isPending } = useVerifyPaymentMutation()
   const [activeOrderCode, setActiveOrderCode] = React.useState<number | null>(null)
+  const [isModalOpen, setIsModalOpen] = React.useState(false)
+  const [selectedPayment, setSelectedPayment] = React.useState<PaymentResponse | null>(null)
+
+  // Polling payment history when the checkout modal is open
+  React.useEffect(() => {
+    if (!isModalOpen || !refetchHistory) return
+
+    const interval = setInterval(() => {
+      refetchHistory()
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [isModalOpen, refetchHistory])
+
+  // Automatically close modal when payment status updates to PAID
+  React.useEffect(() => {
+    if (!isModalOpen || !selectedPayment) return
+
+    const currentPayment = payments.find((p) => p.orderCode === selectedPayment.orderCode)
+    if (currentPayment && currentPayment.status === 'PAID') {
+      setIsModalOpen(false)
+      setSelectedPayment(null)
+      toast.success('Thanh toán thành công! Gói dịch vụ đã được kích hoạt.')
+    }
+  }, [payments, selectedPayment, isModalOpen])
 
   const handleVerify = (orderCode: number) => {
     setActiveOrderCode(orderCode)
     mutate(orderCode, {
       onSuccess: (res) => {
-        toast.success(res.message || 'Thanh toán được xác thực thành công!')
+        const payment = res.data
+        if (payment && payment.status === 'PENDING' && payment.checkoutUrl) {
+          toast.info('Đang mở cổng thanh toán PayOS...')
+          setSelectedPayment(payment)
+          setIsModalOpen(true)
+        } else {
+          toast.success(res.message || 'Thanh toán được xác thực thành công!')
+        }
       },
       onSettled: () => {
         setActiveOrderCode(null)
@@ -125,6 +160,17 @@ export const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({
           </tbody>
         </table>
       </div>
+
+      {selectedPayment && (
+        <CheckoutModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          pkgName={selectedPayment.subscriptionName}
+          price={selectedPayment.amount}
+          checkoutUrl={selectedPayment.checkoutUrl || ''}
+          isCreatingLink={false}
+        />
+      )}
     </div>
   )
 }

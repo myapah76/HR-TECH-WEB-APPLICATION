@@ -75,6 +75,11 @@ public enum ErrorCode {
     ORDER_CODE_NOT_FOUND(HttpStatus.NOT_FOUND, "Order code not found"),
     WEBHOOK_NOT_FOUND(HttpStatus.NOT_FOUND, "Webhook not found"),
     PAYMENT_VERIFICATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Payment verification failed"),
+    EXIST_ANOTHER_PENDING_PAYMENT(HttpStatus.CONFLICT,
+            "Bạn đã có một giao dịch thanh toán đang chờ xử lý, " +
+                    "vui lòng kiểm tra lại trạng thái gói dịch vụ của bạn"),
+    PAYMENT_ALREADY_PAID(HttpStatus.BAD_REQUEST,
+            "Bạn đã thanh toán gói này rồi, vui lòng kiểm tra lại trạng thái gói dịch vụ của bạn"),
 
     // Feature
     FEATURE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Feature already exists"),
