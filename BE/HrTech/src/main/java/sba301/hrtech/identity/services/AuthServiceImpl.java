@@ -77,7 +77,7 @@ public class AuthServiceImpl implements IAuthService {
         // 1. generate OTP
         String otp = generateOtp();
 
-        if (userService.getUserEntityByEmail(request.email()) != null) {
+        if (userService.getUserEntityByEmail(request.email()).isPresent()) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED);
         }
 

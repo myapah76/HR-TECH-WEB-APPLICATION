@@ -8,27 +8,21 @@
 
     <h1 style="text-align:center; color:#4b2e2a;">HR Tech</h1>
 
-    <h2 style="color:#4b2e2a;">Job Offer</h2>
-
-    <p>Xin chào <span th:text="${fullName}"></span>,</p>
-
-    <p>
-        Chúc mừng bạn! Hồ sơ ứng tuyển của bạn cho vị trí
-        <b th:text="${jobTitle}"></b>
-        đã được chuyển sang giai đoạn nhận đề nghị làm việc.
-    </p>
+    <p>Xin chào bạn,</p>
+    <p>Đây là mã OTP của bạn:</p>
 
     <div style="text-align:center; margin:30px 0;">
-        <span style="background:#4b2e2a; color:white; padding:12px 20px;
-                     text-decoration:none; border-radius:8px; font-weight:bold;"
-              th:text="${newStatus}">
-            OFFER
+        <span style="font-size:34px; font-weight:bold; letter-spacing:8px;"
+              th:text="${otp}">
+            123456
         </span>
     </div>
 
-    <p>Bộ phận tuyển dụng sẽ liên hệ với bạn để thông báo các bước tiếp theo.</p>
+    <p>⏳ Mã có hiệu lực trong <b>10 phút</b></p>
 
-    <div th:replace="~{email/fragments/footer :: footer}"></div>
+    <p style="font-size:12px; color:#aaa;">
+        © <span th:text="${year}"></span> HR Tech
+    </p>
 
 </div>
 </body>
