@@ -79,9 +79,6 @@ export default function AiAdvisorPage() {
           setSelectedCv('')
           setSelectedJob('')
         },
-        onError: () => {
-          toast.error('Có lỗi xảy ra khi tạo phiên chat mới')
-        },
       }
     )
   }
@@ -103,7 +100,6 @@ export default function AiAdvisorPage() {
           setOptimisticMessage('');
         },
         onError: () => {
-          toast.error('Có lỗi xảy ra khi gửi tin nhắn')
           setMessageText(currentText);
           setOptimisticMessage('');
         },

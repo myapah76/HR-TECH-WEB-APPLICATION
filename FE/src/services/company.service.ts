@@ -11,7 +11,9 @@ export const getMyCompany = async (): Promise<CompanyResponse> => {
 export const getCompanies = async (
   params?: GetCompaniesParams
 ): Promise<PageResponse<CompanyResponse>> => {
-  const response = await api.get<ApiResponse<PageResponse<CompanyResponse>>>('/companies', { params })
+  const response = await api.get<ApiResponse<PageResponse<CompanyResponse>>>('/companies', {
+    params,
+  })
   return response.data.data
 }
 
@@ -21,4 +23,3 @@ export const getCompanyMembers = async (companyId: string): Promise<CompanyMembe
   )
   return response.data.data
 }
-

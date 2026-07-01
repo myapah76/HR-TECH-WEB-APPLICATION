@@ -55,9 +55,6 @@ function SetupPasswordForm() {
           toast.success('Thiết lập mật khẩu thành công')
           router.push('/')
         },
-        onError: () => {
-          toast.error('Có lỗi xảy ra, vui lòng thử lại sau')
-        }
       }
     )
   }

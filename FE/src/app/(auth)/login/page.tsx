@@ -41,9 +41,6 @@ export default function LoginPage() {
               toast.success('Đăng nhập Google thành công')
             }
           },
-          onError: () => {
-            toast.error('Đăng nhập Google thất bại')
-          },
         }
       )
     },
