@@ -5,6 +5,7 @@ import sba301.hrtech.skill.dtos.request.UpdateSkillRequest;
 import sba301.hrtech.skill.dtos.response.PendingRelationshipResponse;
 import sba301.hrtech.skill.dtos.response.SkillResponse;
 import sba301.hrtech.skill.dtos.response.SkillWithRelationsResponse;
+import sba301.hrtech.skill.dtos.response.SkillGraphResponse;
 
 import java.util.List;
 
@@ -28,4 +29,6 @@ public interface ISkillService {
     void addRelatedSkill(String skillId, String relatedSkillId);
     void addParentChild(String parentId, String childId);
     List<SkillResponse> getRelatedSkills(String skillId);
+    SkillGraphResponse getSkillGraph();
+    void deleteRelationship(String sourceId, String targetId, String type);
 }
