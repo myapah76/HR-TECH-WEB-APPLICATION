@@ -1,3 +1,5 @@
+import { CompanyRole } from '@/src/enums/company.enum'
+
 export interface CompanyResponse {
   id: string;
   name: string;
@@ -18,6 +20,12 @@ export interface CompanyMemberResponse {
   email: string
   firstName: string
   lastName: string
-  role: 'OWNER' | 'HR_MANAGER' | 'HR'
+  role: CompanyRole
   createdAt: string
+}
+
+export interface GetCompaniesParams {
+  keyword?: string
+  page?: number
+  size?: number
 }

@@ -54,3 +54,5 @@ export const EXPERIENCE_LEVEL_LABELS: Record<ExperienceLevel, string> = {
   [ExperienceLevel.MIDDLE]: 'Middle',
   [ExperienceLevel.SENIOR]: 'Senior',
 }
+
+export type JobStatusAction = 'submit' | 'approve' | 'reject' | 'close'

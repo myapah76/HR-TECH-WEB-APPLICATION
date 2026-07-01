@@ -1,9 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import {
-  JobStatusAction,
-  updateJobStatus,
-} from '@/src/services/job.service'
+import { updateJobStatus } from '@/src/services/job.service'
+import { JobStatusAction } from '@/src/types/job'
 
 interface UpdateJobStatusVariables {
   jobId: string

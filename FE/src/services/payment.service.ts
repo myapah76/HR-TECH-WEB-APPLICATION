@@ -5,14 +5,14 @@ import { PaymentResponse } from '@/src/types/payment'
 export const getMyPaymentHistory = async (
   page: number = 0,
   size: number = 10
-): Promise<ApiResponse<PageResponse<PaymentResponse>>> => {
-  const response = await api.get(`/payments/my-history?page=${page}&size=${size}`)
-  return response.data
+): Promise<PageResponse<PaymentResponse>> => {
+  const response = await api.get<ApiResponse<PageResponse<PaymentResponse>>>(`/payments/my-history?page=${page}&size=${size}`)
+  return response.data.data
 }
 
 export const verifyPaymentStatus = async (
   orderCode: number
-): Promise<ApiResponse<PaymentResponse>> => {
-  const response = await api.post(`/payments/${orderCode}/verify`)
-  return response.data
+): Promise<PaymentResponse> => {
+  const response = await api.post<ApiResponse<PaymentResponse>>(`/payments/${orderCode}/verify`)
+  return response.data.data
 }

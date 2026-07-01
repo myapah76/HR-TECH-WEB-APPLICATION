@@ -30,9 +30,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       try {
         const res = await refreshToken(refreshReqData)
         setAuth({
-          user: res.data.userResponse,
-          accessToken: res.data.accessToken,
-          refreshToken: res.data.refreshToken,
+          user: res.userResponse,
+          accessToken: res.accessToken,
+          refreshToken: res.refreshToken,
         })
       } catch {
         try {

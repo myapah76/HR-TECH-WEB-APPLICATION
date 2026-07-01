@@ -30,10 +30,10 @@ export default function LoginPage() {
         { token: tokenResponse.access_token },
         {
           onSuccess: (response) => {
-            if (response.data.needsPasswordSetup) {
+            if (response.needsPasswordSetup) {
               // Redirect to setup password with token
               router.push(
-                `/setup-password?token=${encodeURIComponent(response.data.setupToken || '')}`
+                `/setup-password?token=${encodeURIComponent(response.setupToken || '')}`
               )
               toast.info('Vui lòng tạo mật khẩu cho tài khoản Google của bạn')
             } else {

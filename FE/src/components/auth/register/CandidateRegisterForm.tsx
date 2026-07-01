@@ -43,7 +43,7 @@ export function CandidateRegisterForm() {
         onSuccess: (response) => {
           toast.success('Đã gửi mã xác nhận. Vui lòng kiểm tra email!')
           router.push(
-            `/confirm-otp?email=${response?.data?.email}&expireIn=${response?.data?.expireIn}&otpType=${OtpType.REGISTER}`
+            `/confirm-otp?email=${response?.email}&expireIn=${response?.expireIn}&otpType=${OtpType.REGISTER}`
           )
         },
       }

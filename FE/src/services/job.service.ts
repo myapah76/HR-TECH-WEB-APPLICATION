@@ -1,43 +1,11 @@
-import axios from 'axios'
 import { api } from '@/src/lib/axios'
-import { CreateJobRequest, Job } from '@/src/types/job'
-import { ApiResponse } from '../types/api'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL
-
-export interface PageResponse<T> {
-  content: T[]
-  totalPages: number
-  totalElements: number
-  size: number
-  number: number
-  first: boolean
-  last: boolean
-}
-
-export interface ManageJobsParams {
-  status?: string
-  jobType?: string
-  experienceLevel?: string
-  page?: number
-  size?: number
-}
-
-export type JobStatusAction = 'submit' | 'approve' | 'reject' | 'close'
-
-export interface JobSearchParams {
-  keyword?: string
-  location?: string
-  jobType?: string
-  experienceLevel?: string
-  salaryMin?: number
-  salaryMax?: number
-  page?: number
-  size?: number
-}
+import { CreateJobRequest, Job, ManageJobsParams, JobStatusAction, JobSearchParams } from '@/src/types/job'
+import { ApiResponse, PageResponse } from '../types/api'
 
 export const getJobs = async (page = 0, size = 10): Promise<PageResponse<Job>> => {
-  const response = await axios.get(`${API_URL}/jobs?page=${page}&size=${size}`)
+  const response = await api.get<ApiResponse<PageResponse<Job>>>(`/jobs`, {
+    params: { page, size }
+  })
 
   return response.data.data
 }
@@ -56,7 +24,7 @@ export const searchJobs = async (params: JobSearchParams): Promise<PageResponse<
   if (salaryMin !== undefined && salaryMin >= 0) queryParams.set('salaryMin', String(salaryMin))
   if (salaryMax !== undefined && salaryMax >= 0) queryParams.set('salaryMax', String(salaryMax))
 
-  const response = await axios.get(`${API_URL}/jobs/search?${queryParams.toString()}`)
+  const response = await api.get<ApiResponse<PageResponse<Job>>>(`/jobs/search?${queryParams.toString()}`)
   return response.data.data
 }
 
@@ -76,7 +44,7 @@ export const unsaveJob = async (jobId: string): Promise<void> => {
 }
 
 export const getJobById = async (id: string): Promise<Job> => {
-  const response = await axios.get(`${API_URL}/jobs/${id}`)
+  const response = await api.get<ApiResponse<Job>>(`/jobs/${id}`)
   return response.data.data
 }
 

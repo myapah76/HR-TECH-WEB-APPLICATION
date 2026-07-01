@@ -36,11 +36,11 @@ function PricingContent() {
   const { data: res, isLoading } = useAllActiveSubscriptionPlansQuery()
   const paymentMutation = useCreatePaymentMutation()
   const { data: currentSubRes, isLoading: isSubLoading } = useMyCurrentSubscriptionQuery(!!user)
-  const currentSubscription = currentSubRes?.data
+  const currentSubscription = currentSubRes
 
   const { data: paymentHistoryRes, refetch: refetchHistory } = useMyPaymentHistoryQuery(0, 10, !!user)
   const verifyMutation = useVerifyPaymentMutation()
-  const payments = paymentHistoryRes?.data?.content || []
+  const payments = paymentHistoryRes?.content || []
   const pendingPayment = payments.find((p) => p.status === 'PENDING')
   const hasPendingPayment = !!pendingPayment
 
@@ -54,7 +54,7 @@ function PricingContent() {
     router.replace('/candidate/billing')
   }
 
-  const plans = res?.data || []
+  const plans = res || []
 
   // Polling payment history when the checkout modal is open
   useEffect(() => {
@@ -90,8 +90,8 @@ function PricingContent() {
         try {
           const res = await refreshToken()
           setAuth({
-            user: res.data.userResponse,
-            accessToken: res.data.accessToken,
+            user: res.userResponse,
+            accessToken: res.accessToken,
           })
           toast.success('Gói dịch vụ đã được kích hoạt thành công!')
         } catch (err) {
@@ -122,8 +122,8 @@ function PricingContent() {
           // Refresh session to get updated user role / subscription status
           const res = await refreshToken()
           setAuth({
-            user: res.data.userResponse,
-            accessToken: res.data.accessToken,
+            user: res.userResponse,
+            accessToken: res.accessToken,
           })
           toast.success('Gói dịch vụ đã được kích hoạt thành công!')
         } catch (err) {
@@ -168,8 +168,8 @@ function PricingContent() {
 
       paymentMutation.mutate(packageId, {
         onSuccess: (res) => {
-          if (res.data?.checkoutUrl) {
-            setCheckoutUrl(res.data.checkoutUrl)
+          if (res.checkoutUrl) {
+            setCheckoutUrl(res.checkoutUrl)
           } else {
             toast.error('Không tìm thấy liên kết thanh toán!')
           }

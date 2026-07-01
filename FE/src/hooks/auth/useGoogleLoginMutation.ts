@@ -8,11 +8,11 @@ export const useGoogleLoginMutation = () => {
     mutationFn: loginWithGoogle,
     onSuccess: (response) => {
       // If no password setup is needed, we log them in directly
-      if (!response.data.needsPasswordSetup && response.data.userResponse && response.data.accessToken) {
+      if (!response.needsPasswordSetup && response.userResponse && response.accessToken) {
         setAuth({
-          user: response.data.userResponse,
-          accessToken: response.data.accessToken,
-          refreshToken: response.data.refreshToken,
+          user: response.userResponse,
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
         })
       }
     },

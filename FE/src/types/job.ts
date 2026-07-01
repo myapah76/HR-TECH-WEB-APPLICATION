@@ -1,5 +1,6 @@
-import { JobStatus, JobType, ExperienceLevel } from '@/src/enums/job.enum';
+import { JobStatus, JobType, ExperienceLevel, JobStatusAction } from '@/src/enums/job.enum';
 export { JobStatus, JobType, ExperienceLevel };
+export type { JobStatusAction };
 
 export interface JobSkill {
   id: string;
@@ -62,4 +63,24 @@ export interface CreateJobRequest {
   deadline?: string;
   requirements?: string;
   skills?: JobSkillRequest[];
+}
+
+export interface ManageJobsParams {
+  status?: string
+  jobType?: string
+  experienceLevel?: string
+  page?: number
+  size?: number
+}
+
+
+export interface JobSearchParams {
+  keyword?: string
+  location?: string
+  jobType?: string
+  experienceLevel?: string
+  salaryMin?: number
+  salaryMax?: number
+  page?: number
+  size?: number
 }

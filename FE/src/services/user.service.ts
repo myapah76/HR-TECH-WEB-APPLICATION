@@ -2,12 +2,12 @@ import { api } from '@/src/lib/axios'
 import { ApiResponse } from '@/src/types/api'
 import { User, UpdateUserRequest, ChangePasswordRequest } from '@/src/types/user'
 
-export const updateUserProfile = async (data: UpdateUserRequest): Promise<ApiResponse<User>> => {
+export const updateUserProfile = async (data: UpdateUserRequest): Promise<User> => {
   const response = await api.put<ApiResponse<User>>('/users/me', data)
-  return response.data
+  return response.data.data
 }
 
-export const changeUserPassword = async (data: ChangePasswordRequest): Promise<ApiResponse<User>> => {
+export const changeUserPassword = async (data: ChangePasswordRequest): Promise<User> => {
   const response = await api.put<ApiResponse<User>>('/users/me/password', data)
-  return response.data
+  return response.data.data
 }

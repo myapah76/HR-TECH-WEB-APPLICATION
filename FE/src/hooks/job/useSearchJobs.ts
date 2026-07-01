@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { searchJobs, JobSearchParams } from '@/src/services/job.service'
+import { searchJobs } from '@/src/services/job.service'
+import { JobSearchParams } from '@/src/types/job'
 
 export const useSearchJobs = (params: JobSearchParams) => {
   return useQuery({

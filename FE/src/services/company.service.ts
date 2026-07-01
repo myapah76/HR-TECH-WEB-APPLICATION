@@ -1,34 +1,18 @@
 import { api } from '@/src/lib/axios'
-import { ApiResponse } from '@/src/types/api'
+import { ApiResponse, PageResponse } from '@/src/types/api'
 
-import { CompanyMemberResponse, CompanyResponse } from '@/src/types/company'
+import { CompanyMemberResponse, CompanyResponse, GetCompaniesParams } from '@/src/types/company'
 
-export const getMyCompany = async (): Promise<ApiResponse<CompanyResponse>> => {
+export const getMyCompany = async (): Promise<CompanyResponse> => {
   const response = await api.get<ApiResponse<CompanyResponse>>('/companies/my-company')
-  return response.data
-}
-
-export interface GetCompaniesParams {
-  keyword?: string
-  page?: number
-  size?: number
-}
-
-export interface PageResponse<T> {
-  content: T[]
-  totalPages: number
-  totalElements: number
-  size: number
-  number: number
-  first: boolean
-  last: boolean
+  return response.data.data
 }
 
 export const getCompanies = async (
   params?: GetCompaniesParams
-): Promise<ApiResponse<PageResponse<CompanyResponse>>> => {
+): Promise<PageResponse<CompanyResponse>> => {
   const response = await api.get<ApiResponse<PageResponse<CompanyResponse>>>('/companies', { params })
-  return response.data
+  return response.data.data
 }
 
 export const getCompanyMembers = async (companyId: string): Promise<CompanyMemberResponse[]> => {

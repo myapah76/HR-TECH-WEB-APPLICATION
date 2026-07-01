@@ -9,9 +9,9 @@ export const useUpdateUserProfile = () => {
   return useMutation({
     mutationFn: updateUserProfile,
     onSuccess: (response) => {
-      if (response.data && token) {
+      if (response && token) {
         setAuth({
-          user: response.data,
+          user: response,
           accessToken: token,
         })
       }

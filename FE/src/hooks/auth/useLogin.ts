@@ -8,9 +8,9 @@ export const useLogin = () => {
     mutationFn: login,
     onSuccess: (response) => {
       setAuth({
-        user: response.data.userResponse,
-        accessToken: response.data.accessToken,
-        refreshToken: response.data.refreshToken,
+        user: response.userResponse,
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
       })
     },
   })

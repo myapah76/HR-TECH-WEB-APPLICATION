@@ -10,7 +10,7 @@ export function useSubscriptionAccess() {
   const { user } = useAuthStore()
   const { data: subRes, isLoading } = useMyCurrentSubscriptionQuery(!!user)
 
-  const subscription = subRes?.data ?? null
+  const subscription = subRes ?? null
   const isActive = !!subscription && subscription.status === 'ACTIVE'
   // Chỉ tính là "có gói trả phí" khi price > 0 (phân biệt Free vs Paid)
   const hasPaidPlan = isActive && (subscription.planPrice ?? 0) > 0

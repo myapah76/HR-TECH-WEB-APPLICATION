@@ -1,4 +1,5 @@
-import { SubscriptionType } from '@/src/enums/subscriptionPlan.enum'
+import { SubscriptionType, ResetType, SubscriptionStatus } from '@/src/enums/subscriptionPlan.enum'
+export { SubscriptionType, ResetType, SubscriptionStatus };
 
 export interface SubscriptionPlanResponse {
   id: string
@@ -19,7 +20,7 @@ export interface PlanFeature {
 }
 
 export interface SubFeatureRateUsageResponse {
-  resetType: 'DAILY' | 'WEEKLY'
+  resetType: ResetType
   capQuota: number
   used: number
   lastResetDate: string
@@ -38,7 +39,7 @@ export interface MySubscriptionResponse {
   planId: string
   planName: string
   planPrice: number
-  status: string
+  status: SubscriptionStatus
   startDate: string
   endDate: string
   aiCreditBalance: number
@@ -72,4 +73,9 @@ export interface RateLimitSectionProps {
 
 export interface StandardFeaturesSectionProps {
   standardFeatures: SubFeatureUsageResponse[]
+}
+
+export interface CreatePaymentResponse {
+  checkoutUrl: string
+  paymentLinkId: string
 }

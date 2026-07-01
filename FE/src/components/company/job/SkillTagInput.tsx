@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 import { X, Search, Loader2 } from 'lucide-react'
-import { searchSkills } from '@/src/services/skill.service'
 import { Skill } from '@/src/types/skill'
-import { useQuery } from '@tanstack/react-query'
+import { useSearchSkills } from '@/src/hooks/skill'
+import { useClickOutside } from '@/src/hooks/useClickOutside'
 
 interface SkillTagInputProps {
   value: Skill[]
@@ -22,22 +22,9 @@ export default function SkillTagInput({
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   // Use react-query to fetch suggestions based on inputValue
-  const { data: suggestions = [], isFetching } = useQuery({
-    queryKey: ['searchSkills', inputValue],
-    queryFn: () => searchSkills(inputValue),
-    enabled: inputValue.length > 0,
-    staleTime: 1000 * 60 * 5,
-  })
+  const { data: suggestions = [], isFetching } = useSearchSkills(inputValue)
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setIsFocused(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  useClickOutside(wrapperRef, () => setIsFocused(false))
 
   const handleAddSkill = (skill: Skill) => {
     if (!value.find((s) => s.id === skill.id)) {

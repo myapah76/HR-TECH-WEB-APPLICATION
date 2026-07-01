@@ -51,14 +51,13 @@ export const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({
   const handleVerify = (orderCode: number) => {
     setActiveOrderCode(orderCode)
     mutate(orderCode, {
-      onSuccess: (res) => {
-        const payment = res.data
+      onSuccess: (payment) => {
         if (payment && payment.status === 'PENDING' && payment.checkoutUrl) {
           toast.info('Đang mở cổng thanh toán PayOS...')
           setSelectedPayment(payment)
           setIsModalOpen(true)
         } else {
-          toast.success(res.message || 'Thanh toán được xác thực thành công!')
+          toast.success('Thanh toán được xác thực thành công!')
         }
       },
       onSettled: () => {

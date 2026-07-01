@@ -32,6 +32,11 @@ export interface ConfirmOtpRequest {
   type: OtpType
 }
 
+export interface ConfirmOtpResult<T = any> {
+  type: string
+  data: T
+}
+
 export interface ConfirmForgotPasswordOtpResponse {
   resetToken: string
 }

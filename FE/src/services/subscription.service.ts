@@ -1,23 +1,22 @@
 import { api } from '@/src/lib/axios'
 import { ApiResponse } from '@/src/types/api'
-import { SubscriptionPlanResponse } from '@/src/types/subscription'
+import { MySubscriptionResponse, SubscriptionPlanResponse, CreatePaymentResponse } from '@/src/types/subscription'
 
-export interface CreatePaymentResponse {
-  checkoutUrl: string
-  paymentLinkId: string
+export const getAllActive = async (): Promise<SubscriptionPlanResponse[]> => {
+  const response = await api.get<ApiResponse<SubscriptionPlanResponse[]>>(
+    '/subscription-plans/active'
+  )
+  return response.data.data
 }
 
-export const getAllActive = async (): Promise<ApiResponse<SubscriptionPlanResponse[]>> => {
-  const response = await api.get('/subscription-plans/active')
-  return response.data
+export const createPayment = async (subscriptionPlanId: string): Promise<CreatePaymentResponse> => {
+  const response = await api.post<ApiResponse<CreatePaymentResponse>>('/payments', {
+    subscriptionPlanId,
+  })
+  return response.data.data
 }
 
-export const createPayment = async (subscriptionPlanId: string): Promise<ApiResponse<CreatePaymentResponse>> => {
-  const response = await api.post('/payments', { subscriptionPlanId })
-  return response.data
-}
-
-export const getMyCurrentSubscription = async (): Promise<ApiResponse<any>> => {
-  const response = await api.get('/subscriptions/my-current')
-  return response.data
+export const getMyCurrentSubscription = async (): Promise<MySubscriptionResponse> => {
+  const response = await api.get<ApiResponse<MySubscriptionResponse>>('/subscriptions/my-current')
+  return response.data.data
 }

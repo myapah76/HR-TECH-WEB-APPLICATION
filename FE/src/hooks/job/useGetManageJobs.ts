@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { getManageJobs, ManageJobsParams } from '@/src/services/job.service'
+import { getManageJobs } from '@/src/services/job.service'
+import { ManageJobsParams } from '@/src/types/job'
 
 export const useGetManageJobs = (companyId?: string, params?: ManageJobsParams) => {
   return useQuery({
