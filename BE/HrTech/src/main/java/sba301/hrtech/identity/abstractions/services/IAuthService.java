@@ -5,7 +5,7 @@ import sba301.hrtech.identity.dtos.auth.response.TokenPair;
 import sba301.hrtech.identity.dtos.auth.response.ConfirmOtpResult;
 import sba301.hrtech.identity.dtos.auth.response.EmailActionResponse;
 
-import javax.management.relation.RoleNotFoundException;
+
 
 public interface IAuthService {
     EmailActionResponse register(RegisterRequest request);
@@ -13,7 +13,7 @@ public interface IAuthService {
     EmailActionResponse reSendOtp(ResendOtpRequest request);
     void resetPassword(ResetPasswordRequest request);
     void changePassword(ChangePasswordRequest request);
-    ConfirmOtpResult confirmOtp(ConfirmOtpRequest request) throws RoleNotFoundException;
+    ConfirmOtpResult confirmOtp(ConfirmOtpRequest request);
     TokenPair login(LoginRequest request);
     TokenPair googleLogin(GoogleLoginRequest request);
     TokenPair setupPassword(SetupPasswordRequest request);

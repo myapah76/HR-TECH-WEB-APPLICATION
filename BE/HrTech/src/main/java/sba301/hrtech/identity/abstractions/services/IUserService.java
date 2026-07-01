@@ -21,6 +21,7 @@ public interface IUserService {
 
     User getUserEntityById(UUID id);
     User saveUserEntity(User user);
-    Optional<User> getUserEntityByEmail(String email);
+    User getUserEntityByEmail(String email);
+    boolean existsByEmail(String email);
 
 }

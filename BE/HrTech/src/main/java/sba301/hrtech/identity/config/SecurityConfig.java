@@ -4,6 +4,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -83,13 +84,10 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 // Vô hiệu hóa HTTP Basic auth vì chúng ta sẽ dùng JWT
                 .httpBasic(AbstractHttpConfigurer::disable)
-                // Cấu hình phân quyền: cho phép truy cập công khai với các endpoint trong
-                // PUBLIC_ENDPOINTS
-                // yêu cầu xác thực với các endpoint khác
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .anyRequest().authenticated())
-
+                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll() // cho phép truy cập công khai với các endpoint
+                        .requestMatchers(HttpMethod.GET, "/api/skills").permitAll()
+                        .anyRequest().authenticated()) // yêu cầu xác thực với các endpoint khác
                 // Xử lý lỗi 401 và 403 trả về JSON chuẩn ApiResponse
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((request, response, authException) -> {

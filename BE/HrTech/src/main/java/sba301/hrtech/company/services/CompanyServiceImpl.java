@@ -101,7 +101,7 @@ public class CompanyServiceImpl implements ICompanyService {
         String email = request.email().toLowerCase();
 
         // 1. Check if email exists
-        if (userService.getUserEntityByEmail(email) != null) {
+        if (userService.existsByEmail(request.email())) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED,
                     "Email is already registered. Please use a different email for business account.");
         }
@@ -167,7 +167,7 @@ public class CompanyServiceImpl implements ICompanyService {
         }
 
         // Double check email existence just in case
-        if (userService.getUserEntityByEmail(email) != null) {
+        if (userService.existsByEmail(email)) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED, "Email is already registered.");
         }
 
@@ -330,7 +330,7 @@ public class CompanyServiceImpl implements ICompanyService {
         }
 
         String email = request.email().toLowerCase();
-        if (userService.getUserEntityByEmail(email) != null) {
+        if (userService.existsByEmail(email)) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED,
                     "Email is already registered. Please provide a new corporate email.");
         }

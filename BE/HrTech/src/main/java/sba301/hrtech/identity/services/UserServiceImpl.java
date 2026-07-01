@@ -115,7 +115,13 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    public Optional<User> getUserEntityByEmail(String email) {
-        return userRepository.findByEmail(email);
+    public User getUserEntityByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    @Override
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
     }
 }

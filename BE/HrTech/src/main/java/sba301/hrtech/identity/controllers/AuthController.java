@@ -1,8 +1,6 @@
 package sba301.hrtech.identity.controllers;
 
-
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.HttpHeaders;
+import sba301.hrtech.identity.utils.CookieUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,14 +17,13 @@ import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.shared.response.ApiResponse;
 
-import javax.management.relation.RoleNotFoundException;
-
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final IAuthService authService;
+    private final CookieUtils cookieUtils;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<EmailActionResponse>> register(
@@ -53,13 +50,12 @@ public class AuthController {
         EmailActionResponse response = authService.reSendOtp(request);
 
         return ResponseEntity.ok(
-                ApiResponse.success(response, "OTP resent successfully")
-        );
+                ApiResponse.success(response, "OTP resent successfully"));
     }
 
     @PostMapping("/confirm-otp")
     public ResponseEntity<ApiResponse<ConfirmOtpResult>> confirmOtp(
-            @RequestBody ConfirmOtpRequest request) throws RoleNotFoundException {
+            @RequestBody ConfirmOtpRequest request) {
 
         ConfirmOtpResult response = authService.confirmOtp(request);
         return ResponseEntity.ok(ApiResponse.success(response, "OTP confirmed successfully"));
@@ -92,11 +88,8 @@ public class AuthController {
 
         TokenPair tokenPair = authService.login(request);
         AuthResponse authResponse = tokenPair.authResponse();
-        
-        if ("true".equalsIgnoreCase(cookiesEnabled)) {
-            setRefreshTokenCookie(response, tokenPair.refreshToken());
-            authResponse.setRefreshToken(null);
-        }
+
+        handleRefreshTokenCookie(response, tokenPair, authResponse, cookiesEnabled);
 
         return ResponseEntity.ok(ApiResponse.success(authResponse, "Login successfully"));
     }
@@ -114,10 +107,7 @@ public class AuthController {
             return ResponseEntity.ok(ApiResponse.success(authResponse, "Password setup required"));
         }
 
-        if ("true".equalsIgnoreCase(cookiesEnabled)) {
-            setRefreshTokenCookie(response, tokenPair.refreshToken());
-            authResponse.setRefreshToken(null);
-        }
+        handleRefreshTokenCookie(response, tokenPair, authResponse, cookiesEnabled);
 
         return ResponseEntity.ok(ApiResponse.success(authResponse, "Google login successfully"));
     }
@@ -131,10 +121,7 @@ public class AuthController {
         TokenPair tokenPair = authService.setupPassword(request);
         AuthResponse authResponse = tokenPair.authResponse();
 
-        if ("true".equalsIgnoreCase(cookiesEnabled)) {
-            setRefreshTokenCookie(response, tokenPair.refreshToken());
-            authResponse.setRefreshToken(null);
-        }
+        handleRefreshTokenCookie(response, tokenPair, authResponse, cookiesEnabled);
 
         return ResponseEntity.ok(ApiResponse.success(authResponse, "Password setup successfully"));
     }
@@ -146,7 +133,8 @@ public class AuthController {
             @RequestHeader(value = "X-Cookies-Enabled", defaultValue = "true") String cookiesEnabled,
             HttpServletResponse response) {
 
-        String refreshToken = cookieRefreshToken != null ? cookieRefreshToken : (request != null ? request.getRefreshToken() : null);
+        String refreshToken = cookieRefreshToken != null ? cookieRefreshToken
+                : (request != null ? request.getRefreshToken() : null);
         if (refreshToken == null || refreshToken.isEmpty()) {
             throw new AppException(ErrorCode.INVALID_INPUT, "Refresh token is required");
         }
@@ -154,10 +142,7 @@ public class AuthController {
         TokenPair tokenPair = authService.refresh(refreshToken);
         AuthResponse authResponse = tokenPair.authResponse();
 
-        if ("true".equalsIgnoreCase(cookiesEnabled)) {
-            setRefreshTokenCookie(response, tokenPair.refreshToken());
-            authResponse.setRefreshToken(null);
-        }
+        handleRefreshTokenCookie(response, tokenPair, authResponse, cookiesEnabled);
 
         return ResponseEntity.ok(ApiResponse.success(authResponse, "Token refreshed successfully"));
     }
@@ -168,38 +153,23 @@ public class AuthController {
             @RequestBody(required = false) RefreshRequest request,
             HttpServletResponse response) {
 
-        String refreshToken = cookieRefreshToken != null ? cookieRefreshToken : (request != null ? request.getRefreshToken() : null);
+        String refreshToken = cookieRefreshToken != null ? cookieRefreshToken
+                : (request != null ? request.getRefreshToken() : null);
 
         if (refreshToken != null) {
             authService.logout(refreshToken);
         }
 
-        clearRefreshTokenCookie(response);
+        cookieUtils.clearRefreshTokenCookie(response);
 
         return ResponseEntity.ok(ApiResponse.success(null, "Logout successfully"));
     }
 
-    private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
-                .httpOnly(true)
-                .secure(true) // Yêu cầu HTTPS
-                .path("/")
-                .maxAge(7 * 24 * 60 * 60) // 7 days
-                .sameSite("Strict") // Chống CSRF
-                .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-    }
-
-    private void clearRefreshTokenCookie(HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
-                .httpOnly(true)
-                .secure(true)
-                .path("/")
-                .maxAge(0) // Xóa cookie
-                .sameSite("Strict")
-                .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    private void handleRefreshTokenCookie(HttpServletResponse response, TokenPair tokenPair, AuthResponse authResponse,
+            String cookiesEnabled) {
+        if ("true".equalsIgnoreCase(cookiesEnabled)) {
+            cookieUtils.setRefreshTokenCookie(response, tokenPair.refreshToken());
+            authResponse.setRefreshToken(null);
+        }
     }
 }

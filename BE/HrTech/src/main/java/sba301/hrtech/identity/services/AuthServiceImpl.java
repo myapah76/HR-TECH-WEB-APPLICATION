@@ -44,7 +44,6 @@ import sba301.hrtech.subscription.abstractions.services.ISubscriptionService;
 import sba301.hrtech.company.abstractions.services.ICompanyService;
 import org.springframework.context.annotation.Lazy;
 
-import javax.management.relation.RoleNotFoundException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -77,7 +76,7 @@ public class AuthServiceImpl implements IAuthService {
         // 1. generate OTP
         String otp = generateOtp();
 
-        if (userService.getUserEntityByEmail(request.email()) != null) {
+        if (userService.existsByEmail(request.email())) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED);
         }
 
@@ -109,10 +108,15 @@ public class AuthServiceImpl implements IAuthService {
 
     @Override
     public EmailActionResponse forgetPassword(ForgetPasswordRequest request) {
-        Optional<User> user = userService.getUserEntityByEmail(request.email());
-        if (user.isEmpty() || user.get().getIsBlocked()) {
+        if (!userService.existsByEmail(request.email())) {
+            throw new AppException(ErrorCode.EMAIL_NOT_FOUND, "Email not found");
+        }
+        
+        User user = userService.getUserEntityByEmail(request.email());
+        if (Boolean.TRUE.equals(user.getIsBlocked())) {
             throw new AppException(ErrorCode.USER_ALREADY_REGISTERED, "User is blocked");
         }
+
         String key = OtpType.FORGET_PASSWORD + request.email();
         String otp = generateOtp();
 
@@ -157,9 +161,9 @@ public class AuthServiceImpl implements IAuthService {
             throw new AppException(ErrorCode.TOKEN_EXPIRED);
         }
 
-        Optional<User> user = userService.getUserEntityByEmail(email);
-        user.get().setPassword(passwordEncoder.encode(request.newPassword()));
-        userService.saveUserEntity(user.orElse(null));
+        User user = userService.getUserEntityByEmail(email);
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        userService.saveUserEntity(user);
         redisTemplate.delete(key);
     }
 
@@ -183,7 +187,7 @@ public class AuthServiceImpl implements IAuthService {
 
     @Override
     @Transactional
-    public ConfirmOtpResult confirmOtp(ConfirmOtpRequest request) throws RoleNotFoundException {
+    public ConfirmOtpResult confirmOtp(ConfirmOtpRequest request) {
 
         String email = request.email();
 
@@ -204,23 +208,21 @@ public class AuthServiceImpl implements IAuthService {
     @Override
     public TokenPair login(LoginRequest request) {
 
-        Optional<User> user = userService.getUserEntityByEmail(request.getEmail());
-        if (!user.isPresent()){
-            throw new AppException(ErrorCode.USER_NOT_FOUND, request.getEmail() + "is not register");
-        }
-        if (user.get().getIsBlocked()) {
+        User user = userService.getUserEntityByEmail(request.getEmail());
+
+        if (Boolean.TRUE.equals(user.getIsBlocked())) {
             throw new AppException(ErrorCode.USER_ALREADY_REGISTERED, "User is blocked");
         }
-        if (!passwordEncoder.matches(request.getPassword(), user.orElse(new User()).getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new AppException(ErrorCode.WRONG_PASSWORD);
         }
-        UserDetails userDetails = new CustomUserDetails(user.orElse(null));
+        UserDetails userDetails = new CustomUserDetails(user);
         String accessToken = jwtService.generateToken(userDetails);
 
-        String refreshToken = refreshTokenService.createRefreshToken(user.orElse(null));
+        String refreshToken = refreshTokenService.createRefreshToken(user);
 
         return new TokenPair(
-                new AuthResponse(userMapper.toResponse(user.orElse(null)), accessToken, refreshToken),
+                new AuthResponse(userMapper.toResponse(user), accessToken, refreshToken),
                 refreshToken
         );
     }
@@ -269,38 +271,37 @@ public class AuthServiceImpl implements IAuthService {
         String firstName = (String) userInfo.get("given_name");
         String lastName = (String) userInfo.get("family_name");
         String picture = (String) userInfo.get("picture");
-        
-        Optional<User> user = userService.getUserEntityByEmail(email);
-        
-        if (user.isEmpty()) {
-            user = Optional.of(new User());
-            user.get().setEmail(email);
-            user.get().setUsername(email.split("@")[0]);
-            user.get().setFirstName(firstName);
-            user.get().setLastName(lastName);
-            user.get().setAvatarUrl(picture);
+
+        User user;
+        if (!userService.existsByEmail(email)) {
+            user = new User();
+            user.setEmail(email);
+            user.setUsername(email.split("@")[0]);
+            user.setFirstName(firstName);
+            user.setLastName(lastName);
+            user.setAvatarUrl(picture);
             // generate random strong password
-            user.get().setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-            user.get().setRequirePasswordChange(true);
+            user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+            user.setRequirePasswordChange(true);
             
             Role role = roleRepository.findByName("CANDIDATE")
                     .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Role CANDIDATE not found"));
-            user.get().setRole(role);
-            user = Optional.ofNullable(userService.saveUserEntity(user.orElse(null)));
+            user.setRole(role);
+            user = userService.saveUserEntity(user);
 
             // Tự động tạo và kích hoạt gói Free cho candidate mới đăng ký qua Google
-            if (user.isPresent()) {
-                subscriptionService.createAndActivateFreeSubscription(user.get().getId());
-            }
+            subscriptionService.createAndActivateFreeSubscription(user.getId());
+        } else {
+            user = userService.getUserEntityByEmail(email);
         }
         
-        if (user.get().getIsBlocked()) {
+        if (Boolean.TRUE.equals(user.getIsBlocked())) {
             throw new AppException(ErrorCode.USER_ALREADY_REGISTERED, "User is blocked");
         }
-        
-        if (user.get().getRequirePasswordChange() != null && user.get().getRequirePasswordChange()) {
+
+        if (user.getRequirePasswordChange() != null && user.getRequirePasswordChange()) {
             String setupToken = UUID.randomUUID().toString();
-            redisTemplate.opsForValue().set("setup_pwd:" + setupToken, user.get().getId().toString(), Duration.ofMinutes(15));
+            redisTemplate.opsForValue().set("setup_pwd:" + setupToken, user.getId().toString(), Duration.ofMinutes(15));
             
             AuthResponse authResponse = AuthResponse.builder()
                 .needsPasswordSetup(true)
@@ -309,12 +310,12 @@ public class AuthServiceImpl implements IAuthService {
             return new TokenPair(authResponse, null);
         }
         
-        UserDetails userDetails = new CustomUserDetails(user.orElse(null));
+        UserDetails userDetails = new CustomUserDetails(user);
         String accessToken = jwtService.generateToken(userDetails);
-        String refreshToken = refreshTokenService.createRefreshToken(user.orElse(null));
+        String refreshToken = refreshTokenService.createRefreshToken(user);
 
         return new TokenPair(
-                new AuthResponse(userMapper.toResponse(user.orElse(null)), accessToken, refreshToken), refreshToken
+                new AuthResponse(userMapper.toResponse(user), accessToken, refreshToken), refreshToken
         );
     }
 
@@ -424,7 +425,7 @@ public class AuthServiceImpl implements IAuthService {
         }
     }
 
-    private ConfirmOtpResult confirmRegisterOtp(String email) throws RoleNotFoundException {
+    private ConfirmOtpResult confirmRegisterOtp(String email) {
 
         String key = OtpType.REGISTER + email;
 
@@ -444,7 +445,7 @@ public class AuthServiceImpl implements IAuthService {
             requestedRole = "CANDIDATE";
         }
         Role role = roleRepository.findByName(requestedRole.toUpperCase())
-                .orElseThrow(RoleNotFoundException::new);
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND, "Role not found"));
 
         user.setRole(role);
         userService.saveUserEntity(user);
