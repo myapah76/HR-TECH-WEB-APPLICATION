@@ -7,6 +7,7 @@ import { logout as logoutService } from '@/src/services/auth.service'
 import { useRouter, usePathname } from 'next/navigation'
 
 const NAV_ITEMS = [
+  { label: 'Trang chủ', path: '/', id: 'nav-home' },
   { label: 'Tìm việc', path: '/jobs', id: 'nav-jobs' },
   { label: 'Công ty', path: '/companies', id: 'nav-companies' },
   { label: 'Các gói', path: '/pricing', id: 'nav-pricing' },
