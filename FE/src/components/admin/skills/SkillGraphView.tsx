@@ -1,5 +1,6 @@
-import { ReactFlow, Controls, Background, Panel, Node } from '@xyflow/react'
-import { Plus } from 'lucide-react'
+import React, { useState, useMemo } from 'react'
+import { ReactFlow, ReactFlowProvider, useReactFlow, Controls, Background, Panel, Node } from '@xyflow/react'
+import { Plus, Search, X } from 'lucide-react'
 import { Skill, SkillEdge } from '@/src/types/skill'
 import SkillDetailPanel from './SkillDetailPanel'
 import AddSkillModal from './AddSkillModal'
@@ -36,7 +37,7 @@ interface SkillGraphViewProps {
   currentNodeRels: SkillEdge[]
 }
 
-const SkillGraphView = ({
+const SkillGraphInner = ({
   nodes,
   edges,
   skills,
@@ -60,9 +61,39 @@ const SkillGraphView = ({
   onDeleteRel,
   currentNodeRels,
 }: SkillGraphViewProps) => {
+  const { setCenter } = useReactFlow()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSuggestions, setShowSuggestions] = useState(false)
+
+  const suggestions = useMemo(() => {
+    if (!searchQuery.trim()) return []
+    const query = searchQuery.toLowerCase()
+    return skills.filter((s) => s.name.toLowerCase().includes(query))
+  }, [skills, searchQuery])
+
+  const handleSelectSkill = (skill: Skill) => {
+    // 1. Select the node to open detail panel
+    onNodeClick(null as any, { id: skill.id } as Node)
+
+    // 2. Zoom & center the viewport on the selected node
+    const flowNode = nodes.find((n) => n.id === skill.id)
+    if (flowNode) {
+      setCenter(flowNode.position.x, flowNode.position.y, { zoom: 1.3, duration: 800 })
+    }
+
+    setSearchQuery(skill.name)
+    setShowSuggestions(false)
+  }
+
+  const handleClearSearch = () => {
+    setSearchQuery('')
+    setShowSuggestions(false)
+    onClosePanel()
+  }
+
   return (
     <div className="flex-1 flex gap-6 relative min-h-0 bg-white rounded-3xl border border-slate-200/60 p-1.5 shadow-sm overflow-hidden">
-
+      
       {/* React Flow Container */}
       <div className="flex-1 relative h-full rounded-2xl overflow-hidden bg-slate-50">
         <ReactFlow
@@ -76,12 +107,62 @@ const SkillGraphView = ({
           onNodeDragStop={onNodeDragStop}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
+          onPaneClick={() => setShowSuggestions(false)}
           fitView
           minZoom={0.2}
           maxZoom={2.5}
         >
           <Background color="#cbd5e1" gap={18} size={1} />
           <Controls className="!bg-white !border-slate-200 !shadow-lg" />
+
+          {/* Search bar panel */}
+          <Panel position="top-center" className="flex flex-col gap-1 w-80">
+            <div className="relative flex items-center bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-md px-3.5 py-2">
+              <Search className="h-4.5 w-4.5 text-slate-400 mr-2 shrink-0" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm kỹ năng..."
+                value={searchQuery}
+                onFocus={() => setShowSuggestions(true)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setShowSuggestions(true)
+                }}
+                className="w-full text-sm bg-transparent border-none outline-hidden text-slate-800 placeholder-slate-400"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Suggestions list */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="bg-white/95 backdrop-blur-md border border-slate-200/80 rounded-2xl shadow-xl max-h-60 overflow-y-auto flex flex-col p-1.5 z-50 animate-scale-up">
+                {suggestions.map((skill) => (
+                  <button
+                    type="button"
+                    key={skill.id}
+                    onClick={() => handleSelectSkill(skill)}
+                    className="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-violet-50 hover:text-violet-700 transition-all capitalize"
+                  >
+                    {skill.name}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {showSuggestions && searchQuery && suggestions.length === 0 && (
+              <div className="bg-white/95 backdrop-blur-md border border-slate-200/80 rounded-2xl shadow-xl p-4 text-center text-xs text-slate-400 font-bold">
+                Không tìm thấy kỹ năng nào
+              </div>
+            )}
+          </Panel>
 
           {/* Add skill button */}
           <Panel position="top-right" className="flex gap-2">
@@ -121,6 +202,14 @@ const SkillGraphView = ({
         availableRoles={availableRoles}
       />
     </div>
+  )
+}
+
+const SkillGraphView = (props: SkillGraphViewProps) => {
+  return (
+    <ReactFlowProvider>
+      <SkillGraphInner {...props} />
+    </ReactFlowProvider>
   )
 }
 
