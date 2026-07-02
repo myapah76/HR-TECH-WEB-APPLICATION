@@ -1,6 +1,7 @@
 import QueryProvider from '@/src/providers/QueryProvider'
 import AuthProvider from '../providers/AuthProvider'
 import GoogleProvider from '../providers/GoogleProvider'
+import { ThemeProvider } from '../providers/ThemeProvider'
 import Footer from '@/src/components/layout/Footer'
 import Header from '@/src/components/layout/Header'
 import '@/src/styles/global.css'
@@ -24,17 +25,38 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" className={cn('font-sans', geist.variable)} suppressHydrationWarning>
+      <head>
+        <script
+          // chống nhấp nháy sáng
+          dangerouslySetInnerHTML={{
+            __html: `
+        (function() {
+          try {
+            var theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+              document.documentElement.classList.add('dark');
+            } else {
+              document.documentElement.classList.remove('dark');
+            }
+          } catch (e) {}
+        })()
+      `,
+          }}
+        />
+      </head>
       <body>
-        <GoogleProvider>
-          <QueryProvider>
-            <AuthProvider>
-              <Header />
-              {children}
-              <Toaster position="top-right" richColors closeButton />
-              <CookieWarningPopup />
-            </AuthProvider>
-          </QueryProvider>
-        </GoogleProvider>
+        <ThemeProvider>
+          <GoogleProvider>
+            <QueryProvider>
+              <AuthProvider>
+                <Header />
+                {children}
+                <Toaster position="top-right" richColors closeButton />
+                <CookieWarningPopup />
+              </AuthProvider>
+            </QueryProvider>
+          </GoogleProvider>
+        </ThemeProvider>
         <Footer />
       </body>
     </html>

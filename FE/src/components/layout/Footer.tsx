@@ -9,7 +9,7 @@ import { Code, Briefcase, Mail, MapPin, Phone, Share2 } from "lucide-react"
 export default function Footer() {
   return (
     <footer
-      className="bg-gray-905 border-t border-gray-150 bg-slate-900 text-slate-300 py-12"
+      className="bg-gray-905 border-t border-gray-150 bg-slate-900 dark:bg-slate-950 text-slate-300 py-12"
       id="site-footer"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

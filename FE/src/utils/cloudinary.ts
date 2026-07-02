@@ -1,10 +1,10 @@
 import { getCloudinarySignature } from '@/src/services/cloudinary.service'
-import { getSystemConfig } from '@/src/services/system.service'
+import { getPublicSystemConfig } from '@/src/services/system.service'
 
 export const uploadToCloudinary = async (file: File, folder: string): Promise<string> => {
   // 1. Check file size dynamically against database maxFileSize config
   try {
-    const config = await getSystemConfig()
+    const config = await getPublicSystemConfig()
     const maxFileSizeMB = config?.maxFileSize || 10
     const maxFileSizeBytes = maxFileSizeMB * 1024 * 1024
     if (file.size > maxFileSizeBytes) {

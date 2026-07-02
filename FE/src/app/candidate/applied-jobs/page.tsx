@@ -153,7 +153,7 @@ export default function AppliedJobsPage() {
           setPreferredInterviewDateTime('')
           setScheduleChangeReason('')
         },
-        onError: (error) => {
+        onError: (error: unknown) => {
           toast.error(getErrorMessage(error))
         },
       }

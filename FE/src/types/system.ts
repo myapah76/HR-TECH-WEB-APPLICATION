@@ -40,3 +40,8 @@ export interface SystemConfigResponse {
   dbOnline: boolean;
   dbSize: string;
 }
+
+export interface PublicSystemConfigResponse {
+  websiteName: string;
+  maxFileSize: number;
+}

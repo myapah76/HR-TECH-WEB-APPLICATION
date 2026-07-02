@@ -6,6 +6,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.shared.response.ApiResponse;
 import sba301.hrtech.system.abstractions.services.SystemConfigService;
+import sba301.hrtech.system.dtos.PublicSystemConfigResponse;
 import sba301.hrtech.system.dtos.SystemConfigRequest;
 import sba301.hrtech.system.dtos.SystemConfigResponse;
 
@@ -15,6 +16,13 @@ import sba301.hrtech.system.dtos.SystemConfigResponse;
 public class SystemConfigController {
 
     private final SystemConfigService systemConfigService;
+
+    @GetMapping("/public")
+    public ApiResponse<PublicSystemConfigResponse> getPublicSystemConfig() {
+        return ApiResponse.success(
+                systemConfigService.getPublicSystemConfig(),
+                "Public system configuration retrieved successfully");
+    }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN_SYSTEM')")

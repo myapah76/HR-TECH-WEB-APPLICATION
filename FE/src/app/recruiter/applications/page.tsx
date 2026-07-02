@@ -9,7 +9,6 @@ import {
   Filter,
   ChevronDown,
   Brain,
-  Star,
   AlertCircle,
   Loader2,
   TrendingUp,
@@ -19,6 +18,8 @@ import {
   useGetApplicationsByJob,
   useScheduleInterview,
   useUpdateApplicationStatus,
+  useRejectCandidateReschedule,
+  useAcceptCandidateReschedule,
 } from '@/src/hooks/application'
 import { getApplicationsByJob } from '@/src/services/application.service'
 import { useGetManageJobs } from '@/src/hooks/job'
@@ -29,6 +30,8 @@ import {
   ScheduleInterviewRequest,
 } from '@/src/types'
 import ApplicationDetailModal from '@/src/components/recruiter/ApplicationDetailModal'
+import { toast } from 'sonner'
+import { getErrorMessage } from '@/src/utils'
 
 import {
   STATUS_CONFIG,
@@ -82,6 +85,8 @@ export default function HRApplicationsPage() {
 
   const updateStatus = useUpdateApplicationStatus()
   const scheduleInterview = useScheduleInterview()
+  const acceptCandidateReschedule = useAcceptCandidateReschedule()
+  const rejectCandidateReschedule = useRejectCandidateReschedule()
 
   // ─── Derived stats ─────────────────────────────────────────────────────────
   const stats = {
@@ -90,9 +95,9 @@ export default function HRApplicationsPage() {
     interview: applications.filter(
       (a) =>
         a.status === ApplicationStatus.INTERVIEW ||
-        a.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE
+        a.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE ||
+        a.status === ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE
     ).length,
-    offer: applications.filter((a) => a.status === ApplicationStatus.OFFER).length,
   }
 
   // ─── Filter ─────────────────────────────────────────────────────────────────
@@ -124,10 +129,38 @@ export default function HRApplicationsPage() {
       }
     )
   }
+
+  const handleAcceptCandidateReschedule = (id: string) => {
+    acceptCandidateReschedule.mutate(id, {
+      onSuccess: (updated) => {
+        toast.success('Đã chấp nhận lịch phỏng vấn ứng viên đề xuất.')
+        if (selectedApp?.id === id) {
+          setSelectedApp({ ...selectedApp, ...updated })
+        }
+      },
+      onError: (error) => {
+        toast.error(getErrorMessage(error))
+      },
+    })
+  }
+
+  const handleRejectCandidateReschedule = (id: string) => {
+    rejectCandidateReschedule.mutate(id, {
+      onSuccess: (updated) => {
+        toast.success('Đã từ chối yêu cầu đổi lịch phỏng vấn.')
+        if (selectedApp?.id === id) {
+          setSelectedApp({ ...selectedApp, ...updated })
+        }
+      },
+      onError: (error) => {
+        toast.error(getErrorMessage(error))
+      },
+    })
+  }
   return (
     <div className="space-y-6 animate-fade-in pb-12">
       {/* ─── Stat Row ────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           {
             icon: Inbox,
@@ -145,17 +178,10 @@ export default function HRApplicationsPage() {
           },
           {
             icon: Brain,
-            label: 'Phỏng vấn',
+            label: 'Phỏng vấn / Hẹn lịch',
             value: stats.interview,
             color: 'text-indigo-700',
             bg: 'bg-indigo-50',
-          },
-          {
-            icon: Star,
-            label: 'Đã Offer',
-            value: stats.offer,
-            color: 'text-emerald-700',
-            bg: 'bg-emerald-50',
           },
         ].map((s, i) => (
           <div
@@ -327,7 +353,12 @@ export default function HRApplicationsPage() {
           onClose={() => setSelectedApp(null)}
           onStatusChange={handleStatusUpdate}
           onScheduleInterview={handleScheduleInterview}
+          onAcceptCandidateReschedule={handleAcceptCandidateReschedule}
+          onRejectCandidateReschedule={handleRejectCandidateReschedule}
           isSchedulingInterview={scheduleInterview.isPending}
+          isReviewingCandidateReschedule={
+            acceptCandidateReschedule.isPending || rejectCandidateReschedule.isPending
+          }
         />
       )}
     </div>

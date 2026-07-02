@@ -10,6 +10,7 @@ import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
 import sba301.hrtech.system.abstractions.repositories.SystemConfigRepository;
 import sba301.hrtech.system.abstractions.services.SystemConfigService;
+import sba301.hrtech.system.dtos.PublicSystemConfigResponse;
 import sba301.hrtech.system.dtos.SystemConfigRequest;
 import sba301.hrtech.system.dtos.SystemConfigResponse;
 import sba301.hrtech.system.entities.SystemConfig;
@@ -63,10 +64,19 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         return systemConfigMapper.toResponse(config, dbOnline, dbSize);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public PublicSystemConfigResponse getPublicSystemConfig() {
+        SystemConfig config = getActiveConfig();
+        return new PublicSystemConfigResponse(
+                config.getWebsiteName(),
+                config.getMaxFileSize()
+        );
+    }
+
     private SystemConfig getActiveConfig() {
         return systemConfigRepository.findAll().stream()
                 .findFirst()
                 .orElseThrow(() -> new AppException(ErrorCode.SYSTEM_CONFIG_NOT_INITIALIZED));
     }
-
 }

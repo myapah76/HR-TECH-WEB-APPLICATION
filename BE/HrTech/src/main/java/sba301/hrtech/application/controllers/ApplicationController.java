@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.application.abstractions.services.ApplicationService;
-//import sba301.hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
+import sba301.hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
 import sba301.hrtech.application.dtos.request.ScheduleInterviewRequest;
 import sba301.hrtech.application.dtos.request.SubmitApplicationRequest;
 import sba301.hrtech.application.dtos.response.ApplicationDetailResponse;
@@ -89,16 +89,16 @@ public class ApplicationController {
                 "Đã xác nhận lịch phỏng vấn"));
     }
 
-//    @PostMapping("/{id}/interview-schedule/change")
-//    @PreAuthorize("hasRole('CANDIDATE')")
-//    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> changeInterviewScheduleForCurrentCandidate(
-//            @PathVariable UUID id,
-//            @Valid @RequestBody ChangeInterviewScheduleRequest request) {
-//        UUID currentUserId = authUtils.getCurrentUserId();
-//        return ResponseEntity.ok(ApiResponse.success(
-//                applicationService.changeInterviewSchedule(currentUserId, id, request),
-//                "Đã ghi nhận yêu cầu đổi lịch phỏng vấn"));
-//    }
+    @PostMapping("/{id}/interview-schedule/change")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> changeInterviewScheduleForCurrentCandidate(
+            @PathVariable UUID id,
+            @Valid @RequestBody ChangeInterviewScheduleRequest request) {
+        UUID currentUserId = authUtils.getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse.success(
+                applicationService.changeInterviewSchedule(currentUserId, id, request),
+                "Đã ghi nhận yêu cầu đổi lịch phỏng vấn"));
+    }
 
     @PostMapping("/{id}/interview-schedule/reschedule/accept")
     @PreAuthorize("@companySecurity.isApplicationOwnerOrManagerOrHr(#id)")
