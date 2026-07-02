@@ -10,7 +10,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import sba301.hrtech.application.abstractions.repositories.ApplicationRepository;
 import sba301.hrtech.application.abstractions.repositories.ApplicationScoreRepository;
 import sba301.hrtech.application.abstractions.services.ApplicationService;
-import sba301.hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
+//import sba301.hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
 import sba301.hrtech.application.dtos.request.ScheduleInterviewRequest;
 import sba301.hrtech.application.dtos.request.SubmitApplicationRequest;
 import sba301.hrtech.application.dtos.response.ApplicationDetailResponse;
@@ -223,17 +223,17 @@ public class ApplicationServiceImpl implements ApplicationService {
         return applicationMapper.toSummaryResponse(applicationRepository.save(application));
     }
 
-    @Override
-    public ApplicationSummaryResponse changeInterviewSchedule(UUID userId, UUID applicationId, ChangeInterviewScheduleRequest request) {
-        Application application = findCandidateApplicationWaitingForSchedule(userId, applicationId);
-
-        application.setStatus(ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE);
-        application.setInterviewAcceptedAt(null);
-        application.setCandidatePreferredInterviewDateTime(request.candidatePreferredInterviewDateTime());
-        application.setCandidateInterviewResponseMessage(normalizeBlank(request.reason()));
-
-        return applicationMapper.toSummaryResponse(applicationRepository.save(application));
-    }
+//    @Override
+//    public ApplicationSummaryResponse changeInterviewSchedule(UUID userId, UUID applicationId, ChangeInterviewScheduleRequest request) {
+//        Application application = findCandidateApplicationWaitingForSchedule(userId, applicationId);
+//
+//        application.setStatus(ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE);
+//        application.setInterviewAcceptedAt(null);
+//        application.setCandidatePreferredInterviewDateTime(request.candidatePreferredInterviewDateTime());
+//        application.setCandidateInterviewResponseMessage(normalizeBlank(request.reason()));
+//
+//        return applicationMapper.toSummaryResponse(applicationRepository.save(application));
+//    }
 
     @Override
     public ApplicationSummaryResponse acceptCandidateReschedule(UUID applicationId) {

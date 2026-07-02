@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import PageHeader from '@/src/components/ui/PageHeader'
 import Badge from '@/src/components/ui/Badge'
 import {
   Building2,
@@ -93,11 +92,7 @@ export default function CompaniesPage() {
 
   return (
     <div className="font-sans">
-      <PageHeader
-        icon={Building2}
-        title="Quản lý công ty"
-        subtitle="Xác minh và quản lý hồ sơ doanh nghiệp tuyển dụng"
-      />
+
 
       {/* Search Filter Bar */}
       <div className="mb-6 flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200/60 shadow-xs">

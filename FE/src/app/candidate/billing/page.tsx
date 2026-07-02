@@ -6,7 +6,7 @@ import { PaymentHistoryTable } from '@/src/components/billing/PaymentHistoryTabl
 import { useMyCurrentSubscriptionQuery } from '@/src/hooks/subscription'
 import { useMyPaymentHistoryQuery } from '@/src/hooks/payment'
 import { useAuthStore } from '@/src/stores/auth.store'
-import PageHeader from '@/src/components/ui/PageHeader'
+
 
 export default function CandidateBillingPage() {
   const { user } = useAuthStore()
@@ -16,10 +16,7 @@ export default function CandidateBillingPage() {
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
-      <PageHeader
-        title="Quản lý Gói dịch vụ"
-        subtitle="Theo dõi gói đăng ký hiện tại và lịch sử thanh toán của bạn."
-      />
+
 
       <CurrentPlanCard subscription={subRes} isLoading={isSubLoading} />
 

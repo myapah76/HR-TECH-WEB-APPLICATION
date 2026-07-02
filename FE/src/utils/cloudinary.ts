@@ -10,10 +10,7 @@ export const uploadToCloudinary = async (file: File, folder: string): Promise<st
     if (file.size > maxFileSizeBytes) {
       throw new Error(`Dung lượng tệp vượt quá giới hạn tối đa cho phép là ${maxFileSizeMB} MB.`)
     }
-  } catch (error) {
-    if (error instanceof Error && error.message?.includes('vượt quá giới hạn')) {
-      throw error
-    }
+  } catch {
     const maxFileSizeMB = 10
     const maxFileSizeBytes = maxFileSizeMB * 1024 * 1024
     if (file.size > maxFileSizeBytes) {

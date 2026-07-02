@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import PageHeader from '@/src/components/ui/PageHeader'
 import {
   CreditCard,
   Plus,
@@ -169,20 +168,15 @@ export default function AdminSubscriptionsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        icon={CreditCard}
-        title="Quản lý gói dịch vụ"
-        subtitle="Thiết lập các gói quyền lợi và mức giá cho doanh nghiệp và ứng viên"
-        actions={
-          <button
-            onClick={handleOpenCreate}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 px-5 rounded-xl flex items-center gap-2 cursor-pointer transition-all shadow-md shadow-blue-500/10 hover:shadow-lg"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Thêm gói mới</span>
-          </button>
-        }
-      />
+      <div className="flex justify-end mb-6">
+        <button
+          onClick={handleOpenCreate}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 px-5 rounded-xl flex items-center gap-2 cursor-pointer transition-all shadow-md shadow-blue-500/10 hover:shadow-lg"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Thêm gói mới</span>
+        </button>
+      </div>
 
       {/* Tabs */}
       <div className="flex border-b border-slate-200">

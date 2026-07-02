@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import PageHeader from '@/src/components/ui/PageHeader'
 import {
   Settings,
   Globe,
@@ -119,25 +118,20 @@ export default function SystemSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        icon={Settings}
-        title="Cấu hình hệ thống"
-        subtitle="Cấu hình toàn cục cho các tài nguyên nền tảng HR-Tech"
-        actions={
-          <button
-            onClick={handleSave}
-            disabled={updateMutation.isPending}
-            className="bg-violet-600 hover:bg-violet-700 disabled:bg-slate-700 disabled:opacity-50 text-white font-bold text-xs py-2.5 px-5 rounded-xl flex items-center gap-2 cursor-pointer transition-all shadow-md shadow-violet-600/10 hover:shadow-lg hover:shadow-violet-600/20"
-          >
-            {updateMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            <span>{updateMutation.isPending ? 'Đang lưu...' : 'Lưu cấu hình'}</span>
-          </button>
-        }
-      />
+      <div className="flex justify-end mb-6">
+        <button
+          onClick={handleSave}
+          disabled={updateMutation.isPending}
+          className="bg-violet-600 hover:bg-violet-700 disabled:bg-slate-700 disabled:opacity-50 text-white font-bold text-xs py-2.5 px-5 rounded-xl flex items-center gap-2 cursor-pointer transition-all shadow-md shadow-violet-600/10 hover:shadow-lg hover:shadow-violet-600/20"
+        >
+          {updateMutation.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          <span>{updateMutation.isPending ? 'Đang lưu...' : 'Lưu cấu hình'}</span>
+        </button>
+      </div>
 
       <div className="flex flex-col md:flex-row gap-6 items-start">
         {/* Left Sidebar Menu */}

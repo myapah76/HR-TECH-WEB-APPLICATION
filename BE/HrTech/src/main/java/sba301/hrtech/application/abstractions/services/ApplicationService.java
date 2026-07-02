@@ -2,7 +2,7 @@ package sba301.hrtech.application.abstractions.services;
 
 import sba301.hrtech.application.dtos.response.ApplicationDetailResponse;
 import sba301.hrtech.application.dtos.response.ApplicationSummaryResponse;
-import sba301.hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
+//import sba301.hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
 import sba301.hrtech.application.dtos.request.ScheduleInterviewRequest;
 import sba301.hrtech.application.dtos.request.SubmitApplicationRequest;
 import sba301.hrtech.application.entities.enums.ApplicationStatus;
@@ -18,7 +18,7 @@ public interface ApplicationService {
     ApplicationSummaryResponse updateStatus(UUID applicationId, ApplicationStatus newStatus);
     ApplicationSummaryResponse scheduleInterview(UUID applicationId, ScheduleInterviewRequest request);
     ApplicationSummaryResponse acceptInterviewSchedule(UUID userId, UUID applicationId);
-    ApplicationSummaryResponse changeInterviewSchedule(UUID userId, UUID applicationId, ChangeInterviewScheduleRequest request);
+//    ApplicationSummaryResponse changeInterviewSchedule(UUID userId, UUID applicationId, ChangeInterviewScheduleRequest request);
     ApplicationSummaryResponse acceptCandidateReschedule(UUID applicationId);
     ApplicationSummaryResponse rejectCandidateReschedule(UUID applicationId);
     List<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId);
