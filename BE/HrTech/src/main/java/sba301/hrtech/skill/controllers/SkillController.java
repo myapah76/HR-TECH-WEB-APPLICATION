@@ -13,6 +13,8 @@ import sba301.hrtech.skill.dtos.response.PendingRelationshipResponse;
 import sba301.hrtech.skill.dtos.response.SkillResponse;
 import sba301.hrtech.skill.dtos.response.SkillWithRelationsResponse;
 
+import sba301.hrtech.skill.dtos.response.SkillGraphResponse;
+
 import java.util.List;
 
 @RestController
@@ -120,6 +122,20 @@ public class SkillController {
     @GetMapping("/{id}/related")
     public ResponseEntity<ApiResponse<List<SkillResponse>>> getRelatedSkills(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(skillService.getRelatedSkills(id)));
+    }
+
+    @GetMapping("/graph")
+    public ResponseEntity<ApiResponse<SkillGraphResponse>> getSkillGraph() {
+        return ResponseEntity.ok(ApiResponse.success(skillService.getSkillGraph()));
+    }
+
+    @DeleteMapping("/relationships")
+    public ResponseEntity<ApiResponse<Void>> deleteRelationship(
+            @RequestParam String sourceId,
+            @RequestParam String targetId,
+            @RequestParam String type) {
+        skillService.deleteRelationship(sourceId, targetId, type);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
 }

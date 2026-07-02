@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import sba301.hrtech.skill.dtos.response.SkillGraphResponse;
+import sba301.hrtech.skill.dtos.response.RelationshipResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -40,11 +42,12 @@ public class SkillServiceImpl implements ISkillService {
                     "Skill already exists: " + request.getName());
         }
 
+        List<String> validatedRoles = validateAndGetRoles(request.getRoles());
         SkillNode skillNode = SkillNode.builder()
                 .id(UUID.randomUUID().toString())
                 .name(request.getName().trim().toLowerCase())
                 .description(request.getDescription())
-                .roles(request.getRoles() != null ? request.getRoles() : new ArrayList<>())
+                .roles(validatedRoles)
                 .isVerified(true) // Admin-created skills are auto-verified
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
@@ -66,7 +69,7 @@ public class SkillServiceImpl implements ISkillService {
             skillNode.setDescription(request.getDescription());
         }
         if (request.getRoles() != null) {
-            skillNode.setRoles(request.getRoles());
+            skillNode.setRoles(validateAndGetRoles(request.getRoles()));
         }
 
         skillNode.setUpdatedAt(Instant.now());
@@ -196,6 +199,27 @@ public class SkillServiceImpl implements ISkillService {
         return skillMapper.toResponseList(related);
     }
 
+    @Override
+    public SkillGraphResponse getSkillGraph() {
+        // Fetch all nodes (both verified and unverified)
+        List<SkillNode> allNodes = skillNodeRepository.findAll();
+        List<SkillResponse> nodes = skillMapper.toResponseList(allNodes);
+
+        // Fetch all relationships
+        List<RelationshipResponse> edges = skillNodeRepository.findAllRelationships();
+
+        return new SkillGraphResponse(nodes, edges);
+    }
+
+    @Override
+    public void deleteRelationship(String sourceId, String targetId, String type) {
+        if (!type.equals("PARENT_OF") && !type.equals("RELATED_TO")) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid relationship type");
+        }
+        skillNodeRepository.deleteRelationship(sourceId, targetId, type);
+        log.info("Deleted relationship {} between {} and {}", type, sourceId, targetId);
+    }
+
     // === Helpers ===
 
     private SkillNode findSkillOrThrow(String id) {
@@ -208,5 +232,24 @@ public class SkillServiceImpl implements ISkillService {
             throw new AppException(ErrorCode.SKILL_SELF_RELATIONSHIP,
                     "Cannot create relationship between a skill and itself");
         }
+    }
+
+    private List<String> validateAndGetRoles(List<String> roles) {
+        if (roles == null || roles.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<String> validRoles = roleAliasRepository.findDistinctCanonicalRoles();
+        List<String> normalized = new ArrayList<>();
+        for (String r : roles) {
+            String trimmed = r.trim();
+            if (trimmed.isEmpty()) continue;
+            String matchingCanonical = validRoles.stream()
+                    .filter(vr -> vr.equalsIgnoreCase(trimmed))
+                    .findFirst()
+                    .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST,
+                            "Vai trò không tồn tại trong danh mục hệ thống: " + trimmed));
+            normalized.add(matchingCanonical);
+        }
+        return normalized;
     }
 }

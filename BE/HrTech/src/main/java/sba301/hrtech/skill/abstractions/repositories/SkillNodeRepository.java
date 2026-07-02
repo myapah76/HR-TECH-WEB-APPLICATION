@@ -9,6 +9,7 @@ import sba301.hrtech.skill.entities.SkillNode;
 
 import java.util.List;
 import java.util.Optional;
+import sba301.hrtech.skill.dtos.response.RelationshipResponse;
 
 @Repository
 public interface SkillNodeRepository extends Neo4jRepository<SkillNode, String> {
@@ -20,19 +21,15 @@ public interface SkillNodeRepository extends Neo4jRepository<SkillNode, String> 
 
     List<SkillNode> findByIsVerifiedTrue();
 
-    // @Query("MATCH (s:Skill) WHERE s.is_verified = true AND ANY(r IN s.roles WHERE
-    // toLower(r) = toLower($role)) RETURN s.id")
-    @Query("MATCH (s:Skill) WHERE ANY(r IN s.roles WHERE toLower(r) = toLower($role)) RETURN s.id")
+    @Query("MATCH (s:Skill) WHERE s.is_verified = true AND ANY(r IN s.roles WHERE toLower(r) = toLower($role)) RETURN s.id")
     List<String> findIdsByRole(@Param("role") String role);
 
-    // @Query("MATCH (s:Skill) WHERE s.is_verified = true AND toLower(s.name)
-    // CONTAINS toLower($keyword) RETURN s.id LIMIT 50")
-    @Query("MATCH (s:Skill) WHERE toLower(s.name) CONTAINS toLower($keyword) RETURN s.id LIMIT 50")
+    @Query("MATCH (s:Skill) WHERE s.is_verified = true AND toLower(s.name) CONTAINS toLower($keyword) RETURN s.id LIMIT 50")
     List<String> findIdsByNameContaining(@Param("keyword") String keyword);
 
-    @Query("MATCH (s:Skill) WHERE s.name =~ ('(?i).*' + $keyword + '.*') OR ANY(role IN s.roles WHERE role =~ ('(?i).*' + $canonicalRole + '.*')) RETURN s LIMIT 20")
+    @Query("MATCH (s:Skill) WHERE s.is_verified = true AND (s.name =~ ('(?i).*' + $keyword + '.*') OR ANY(role IN s.roles WHERE role =~ ('(?i).*' + $canonicalRole + '.*'))) RETURN s LIMIT 20")
     List<SkillNode> searchByKeywordAndRole(@Param("keyword") String keyword,
-            @Param("canonicalRole") String canonicalRole);
+                                           @Param("canonicalRole") String canonicalRole);
 
     @Query("MATCH (s:Skill) WHERE s.id IN $ids RETURN s")
     List<SkillNode> findAllByIds(@Param("ids") List<String> ids);
@@ -75,7 +72,7 @@ public interface SkillNodeRepository extends Neo4jRepository<SkillNode, String> 
                 SET r.status = 'APPROVED'
             """)
     void approvePendingRelationship(@Param("sourceId") String sourceId, @Param("targetId") String targetId,
-            @Param("type") String type);
+                                    @Param("type") String type);
 
     @Query("""
                 MATCH (a:Skill {id: $sourceId})-[r]->(b:Skill {id: $targetId})
@@ -83,7 +80,7 @@ public interface SkillNodeRepository extends Neo4jRepository<SkillNode, String> 
                 DELETE r
             """)
     void rejectPendingRelationship(@Param("sourceId") String sourceId, @Param("targetId") String targetId,
-            @Param("type") String type);
+                                   @Param("type") String type);
 
     @Query("""
                 MATCH (a:Skill {id: $sourceId})
@@ -125,4 +122,16 @@ public interface SkillNodeRepository extends Neo4jRepository<SkillNode, String> 
                 ON CREATE SET r.status = 'PENDING'
             """)
     void createPendingParentOfByName(@Param("parentName") String parentName, @Param("childName") String childName);
+
+    @Query("MATCH (a:Skill)-[r]->(b:Skill) RETURN a.id AS sourceId, b.id AS targetId, type(r) AS type, COALESCE(r.status, 'APPROVED') AS status")
+    List<RelationshipResponse> findAllRelationships();
+
+    @Query("MATCH (a:Skill {id: $sourceId})-[r]->(b:Skill {id: $targetId}) WHERE type(r) = $type DELETE r")
+    void deleteRelationship(@Param("sourceId") String sourceId, @Param("targetId") String targetId, @Param("type") String type);
+
+    @Query("MATCH (s:Skill) WHERE $oldRole IN s.roles SET s.roles = [r IN s.roles WHERE r <> $oldRole] + $newRole")
+    void renameRoleInSkills(@Param("oldRole") String oldRole, @Param("newRole") String newRole);
+
+    @Query("MATCH (s:Skill) WHERE $role IN s.roles SET s.roles = [r IN s.roles WHERE r <> $role]")
+    void removeRoleFromSkills(@Param("role") String role);
 }

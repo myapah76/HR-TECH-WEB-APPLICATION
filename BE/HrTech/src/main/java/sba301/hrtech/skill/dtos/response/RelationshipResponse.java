@@ -1,0 +1,17 @@
+package sba301.hrtech.skill.dtos.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class RelationshipResponse {
+    private String sourceId;
+    private String targetId;
+    private String type;
+    private String status;
+}

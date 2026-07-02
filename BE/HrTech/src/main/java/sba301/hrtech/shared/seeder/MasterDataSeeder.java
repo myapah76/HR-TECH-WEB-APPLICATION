@@ -15,14 +15,9 @@ import sba301.hrtech.job.abstractions.repositories.JobRepository;
 import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.job.abstractions.services.ISavedJobService;
 import sba301.hrtech.job.dtos.request.JobRequest;
-import sba301.hrtech.job.dtos.request.JobSkillRequest;
 import sba301.hrtech.job.dtos.response.JobResponse;
-import sba301.hrtech.skill.abstractions.repositories.SkillNodeRepository;
-import sba301.hrtech.skill.entities.SkillNode;
 import sba301.hrtech.subscription.abstractions.services.ISubscriptionService;
 import sba301.hrtech.subscription.entities.enums.SubscriptionType;
-import sba301.hrtech.subscription.entities.CandidateSubscription;
-import sba301.hrtech.subscription.entities.CompanySubscription;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -38,7 +33,6 @@ public class MasterDataSeeder implements CommandLineRunner {
     private final CompanyRepository companyRepository;
     private final JobRepository jobRepository;
     private final IJobService jobService;
-    private final SkillNodeRepository skillNodeRepository;
     private final ISavedJobService savedJobService;
     private final ISubscriptionService subscriptionService;
 
@@ -139,7 +133,7 @@ public class MasterDataSeeder implements CommandLineRunner {
             createJobRequest("Database Administrator", "Oracle, SQL Server, MySQL, Performance Tuning", company2.getId(), 18000000, 32000000),
             createJobRequest("Security Engineer", "Cybersecurity, Penetration Testing, OWASP", company2.getId(), 22000000, 45000000),
             createJobRequest("Product Manager", "Agile, Scrum, Leadership, Product Strategy", company2.getId(), 25000000, 50000000),
-            createJobRequest("Data Scientist", "Python, R, Statistics, Data Mining", company2.getId(), 30000000, 60000000));
+            createJobRequest("Data Scientist", "Python, Rlang, Statistics, Data Mining", company2.getId(), 30000000, 60000000));
 
         List<UUID> createdJobIds1 = new ArrayList<>();
         List<UUID> createdJobIds2 = new ArrayList<>();
@@ -187,17 +181,6 @@ public class MasterDataSeeder implements CommandLineRunner {
     }
 
     private JobRequest createJobRequest(String title, String skills, UUID companyId, long salaryMin, long salaryMax) {
-        List<JobSkillRequest> skillRequests = new ArrayList<>();
-        for (String skillName : skills.split(", ")) {
-            String sanitized = skillName.toLowerCase().replace(" ", "").replace(".", "");
-            SkillNode node = skillNodeRepository.findByNameIgnoreCase(sanitized)
-                    .orElseGet(() -> skillNodeRepository.save(SkillNode.builder()
-                            .name(sanitized)
-                            .createdAt(Instant.now())
-                            .build()));
-            skillRequests.add(new JobSkillRequest(node.getId(), "INTERMEDIATE"));
-        }
-
         return new JobRequest(
                 companyId,
                 title,
@@ -209,7 +192,7 @@ public class MasterDataSeeder implements CommandLineRunner {
                 "MIDDLE",
                 Instant.now().plus(30, ChronoUnit.DAYS),
                 "Must have experience with: " + skills,
-                skillRequests);
+                new ArrayList<>());
     }
 
     private void mockSecurityContext(User user) {
