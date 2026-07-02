@@ -92,7 +92,7 @@ export default function ManageJobPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 pb-12">
+    <div className="space-y-8 pb-12">
       <div className="flex justify-end">
         <Link
           href="/recruiter/post-job"

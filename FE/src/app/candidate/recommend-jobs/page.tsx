@@ -201,7 +201,7 @@ export default function RecommendJobsPage() {
   )
 
   return (
-    <div className="space-y-8 animate-fade-in max-w-6xl mx-auto">
+    <div className="space-y-8 animate-fade-in">
 
       {/* Feature gate: show upgrade prompt for free users */}
       {!isSubLoading && !hasPaidPlan ? (

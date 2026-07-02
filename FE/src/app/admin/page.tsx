@@ -5,7 +5,7 @@ import { Users, Briefcase, Building2, TrendingUp, Activity, Shield } from 'lucid
 
 export default function AdminDashboard() {
   return (
-    <div className="max-w-6xl">
+    <div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard icon={Users} label="Tổng người dùng" value="12,847" change={8} color="blue" />

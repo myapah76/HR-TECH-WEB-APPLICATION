@@ -125,7 +125,7 @@ export default function HRApplicationsPage() {
     )
   }
   return (
-    <div className="max-w-7xl space-y-6 animate-fade-in pb-12">
+    <div className="space-y-6 animate-fade-in pb-12">
 
       {/* ─── Stat Row ────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

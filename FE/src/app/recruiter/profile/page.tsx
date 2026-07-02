@@ -149,7 +149,7 @@ export default function RecruiterCompanyProfilePage() {
   const logoBg = bgColors[colorIdx]
 
   return (
-    <div className="max-w-5xl mx-auto pb-12 font-sans">
+    <div className="pb-12 font-sans">
       {/* Header title */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

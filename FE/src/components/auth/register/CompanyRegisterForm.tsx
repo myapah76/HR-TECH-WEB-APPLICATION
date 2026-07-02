@@ -27,6 +27,7 @@ import { useRegisterCompany } from '@/src/hooks/auth'
 import { OtpType } from '@/src/enums/otp.enum'
 import { toast } from 'sonner'
 import { uploadToCloudinary } from '@/src/utils/cloudinary'
+import { getErrorMessage } from '@/src/utils'
 
 export function CompanyRegisterForm() {
   const router = useRouter()
@@ -86,9 +87,8 @@ export function CompanyRegisterForm() {
           },
         }
       )
-    } catch (error: any) {
-      console.error(error)
-      toast.error(error.message || 'Lỗi khi tải ảnh lên, vui lòng thử lại!')
+    } catch (error) {
+      toast.error(getErrorMessage(error))
       setIsUploading(false)
     }
   }

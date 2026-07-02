@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import PageHeader from '@/src/components/ui/PageHeader'
 import {
   Settings,
@@ -34,50 +34,31 @@ export default function SystemSettingsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('general')
 
   // Form States
-  const [websiteName, setWebsiteName] = useState('')
-  const [maxFileSize, setMaxFileSize] = useState(10)
+  const [websiteName, setWebsiteName] = useState(config?.websiteName || '')
+  const [maxFileSize, setMaxFileSize] = useState(config?.maxFileSize ?? 10)
 
-  const [smtpHost, setSmtpHost] = useState('')
-  const [smtpPort, setSmtpPort] = useState(587)
-  const [smtpUsername, setSmtpUsername] = useState('')
-  const [smtpPassword, setSmtpPassword] = useState('')
-  const [smtpFromEmail, setSmtpFromEmail] = useState('')
+  const [smtpHost, setSmtpHost] = useState(config?.smtpHost || '')
+  const [smtpPort, setSmtpPort] = useState(config?.smtpPort ?? 587)
+  const [smtpUsername, setSmtpUsername] = useState(config?.smtpUsername || '')
+  const [smtpPassword, setSmtpPassword] = useState(config?.smtpPassword || '')
+  const [smtpFromEmail, setSmtpFromEmail] = useState(config?.smtpFromEmail || '')
 
-  const [jwtAccessExpiration, setJwtAccessExpiration] = useState(60)
-  const [jwtRefreshExpiration, setJwtRefreshExpiration] = useState(30)
-  const [jwtIssuer, setJwtIssuer] = useState('')
-  const [jwtAudience, setJwtAudience] = useState('')
+  const [jwtAccessExpiration, setJwtAccessExpiration] = useState(
+    config?.jwtAccessExpirationMinutes ?? 60
+  )
+  const [jwtRefreshExpiration, setJwtRefreshExpiration] = useState(
+    config?.jwtRefreshTokenExpirationDays ?? 30
+  )
+  const [jwtIssuer, setJwtIssuer] = useState(config?.jwtIssuer || '')
+  const [jwtAudience, setJwtAudience] = useState(config?.jwtAudience || '')
 
-  const [cloudinaryCloudName, setCloudinaryCloudName] = useState('')
-  const [cloudinaryApiKey, setCloudinaryApiKey] = useState('')
-  const [cloudinaryApiSecret, setCloudinaryApiSecret] = useState('')
+  const [cloudinaryCloudName, setCloudinaryCloudName] = useState(config?.cloudinaryCloudName || '')
+  const [cloudinaryApiKey, setCloudinaryApiKey] = useState(config?.cloudinaryApiKey || '')
+  const [cloudinaryApiSecret, setCloudinaryApiSecret] = useState(config?.cloudinaryApiSecret || '')
 
-  const [payosClientId, setPayosClientId] = useState('')
-  const [payosApiKey, setPayosApiKey] = useState('')
-  const [payosChecksumKey, setPayosChecksumKey] = useState('')
-
-  // Sync state with fetched database config
-  useEffect(() => {
-    if (config) {
-      setWebsiteName(config.websiteName || '')
-      setMaxFileSize(config.maxFileSize ?? 10)
-      setSmtpHost(config.smtpHost || '')
-      setSmtpPort(config.smtpPort ?? 587)
-      setSmtpUsername(config.smtpUsername || '')
-      setSmtpPassword(config.smtpPassword || '')
-      setSmtpFromEmail(config.smtpFromEmail || '')
-      setJwtAccessExpiration(config.jwtAccessExpirationMinutes ?? 60)
-      setJwtRefreshExpiration(config.jwtRefreshTokenExpirationDays ?? 30)
-      setJwtIssuer(config.jwtIssuer || '')
-      setJwtAudience(config.jwtAudience || '')
-      setCloudinaryCloudName(config.cloudinaryCloudName || '')
-      setCloudinaryApiKey(config.cloudinaryApiKey || '')
-      setCloudinaryApiSecret(config.cloudinaryApiSecret || '')
-      setPayosClientId(config.payosClientId || '')
-      setPayosApiKey(config.payosApiKey || '')
-      setPayosChecksumKey(config.payosChecksumKey || '')
-    }
-  }, [config])
+  const [payosClientId, setPayosClientId] = useState(config?.payosClientId || '')
+  const [payosApiKey, setPayosApiKey] = useState(config?.payosApiKey || '')
+  const [payosChecksumKey, setPayosChecksumKey] = useState(config?.payosChecksumKey || '')
 
   const handleSave = () => {
     if (!websiteName.trim()) {
@@ -137,7 +118,7 @@ export default function SystemSettingsPage() {
   }
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="space-y-6">
       <PageHeader
         icon={Settings}
         title="Cấu hình hệ thống"
@@ -173,7 +154,7 @@ export default function SystemSettingsPage() {
         </div>
 
         {/* Right Active Configuration Panel */}
-        <div className="flex-1 w-full bg-white rounded-2xl border border-slate-200/60 p-6 shadow-xs min-h-[380px]">
+        <div className="flex-1 w-full bg-white rounded-2xl border border-slate-200/60 p-6 shadow-xs min-h-95">
           {activeTab === 'general' && (
             <GeneralTab
               websiteName={websiteName}

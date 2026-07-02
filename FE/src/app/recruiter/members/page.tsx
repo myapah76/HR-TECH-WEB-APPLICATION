@@ -115,7 +115,7 @@ export default function RecruiterMembersPage() {
   }
 
   return (
-    <div className="max-w-5xl space-y-6 font-sans">
+    <div className="space-y-6 font-sans">
       <PageHeader
         icon={UserCheck}
         title="Quản lý nhân sự"

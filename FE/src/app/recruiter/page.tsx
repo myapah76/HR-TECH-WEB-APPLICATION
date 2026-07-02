@@ -112,7 +112,7 @@ export default function RecruiterDashboardPage() {
   ]
 
   return (
-    <div className="max-w-6xl space-y-8 animate-fade-in font-sans">
+    <div className="space-y-8 animate-fade-in font-sans">
       <div className="flex justify-end">
         <Link
           href="/recruiter/post-job"

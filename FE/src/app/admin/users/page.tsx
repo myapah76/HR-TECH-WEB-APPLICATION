@@ -65,7 +65,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     if (usersPage && usersPage.totalPages > 0 && currentPage > usersPage.totalPages) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentPage(usersPage.totalPages)
     }
   }, [currentPage, usersPage])
@@ -101,7 +101,7 @@ export default function UsersPage() {
   const confirmActionLabel = confirmUser?.isBlocked ? 'mở khóa' : 'khóa'
 
   return (
-    <div className="max-w-6xl">
+    <div>
       <PageHeader
         icon={Users}
         title="Quản lý người dùng"
@@ -121,7 +121,9 @@ export default function UsersPage() {
 
         <select
           value={roleFilter}
-          onChange={(event) => updateFilter(() => setRoleFilter(event.target.value as 'ALL' | RoleUser))}
+          onChange={(event) =>
+            updateFilter(() => setRoleFilter(event.target.value as 'ALL' | RoleUser))
+          }
           className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
         >
           <option value="ALL">Tất cả vai trò</option>
@@ -134,7 +136,9 @@ export default function UsersPage() {
 
         <select
           value={blockedFilter}
-          onChange={(event) => updateFilter(() => setBlockedFilter(event.target.value as BlockedFilter))}
+          onChange={(event) =>
+            updateFilter(() => setBlockedFilter(event.target.value as BlockedFilter))
+          }
           className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
         >
           <option value="ALL">Tất cả trạng thái</option>
@@ -203,7 +207,9 @@ export default function UsersPage() {
                             {getFullName(user).charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="text-xs font-extrabold text-slate-800">{getFullName(user)}</p>
+                            <p className="text-xs font-extrabold text-slate-800">
+                              {getFullName(user)}
+                            </p>
                             <p className="text-[10px] font-bold text-slate-400">{user.email}</p>
                           </div>
                         </div>
@@ -224,7 +230,11 @@ export default function UsersPage() {
                           type="button"
                           onClick={() => handleRequestToggleBlocked(user)}
                           disabled={isCurrentUser || isUpdating}
-                          title={isCurrentUser ? 'Không thể tự khóa/mở khóa tài khoản hiện tại' : actionLabel}
+                          title={
+                            isCurrentUser
+                              ? 'Không thể tự khóa/mở khóa tài khoản hiện tại'
+                              : actionLabel
+                          }
                           className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition ${
                             user.isBlocked
                               ? 'text-emerald-500 hover:bg-emerald-50 hover:text-emerald-700'
