@@ -38,13 +38,9 @@
     </div>
 
     <div style="text-align:center; margin:30px 0;">
-        <a th:href="${acceptLink}"
+        <a th:href="${actionLink}"
            style="background:#4b2e2a; color:white; padding:12px 20px; text-decoration:none; border-radius:8px; display:inline-block; margin:4px;">
-            Xác nhận lịch
-        </a>
-        <a th:href="${rejectLink}"
-           style="background:#fff; color:#4b2e2a; padding:12px 20px; text-decoration:none; border-radius:8px; border:1px solid #4b2e2a; display:inline-block; margin:4px;">
-            Yêu cầu đổi lịch
+            <span th:text="${actionLabel}">Phản hồi lịch phỏng vấn</span>
         </a>
     </div>
 

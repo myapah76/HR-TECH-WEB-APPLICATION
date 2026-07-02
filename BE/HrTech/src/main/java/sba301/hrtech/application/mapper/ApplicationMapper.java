@@ -20,6 +20,7 @@ public interface ApplicationMapper {
     @Mapping(target = "cvTitle", source = "cv.title")
     @Mapping(target = "appliedAt", source = "appliedAt")
     @Mapping(target = "interviewDateTime", source = "interviewDateTime")
+    @Mapping(target = "candidatePreferredInterviewDateTime", source = "candidatePreferredInterviewDateTime")
     ApplicationSummaryResponse toSummaryResponse(Application entity);
 
     @Mapping(target = "jobId", source = "job.id")

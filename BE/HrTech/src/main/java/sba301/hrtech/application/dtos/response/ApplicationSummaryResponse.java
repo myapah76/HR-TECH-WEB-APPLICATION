@@ -25,4 +25,5 @@ public class ApplicationSummaryResponse {
     private ApplicationStatus status;
     private Instant appliedAt;
     private Instant interviewDateTime;
+    private Instant candidatePreferredInterviewDateTime;
 }
