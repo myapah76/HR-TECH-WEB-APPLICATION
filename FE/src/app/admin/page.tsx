@@ -1,17 +1,28 @@
 'use client'
 
 import StatCard from '@/src/components/ui/StatCard'
-import { Users, Briefcase, Building2, TrendingUp, Activity, Shield } from 'lucide-react'
+import { Users, Briefcase, Building2, TrendingUp, Activity } from 'lucide-react'
 
 export default function AdminDashboard() {
   return (
     <div>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard icon={Users} label="Tổng người dùng" value="12,847" change={8} color="blue" />
-        <StatCard icon={Briefcase} label="Tin tuyển dụng" value="3,421" change={15} color="emerald" />
+        <StatCard
+          icon={Briefcase}
+          label="Tin tuyển dụng"
+          value="3,421"
+          change={15}
+          color="emerald"
+        />
         <StatCard icon={Building2} label="Công ty" value="567" change={5} color="violet" />
-        <StatCard icon={TrendingUp} label="Lượt truy cập/ngày" value="45K" change={12} color="amber" />
+        <StatCard
+          icon={TrendingUp}
+          label="Lượt truy cập/ngày"
+          value="45K"
+          change={12}
+          color="amber"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

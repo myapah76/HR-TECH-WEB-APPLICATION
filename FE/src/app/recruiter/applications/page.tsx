@@ -1,46 +1,39 @@
 'use client'
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import { useQueries } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import {
   Users,
   Briefcase,
   Search,
   Filter,
   ChevronDown,
-  Clock,
   Brain,
   Star,
-  CheckCircle2,
-  XCircle,
   AlertCircle,
   Loader2,
-  FileText,
   TrendingUp,
-  ArrowUpRight,
   Inbox,
-  Eye,
 } from 'lucide-react'
 import {
   useGetApplicationsByJob,
-  useAcceptCandidateReschedule,
-  useRejectCandidateReschedule,
   useScheduleInterview,
   useUpdateApplicationStatus,
 } from '@/src/hooks/application'
 import { getApplicationsByJob } from '@/src/services/application.service'
 import { useGetManageJobs } from '@/src/hooks/job'
 import { useGetMyCompany } from '@/src/hooks/company'
-import { ApplicationStatus, ApplicationSummaryResponse, ScheduleInterviewRequest } from '@/src/types'
-import { getErrorMessage } from '@/src/utils'
+import {
+  ApplicationStatus,
+  ApplicationSummaryResponse,
+  ScheduleInterviewRequest,
+} from '@/src/types'
 import ApplicationDetailModal from '@/src/components/recruiter/ApplicationDetailModal'
 
 import {
   STATUS_CONFIG,
   FILTER_STATUS_OPTIONS,
   ApplicationRow,
-  StatusBadge,
 } from '@/src/components/recruiter/ApplicationRow'
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -81,25 +74,25 @@ export default function HRApplicationsPage() {
     })
   }, [allJobQueries])
 
-  const isAllAppsLoading = selectedJobId === '' && jobs.length > 0 && allJobQueries.some((q) => q.isLoading)
+  const isAllAppsLoading =
+    selectedJobId === '' && jobs.length > 0 && allJobQueries.some((q) => q.isLoading)
 
   const applications: ApplicationSummaryResponse[] = selectedJobId ? singleJobData : allApplications
   const isAppsLoading = selectedJobId ? isSingleJobLoading : isAllAppsLoading
 
   const updateStatus = useUpdateApplicationStatus()
   const scheduleInterview = useScheduleInterview()
-  const acceptCandidateReschedule = useAcceptCandidateReschedule()
-  const rejectCandidateReschedule = useRejectCandidateReschedule()
 
   // ─── Derived stats ─────────────────────────────────────────────────────────
   const stats = {
     total: applications.length,
     submitted: applications.filter((a) => a.status === ApplicationStatus.SUBMITTED).length,
-    interview: applications.filter((a) =>
-      a.status === ApplicationStatus.INTERVIEW ||
-      a.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE ||
-      a.status === ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE
+    interview: applications.filter(
+      (a) =>
+        a.status === ApplicationStatus.INTERVIEW ||
+        a.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE
     ).length,
+    offer: applications.filter((a) => a.status === ApplicationStatus.OFFER).length,
   }
 
   // ─── Filter ─────────────────────────────────────────────────────────────────
@@ -131,46 +124,47 @@ export default function HRApplicationsPage() {
       }
     )
   }
-
-  const handleAcceptCandidateReschedule = (id: string) => {
-    acceptCandidateReschedule.mutate(id, {
-      onSuccess: (updated) => {
-        toast.success('Đã chấp nhận lịch phỏng vấn ứng viên đề xuất.')
-        if (selectedApp?.id === id) {
-          setSelectedApp({ ...selectedApp, ...updated })
-        }
-      },
-      onError: (error) => {
-        toast.error(getErrorMessage(error))
-      },
-    })
-  }
-
-  const handleRejectCandidateReschedule = (id: string) => {
-    rejectCandidateReschedule.mutate(id, {
-      onSuccess: (updated) => {
-        toast.success('Đã từ chối yêu cầu đổi lịch phỏng vấn.')
-        if (selectedApp?.id === id) {
-          setSelectedApp({ ...selectedApp, ...updated })
-        }
-      },
-      onError: (error) => {
-        toast.error(getErrorMessage(error))
-      },
-    })
-  }
   return (
     <div className="space-y-6 animate-fade-in pb-12">
-
       {/* ─── Stat Row ────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { icon: Inbox, label: 'Tổng hồ sơ', value: stats.total, color: 'text-slate-700', bg: 'bg-slate-100' },
-          { icon: AlertCircle, label: 'Mới nộp', value: stats.submitted, color: 'text-blue-700', bg: 'bg-blue-50' },
-          { icon: Brain, label: 'Phỏng vấn', value: stats.interview, color: 'text-indigo-700', bg: 'bg-indigo-50' },
+          {
+            icon: Inbox,
+            label: 'Tổng hồ sơ',
+            value: stats.total,
+            color: 'text-slate-700',
+            bg: 'bg-slate-100',
+          },
+          {
+            icon: AlertCircle,
+            label: 'Mới nộp',
+            value: stats.submitted,
+            color: 'text-blue-700',
+            bg: 'bg-blue-50',
+          },
+          {
+            icon: Brain,
+            label: 'Phỏng vấn',
+            value: stats.interview,
+            color: 'text-indigo-700',
+            bg: 'bg-indigo-50',
+          },
+          {
+            icon: Star,
+            label: 'Đã Offer',
+            value: stats.offer,
+            color: 'text-emerald-700',
+            bg: 'bg-emerald-50',
+          },
         ].map((s, i) => (
-          <div key={i} className="bg-white rounded-2xl border border-slate-200/60 p-4 shadow-xs flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
+          <div
+            key={i}
+            className="bg-white rounded-2xl border border-slate-200/60 p-4 shadow-xs flex items-center gap-3"
+          >
+            <div
+              className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}
+            >
               <s.icon className={`w-5 h-5 ${s.color}`} />
             </div>
             <div>
@@ -190,7 +184,10 @@ export default function HRApplicationsPage() {
             <select
               id="select-job"
               value={selectedJobId}
-              onChange={(e) => { setSelectedJobId(e.target.value); setFilterStatus('') }}
+              onChange={(e) => {
+                setSelectedJobId(e.target.value)
+                setFilterStatus('')
+              }}
               className="w-full pl-9 pr-9 py-2.5 text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all"
             >
               <option value="">— Tất cả tin tuyển dụng —</option>
@@ -198,7 +195,9 @@ export default function HRApplicationsPage() {
                 <option disabled>Đang tải...</option>
               ) : (
                 jobs.map((j) => (
-                  <option key={j.id} value={j.id}>{j.title}</option>
+                  <option key={j.id} value={j.id}>
+                    {j.title}
+                  </option>
                 ))
               )}
             </select>
@@ -228,7 +227,9 @@ export default function HRApplicationsPage() {
               className="w-full pl-9 pr-9 py-2.5 text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all"
             >
               {FILTER_STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
               ))}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -281,10 +282,10 @@ export default function HRApplicationsPage() {
               <h3 className="text-base font-bold text-slate-700">Chưa có hồ sơ ứng tuyển</h3>
               <p className="text-sm text-slate-400 mt-1">
                 {filterStatus || searchQuery
-                    ? 'Không tìm thấy hồ sơ phù hợp với bộ lọc hiện tại'
-                    : selectedJobId
-                      ? 'Chưa có ứng viên nào nộp hồ sơ cho vị trí này'
-                      : 'Chưa có hồ sơ nào được nộp'}
+                  ? 'Không tìm thấy hồ sơ phù hợp với bộ lọc hiện tại'
+                  : selectedJobId
+                    ? 'Chưa có ứng viên nào nộp hồ sơ cho vị trí này'
+                    : 'Chưa có hồ sơ nào được nộp'}
               </p>
             </div>
           </div>
@@ -311,11 +312,7 @@ export default function HRApplicationsPage() {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filtered.map((app) => (
-                  <ApplicationRow
-                    key={app.id}
-                    app={app}
-                    onViewDetail={setSelectedApp}
-                  />
+                  <ApplicationRow key={app.id} app={app} onViewDetail={setSelectedApp} />
                 ))}
               </tbody>
             </table>
@@ -330,10 +327,7 @@ export default function HRApplicationsPage() {
           onClose={() => setSelectedApp(null)}
           onStatusChange={handleStatusUpdate}
           onScheduleInterview={handleScheduleInterview}
-          onAcceptCandidateReschedule={handleAcceptCandidateReschedule}
-          onRejectCandidateReschedule={handleRejectCandidateReschedule}
           isSchedulingInterview={scheduleInterview.isPending}
-          isReviewingCandidateReschedule={acceptCandidateReschedule.isPending || rejectCandidateReschedule.isPending}
         />
       )}
     </div>

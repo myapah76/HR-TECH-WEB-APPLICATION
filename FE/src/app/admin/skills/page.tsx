@@ -3,9 +3,8 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Node } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Network, UserCheck, GitBranch, GitMerge, Workflow } from 'lucide-react'
+import { Network, UserCheck, GitBranch, GitMerge } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
-import { getErrorMessage } from '@/src/utils'
 
 import {
   getSkillGraph,
@@ -31,6 +30,7 @@ import PendingSkillsTab from '@/src/components/admin/skills/PendingSkillsTab'
 import PendingRelationsTab from '@/src/components/admin/skills/PendingRelationsTab'
 import RoleAliasesTab from '@/src/components/admin/skills/RoleAliasesTab'
 import { useSkillPhysics } from '@/src/hooks/skill'
+import { getErrorMessage } from '@/src/utils/get-error-message'
 
 export default function AdminSkillsDashboard() {
   const [activeTab, setActiveTab] = useState<SkillTab>(SkillTab.GRAPH)
@@ -236,7 +236,7 @@ export default function AdminSkillsDashboard() {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${
               activeTab === tab.id
                 ? 'bg-white text-violet-600 shadow-xs'
