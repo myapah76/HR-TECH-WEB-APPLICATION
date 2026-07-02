@@ -24,6 +24,8 @@ public interface ICompanyService {
     // CRUD
     Page<CompanyResponse> getCompanies(String keyword, Pageable pageable);
 
+    Page<CompanyResponse> getCompaniesForAdmin(String keyword, Pageable pageable);
+
     CompanyResponse getCompanyById(UUID companyId);
 
     CompanyResponse getMyCompany();
@@ -47,5 +49,7 @@ public interface ICompanyService {
     CompanyResponse approveCompany(UUID companyId);
 
     CompanyResponse rejectCompany(UUID companyId);
+
+    CompanyResponse restoreCompany(UUID companyId);
 }
 

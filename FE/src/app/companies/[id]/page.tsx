@@ -18,6 +18,8 @@ interface CompanyDetail {
   email: string
   phone: string
   taxCode: string
+  industry?: string
+  size?: string
 }
 
 interface JobItem {
@@ -105,7 +107,7 @@ export default function CompanyDetailPage() {
             <img
               src={company.logoUrl}
               alt={company.name}
-              className="h-20 w-20 rounded-2xl object-cover border border-slate-100"
+              className="h-28 w-28 rounded-2xl object-contain bg-white p-1 border border-slate-200 shadow-md"
               onError={(e) => {
                 (e.target as HTMLElement).style.display = 'none'
                 const sibling = (e.target as HTMLElement).nextElementSibling
@@ -114,14 +116,14 @@ export default function CompanyDetailPage() {
             />
           ) : null}
           <div
-            className={`h-20 w-20 rounded-2xl text-white font-extrabold text-2xl flex items-center justify-center shrink-0 ${logoBg}`}
+            className={`h-28 w-28 rounded-2xl text-white font-black text-3xl flex items-center justify-center shrink-0 border-2 border-white shadow-md ${logoBg}`}
             style={company.logoUrl ? { display: 'none' } : undefined}
           >
             {initials}
           </div>
           <div className="flex-1">
             <h1 className="text-2xl font-black text-slate-900">{company.name}</h1>
-            <p className="text-sm font-bold text-slate-400 mt-1">Doanh nghiệp công nghệ</p>
+            <p className="text-sm font-bold text-slate-400 mt-1">{company.industry || 'Doanh nghiệp công nghệ'}</p>
             <div className="flex flex-wrap gap-3 mt-4">
               <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg">
                 <MapPin className="h-3.5 w-3.5" />
@@ -129,11 +131,7 @@ export default function CompanyDetailPage() {
               </span>
               <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg">
                 <Users className="h-3.5 w-3.5" />
-                100 - 500 nhân sự
-              </span>
-              <span className="flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg">
-                <Star className="h-3.5 w-3.5" />
-                4.8/5
+                {company.size || '100 - 500 nhân sự'}
               </span>
               <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg">
                 <Calendar className="h-3.5 w-3.5" />

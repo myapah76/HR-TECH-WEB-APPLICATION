@@ -233,6 +233,13 @@ public class CompanyServiceImpl implements ICompanyService {
     }
 
     @Override
+    public Page<CompanyResponse> getCompaniesForAdmin(String keyword, Pageable pageable) {
+        String cleanKeyword = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();
+        return companyRepository.searchCompaniesForAdmin(cleanKeyword, pageable)
+                .map(companyMapper::toResponse);
+    }
+
+    @Override
     public CompanyResponse getCompanyById(UUID companyId) {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(ErrorCode.COMPANY_NOT_FOUND, "Company not found."));
@@ -501,6 +508,30 @@ public class CompanyServiceImpl implements ICompanyService {
 
         company.setStatus(CompanyStatus.REJECTED);
         Company savedCompany = companyRepository.save(company);
+        return companyMapper.toResponse(savedCompany);
+    }
+
+    @Override
+    @Transactional
+    public CompanyResponse restoreCompany(UUID companyId) {
+        Company company = companyRepository.findCompanyByIdIncludingDeleted(companyId)
+                .orElseThrow(() -> new AppException(ErrorCode.COMPANY_NOT_FOUND, "Company not found."));
+        if (!company.isDeleted()) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Company is not deleted.");
+        }
+
+        company.setDeleted(false);
+        company.setStatus(CompanyStatus.APPROVED);
+        Company savedCompany = companyRepository.save(company);
+
+        // Restore all members
+        List<CompanyMember> members = companyMemberRepository.findAllMembersIncludingDeleted(companyId);
+        for (CompanyMember member : members) {
+            member.setDeleted(false);
+            member.setMembershipStatus(MembershipStatus.ACTIVE);
+            companyMemberRepository.save(member);
+        }
+
         return companyMapper.toResponse(savedCompany);
     }
 }

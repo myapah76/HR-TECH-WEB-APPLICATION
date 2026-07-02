@@ -14,4 +14,7 @@ public interface CompanyMemberRepository extends JpaRepository<CompanyMember, UU
     Optional<CompanyMember> findByUserIdAndDeletedFalse(UUID userId);
     boolean existsByUserIdAndDeletedFalse(UUID userId);
     boolean existsByCompanyIdAndUserIdAndCompanyRoleInAndDeletedFalse(UUID companyId, UUID userId, List<CompanyRole> roles);
+
+    @org.springframework.data.jpa.repository.Query(value = "SELECT * FROM company_members WHERE company_id = :companyId", nativeQuery = true)
+    List<CompanyMember> findAllMembersIncludingDeleted(@org.springframework.data.repository.query.Param("companyId") UUID companyId);
 }

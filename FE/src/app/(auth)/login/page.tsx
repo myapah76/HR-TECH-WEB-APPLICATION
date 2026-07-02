@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { Mail, Lock, Eye, EyeOff, Code } from 'lucide-react'
+import { AlertTriangle, Mail, Lock, Eye, EyeOff, X } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -14,6 +14,7 @@ import { Label } from '@/src/components/ui/label'
 import { useRouter } from 'next/navigation'
 import { useLogin, useGoogleLoginMutation } from '@/src/hooks/auth'
 import { useGoogleLogin } from '@react-oauth/google'
+import { isBlockedLoginError } from '@/src/utils'
 
 import { toast } from 'sonner'
 
@@ -23,6 +24,7 @@ export default function LoginPage() {
   const router = useRouter()
 
   const [showPassword, setShowPassword] = useState(false)
+  const [showBlockedModal, setShowBlockedModal] = useState(false)
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: (tokenResponse) => {
@@ -63,6 +65,11 @@ export default function LoginPage() {
         router.push('/')
         toast.success('Đăng nhập thành công')
         console.log(response)
+      },
+      onError: (error) => {
+        if (isBlockedLoginError(error)) {
+          setShowBlockedModal(true)
+        }
       },
     })
   }
@@ -197,6 +204,43 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {showBlockedModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-slate-900">Tài khoản bị khóa</h2>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">
+                    Tài khoản của bạn đã bị khóa.
+                    <br />
+                    Vui lòng liên hệ quản trị viên để được hỗ trợ.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBlockedModal(false)}
+                className="rounded-xl p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowBlockedModal(false)}
+              className="h-11 w-full rounded-xl bg-blue-600 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+            >
+              Đã hiểu
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

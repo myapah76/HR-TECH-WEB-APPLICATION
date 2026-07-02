@@ -13,6 +13,7 @@ public interface CompanyMapper {
 
     @Mapping(target = "size", expression = "java(company.getSize() != null ? company.getSize().name() : null)")
     @Mapping(target = "status", expression = "java(company.getStatus() != null ? company.getStatus().name() : null)")
+    @Mapping(target = "isDeleted", source = "deleted")
     CompanyResponse toResponse(Company company);
 
     @Mapping(target = "id", ignore = true)

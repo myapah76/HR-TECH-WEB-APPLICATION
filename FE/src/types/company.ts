@@ -12,6 +12,9 @@ export interface CompanyResponse {
   logoUrl: string;
   coverImageUrl: string;
   status: string;
+  industry?: string;
+  size?: string;
+  isDeleted?: boolean;
 }
 
 export interface CompanyMemberResponse {

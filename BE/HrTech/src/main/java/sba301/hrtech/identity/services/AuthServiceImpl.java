@@ -209,11 +209,11 @@ public class AuthServiceImpl implements IAuthService {
 
         User user = userService.getUserEntityByEmail(request.getEmail());
 
-        if (Boolean.TRUE.equals(user.getIsBlocked())) {
-            throw new AppException(ErrorCode.USER_ALREADY_REGISTERED, "User is blocked");
-        }
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new AppException(ErrorCode.WRONG_PASSWORD);
+        }
+        if (Boolean.TRUE.equals(user.getIsBlocked())) {
+            throw new AppException(ErrorCode.USER_IS_BLOCKED, "User is blocked");
         }
         UserDetails userDetails = new CustomUserDetails(user);
         String accessToken = jwtService.generateToken(userDetails);

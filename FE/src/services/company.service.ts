@@ -23,3 +23,21 @@ export const getCompanyMembers = async (companyId: string): Promise<CompanyMembe
   )
   return response.data.data
 }
+
+export interface CompanyUpdateRequest {
+  name: string
+  description?: string
+  logoUrl?: string
+  website?: string
+  industry?: string
+  size?: string
+  address?: string
+}
+
+export const updateCompany = async (
+  id: string,
+  request: CompanyUpdateRequest
+): Promise<CompanyResponse> => {
+  const response = await api.put<ApiResponse<CompanyResponse>>(`/companies/${id}`, request)
+  return response.data.data
+}
