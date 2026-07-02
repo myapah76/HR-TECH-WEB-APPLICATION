@@ -77,7 +77,7 @@ export default function MockInterviewSetupPage() {
     )
   }
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in p-2">
+    <div className="space-y-8 animate-fade-in p-2">
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* SETUP FORM */}

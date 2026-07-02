@@ -187,7 +187,7 @@ export default function AppliedJobsPage() {
   }
 
   return (
-    <div className="max-w-6xl space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
 
       {/* Danh sách ứng tuyển */}
       <div className="space-y-4">

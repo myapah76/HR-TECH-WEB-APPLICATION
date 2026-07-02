@@ -28,7 +28,7 @@ export default function SavedJobsPage() {
   }
 
   return (
-    <div className="max-w-6xl space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
 
       {/* Danh sách công việc đã lưu */}
       <div className="space-y-4">

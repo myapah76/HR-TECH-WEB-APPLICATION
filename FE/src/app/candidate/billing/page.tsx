@@ -15,7 +15,7 @@ export default function CandidateBillingPage() {
   const { data: paymentRes, isLoading: isPaymentLoading, refetch } = useMyPaymentHistoryQuery(0, 50) // Load max 50 recent payments for now
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
       <PageHeader
         title="Quản lý Gói dịch vụ"
         subtitle="Theo dõi gói đăng ký hiện tại và lịch sử thanh toán của bạn."
