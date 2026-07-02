@@ -9,6 +9,7 @@ export interface ApplicationSummaryResponse {
   status: ApplicationStatus;
   appliedAt: string;
   interviewDateTime?: string;
+  candidatePreferredInterviewDateTime?: string;
 }
 
 export interface ApplicationDetailResponse {
@@ -51,6 +52,11 @@ export interface ScheduleInterviewRequest {
 
 export interface RejectInterviewScheduleRequest {
   preferredInterviewDateTime: string;
+  reason: string;
+}
+
+export interface ChangeInterviewScheduleRequest {
+  candidatePreferredInterviewDateTime: string;
   reason: string;
 }
 

@@ -65,8 +65,8 @@ public class NotificationServiceImpl implements INotificationService {
                             request.getInterviewLocation(),
                             request.getInterviewMeetingLink(),
                             request.getNote(),
-                            request.getAcceptLink(),
-                            request.getRejectLink()
+                            request.getActionLink(),
+                            request.getActionLabel()
                     )
                     .whenComplete((result, throwable) -> {
                         if (throwable != null) {

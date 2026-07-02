@@ -3,7 +3,7 @@ import {
     ApplicationDetailResponse,
     ApplicationStatus,
     ApplicationSummaryResponse,
-    RejectInterviewScheduleRequest,
+    ChangeInterviewScheduleRequest,
     ScheduleInterviewRequest,
     SubmitApplicationRequest,
 } from '../types'
@@ -67,20 +67,34 @@ export const scheduleInterview = async (
   return response.data.data
 }
 
-export const rejectInterviewSchedule = async (
-  token: string,
-  request: RejectInterviewScheduleRequest
+export const acceptInterviewSchedule = async (applicationId: string): Promise<ApplicationSummaryResponse> => {
+  const response = await api.post<ApiResponse<ApplicationSummaryResponse>>(
+    `/applications/${applicationId}/interview-schedule/accept`
+  )
+  return response.data.data
+}
+
+export const changeInterviewSchedule = async (
+  applicationId: string,
+  request: ChangeInterviewScheduleRequest
 ): Promise<ApplicationSummaryResponse> => {
   const response = await api.post<ApiResponse<ApplicationSummaryResponse>>(
-    `/applications/interview-schedule/reject?token=${encodeURIComponent(token)}`,
+    `/applications/${applicationId}/interview-schedule/change`,
     request
   )
   return response.data.data
 }
 
-export const acceptInterviewSchedule = async (token: string): Promise<ApplicationSummaryResponse> => {
+export const acceptCandidateReschedule = async (applicationId: string): Promise<ApplicationSummaryResponse> => {
   const response = await api.post<ApiResponse<ApplicationSummaryResponse>>(
-    `/applications/interview-schedule/accept?token=${encodeURIComponent(token)}`
+    `/applications/${applicationId}/interview-schedule/reschedule/accept`
+  )
+  return response.data.data
+}
+
+export const rejectCandidateReschedule = async (applicationId: string): Promise<ApplicationSummaryResponse> => {
+  const response = await api.post<ApiResponse<ApplicationSummaryResponse>>(
+    `/applications/${applicationId}/interview-schedule/reschedule/reject`
   )
   return response.data.data
 }

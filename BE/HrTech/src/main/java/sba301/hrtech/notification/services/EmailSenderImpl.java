@@ -98,8 +98,8 @@ public class EmailSenderImpl implements IEmailSender {
             String interviewLocation,
             String interviewMeetingLink,
             String note,
-            String acceptLink,
-            String rejectLink) {
+            String actionLink,
+            String actionLabel) {
         try {
             Context context = new Context();
             context.setVariable("fullName", fullName);
@@ -110,8 +110,8 @@ public class EmailSenderImpl implements IEmailSender {
             context.setVariable("interviewLocation", interviewLocation);
             context.setVariable("interviewMeetingLink", interviewMeetingLink);
             context.setVariable("note", note);
-            context.setVariable("acceptLink", acceptLink);
-            context.setVariable("rejectLink", rejectLink);
+            context.setVariable("actionLink", actionLink);
+            context.setVariable("actionLabel", actionLabel);
             context.setVariable("year", Year.now().getValue());
 
             String templateName = switch (newStatus) {

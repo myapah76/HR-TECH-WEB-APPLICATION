@@ -14,7 +14,6 @@ import java.util.UUID;
 public interface ApplicationRepository extends JpaRepository<Application, UUID> {
     List<Application> findByUserId(UUID userId);
     List<Application> findByJobId(UUID jobId);
-    Optional<Application> findByInterviewResponseToken(String interviewResponseToken);
     boolean existsByUserIdAndJobId(UUID userId, UUID jobId);
     boolean existsByUserIdAndJobIdAndStatusNotIn(UUID userId, UUID jobId, java.util.Collection<ApplicationStatus> statuses);
 }

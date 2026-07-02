@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useQueries } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import {
   Users,
   Briefcase,
@@ -23,6 +24,8 @@ import {
 } from 'lucide-react'
 import {
   useGetApplicationsByJob,
+  useAcceptCandidateReschedule,
+  useRejectCandidateReschedule,
   useScheduleInterview,
   useUpdateApplicationStatus,
 } from '@/src/hooks/application'
@@ -30,6 +33,7 @@ import { getApplicationsByJob } from '@/src/services/application.service'
 import { useGetManageJobs } from '@/src/hooks/job'
 import { useGetMyCompany } from '@/src/hooks/company'
 import { ApplicationStatus, ApplicationSummaryResponse, ScheduleInterviewRequest } from '@/src/types'
+import { getErrorMessage } from '@/src/utils'
 import ApplicationDetailModal from '@/src/components/recruiter/ApplicationDetailModal'
 
 import {
@@ -84,15 +88,18 @@ export default function HRApplicationsPage() {
 
   const updateStatus = useUpdateApplicationStatus()
   const scheduleInterview = useScheduleInterview()
+  const acceptCandidateReschedule = useAcceptCandidateReschedule()
+  const rejectCandidateReschedule = useRejectCandidateReschedule()
 
   // ─── Derived stats ─────────────────────────────────────────────────────────
   const stats = {
     total: applications.length,
     submitted: applications.filter((a) => a.status === ApplicationStatus.SUBMITTED).length,
     interview: applications.filter((a) =>
-      a.status === ApplicationStatus.INTERVIEW || a.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE
+      a.status === ApplicationStatus.INTERVIEW ||
+      a.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE ||
+      a.status === ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE
     ).length,
-    offer: applications.filter((a) => a.status === ApplicationStatus.OFFER).length,
   }
 
   // ─── Filter ─────────────────────────────────────────────────────────────────
@@ -124,6 +131,34 @@ export default function HRApplicationsPage() {
       }
     )
   }
+
+  const handleAcceptCandidateReschedule = (id: string) => {
+    acceptCandidateReschedule.mutate(id, {
+      onSuccess: (updated) => {
+        toast.success('Đã chấp nhận lịch phỏng vấn ứng viên đề xuất.')
+        if (selectedApp?.id === id) {
+          setSelectedApp({ ...selectedApp, ...updated })
+        }
+      },
+      onError: (error) => {
+        toast.error(getErrorMessage(error))
+      },
+    })
+  }
+
+  const handleRejectCandidateReschedule = (id: string) => {
+    rejectCandidateReschedule.mutate(id, {
+      onSuccess: (updated) => {
+        toast.success('Đã từ chối yêu cầu đổi lịch phỏng vấn.')
+        if (selectedApp?.id === id) {
+          setSelectedApp({ ...selectedApp, ...updated })
+        }
+      },
+      onError: (error) => {
+        toast.error(getErrorMessage(error))
+      },
+    })
+  }
   return (
     <div className="space-y-6 animate-fade-in pb-12">
 
@@ -133,7 +168,6 @@ export default function HRApplicationsPage() {
           { icon: Inbox, label: 'Tổng hồ sơ', value: stats.total, color: 'text-slate-700', bg: 'bg-slate-100' },
           { icon: AlertCircle, label: 'Mới nộp', value: stats.submitted, color: 'text-blue-700', bg: 'bg-blue-50' },
           { icon: Brain, label: 'Phỏng vấn', value: stats.interview, color: 'text-indigo-700', bg: 'bg-indigo-50' },
-          { icon: Star, label: 'Đã Offer', value: stats.offer, color: 'text-emerald-700', bg: 'bg-emerald-50' },
         ].map((s, i) => (
           <div key={i} className="bg-white rounded-2xl border border-slate-200/60 p-4 shadow-xs flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
@@ -296,7 +330,10 @@ export default function HRApplicationsPage() {
           onClose={() => setSelectedApp(null)}
           onStatusChange={handleStatusUpdate}
           onScheduleInterview={handleScheduleInterview}
+          onAcceptCandidateReschedule={handleAcceptCandidateReschedule}
+          onRejectCandidateReschedule={handleRejectCandidateReschedule}
           isSchedulingInterview={scheduleInterview.isPending}
+          isReviewingCandidateReschedule={acceptCandidateReschedule.isPending || rejectCandidateReschedule.isPending}
         />
       )}
     </div>

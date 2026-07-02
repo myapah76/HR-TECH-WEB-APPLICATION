@@ -17,7 +17,7 @@ public interface IEmailSender {
             String interviewLocation,
             String interviewMeetingLink,
             String note,
-            String acceptLink,
-            String rejectLink);
+            String actionLink,
+            String actionLabel);
 
 }
