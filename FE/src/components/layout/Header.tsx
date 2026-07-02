@@ -7,6 +7,7 @@ import { useAuthStore } from '@/src/stores/auth.store'
 import { logout as logoutService } from '@/src/services/auth.service'
 import { useRouter, usePathname } from 'next/navigation'
 import { useGetSystemConfig } from '@/src/hooks/system'
+import { RoleUser } from '@/src/enums/role.enum'
 
 const NAV_ITEMS = [
   { label: 'Trang chủ', path: '/', id: 'nav-home' },
@@ -19,7 +20,8 @@ export default function Header() {
   const { user, logout: clearAuth } = useAuthStore()
   const router = useRouter()
   const pathname = usePathname()
-  const { data: config } = useGetSystemConfig()
+  const isAdmin = user?.roleResponse?.name === RoleUser.ADMIN_SYSTEM
+  const { data: config } = useGetSystemConfig(isAdmin)
 
   useEffect(() => {
     if (config?.websiteName) {
