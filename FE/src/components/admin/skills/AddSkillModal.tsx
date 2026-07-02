@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Sparkles, AlertCircle } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface AddSkillModalProps {
   isOpen: boolean
@@ -13,6 +14,7 @@ const AddSkillModal = ({ isOpen, onClose, onAdd, availableRoles }: AddSkillModal
   const [addDesc, setAddDesc] = useState('')
   const [selectedRoles, setSelectedRoles] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+  const [roleError, setRoleError] = useState(false)
 
   if (!isOpen) return null
 
@@ -21,6 +23,13 @@ const AddSkillModal = ({ isOpen, onClose, onAdd, availableRoles }: AddSkillModal
     const trimmedName = addName.trim()
     if (!trimmedName) return
 
+    if (selectedRoles.length === 0) {
+      setRoleError(true)
+      toast.error('Bắt buộc phải chọn ít nhất 1 vai trò tuyển dụng chuẩn!')
+      return
+    }
+
+    setRoleError(false)
     setLoading(true)
     try {
       await onAdd(trimmedName, addDesc.trim(), selectedRoles)
@@ -28,6 +37,7 @@ const AddSkillModal = ({ isOpen, onClose, onAdd, availableRoles }: AddSkillModal
       setAddName('')
       setAddDesc('')
       setSelectedRoles([])
+      setRoleError(false)
       onClose()
     } finally {
       setLoading(false)
@@ -35,6 +45,7 @@ const AddSkillModal = ({ isOpen, onClose, onAdd, availableRoles }: AddSkillModal
   }
 
   const toggleRoleSelection = (role: string) => {
+    setRoleError(false)
     if (selectedRoles.includes(role)) {
       setSelectedRoles(selectedRoles.filter((r) => r !== role))
     } else {
@@ -57,7 +68,9 @@ const AddSkillModal = ({ isOpen, onClose, onAdd, availableRoles }: AddSkillModal
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-black text-slate-700">Tên kỹ năng</label>
+            <label className="text-sm font-black text-slate-700">
+              Tên kỹ năng <span className="text-rose-500">*</span>
+            </label>
             <input
               type="text"
               required
@@ -81,11 +94,18 @@ const AddSkillModal = ({ isOpen, onClose, onAdd, availableRoles }: AddSkillModal
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-black text-slate-700">
-              Chọn vai trò (Chỉ được chọn từ danh mục chuẩn)
+            <label className="text-sm font-black text-slate-700 flex items-center justify-between">
+              <span>
+                Chọn vai trò tuyển dụng <span className="text-rose-500">*</span>
+              </span>
+              <span className="text-xs font-semibold text-slate-400">
+                ({selectedRoles.length} đã chọn)
+              </span>
             </label>
             
-            <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-100 rounded-2xl max-h-36 overflow-y-auto">
+            <div className={`flex flex-wrap gap-2 p-3 bg-slate-50 border rounded-2xl max-h-36 overflow-y-auto transition-colors ${
+              roleError ? 'border-rose-300 bg-rose-50/30' : 'border-slate-100'
+            }`}>
               {availableRoles.map((role) => {
                 const isSelected = selectedRoles.includes(role)
                 return (
@@ -111,6 +131,13 @@ const AddSkillModal = ({ isOpen, onClose, onAdd, availableRoles }: AddSkillModal
                 </div>
               )}
             </div>
+
+            {roleError && (
+              <p className="text-xs text-rose-500 font-bold flex items-center gap-1 mt-0.5">
+                <AlertCircle className="h-3.5 w-3.5" />
+                Vui lòng chọn ít nhất 1 vai trò cho kỹ năng mới.
+              </p>
+            )}
           </div>
 
           <div className="flex justify-end gap-2 mt-2">

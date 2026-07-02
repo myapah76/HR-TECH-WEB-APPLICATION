@@ -6,22 +6,10 @@ import '@xyflow/react/dist/style.css'
 import { Network, UserCheck, GitBranch, GitMerge, Workflow } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
 import { getErrorMessage } from '@/src/utils'
-
 import {
-  getSkillGraph,
-  createSkill,
-  updateSkill,
-  deleteSkill,
-  addRelatedSkill,
-  addParentChild,
-  deleteRelationship,
-  getPendingSkills,
-  approveSkill,
-  rejectSkill,
-  getPendingRelationships,
-  approveRelationship,
-  rejectRelationship,
-  getDistinctCanonicalRoles,
+  getSkillGraph, createSkill, updateSkill, deleteSkill, addRelatedSkill,
+  addParentChild, deleteRelationship, getPendingSkills, approveSkill, approveAllSkills, rejectSkill,
+  getPendingRelationships, approveRelationship, approveAllPendingRelationships, rejectRelationship, getDistinctCanonicalRoles,
 } from '@/src/services/skill.service'
 import { Skill, SkillEdge, PendingRelationship } from '@/src/types/skill'
 import { SkillTab } from '@/src/enums/skill.enum'
@@ -30,11 +18,18 @@ import SkillGraphView from '@/src/components/admin/skills/SkillGraphView'
 import PendingSkillsTab from '@/src/components/admin/skills/PendingSkillsTab'
 import PendingRelationsTab from '@/src/components/admin/skills/PendingRelationsTab'
 import RoleAliasesTab from '@/src/components/admin/skills/RoleAliasesTab'
-import { useSkillPhysics } from '@/src/hooks/skill'
+import { useSkillPhysics } from '@/src/utils/skillPhysicsUtils'
+import { useDrillDownGraph } from '@/src/utils/skillDrillDownUtils'
 
 export default function AdminSkillsDashboard() {
   const [activeTab, setActiveTab] = useState<SkillTab>(SkillTab.GRAPH)
   const [selectedNode, setSelectedNode] = useState<Skill | null>(null)
+  const [skills, setSkills] = useState<Skill[]>([])
+  const [edgesList, setEdgesList] = useState<SkillEdge[]>([])
+  const [isAddOpen, setIsAddOpen] = useState(false)
+  const [pendingSkills, setPendingSkills] = useState<Skill[]>([])
+  const [pendingRels, setPendingRels] = useState<PendingRelationship[]>([])
+  const [availableRoles, setAvailableRoles] = useState<string[]>([])
 
   const {
     nodes,
@@ -48,14 +43,22 @@ export default function AdminSkillsDashboard() {
     handleNodeDragStop,
   } = useSkillPhysics(selectedNode?.id || null)
 
-  const [skills, setSkills] = useState<Skill[]>([])
-  const [edgesList, setEdgesList] = useState<SkillEdge[]>([])
-  const [isAddOpen, setIsAddOpen] = useState(false)
-  const [pendingSkills, setPendingSkills] = useState<Skill[]>([])
-  const [pendingRels, setPendingRels] = useState<PendingRelationship[]>([])
-  const [availableRoles, setAvailableRoles] = useState<string[]>([])
+  const {
+    visibleNodesData,
+    visibleEdgesData,
+    expandAll,
+    collapseAll,
+    expandPathToSkill,
+  } = useDrillDownGraph(skills, edgesList, availableRoles, selectedNode?.id || null)
 
   const nodeTypes = useMemo(() => ({ skillNode: SkillNodeComponent }), [])
+
+  // Update simulation when visible nodes/edges change in drill-down mode
+  useEffect(() => {
+    if (visibleNodesData.length > 0) {
+      initializeSimulation(visibleNodesData, visibleEdgesData)
+    }
+  }, [visibleNodesData, visibleEdgesData])
 
   // ── Data Fetching ──────────────────────────────────────────────────────────
 
@@ -64,7 +67,6 @@ export default function AdminSkillsDashboard() {
       const graph = await getSkillGraph()
       setSkills(graph.nodes)
       setEdgesList(graph.edges)
-      initializeSimulation(graph.nodes, graph.edges)
       const roles = await getDistinctCanonicalRoles()
       setAvailableRoles(roles)
     } catch (err) {
@@ -91,6 +93,23 @@ export default function AdminSkillsDashboard() {
   // ── Graph Handlers ─────────────────────────────────────────────────────────
 
   const handleNodeClick = (_: any, node: Node) => {
+    // Toggle deselect: If clicking the currently selected node again, clear selection to exit focus mode
+    if (selectedNode?.id === node.id) {
+      setSelectedNode(null)
+      return
+    }
+
+    if (node.id.startsWith('role:')) {
+      const canonicalRole = node.id.replace('role:', '')
+      setSelectedNode({
+        id: node.id,
+        name: canonicalRole,
+        description: `Vai trò ${canonicalRole}`,
+        roles: [canonicalRole],
+        isVerified: true,
+      } as any)
+      return
+    }
     const skill = skills.find((s) => s.id === node.id)
     if (skill) setSelectedNode(skill)
   }
@@ -171,6 +190,17 @@ export default function AdminSkillsDashboard() {
     }
   }
 
+  const handleApproveAllSkills = async () => {
+    try {
+      await approveAllSkills()
+      toast.success('Đã duyệt tất cả kỹ năng thành công!')
+      loadPendingData()
+      loadGraph()
+    } catch (err) {
+      toast.error('Duyệt tất cả kỹ năng thất bại: ' + getErrorMessage(err))
+    }
+  }
+
   const handleRejectSkill = async (id: string) => {
     if (!confirm('Bạn có muốn loại bỏ và xóa kỹ năng này không?')) return
     try {
@@ -191,6 +221,17 @@ export default function AdminSkillsDashboard() {
       loadGraph()
     } catch (err) {
       toast.error('Duyệt quan hệ thất bại: ' + getErrorMessage(err))
+    }
+  }
+
+  const handleApproveAllRelationships = async () => {
+    try {
+      await approveAllPendingRelationships()
+      toast.success('Đã duyệt tất cả mối quan hệ thành công!')
+      loadPendingData()
+      loadGraph()
+    } catch (err) {
+      toast.error('Duyệt tất cả quan hệ thất bại: ' + getErrorMessage(err))
     }
   }
 
@@ -216,37 +257,61 @@ export default function AdminSkillsDashboard() {
     { id: SkillTab.GRAPH, label: 'Bản đồ Đồ thị', icon: Network },
     {
       id: SkillTab.PENDING_SKILLS,
-      label: `Duyệt Kỹ năng (${pendingSkills.length})`,
+      label: `Duyệt Kỹ năng`,
       icon: UserCheck,
     },
-    { id: SkillTab.PENDING_RELS, label: `Duyệt Liên kết (${pendingRels.length})`, icon: GitBranch },
+    { id: SkillTab.PENDING_RELS, label: `Duyệt Liên kết`, icon: GitBranch },
     { id: SkillTab.ROLE_ALIAS, label: 'Quản lý Vai trò (Role Alias)', icon: GitMerge },
   ]
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div
-      className="flex flex-col h-[calc(100vh-120px)] w-full max-w-full px-4"
-      id="skills-admin-page"
-    >
+    <div className="flex flex-col h-[calc(100vh-4rem)] p-6 bg-slate-50 overflow-hidden" id="skills-admin-page">
       <Toaster position="top-right" richColors />
 
-      <div className="mb-6 flex bg-slate-100/80 p-1 rounded-xl border border-slate-200/50 self-start">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${
-              activeTab === tab.id
+      {/* Header Tabs */}
+      <div className="flex items-center justify-between mb-4 shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="p-2 bg-violet-600 text-white rounded-xl shadow-md shadow-violet-500/20">
+            <Workflow className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-slate-800 tracking-tight">
+              Quản lý Đồ thị Kỹ năng (Skill Graph)
+            </h1>
+            <p className="text-xs text-slate-500 font-medium">
+              Kiểm duyệt, chỉnh sửa và trực quan hóa cây mối quan hệ kỹ năng Neo4j
+            </p>
+          </div>
+        </div>
+
+        {/* Tab switcher buttons */}
+        <div className="flex bg-slate-200/60 p-1 rounded-xl gap-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === tab.id
                 ? 'bg-white text-violet-600 shadow-xs'
                 : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <tab.icon className="h-4 w-4" />
-            {tab.label}
-          </button>
-        ))}
+                }`}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+              {tab.id === SkillTab.PENDING_SKILLS && pendingSkills.length > 0 && (
+                <span className="ml-1 px-2 py-0.5 text-xs font-black bg-amber-500 text-white rounded-full">
+                  {pendingSkills.length}
+                </span>
+              )}
+              {tab.id === SkillTab.PENDING_RELS && pendingRels.length > 0 && (
+                <span className="ml-1 px-2 py-0.5 text-xs font-black bg-violet-500 text-white rounded-full">
+                  {pendingRels.length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tab: Graph View */}
@@ -275,6 +340,9 @@ export default function AdminSkillsDashboard() {
           onAddRel={handleAddRelationship}
           onDeleteRel={handleDeleteRel}
           currentNodeRels={currentNodeRels}
+          onExpandAll={expandAll}
+          onCollapseAll={collapseAll}
+          onExpandPathToSkill={expandPathToSkill}
         />
       )}
 
@@ -283,6 +351,7 @@ export default function AdminSkillsDashboard() {
         <PendingSkillsTab
           pendingSkills={pendingSkills}
           onApprove={handleApproveSkill}
+          onApproveAll={handleApproveAllSkills}
           onReject={handleRejectSkill}
         />
       )}
@@ -292,6 +361,7 @@ export default function AdminSkillsDashboard() {
         <PendingRelationsTab
           pendingRels={pendingRels}
           onApprove={handleApproveRel}
+          onApproveAll={handleApproveAllRelationships}
           onReject={handleRejectRel}
         />
       )}

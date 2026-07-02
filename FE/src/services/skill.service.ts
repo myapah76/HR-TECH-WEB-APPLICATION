@@ -61,6 +61,10 @@ export const approveSkill = async (id: string): Promise<Skill> => {
   return response.data.data
 }
 
+export const approveAllSkills = async (): Promise<void> => {
+  await api.put<ApiResponse<void>>(`/skills/approve-all`)
+}
+
 export const rejectSkill = async (id: string): Promise<void> => {
   await api.delete<ApiResponse<void>>(`/skills/${id}/reject`)
 }
@@ -74,6 +78,10 @@ export const approveRelationship = async (sourceId: string, targetId: string, ty
   await api.put<ApiResponse<void>>(`/skills/${sourceId}/relationships/${targetId}/approve`, null, {
     params: { type }
   })
+}
+
+export const approveAllPendingRelationships = async (): Promise<void> => {
+  await api.put<ApiResponse<void>>(`/skills/relationships/approve-all`)
 }
 
 export const rejectRelationship = async (sourceId: string, targetId: string, type: string): Promise<void> => {

@@ -2,18 +2,26 @@ import React, { useState, useEffect } from 'react'
 import { Search, CheckCircle, XCircle, CheckCheck, Loader2 } from 'lucide-react'
 import { Skill } from '@/src/types/skill'
 import Pagination from '@/src/components/common/Pagination'
+import ConfirmModal from '@/src/components/common/ConfirmModal'
 
 interface PendingSkillsTabProps {
   pendingSkills: Skill[]
   onApprove: (id: string) => Promise<void>
+  onApproveAll: () => Promise<void>
   onReject: (id: string) => Promise<void>
 }
 
-const PendingSkillsTab = ({ pendingSkills, onApprove, onReject }: PendingSkillsTabProps) => {
+const PendingSkillsTab = ({
+  pendingSkills,
+  onApprove,
+  onApproveAll,
+  onReject,
+}: PendingSkillsTabProps) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [isApprovingAll, setIsApprovingAll] = useState(false)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
 
   const filtered = pendingSkills.filter((s) =>
     s.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -30,29 +38,22 @@ const PendingSkillsTab = ({ pendingSkills, onApprove, onReject }: PendingSkillsT
     currentPage * itemsPerPage
   )
 
-  const handleApproveAll = async () => {
-    if (filtered.length === 0) return
-    if (!confirm(`Bạn có chắc chắn muốn duyệt tất cả ${filtered.length} kỹ năng này không?`)) return
-
+  const handleConfirmApproveAll = async () => {
     setIsApprovingAll(true)
     try {
-      for (const skill of filtered) {
-        await onApprove(skill.id)
-      }
+      await onApproveAll()
     } finally {
       setIsApprovingAll(false)
+      setShowConfirmModal(false)
     }
   }
 
   return (
     <div className="flex-1 bg-white rounded-3xl border border-slate-200/60 p-6 shadow-sm flex flex-col min-h-0 overflow-hidden">
-      
       {/* Header controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 shrink-0">
         <div>
-          <h2 className="text-lg font-black text-slate-800">
-            Danh sách Kỹ năng Chờ Duyệt
-          </h2>
+          <h2 className="text-lg font-black text-slate-800">Danh sách Kỹ năng Chờ Duyệt</h2>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
             Tổng cộng: {pendingSkills.length} kỹ năng đang chờ kiểm duyệt
           </p>
@@ -72,8 +73,8 @@ const PendingSkillsTab = ({ pendingSkills, onApprove, onReject }: PendingSkillsT
 
           <button
             type="button"
-            onClick={handleApproveAll}
-            disabled={isApprovingAll || filtered.length === 0}
+            onClick={() => setShowConfirmModal(true)}
+            disabled={isApprovingAll || pendingSkills.length === 0}
             className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed rounded-xl transition-all shadow-xs shrink-0"
           >
             {isApprovingAll ? (
@@ -100,9 +101,7 @@ const PendingSkillsTab = ({ pendingSkills, onApprove, onReject }: PendingSkillsT
           <tbody className="divide-y divide-slate-100 text-sm">
             {paginatedSkills.map((skill) => (
               <tr key={skill.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-6 py-4 font-bold text-slate-800 capitalize">
-                  {skill.name}
-                </td>
+                <td className="px-6 py-4 font-bold text-slate-800 capitalize">{skill.name}</td>
                 <td className="px-6 py-4 text-slate-500 max-w-xs truncate">
                   {skill.description || <span className="italic text-slate-300">Không có mô tả</span>}
                 </td>
@@ -148,6 +147,19 @@ const PendingSkillsTab = ({ pendingSkills, onApprove, onReject }: PendingSkillsT
         itemsPerPage={itemsPerPage}
         onPageChange={setCurrentPage}
         onItemsPerPageChange={setItemsPerPage}
+      />
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        title="Duyệt hàng loạt kỹ năng"
+        description={`Bạn có chắc chắn muốn phê duyệt tất cả ${pendingSkills.length} kỹ năng đang chờ kiểm duyệt không?`}
+        confirmText="Xác nhận duyệt tất cả"
+        cancelText="Hủy bỏ"
+        variant="success"
+        isLoading={isApprovingAll}
+        onConfirm={handleConfirmApproveAll}
+        onClose={() => setShowConfirmModal(false)}
       />
     </div>
   )

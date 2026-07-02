@@ -144,21 +144,53 @@ export const applyPhysicsTick = (
 ) => {
     const nodeList = Array.from(simNodes.entries())
 
-    // 1. Repulsion force between all nodes (charge)
+    // 1. Hard Body Collision & Repulsion force between all nodes
     for (let i = 0; i < nodeList.length; i++) {
-        const [_, n1] = nodeList[i]
+        const [id1, n1] = nodeList[i]
+        const isRole1 = id1.startsWith('role:')
+        const radius1 = isRole1 ? 85 : 55
+
         for (let j = i + 1; j < nodeList.length; j++) {
-            const [_, n2] = nodeList[j]
+            const [id2, n2] = nodeList[j]
+            const isRole2 = id2.startsWith('role:')
+            const radius2 = isRole2 ? 85 : 55
+
             const dx = n2.x - n1.x
             const dy = n2.y - n1.y
             const distSq = dx * dx + dy * dy + 0.01
             const dist = Math.sqrt(distSq)
 
+            const minDistance = radius1 + radius2 + 35 // Minimum safe padding
+
+            // A. Hard Body Collision: Instantly separate overlapping nodes
+            if (dist < minDistance) {
+                const overlap = minDistance - dist
+                const nx = dx / dist
+                const ny = dy / dist
+                const pushX = nx * overlap * 0.45
+                const pushY = ny * overlap * 0.45
+
+                if (n1.fx === undefined && n2.fx === undefined) {
+                    n1.x -= pushX
+                    n1.y -= pushY
+                    n2.x += pushX
+                    n2.y += pushY
+                } else if (n1.fx === undefined) {
+                    n1.x -= pushX * 2
+                    n1.y -= pushY * 2
+                } else if (n2.fx === undefined) {
+                    n2.x += pushX * 2
+                    n2.y += pushY * 2
+                }
+            }
+
+            // B. Smooth Repulsion force for spatial layout
             if (dist < 900) {
-                const repulsionConstant = 320
+                const repulsionConstant = 260
                 const force = (repulsionConstant * repulsionConstant) / distSq
-                const fx = (dx / dist) * force * 0.1 * alpha
-                const fy = (dy / dist) * force * 0.1 * alpha
+                const maxF = 12
+                const fx = Math.min(maxF, Math.max(-maxF, (dx / dist) * force * 0.08 * alpha))
+                const fy = Math.min(maxF, Math.max(-maxF, (dy / dist) * force * 0.08 * alpha))
 
                 if (n1.fx === undefined) {
                     n1.vx -= fx
@@ -181,8 +213,9 @@ export const applyPhysicsTick = (
             const dy = target.y - source.y
             const dist = Math.sqrt(dx * dx + dy * dy) + 0.01
             const force = forceStrength * (dist - k)
-            const fx = (dx / dist) * force * alpha
-            const fy = (dy / dist) * force * alpha
+            const maxLinkF = 15
+            const fx = Math.min(maxLinkF, Math.max(-maxLinkF, (dx / dist) * force * alpha))
+            const fy = Math.min(maxLinkF, Math.max(-maxLinkF, (dy / dist) * force * alpha))
 
             if (source.fx === undefined) {
                 source.vx += fx
@@ -211,8 +244,8 @@ export const applyPhysicsTick = (
             simNode.x += simNode.vx
             simNode.y += simNode.vy
 
-            simNode.vx *= 0.55
-            simNode.vy *= 0.55
+            simNode.vx = Math.min(12, Math.max(-12, simNode.vx * 0.5))
+            simNode.vy = Math.min(12, Math.max(-12, simNode.vy * 0.5))
         }
     })
 }
@@ -233,12 +266,12 @@ export const updateNodesStyle = (nds: any[], selectedNodeId: string | null, neig
     })
 }
 
-// Update edges opacity & styling based on selection
 export const updateEdgesStyle = (eds: any[], selectedNodeId: string | null) => {
     return eds.map((e) => {
+        const isParentOf = e.data?.type === 'PARENT_OF' || e.label === 'PARENT_OF'
+        const isPending = e.data?.status === 'PENDING'
+
         if (!selectedNodeId) {
-            const isParentOf = e.data?.type === 'PARENT_OF'
-            const isPending = e.data?.status === 'PENDING'
             return {
                 ...e,
                 animated: isPending,
@@ -255,12 +288,18 @@ export const updateEdgesStyle = (eds: any[], selectedNodeId: string | null) => {
                     strokeDasharray: isPending ? '5,5' : undefined,
                     opacity: 1,
                 },
+                markerEnd: isParentOf
+                    ? {
+                        type: MarkerType.ArrowClosed,
+                        color: '#8b5cf6',
+                        width: 15,
+                        height: 15,
+                      }
+                    : undefined,
             }
         }
 
         const isConnected = e.source === selectedNodeId || e.target === selectedNodeId
-        const isParentOf = e.data?.type === 'PARENT_OF'
-        const isPending = e.data?.status === 'PENDING'
 
         return {
             ...e,
@@ -276,12 +315,20 @@ export const updateEdgesStyle = (eds: any[], selectedNodeId: string | null) => {
             },
             style: {
                 stroke: isConnected
-                    ? (isParentOf ? '#a78bfa' : '#64748b')
+                    ? (isParentOf ? '#8b5cf6' : '#64748b')
                     : (isParentOf ? '#8b5cf6' : '#94a3b8'),
                 strokeWidth: isConnected ? 3.5 : 1,
                 strokeDasharray: isPending ? '5,5' : undefined,
                 opacity: isConnected ? 1 : 0.15,
             },
+            markerEnd: isParentOf
+                ? {
+                    type: MarkerType.ArrowClosed,
+                    color: isConnected ? '#7c3aed' : '#8b5cf6',
+                    width: isConnected ? 18 : 15,
+                    height: isConnected ? 18 : 15,
+                  }
+                : undefined,
         }
     })
 }

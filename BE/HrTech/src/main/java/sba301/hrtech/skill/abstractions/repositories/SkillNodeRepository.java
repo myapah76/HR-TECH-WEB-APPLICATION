@@ -75,6 +75,26 @@ public interface SkillNodeRepository extends Neo4jRepository<SkillNode, String> 
                                     @Param("type") String type);
 
     @Query("""
+                MATCH (s:Skill {id: $id})
+                SET s.is_verified = true, s.updated_at = datetime()
+            """)
+    void approveSkillById(@Param("id") String id);
+
+    @Query("""
+                MATCH (s:Skill)
+                WHERE s.is_verified = false OR s.is_verified IS NULL
+                SET s.is_verified = true, s.updated_at = datetime()
+            """)
+    void approveAllPendingSkills();
+
+    @Query("""
+                MATCH (a:Skill)-[r]->(b:Skill)
+                WHERE r.status = 'PENDING'
+                SET r.status = 'APPROVED'
+            """)
+    void approveAllPendingRelationships();
+
+    @Query("""
                 MATCH (a:Skill {id: $sourceId})-[r]->(b:Skill {id: $targetId})
                 WHERE type(r) = $type AND r.status = 'PENDING'
                 DELETE r

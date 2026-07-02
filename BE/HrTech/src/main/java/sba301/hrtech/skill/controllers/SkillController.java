@@ -72,6 +72,12 @@ public class SkillController {
         return ResponseEntity.ok(ApiResponse.success(skillService.approveSkill(id)));
     }
 
+    @PutMapping("/approve-all")
+    public ResponseEntity<ApiResponse<Void>> approveAllSkills() {
+        skillService.approveAllSkills();
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
     @DeleteMapping("/{id}/reject")
     public ResponseEntity<ApiResponse<Void>> rejectSkill(@PathVariable String id) {
         skillService.rejectSkill(id);
@@ -89,6 +95,12 @@ public class SkillController {
             @PathVariable String targetId,
             @RequestParam String type) {
         skillService.approvePendingRelationship(sourceId, targetId, type);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @PutMapping("/relationships/approve-all")
+    public ResponseEntity<ApiResponse<Void>> approveAllPendingRelationships() {
+        skillService.approveAllPendingRelationships();
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

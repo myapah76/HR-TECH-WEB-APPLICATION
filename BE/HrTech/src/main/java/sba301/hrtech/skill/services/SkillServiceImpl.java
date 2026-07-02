@@ -123,12 +123,16 @@ public class SkillServiceImpl implements ISkillService {
 
     @Override
     public SkillResponse approveSkill(String id) {
+        skillNodeRepository.approveSkillById(id);
         SkillNode skillNode = findSkillOrThrow(id);
-        skillNode.setIsVerified(true);
-        skillNode.setUpdatedAt(Instant.now());
-        SkillNode saved = skillNodeRepository.save(skillNode);
-        log.info("Approved skill: {}", saved.getName());
-        return skillMapper.toResponse(saved);
+        log.info("Approved skill: {}", skillNode.getName());
+        return skillMapper.toResponse(skillNode);
+    }
+
+    @Override
+    public void approveAllSkills() {
+        skillNodeRepository.approveAllPendingSkills();
+        log.info("Approved all pending skills");
     }
 
     @Override
@@ -151,6 +155,12 @@ public class SkillServiceImpl implements ISkillService {
 
         skillNodeRepository.approvePendingRelationship(sourceId, targetId, type);
         log.info("Approved {} between {} and {}", type, sourceId, targetId);
+    }
+
+    @Override
+    public void approveAllPendingRelationships() {
+        skillNodeRepository.approveAllPendingRelationships();
+        log.info("Approved all pending relationships");
     }
 
     @Override
@@ -236,7 +246,7 @@ public class SkillServiceImpl implements ISkillService {
 
     private List<String> validateAndGetRoles(List<String> roles) {
         if (roles == null || roles.isEmpty()) {
-            return new ArrayList<>();
+            throw new AppException(ErrorCode.BAD_REQUEST, "Kỹ năng mới bắt buộc phải thuộc ít nhất 1 vai trò tuyển dụng");
         }
         List<String> validRoles = roleAliasRepository.findDistinctCanonicalRoles();
         List<String> normalized = new ArrayList<>();

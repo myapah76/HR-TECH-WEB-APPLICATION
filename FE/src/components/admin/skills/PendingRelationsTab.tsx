@@ -2,18 +2,26 @@ import React, { useState, useEffect } from 'react'
 import { Search, CheckCircle, XCircle, CheckCheck, Loader2 } from 'lucide-react'
 import { PendingRelationship } from '@/src/types/skill'
 import Pagination from '@/src/components/common/Pagination'
+import ConfirmModal from '@/src/components/common/ConfirmModal'
 
 interface PendingRelationsTabProps {
   pendingRels: PendingRelationship[]
   onApprove: (sourceId: string, targetId: string, type: string) => Promise<void>
+  onApproveAll: () => Promise<void>
   onReject: (sourceId: string, targetId: string, type: string) => Promise<void>
 }
 
-const PendingRelationsTab = ({ pendingRels, onApprove, onReject }: PendingRelationsTabProps) => {
+const PendingRelationsTab = ({
+  pendingRels,
+  onApprove,
+  onApproveAll,
+  onReject,
+}: PendingRelationsTabProps) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [isApprovingAll, setIsApprovingAll] = useState(false)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
 
   const filtered = pendingRels.filter(
     (rel) =>
@@ -32,29 +40,22 @@ const PendingRelationsTab = ({ pendingRels, onApprove, onReject }: PendingRelati
     currentPage * itemsPerPage
   )
 
-  const handleApproveAll = async () => {
-    if (filtered.length === 0) return
-    if (!confirm(`Bạn có chắc chắn muốn duyệt tất cả ${filtered.length} mối quan hệ này không?`)) return
-
+  const handleConfirmApproveAll = async () => {
     setIsApprovingAll(true)
     try {
-      for (const rel of filtered) {
-        await onApprove(rel.sourceSkillId, rel.targetSkillId, rel.relationshipType)
-      }
+      await onApproveAll()
     } finally {
       setIsApprovingAll(false)
+      setShowConfirmModal(false)
     }
   }
 
   return (
     <div className="flex-1 bg-white rounded-3xl border border-slate-200/60 p-6 shadow-sm flex flex-col min-h-0 overflow-hidden">
-      
       {/* Header controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 shrink-0">
         <div>
-          <h2 className="text-lg font-black text-slate-800">
-            Danh sách Liên kết Chờ Duyệt (từ AI)
-          </h2>
+          <h2 className="text-lg font-black text-slate-800">Danh sách Liên kết Chờ Duyệt (từ AI)</h2>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
             Tổng cộng: {pendingRels.length} mối quan hệ đang chờ kiểm duyệt
           </p>
@@ -74,8 +75,8 @@ const PendingRelationsTab = ({ pendingRels, onApprove, onReject }: PendingRelati
 
           <button
             type="button"
-            onClick={handleApproveAll}
-            disabled={isApprovingAll || filtered.length === 0}
+            onClick={() => setShowConfirmModal(true)}
+            disabled={isApprovingAll || pendingRels.length === 0}
             className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed rounded-xl transition-all shadow-xs shrink-0"
           >
             {isApprovingAll ? (
@@ -162,6 +163,19 @@ const PendingRelationsTab = ({ pendingRels, onApprove, onReject }: PendingRelati
         itemsPerPage={itemsPerPage}
         onPageChange={setCurrentPage}
         onItemsPerPageChange={setItemsPerPage}
+      />
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        title="Duyệt hàng loạt liên kết kỹ năng"
+        description={`Bạn có chắc chắn muốn phê duyệt tất cả ${pendingRels.length} mối quan hệ kỹ năng đang chờ kiểm duyệt không?`}
+        confirmText="Xác nhận duyệt tất cả"
+        cancelText="Hủy bỏ"
+        variant="success"
+        isLoading={isApprovingAll}
+        onConfirm={handleConfirmApproveAll}
+        onClose={() => setShowConfirmModal(false)}
       />
     </div>
   )

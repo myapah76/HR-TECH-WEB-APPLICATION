@@ -22,9 +22,11 @@ public interface ISkillService {
     // Admin review
     List<SkillResponse> getPendingSkills();
     SkillResponse approveSkill(String id);
+    void approveAllSkills();
     void rejectSkill(String id);
     List<PendingRelationshipResponse> getPendingRelationships();
     void approvePendingRelationship(String sourceId, String targetId, String type);
+    void approveAllPendingRelationships();
     void rejectPendingRelationship(String sourceId, String targetId, String type);
     void addRelatedSkill(String skillId, String relatedSkillId);
     void addParentChild(String parentId, String childId);

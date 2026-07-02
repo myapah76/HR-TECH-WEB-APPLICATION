@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react'
 import { ReactFlow, ReactFlowProvider, useReactFlow, Controls, Background, Panel, Node } from '@xyflow/react'
-import { Plus, Search, X } from 'lucide-react'
+import { Plus, Search, X, Maximize2, Minimize2 } from 'lucide-react'
 import { Skill, SkillEdge } from '@/src/types/skill'
 import SkillDetailPanel from './SkillDetailPanel'
 import AddSkillModal from './AddSkillModal'
 import SkillGraphLegend from './SkillGraphLegend'
 import FloatingConnectionEdge from './FloatingConnectionEdge'
+import RoleNode from './RoleNode'
+import SkillNodeComponent from './SkillNode'
 
 const edgeTypes = {
   floating: FloatingConnectionEdge,
@@ -35,6 +37,9 @@ interface SkillGraphViewProps {
   onAddRel: (targetId: string, type: 'PARENT_OF' | 'RELATED_TO') => Promise<void>
   onDeleteRel: (targetId: string, type: 'PARENT_OF' | 'RELATED_TO') => Promise<void>
   currentNodeRels: SkillEdge[]
+  onExpandAll?: () => void
+  onCollapseAll?: () => void
+  onExpandPathToSkill?: (skillId: string) => void
 }
 
 const SkillGraphInner = ({
@@ -60,10 +65,22 @@ const SkillGraphInner = ({
   onAddRel,
   onDeleteRel,
   currentNodeRels,
+  onExpandAll,
+  onCollapseAll,
+  onExpandPathToSkill,
 }: SkillGraphViewProps) => {
   const { setCenter } = useReactFlow()
   const [searchQuery, setSearchQuery] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
+
+  const mergedNodeTypes = useMemo(
+    () => ({
+      skillNode: SkillNodeComponent,
+      roleNode: RoleNode,
+      ...nodeTypes,
+    }),
+    [nodeTypes]
+  )
 
   const suggestions = useMemo(() => {
     if (!searchQuery.trim()) return []
@@ -71,15 +88,33 @@ const SkillGraphInner = ({
     return skills.filter((s) => s.name.toLowerCase().includes(query))
   }, [skills, searchQuery])
 
+  const handleReactFlowNodeClick = (_: any, flowNode: Node) => {
+    // 1. Smoothly zoom and center viewport on clicked node
+    if (flowNode.position) {
+      const targetZoom = flowNode.id.startsWith('role:') ? 1.1 : 1.3
+      setCenter(flowNode.position.x, flowNode.position.y, { zoom: targetZoom, duration: 800 })
+    }
+
+    // 2. Select node to highlight its relationships and dim unrelated nodes
+    onNodeClick(_, flowNode)
+  }
+
   const handleSelectSkill = (skill: Skill) => {
-    // 1. Select the node to open detail panel
+    // 1. Expand path to skill if drill-down is active
+    if (onExpandPathToSkill) {
+      onExpandPathToSkill(skill.id)
+    }
+
+    // 2. Select the node to open detail panel
     onNodeClick(null as any, { id: skill.id } as Node)
 
-    // 2. Zoom & center the viewport on the selected node
-    const flowNode = nodes.find((n) => n.id === skill.id)
-    if (flowNode) {
-      setCenter(flowNode.position.x, flowNode.position.y, { zoom: 1.3, duration: 800 })
-    }
+    // 3. Zoom & center the viewport on the selected node
+    setTimeout(() => {
+      const flowNode = nodes.find((n) => n.id === skill.id)
+      if (flowNode) {
+        setCenter(flowNode.position.x, flowNode.position.y, { zoom: 1.3, duration: 800 })
+      }
+    }, 150)
 
     setSearchQuery(skill.name)
     setShowSuggestions(false)
@@ -101,11 +136,11 @@ const SkillGraphInner = ({
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          onNodeClick={onNodeClick}
+          onNodeClick={handleReactFlowNodeClick}
           onNodeDragStart={onNodeDragStart}
           onNodeDrag={onNodeDrag}
           onNodeDragStop={onNodeDragStop}
-          nodeTypes={nodeTypes}
+          nodeTypes={mergedNodeTypes}
           edgeTypes={edgeTypes}
           onPaneClick={() => setShowSuggestions(false)}
           fitView
@@ -164,8 +199,32 @@ const SkillGraphInner = ({
             )}
           </Panel>
 
-          {/* Add skill button */}
-          <Panel position="top-right" className="flex gap-2">
+          {/* Drill-down Controls & Add skill button */}
+          <Panel position="top-right" className="flex items-center gap-2">
+            {onCollapseAll && (
+              <button
+                type="button"
+                onClick={onCollapseAll}
+                title="Thu gọn về Tầng 0 (Role Roots)"
+                className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl shadow-xs transition-all active:scale-95"
+              >
+                <Minimize2 className="h-3.5 w-3.5 text-slate-500" />
+                Thu gọn
+              </button>
+            )}
+
+            {onExpandAll && (
+              <button
+                type="button"
+                onClick={onExpandAll}
+                title="Mở rộng tất cả các kỹ năng"
+                className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl shadow-xs transition-all active:scale-95"
+              >
+                <Maximize2 className="h-3.5 w-3.5 text-violet-600" />
+                Mở tất cả
+              </button>
+            )}
+
             <button
               onClick={onOpenAdd}
               className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-bold text-white bg-violet-600 hover:bg-violet-700 active:scale-95 transition-all rounded-xl shadow-md"
@@ -180,7 +239,7 @@ const SkillGraphInner = ({
       </div>
 
       {/* Right detail panel */}
-      {selectedNode && (
+      {selectedNode && !selectedNode.id.startsWith('role:') && (
         <SkillDetailPanel
           selectedNode={selectedNode}
           closePanel={onClosePanel}
