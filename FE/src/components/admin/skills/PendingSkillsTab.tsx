@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Search, CheckCircle, XCircle, CheckCheck, Loader2 } from 'lucide-react'
 import { Skill } from '@/src/types/skill'
-import Pagination from './Pagination'
+import Pagination from '@/src/components/common/Pagination'
 
 interface PendingSkillsTabProps {
   pendingSkills: Skill[]

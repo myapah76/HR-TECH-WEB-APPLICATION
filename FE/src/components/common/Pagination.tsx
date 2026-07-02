@@ -1,7 +1,7 @@
 import React from 'react'
 import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from 'lucide-react'
 
-interface PaginationProps {
+export interface PaginationProps {
   currentPage: number
   totalPages: number
   totalItems: number

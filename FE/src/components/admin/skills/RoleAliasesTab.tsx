@@ -11,7 +11,7 @@ import {
 } from '@/src/services/skill.service'
 import CanonicalRoleRow from './CanonicalRoleRow'
 import CanonicalRoleConfirmModal from './CanonicalRoleConfirmModal'
-import Pagination from './Pagination'
+import Pagination from '@/src/components/common/Pagination'
 
 interface CanonicalGroup {
   canonicalRole: string
