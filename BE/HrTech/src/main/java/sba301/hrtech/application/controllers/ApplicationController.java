@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.application.abstractions.services.ApplicationService;
-import sba301.hrtech.application.dtos.request.CandidateInterviewResponseRequest;
+//import sba301.hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
 import sba301.hrtech.application.dtos.request.ScheduleInterviewRequest;
 import sba301.hrtech.application.dtos.request.SubmitApplicationRequest;
 import sba301.hrtech.application.dtos.response.ApplicationDetailResponse;
@@ -79,21 +79,43 @@ public class ApplicationController {
                 "Lên lịch phỏng vấn thành công"));
     }
 
-    @GetMapping("/interview-schedule/accept")
-    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> acceptInterviewSchedule(
-            @RequestParam String token) {
+    @PostMapping("/{id}/interview-schedule/accept")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> acceptInterviewScheduleForCurrentCandidate(
+            @PathVariable UUID id) {
+        UUID currentUserId = authUtils.getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.success(
-                applicationService.acceptInterviewSchedule(token),
+                applicationService.acceptInterviewSchedule(currentUserId, id),
                 "Đã xác nhận lịch phỏng vấn"));
     }
 
-    @PostMapping("/interview-schedule/reject")
-    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> rejectInterviewSchedule(
-            @RequestParam String token,
-            @Valid @RequestBody CandidateInterviewResponseRequest request) {
+//    @PostMapping("/{id}/interview-schedule/change")
+//    @PreAuthorize("hasRole('CANDIDATE')")
+//    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> changeInterviewScheduleForCurrentCandidate(
+//            @PathVariable UUID id,
+//            @Valid @RequestBody ChangeInterviewScheduleRequest request) {
+//        UUID currentUserId = authUtils.getCurrentUserId();
+//        return ResponseEntity.ok(ApiResponse.success(
+//                applicationService.changeInterviewSchedule(currentUserId, id, request),
+//                "Đã ghi nhận yêu cầu đổi lịch phỏng vấn"));
+//    }
+
+    @PostMapping("/{id}/interview-schedule/reschedule/accept")
+    @PreAuthorize("@companySecurity.isApplicationOwnerOrManagerOrHr(#id)")
+    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> acceptCandidateReschedule(
+            @PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(
-                applicationService.rejectInterviewSchedule(token, request),
-                "Đã ghi nhận yêu cầu đổi lịch phỏng vấn"));
+                applicationService.acceptCandidateReschedule(id),
+                "Đã chấp nhận lịch phỏng vấn ứng viên đề xuất"));
+    }
+
+    @PostMapping("/{id}/interview-schedule/reschedule/reject")
+    @PreAuthorize("@companySecurity.isApplicationOwnerOrManagerOrHr(#id)")
+    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> rejectCandidateReschedule(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                applicationService.rejectCandidateReschedule(id),
+                "Đã từ chối yêu cầu đổi lịch phỏng vấn"));
     }
 
     @GetMapping("/jobs/{jobId}")

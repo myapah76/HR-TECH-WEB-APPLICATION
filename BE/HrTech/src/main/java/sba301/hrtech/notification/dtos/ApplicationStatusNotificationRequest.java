@@ -19,6 +19,6 @@ public class ApplicationStatusNotificationRequest {
     private String interviewLocation;
     private String interviewMeetingLink;
     private String note;
-    private String acceptLink;
-    private String rejectLink;
+    private String actionLink;
+    private String actionLabel;
 }

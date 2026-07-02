@@ -1,6 +1,6 @@
 'use client'
 
-import PageHeader from '@/src/components/ui/PageHeader'
+
 import Badge from '@/src/components/ui/Badge'
 import { Briefcase, CheckCircle, XCircle, Eye } from 'lucide-react'
 import { INITIAL_JOBS } from '@/src/data'
@@ -8,12 +8,7 @@ import { INITIAL_JOBS } from '@/src/data'
 export default function JobsManagementPage() {
   return (
     <div>
-      <PageHeader
-        icon={Briefcase}
-        title="Quản lý tin tuyển dụng"
-        subtitle="Duyệt và quản lý tin đăng tuyển trên hệ thống"
-      />
-      <div className="bg-white rounded-2xl border border-slate-200/60 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200/60 shadow-xs overflow-hidden mt-6">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-wider">

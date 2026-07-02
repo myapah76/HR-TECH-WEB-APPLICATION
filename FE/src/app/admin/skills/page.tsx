@@ -278,10 +278,10 @@ export default function AdminSkillsDashboard() {
           </div>
           <div>
             <h1 className="text-xl font-black text-slate-800 tracking-tight">
-              Quản lý Đồ thị Kỹ năng (Skill Graph)
+              Quản lý Đồ thị Kỹ năng
             </h1>
             <p className="text-xs text-slate-500 font-medium">
-              Kiểm duyệt, chỉnh sửa và trực quan hóa cây mối quan hệ kỹ năng Neo4j
+              Kiểm duyệt, chỉnh sửa và trực quan hóa cây mối quan hệ kỹ năng
             </p>
           </div>
         </div>

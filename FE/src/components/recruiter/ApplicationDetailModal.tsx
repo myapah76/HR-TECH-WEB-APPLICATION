@@ -29,36 +29,23 @@ const STATUS_CONFIG: Record<
   { label: string; color: string; bg: string; border: string; dot: string }
 > = {
   [ApplicationStatus.SUBMITTED]: { label: 'Mới nộp', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-500' },
-  [ApplicationStatus.SCREENING]: { label: 'Đang xét', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', dot: 'bg-amber-500' },
   [ApplicationStatus.SCORED]: { label: 'Đã chấm', color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200', dot: 'bg-violet-500' },
   [ApplicationStatus.PENDING_INTERVIEW_SCHEDULE]: { label: 'CHỜ LỊCH PHỎNG VẤN', color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-200', dot: 'bg-orange-500' },
+  [ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE]: { label: 'ỨNG VIÊN XIN ĐỔI LỊCH', color: 'text-cyan-700', bg: 'bg-cyan-50', border: 'border-cyan-200', dot: 'bg-cyan-500' },
   [ApplicationStatus.INTERVIEW]: { label: 'PHỎNG VẤN', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200', dot: 'bg-indigo-500' },
-  [ApplicationStatus.OFFER]: { label: 'Offer', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', dot: 'bg-emerald-500' },
   [ApplicationStatus.REJECTED]: { label: 'TỪ CHỐI', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200', dot: 'bg-rose-500' },
   [ApplicationStatus.WITHDRAWN]: { label: 'Đã rút', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200', dot: 'bg-slate-400' },
 }
 
 const NEXT_ACTIONS: Partial<Record<ApplicationStatus, { status: ApplicationStatus; label: string; style: string }[]>> = {
   [ApplicationStatus.SUBMITTED]: [
-    { status: ApplicationStatus.SCREENING, label: 'Chuyển Sàng lọc', style: 'bg-amber-500 hover:bg-amber-600 text-white' },
-    { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
-  ],
-  [ApplicationStatus.SCREENING]: [
-    { status: ApplicationStatus.INTERVIEW, label: 'Mời Phỏng vấn', style: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
+    { status: ApplicationStatus.INTERVIEW, label: 'Lên lịch Phỏng vấn', style: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
     { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
   ],
   [ApplicationStatus.SCORED]: [
     { status: ApplicationStatus.INTERVIEW, label: 'Mời Phỏng vấn', style: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
     { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
-  ],
-  [ApplicationStatus.INTERVIEW]: [
-    { status: ApplicationStatus.OFFER, label: '✓ Gửi Offer', style: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
-    { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
-  ],
-  [ApplicationStatus.PENDING_INTERVIEW_SCHEDULE]: [
-    { status: ApplicationStatus.INTERVIEW, label: 'Chuyển Phỏng vấn', style: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
-    { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
-  ],
+  ]
 }
 
 function gradeColor(grade?: string) {
@@ -132,7 +119,10 @@ interface Props {
   onClose: () => void
   onStatusChange: (id: string, status: ApplicationStatus) => void
   onScheduleInterview: (id: string, request: ScheduleInterviewRequest) => void
+  onAcceptCandidateReschedule: (id: string) => void
+  onRejectCandidateReschedule: (id: string) => void
   isSchedulingInterview?: boolean
+  isReviewingCandidateReschedule?: boolean
 }
 
 export default function ApplicationDetailModal({
@@ -140,7 +130,10 @@ export default function ApplicationDetailModal({
   onClose,
   onStatusChange,
   onScheduleInterview,
+  onAcceptCandidateReschedule,
+  onRejectCandidateReschedule,
   isSchedulingInterview = false,
+  isReviewingCandidateReschedule = false,
 }: Props) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const [isScheduleOpen, setIsScheduleOpen] = useState(false)
@@ -399,36 +392,58 @@ export default function ApplicationDetailModal({
                       {app.interviewMeetingLink}
                     </p>
                   )}
-                  {app.candidateInterviewResponseMessage && (
-                    <div className="rounded-xl bg-white/70 border border-orange-100 p-3 space-y-1">
-                      {app.candidatePreferredInterviewDateTime && (
-                        <p className="text-sm font-semibold text-slate-700">
-                          Thời gian ứng viên đề xuất: {new Date(app.candidatePreferredInterviewDateTime).toLocaleString('vi-VN')}
-                        </p>
-                      )}
-                      <p className="text-sm font-medium text-rose-600">
-                        Lý do: {app.candidateInterviewResponseMessage}
+                </div>
+              )}
+
+              {app.status === ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE && (
+                <div className="rounded-2xl border border-cyan-100 bg-cyan-50 p-4 space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="flex items-center gap-2 text-xs font-black text-cyan-700 uppercase tracking-wider">
+                      <CalendarClock className="w-3.5 h-3.5" />
+                      Ứng viên yêu cầu đổi lịch
+                    </h3>
+                    {app.interviewDateTime && (
+                      <p className="text-sm font-semibold text-slate-600">
+                        Lịch hiện tại: {new Date(app.interviewDateTime).toLocaleString('vi-VN')}
                       </p>
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => openScheduleForm(true)}
-                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 transition-colors"
-                  >
-                    Đổi lịch phỏng vấn
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                    )}
+                    {app.candidatePreferredInterviewDateTime && (
+                      <p className="text-sm font-black text-slate-800">
+                        Lịch ứng viên đề xuất: {new Date(app.candidatePreferredInterviewDateTime).toLocaleString('vi-VN')}
+                      </p>
+                    )}
+                    {app.candidateInterviewResponseMessage && (
+                      <div className="rounded-xl bg-white/70 border border-cyan-100 p-3">
+                        <p className="text-xs font-black text-cyan-700 uppercase tracking-wider mb-1">Lý do</p>
+                        <p className="text-sm font-medium text-slate-700">{app.candidateInterviewResponseMessage}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onAcceptCandidateReschedule(app.id)}
+                      disabled={isReviewingCandidateReschedule}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {isReviewingCandidateReschedule ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                      Accept new schedule
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onRejectCandidateReschedule(app.id)}
+                      disabled={isReviewingCandidateReschedule}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      Reject new schedule
+                    </button>
+                  </div>
                 </div>
               )}
 
               {/* ── Completed states ─────────────────────────────────────────── */}
-              {app.status === ApplicationStatus.OFFER && (
-                <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                  <p className="text-sm font-bold text-emerald-700">Đã gửi Offer cho ứng viên này</p>
-                </div>
-              )}
               {app.status === ApplicationStatus.REJECTED && (
                 <div className="flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-2xl p-4">
                   <XCircle className="w-5 h-5 text-rose-500 shrink-0" />

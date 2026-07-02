@@ -2,11 +2,10 @@ package sba301.hrtech.application.entities.enums;
 
 public enum ApplicationStatus {
     SUBMITTED,
-    SCREENING,
     SCORED,
     PENDING_INTERVIEW_SCHEDULE,
+    CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE,
     INTERVIEW,
-    OFFER,
     REJECTED,
     WITHDRAWN
 }

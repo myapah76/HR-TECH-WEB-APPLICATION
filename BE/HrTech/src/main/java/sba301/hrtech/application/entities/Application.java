@@ -58,12 +58,6 @@ public class Application extends SoftDeleteEntity {
     @Column(name = "interview_note", columnDefinition = "TEXT")
     private String interviewNote;
 
-    @Column(name = "interview_response_token", unique = true)
-    private String interviewResponseToken;
-
-    @Column(name = "interview_response_token_expires_at")
-    private Instant interviewResponseTokenExpiresAt;
-
     @Column(name = "interview_accepted_at")
     private Instant interviewAcceptedAt;
 

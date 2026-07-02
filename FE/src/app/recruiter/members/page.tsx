@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import PageHeader from '@/src/components/ui/PageHeader'
 import Badge from '@/src/components/ui/Badge'
 import {
   UserCheck,
@@ -116,11 +115,7 @@ export default function RecruiterMembersPage() {
 
   return (
     <div className="space-y-6 font-sans">
-      <PageHeader
-        icon={UserCheck}
-        title="Quản lý nhân sự"
-        subtitle="Quản lý thành viên trong doanh nghiệp, cấp tài khoản cho HR và HR Manager"
-      />
+
 
       <div className="bg-white rounded-2xl border border-slate-200/60 p-6 shadow-xs space-y-5">
         <div className="flex items-center justify-between">

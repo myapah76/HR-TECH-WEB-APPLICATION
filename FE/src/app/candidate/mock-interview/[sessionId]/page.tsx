@@ -5,11 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { Card } from '@/src/components/ui/card'
 import { Button } from '@/src/components/ui/button'
 import { QuestionResponse } from '@/src/types/interview'
-import {
-  Loader2,
-  HelpCircle,
-  ChevronLeft,
-} from 'lucide-react'
+import { Loader2, HelpCircle, ChevronLeft } from 'lucide-react'
 import { MockInterviewEvaluating } from '@/src/components/candidate/interview/MockInterviewEvaluating'
 import { MockInterviewIdleState } from '@/src/components/candidate/interview/MockInterviewIdleState'
 import { MockInterviewRecordingState } from '@/src/components/candidate/interview/MockInterviewRecordingState'
@@ -185,7 +181,7 @@ export default function MockInterviewPracticePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-[400px] flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-100 flex flex-col items-center justify-center p-6 text-center">
         <Loader2 className="w-10 h-10 animate-spin text-blue-600 mb-3 mx-auto" />
         <p className="text-slate-500 font-bold text-sm">Đang tải thông tin phòng phỏng vấn...</p>
       </div>
@@ -194,7 +190,7 @@ export default function MockInterviewPracticePage() {
 
   if (!currentSession) {
     return (
-      <div className="min-h-[400px] flex flex-col items-center justify-center p-6 text-center space-y-4">
+      <div className="min-h-100 flex flex-col items-center justify-center p-6 text-center space-y-4">
         <p className="text-red-500 font-bold text-base">
           Không tìm thấy phiên phỏng vấn này hoặc bạn không có quyền truy cập.
         </p>
@@ -209,12 +205,7 @@ export default function MockInterviewPracticePage() {
   }
 
   if (isEvaluating) {
-    return (
-      <MockInterviewEvaluating
-        evalStep={evalStep}
-        evaluationSteps={evaluationSteps}
-      />
-    )
+    return <MockInterviewEvaluating evalStep={evalStep} evaluationSteps={evaluationSteps} />
   }
 
   const currentQuestionIndex = currentQuestion ? currentQuestion.orderIndex + 1 : totalQuestions
@@ -261,7 +252,7 @@ export default function MockInterviewPracticePage() {
 
       <div className="w-full bg-slate-200/50 h-2 rounded-full overflow-hidden shadow-inner">
         <motion.div
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 h-2 rounded-full"
+          className="bg-linear-to-r from-blue-600 to-indigo-600 h-2 rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${progressPercent}%` }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -269,7 +260,7 @@ export default function MockInterviewPracticePage() {
       </div>
 
       <Card className="p-6 bg-white border border-slate-200/60 shadow-md rounded-3xl space-y-6 relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-linear-to-r from-blue-600 to-indigo-600"></div>
 
         {currentQuestion ? (
           <div className="space-y-6">

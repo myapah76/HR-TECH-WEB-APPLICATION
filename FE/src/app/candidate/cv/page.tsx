@@ -14,7 +14,6 @@ import { usePremiumAiMatch } from '@/src/hooks/recommendation'
 import { useSubscriptionAccess } from '@/src/hooks/subscription'
 import { AiMatchHistoryResponse } from '@/src/types/recommendation'
 import { toast } from 'sonner'
-import { getErrorMessage } from '@/src/utils'
 import { FeatureGate } from '@/src/components/common/FeatureGate'
 import { ScanSearch } from 'lucide-react'
 
@@ -58,7 +57,7 @@ export default function CandidateCvPage() {
       if (saved) {
         try {
           return JSON.parse(saved)
-        } catch (e) {
+        } catch {
           return null
         }
       }
@@ -112,9 +111,6 @@ export default function CandidateCvPage() {
             { duration: 5000 }
           )
         },
-        onError: (error) => {
-          toast.error(getErrorMessage(error))
-        },
       }
     )
   }
@@ -165,7 +161,6 @@ export default function CandidateCvPage() {
   }
   return (
     <div className="space-y-8 animate-fade-in">
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-8">
           {/* UPLOAD SECTION WITH SCANNING ANIMATION */}
