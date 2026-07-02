@@ -94,9 +94,9 @@ export default function JobsSection({ searchKeyword, searchLocation, onJobSelect
     location: searchLocation.trim() ? searchLocation.trim() : undefined,
   };
 
-  // If activeTab is 'vip', we query jobs with salary >= 1000 USD
+  // If activeTab is 'vip', we query jobs with salary >= 20,000,000 VND
   if (activeTab === 'vip') {
-    params.salaryMin = 1000;
+    params.salaryMin = 20000000;
   }
 
   const { data, isLoading } = useSearchJobs(params);
@@ -150,7 +150,7 @@ export default function JobsSection({ searchKeyword, searchLocation, onJobSelect
               }`}
               id="tab-vip"
             >
-              {'Việc Làm VIP ($1000+)'}
+              {'Việc Làm VIP (trên 20tr)'}
             </button>
           </div>
         </div>
