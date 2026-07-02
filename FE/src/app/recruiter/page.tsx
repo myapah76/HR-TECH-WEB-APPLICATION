@@ -25,7 +25,7 @@ const getRelativeTime = (dateStr: string | number | Date) => {
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
   if (diffMs < 0) return 'Vừa xong'
-  
+
   const diffMins = Math.floor(diffMs / (1000 * 60))
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
@@ -43,7 +43,9 @@ export default function RecruiterDashboardPage() {
   // Fetch company jobs to count active ones
   const { data: jobsPage } = useGetManageJobs(companyId, { page: 0, size: 100 })
   const jobs = jobsPage?.content || []
-  const activeJobsCount = jobs.filter((j: any) => j.status === 'OPEN' || j.status === 'APPROVED').length
+  const activeJobsCount = jobs.filter(
+    (j: any) => j.status === 'OPEN' || j.status === 'APPROVED'
+  ).length
 
   // Fetch all company applications
   const { data: applications = [] } = useGetCompanyApplications(companyId, !!companyId)
@@ -55,15 +57,25 @@ export default function RecruiterDashboardPage() {
     .map((app: any) => ({
       action: `Hồ sơ ${app.cvTitle} ứng tuyển vị trí ${app.jobTitle}`,
       time: `${getRelativeTime(app.appliedAt)} trước`,
-      status: app.status === 'SUBMITTED' ? 'new' : app.status === 'OFFER' ? 'offer' : 'ai_match',
+      status:
+        app.status === 'SUBMITTED'
+          ? 'new'
+          : app.status === 'OFFER'
+            ? 'offer'
+            : 'ai_match',
     }))
 
   // Calculate hiring pipeline count and percentages
   const totalApps = applications.length
   const stageCounts = {
     submitted: applications.filter((a: any) => a.status === 'SUBMITTED').length,
-    screening: applications.filter((a: any) => a.status === 'SCREENING' || a.status === 'SCORED').length,
-    interview: applications.filter((a: any) => a.status === 'INTERVIEW' || a.status === 'PENDING_INTERVIEW_SCHEDULE').length,
+    screening: applications.filter(
+      (a: any) => a.status === 'SCREENING' || a.status === 'SCORED'
+    ).length,
+    interview: applications.filter(
+      (a: any) =>
+        a.status === 'INTERVIEW' || a.status === 'PENDING_INTERVIEW_SCHEDULE'
+    ).length,
     offer: applications.filter((a: any) => a.status === 'OFFER').length,
   }
 
@@ -73,14 +85,34 @@ export default function RecruiterDashboardPage() {
   }
 
   const candidatePipeline = [
-    { stage: 'Ứng tuyển mới', count: stageCounts.submitted, percentage: getPercentage(stageCounts.submitted), color: 'bg-blue-500' },
-    { stage: 'Sàng lọc CV', count: stageCounts.screening, percentage: getPercentage(stageCounts.screening), color: 'bg-amber-500' },
-    { stage: 'Phỏng vấn', count: stageCounts.interview, percentage: getPercentage(stageCounts.interview), color: 'bg-indigo-500' },
-    { stage: 'Nhận việc (Offer)', count: stageCounts.offer, percentage: getPercentage(stageCounts.offer), color: 'bg-emerald-500' },
+    {
+      stage: 'Ứng tuyển mới',
+      count: stageCounts.submitted,
+      percentage: getPercentage(stageCounts.submitted),
+      color: 'bg-blue-500',
+    },
+    {
+      stage: 'Sàng lọc CV',
+      count: stageCounts.screening,
+      percentage: getPercentage(stageCounts.screening),
+      color: 'bg-amber-500',
+    },
+    {
+      stage: 'Phỏng vấn',
+      count: stageCounts.interview,
+      percentage: getPercentage(stageCounts.interview),
+      color: 'bg-indigo-500',
+    },
+    {
+      stage: 'Nhận việc (Offer)',
+      count: stageCounts.offer,
+      percentage: getPercentage(stageCounts.offer),
+      color: 'bg-emerald-500',
+    },
   ]
 
   return (
-    <div className="max-w-6xl space-y-8 animate-fade-in">
+    <div className="max-w-6xl space-y-8 animate-fade-in font-sans">
       <div className="flex justify-end">
         <Link
           href="/recruiter/post-job"
@@ -141,7 +173,7 @@ export default function RecruiterDashboardPage() {
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-sm font-semibold text-slate-405">
+                <div className="text-center py-8 text-sm font-semibold text-slate-400">
                   Chưa có hoạt động gần đây
                 </div>
               )}

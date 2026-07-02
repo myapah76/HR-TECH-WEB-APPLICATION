@@ -102,3 +102,13 @@ export const logout = async (data?: { refreshToken: string }): Promise<string> =
   const response = await api.post<ApiResponse<string>>('/auth/logout', data, { headers })
   return response.data.data
 }
+
+export interface ForceChangePasswordRequest {
+  currentPassword?: string
+  newPassword?: string
+  confirmPassword?: string
+}
+
+export const forceChangePassword = async (data: ForceChangePasswordRequest): Promise<void> => {
+  await api.put<ApiResponse<void>>('/auth/change-password', data)
+}

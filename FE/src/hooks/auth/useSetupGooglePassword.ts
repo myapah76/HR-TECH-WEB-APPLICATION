@@ -8,8 +8,8 @@ export const useSetupGooglePassword = () => {
     mutationFn: setupGooglePassword,
     onSuccess: (response) => {
       setAuth({
-        user: response.userResponse,
-        accessToken: response.accessToken,
+        user: response.userResponse!,
+        accessToken: response.accessToken!,
         refreshToken: response.refreshToken,
       })
     },

@@ -41,3 +41,27 @@ export const updateCompany = async (
   const response = await api.put<ApiResponse<CompanyResponse>>(`/companies/${id}`, request)
   return response.data.data
 }
+
+export interface AddMemberRequest {
+  email: string
+  fullName: string
+  role: string
+}
+
+export const addCompanyMember = async (
+  companyId: string,
+  request: AddMemberRequest
+): Promise<CompanyMemberResponse> => {
+  const response = await api.post<ApiResponse<CompanyMemberResponse>>(
+    `/companies/${companyId}/members`,
+    request
+  )
+  return response.data.data
+}
+
+export const removeCompanyMember = async (
+  companyId: string,
+  memberId: string
+): Promise<void> => {
+  await api.delete<ApiResponse<void>>(`/companies/${companyId}/members/${memberId}`)
+}

@@ -215,6 +215,16 @@ public class AuthServiceImpl implements IAuthService {
         if (Boolean.TRUE.equals(user.getIsBlocked())) {
             throw new AppException(ErrorCode.USER_IS_BLOCKED, "User is blocked");
         }
+        if (user.getRequirePasswordChange() != null && user.getRequirePasswordChange()) {
+            String setupToken = UUID.randomUUID().toString();
+            redisTemplate.opsForValue().set("setup_pwd:" + setupToken, user.getId().toString(), Duration.ofMinutes(15));
+
+            AuthResponse authResponse = AuthResponse.builder()
+                    .needsPasswordSetup(true)
+                    .setupToken(setupToken)
+                    .build();
+            return new TokenPair(authResponse, null);
+        }
         UserDetails userDetails = new CustomUserDetails(user);
         String accessToken = jwtService.generateToken(userDetails);
 
@@ -301,7 +311,7 @@ public class AuthServiceImpl implements IAuthService {
         if (user.getRequirePasswordChange() != null && user.getRequirePasswordChange()) {
             String setupToken = UUID.randomUUID().toString();
             redisTemplate.opsForValue().set("setup_pwd:" + setupToken, user.getId().toString(), Duration.ofMinutes(15));
-            
+
             AuthResponse authResponse = AuthResponse.builder()
                 .needsPasswordSetup(true)
                 .setupToken(setupToken)

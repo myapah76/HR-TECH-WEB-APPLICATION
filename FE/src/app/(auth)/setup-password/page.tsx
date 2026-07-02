@@ -72,10 +72,10 @@ function SetupPasswordForm() {
           <CardContent className="p-8">
             <div className="text-center space-y-2">
               <h1 className="text-2xl font-black tracking-tight text-slate-900">
-                Tạo mật khẩu
+                Đặt mật khẩu mới
               </h1>
               <p className="text-xs text-slate-500 font-medium">
-                Vui lòng tạo một mật khẩu cho tài khoản Google của bạn
+                Vui lòng đặt một mật khẩu mới để bảo vệ tài khoản của bạn
               </p>
             </div>
 

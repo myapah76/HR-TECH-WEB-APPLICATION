@@ -7,9 +7,11 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  accessToken: string
-  userResponse: User
+  accessToken?: string
+  userResponse?: User
   refreshToken?: string
+  needsPasswordSetup?: boolean
+  setupToken?: string
 }
 
 export interface RegisterRequest {
