@@ -79,3 +79,25 @@ export interface CreatePaymentResponse {
   checkoutUrl: string
   paymentLinkId: string
 }
+
+export interface PlanFeatureRequest {
+  id: string // Feature ID
+  quota: number
+}
+
+export interface SubscriptionPlanRequest {
+  name: string
+  description: string
+  price: number
+  durationDays: number
+  subscriptionType: SubscriptionType
+  isActive: boolean
+  features: PlanFeatureRequest[]
+}
+
+export interface FeatureResponse {
+  id: string
+  code: string
+  name: string
+  description: string
+}

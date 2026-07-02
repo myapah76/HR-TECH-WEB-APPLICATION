@@ -22,15 +22,6 @@ export default function CandidateProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-black tracking-tight text-blue-900 flex items-center gap-3">
-          <UserIcon className="w-8 h-8 text-blue-600" />
-          Hồ Sơ Cá Nhân
-        </h1>
-        <p className="text-slate-500 font-medium">
-          Xem và cập nhật thông tin cá nhân của bạn, hoặc thực hiện đổi mật khẩu bảo mật tài khoản.
-        </p>
-      </div>
 
       <div className="flex flex-col md:flex-row gap-8 items-start">
         {/* Left Side: Avatar and Tab Navigation */}

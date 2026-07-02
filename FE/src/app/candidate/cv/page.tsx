@@ -160,18 +160,8 @@ export default function CandidateCvPage() {
   if (loading) {
     return <div className="p-8 text-center text-slate-500 font-medium">Đang tải dữ liệu...</div>
   }
-
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-black tracking-tight text-blue-900">
-          Quản lý Hồ sơ & Phân tích AI
-        </h1>
-        <p className="text-slate-500 font-medium">
-          Tải lên CV của bạn, chọn CV làm mặc định và chấm điểm mức độ phù hợp với các công việc đã
-          lưu bằng công nghệ AI.
-        </p>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-8">

@@ -18,7 +18,6 @@ import {
   ShieldCheck,
   Award,
   Clock,
-  Send,
   Loader2,
   ThumbsDown,
   ThumbsUp,
@@ -40,11 +39,7 @@ import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import { ApplyJobModal } from '@/src/components/jobs/ApplyJobModal'
 import Loading from '@/src/app/loading'
 import { formatDate, formatSalary } from '@/src/utils'
-import {
-  JobStatus,
-  JOB_STATUS_LABELS,
-  JOB_STATUS_STYLES,
-} from '@/src/enums/job.enum'
+import { JobStatus, JOB_STATUS_LABELS, JOB_STATUS_STYLES } from '@/src/enums/job.enum'
 
 export default function JobDetailPage() {
   const params = useParams()
@@ -75,16 +70,11 @@ export default function JobDetailPage() {
 
   const { data: savedJobs = [] } = useGetSavedJobs(isCandidate)
 
-
-
   const { data: appliedJobs = [] } = useGetMyApplications(isCandidate)
 
   const isSaved = savedJobs.some((j) => j.id === jobId)
   const hasApplied = appliedJobs.some(
-    (app) =>
-      app.jobId === jobId &&
-      app.status !== 'REJECTED' &&
-      app.status !== 'WITHDRAWN'
+    (app) => app.jobId === jobId && app.status !== 'REJECTED' && app.status !== 'WITHDRAWN'
   )
 
   const saveMutation = useSaveJob()
@@ -97,9 +87,7 @@ export default function JobDetailPage() {
       {
         onSuccess: () => {
           toast.success(
-            action === 'approve'
-              ? 'Đã phê duyệt tin tuyển dụng!'
-              : 'Đã từ chối tin tuyển dụng!'
+            action === 'approve' ? 'Đã phê duyệt tin tuyển dụng!' : 'Đã từ chối tin tuyển dụng!'
           )
         },
       }
@@ -125,8 +113,6 @@ export default function JobDetailPage() {
       })
     }
   }
-
-
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href)
@@ -244,10 +230,7 @@ export default function JobDetailPage() {
                     <span className="flex items-center gap-1.5 bg-slate-50 text-slate-600 px-3 py-1.5 rounded-xl border border-slate-200/50">
                       <Clock className="h-4 w-4" />
                       <span>
-                        Hạn nộp:{' '}
-                        {job.deadline
-                          ? formatDate(job.deadline)
-                          : 'Không thời hạn'}
+                        Hạn nộp: {job.deadline ? formatDate(job.deadline) : 'Không thời hạn'}
                       </span>
                     </span>
                   </div>
@@ -264,7 +247,8 @@ export default function JobDetailPage() {
                       disabled={statusMutation.isPending}
                       className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {statusMutation.isPending && statusMutation.variables?.action === 'approve' ? (
+                      {statusMutation.isPending &&
+                      statusMutation.variables?.action === 'approve' ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <ThumbsUp className="h-4 w-4" />
@@ -307,7 +291,11 @@ export default function JobDetailPage() {
                         : 'bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] hover:-translate-y-0.5 text-white shadow-blue-600/10 hover:shadow-lg hover:shadow-blue-600/20'
                     }`}
                   >
-                    {hasApplied ? <Check className="w-5 h-5" /> : <PlusCircle className="w-5 h-5" />}
+                    {hasApplied ? (
+                      <Check className="w-5 h-5" />
+                    ) : (
+                      <PlusCircle className="w-5 h-5" />
+                    )}
                     <span>{hasApplied ? 'Đã ứng tuyển' : 'Ứng tuyển ngay'}</span>
                   </button>
                 )}
@@ -329,7 +317,7 @@ export default function JobDetailPage() {
                   </button>
                 )}
 
-                {(!user || isCandidate) ? (
+                {!user || isCandidate ? (
                   <button
                     onClick={handleShare}
                     className="p-4 bg-white border border-slate-200 hover:border-slate-350 rounded-2xl text-slate-500 hover:bg-slate-50 transition-all cursor-pointer flex justify-center items-center"

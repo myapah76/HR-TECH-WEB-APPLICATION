@@ -6,13 +6,6 @@ import { Users, Briefcase, Building2, TrendingUp, Activity, Shield } from 'lucid
 export default function AdminDashboard() {
   return (
     <div className="max-w-6xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-          <Shield className="h-6 w-6 text-violet-600" />
-          Bảng Điều Khiển Quản Trị
-        </h1>
-        <p className="text-sm text-slate-500 font-medium mt-1">Tổng quan hệ thống HR-Tech</p>
-      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard icon={Users} label="Tổng người dùng" value="12,847" change={8} color="blue" />

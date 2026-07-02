@@ -29,18 +29,6 @@ export default function SavedJobsPage() {
 
   return (
     <div className="max-w-6xl space-y-6 animate-fade-in">
-      {/* Tiêu đề trang */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-3">
-          <Heart className="w-8 h-8 text-rose-600 fill-rose-600" />
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 animate-slide-in">
-            Việc đã lưu
-          </h1>
-        </div>
-        <p className="text-slate-500 font-semibold tracking-wide text-sm bg-slate-100/50 self-start px-3 py-1 rounded-full border border-slate-200/40">
-          {savedJobs.length} công việc đã được lưu
-        </p>
-      </div>
 
       {/* Danh sách công việc đã lưu */}
       <div className="space-y-4">
