@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { Search, CheckCircle, XCircle, CheckCheck, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { Search, CheckCircle, XCircle, CheckCheck, Loader2 } from 'lucide-react'
 import { PendingRelationship } from '@/src/types/skill'
+import Pagination from './Pagination'
 
 interface PendingRelationsTabProps {
   pendingRels: PendingRelationship[]
@@ -8,11 +9,10 @@ interface PendingRelationsTabProps {
   onReject: (sourceId: string, targetId: string, type: string) => Promise<void>
 }
 
-const ITEMS_PER_PAGE = 8
-
 const PendingRelationsTab = ({ pendingRels, onApprove, onReject }: PendingRelationsTabProps) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
   const [isApprovingAll, setIsApprovingAll] = useState(false)
 
   const filtered = pendingRels.filter(
@@ -26,10 +26,10 @@ const PendingRelationsTab = ({ pendingRels, onApprove, onReject }: PendingRelati
     setCurrentPage(1)
   }, [searchQuery])
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1
+  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1
   const paginatedRels = filtered.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   )
 
   const handleApproveAll = async () => {
@@ -155,48 +155,14 @@ const PendingRelationsTab = ({ pendingRels, onApprove, onReject }: PendingRelati
       </div>
 
       {/* Pagination Footer */}
-      {filtered.length > 0 && (
-        <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-100 shrink-0">
-          <span className="text-xs font-bold text-slate-500">
-            Hiển thị {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filtered.length)} -{' '}
-            {Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} trên tổng số {filtered.length}
-          </span>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="p-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-
-            <div className="flex items-center gap-1 px-2">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
-                    currentPage === page
-                      ? 'bg-violet-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-            </div>
-
-            <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="p-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filtered.length}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setCurrentPage}
+        onItemsPerPageChange={setItemsPerPage}
+      />
     </div>
   )
 }
