@@ -39,3 +39,16 @@ export interface ChangePasswordRequest {
   oldPassword?: string
   newPassword?: string
 }
+
+export interface UpdateUserBlockedRequest {
+  userId: string
+  isBlocked: boolean
+}
+
+export interface AdminUsersParams {
+  page?: number
+  size?: number
+  role?: string
+  isBlocked?: boolean
+  email?: string
+}
