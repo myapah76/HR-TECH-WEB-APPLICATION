@@ -25,6 +25,7 @@ public enum ErrorCode {
     // User
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "User not found"),
     USER_ALREADY_REGISTERED(HttpStatus.CONFLICT, "User already registered"),
+    USER_IS_BLOCKED(HttpStatus.FORBIDDEN, "User is blocked"),
     // Role
     ROLE_NOT_FOUND(HttpStatus.NOT_FOUND, "Role not found"),
     // Common

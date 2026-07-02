@@ -2,7 +2,7 @@
 
 import { QueryCache, QueryClient, QueryClientProvider, MutationCache } from '@tanstack/react-query'
 import { useState } from 'react'
-import { getErrorMessage } from '@/src/utils'
+import { getErrorMessage, isBlockedLoginError } from '@/src/utils'
 import { toast } from 'sonner'
 
 export default function QueryProvider({ children }: { children: React.ReactNode }) {
@@ -23,6 +23,7 @@ export default function QueryProvider({ children }: { children: React.ReactNode 
         // Bắt lỗi toàn cục cho useMutation
         mutationCache: new MutationCache({
           onError: (error) => {
+            if (isBlockedLoginError(error)) return
             toast.error(getErrorMessage(error))
           },
         }),

@@ -2,6 +2,7 @@ package sba301.hrtech.identity.controllers;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import sba301.hrtech.identity.abstractions.services.IRoleService;
 import sba301.hrtech.identity.dtos.role.request.CommonRoleRequest;
@@ -19,6 +20,7 @@ public class RoleController {
 
     private final IRoleService roleService;
 
+    @PreAuthorize("hasRole('ADMIN_SYSTEM')")
     @PostMapping
     public ResponseEntity<ApiResponse<RoleResponse>> createRole(
             @RequestBody CreateRoleRequest request
@@ -29,6 +31,7 @@ public class RoleController {
                         URI.create("/api/roles/" + response.getId()))
                 .body(ApiResponse.success(response, "Role created successfully"));
     }
+
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getAll() {
@@ -49,6 +52,7 @@ public class RoleController {
         return ResponseEntity.ok(ApiResponse.success(roleService.getByName(name), "Role retrieved successfully"));
     }
 
+    @PreAuthorize("hasRole('ADMIN_SYSTEM')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<RoleResponse>> update(
             @PathVariable UUID id,
@@ -57,6 +61,7 @@ public class RoleController {
         return ResponseEntity.ok(ApiResponse.success(roleService.update(id, request), "Role updated successfully"));
     }
 
+    @PreAuthorize("hasRole('ADMIN_SYSTEM')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable UUID id

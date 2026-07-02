@@ -1,11 +1,14 @@
-import React from 'react'
 import { ReactFlow, Controls, Background, Panel, Node } from '@xyflow/react'
 import { Plus } from 'lucide-react'
 import { Skill, SkillEdge } from '@/src/types/skill'
-import SkillNodeComponent from './SkillNode'
 import SkillDetailPanel from './SkillDetailPanel'
 import AddSkillModal from './AddSkillModal'
 import SkillGraphLegend from './SkillGraphLegend'
+import FloatingConnectionEdge from './FloatingConnectionEdge'
+
+const edgeTypes = {
+  floating: FloatingConnectionEdge,
+}
 
 interface SkillGraphViewProps {
   nodes: any[]
@@ -72,6 +75,7 @@ const SkillGraphView = ({
           onNodeDrag={onNodeDrag}
           onNodeDragStop={onNodeDragStop}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           fitView
           minZoom={0.2}
           maxZoom={2.5}
