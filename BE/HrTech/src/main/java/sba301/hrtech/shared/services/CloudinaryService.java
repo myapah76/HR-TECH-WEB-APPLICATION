@@ -6,7 +6,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
+import sba301.hrtech.system.abstractions.services.SystemConfigService;
+import sba301.hrtech.system.entities.SystemConfig;
 
+import sba301.hrtech.shared.dtos.CloudinarySignatureResponse;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,7 +19,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class CloudinaryService {
 
-    private final Cloudinary cloudinary;
+    private final SystemConfigService systemConfigService;
 
     public String checkValidUrl(String url) {
         if (url == null || url.isBlank()) {
@@ -33,7 +38,8 @@ public class CloudinaryService {
         String publicId = getPublicId(matcher, resourceType);
 
         try {
-            var apiResult = cloudinary.api().resource(publicId, ObjectUtils.asMap("resource_type", resourceType));
+            Cloudinary dynamicClient = getDynamicCloudinary();
+            var apiResult = dynamicClient.api().resource(publicId, ObjectUtils.asMap("resource_type", resourceType));
             Object etagObj = apiResult.get("etag");
             return etagObj != null ? etagObj.toString() : null;
         } catch (Exception e) {
@@ -58,5 +64,36 @@ public class CloudinaryService {
             }
         }
         return publicId;
+    }
+
+    public CloudinarySignatureResponse generateUploadSignature(String folder) {
+        SystemConfig config = systemConfigService.getSystemConfigEntity();
+        long timestamp = System.currentTimeMillis() / 1000L;
+        
+        Map<String, Object> params = new HashMap<>();
+        params.put("folder", folder);
+        params.put("timestamp", timestamp);
+
+        try {
+            String signature = getDynamicCloudinary().apiSignRequest(params, config.getCloudinaryApiSecret());
+            
+            return CloudinarySignatureResponse.builder()
+                    .signature(signature)
+                    .timestamp(timestamp)
+                    .apiKey(config.getCloudinaryApiKey())
+                    .cloudName(config.getCloudinaryCloudName())
+                    .build();
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.HAS_ERROR, "Lỗi khi tạo chữ ký Cloudinary: " + e.getMessage());
+        }
+    }
+
+    private Cloudinary getDynamicCloudinary() {
+        SystemConfig config = systemConfigService.getSystemConfigEntity();
+        return new Cloudinary(ObjectUtils.asMap(
+                "cloud_name", config.getCloudinaryCloudName(),
+                "api_key", config.getCloudinaryApiKey(),
+                "api_secret", config.getCloudinaryApiSecret()
+        ));
     }
 }

@@ -21,7 +21,7 @@ export default function CandidateProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
 
       <div className="flex flex-col md:flex-row gap-8 items-start">
         {/* Left Side: Avatar and Tab Navigation */}

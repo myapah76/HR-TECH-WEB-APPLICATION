@@ -62,9 +62,13 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     loginMutation.mutate(data, {
       onSuccess: (response) => {
+        if (response.needsPasswordSetup) {
+          router.push(`/setup-password?token=${encodeURIComponent(response.setupToken || '')}`)
+          toast.info('Vui lòng đặt mật khẩu mới để tiếp tục.')
+          return
+        }
         router.push('/')
         toast.success('Đăng nhập thành công')
-        console.log(response)
       },
       onError: (error) => {
         if (isBlockedLoginError(error)) {

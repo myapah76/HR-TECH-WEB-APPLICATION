@@ -7,11 +7,14 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: login,
     onSuccess: (response) => {
-      setAuth({
-        user: response.userResponse,
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
-      })
+      // Only set auth if we got a real access token (not needsPasswordSetup flow)
+      if (response.accessToken && response.userResponse) {
+        setAuth({
+          user: response.userResponse,
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
+        })
+      }
     },
   })
 }

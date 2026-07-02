@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Plus, X, Search, Tag, Check, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import { getErrorMessage } from '@/src/utils'
 import {
   getRoleAliases,
   createRoleAlias,
@@ -58,8 +59,8 @@ export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTab
       setLoading(true)
       const data = await getRoleAliases()
       setRawAliases(data)
-    } catch (err: any) {
-      toast.error('Lỗi tải danh sách vai trò: ' + err.message)
+    } catch (err) {
+      toast.error('Lỗi tải danh sách vai trò: ' + getErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -131,8 +132,8 @@ export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTab
       setExpandedGroups((prev) => ({ ...prev, [name]: true }))
       loadData()
       onGraphUpdate()
-    } catch (err: any) {
-      toast.error('Lỗi khi tạo vai trò: ' + err.message)
+    } catch (err) {
+      toast.error('Lỗi khi tạo vai trò: ' + getErrorMessage(err))
     }
   }
 
@@ -149,8 +150,8 @@ export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTab
       setNewAliasInputs((prev) => ({ ...prev, [canonical]: '' }))
       loadData()
       onGraphUpdate()
-    } catch (err: any) {
-      toast.error('Không thể thêm alias: ' + err.message)
+    } catch (err) {
+      toast.error('Không thể thêm alias: ' + getErrorMessage(err))
     }
   }
 
@@ -160,8 +161,8 @@ export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTab
       toast.success(`Đã xóa alias '${aliasName}'`)
       loadData()
       onGraphUpdate()
-    } catch (err: any) {
-      toast.error('Xóa alias thất bại: ' + err.message)
+    } catch (err) {
+      toast.error('Xóa alias thất bại: ' + getErrorMessage(err))
     }
   }
 
@@ -178,8 +179,8 @@ export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTab
           toast.success(`Đã xóa vai trò chuẩn '${group.canonicalRole}' và cập nhật đồ thị!`)
           loadData()
           await onGraphUpdate()
-        } catch (err: any) {
-          toast.error('Lỗi khi xóa vai trò: ' + err.message)
+        } catch (err) {
+          toast.error('Lỗi khi xóa vai trò: ' + getErrorMessage(err))
           loadData()
         } finally {
           setConfirmAction(null)
@@ -238,8 +239,8 @@ export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTab
           }
           loadData()
           await onGraphUpdate()
-        } catch (err: any) {
-          toast.error('Cập nhật vai trò chuẩn thất bại: ' + err.message)
+        } catch (err) {
+          toast.error('Cập nhật vai trò chuẩn thất bại: ' + getErrorMessage(err))
           loadData()
         } finally {
           setConfirmAction(null)

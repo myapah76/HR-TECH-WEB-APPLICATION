@@ -90,8 +90,8 @@ function PricingContent() {
         try {
           const res = await refreshToken()
           setAuth({
-            user: res.userResponse,
-            accessToken: res.accessToken,
+            user: res.userResponse!,
+            accessToken: res.accessToken!,
           })
           toast.success('Gói dịch vụ đã được kích hoạt thành công!')
         } catch (err) {
@@ -122,8 +122,8 @@ function PricingContent() {
           // Refresh session to get updated user role / subscription status
           const res = await refreshToken()
           setAuth({
-            user: res.userResponse,
-            accessToken: res.accessToken,
+            user: res.userResponse!,
+            accessToken: res.accessToken!,
           })
           toast.success('Gói dịch vụ đã được kích hoạt thành công!')
         } catch (err) {

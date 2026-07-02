@@ -26,6 +26,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements IUserService {
+    private static final String ADMIN_ROLE = "ADMIN";
+    private static final String ADMIN_SYSTEM_ROLE = "ADMIN_SYSTEM";
 
     private final UserRepository userRepository;
     private final IRoleService roleService;
@@ -105,6 +107,12 @@ public class UserServiceImpl implements IUserService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        String targetRole = user.getRole() != null ? user.getRole().getName() : null;
+        boolean isAdminUser = ADMIN_ROLE.equals(targetRole) || ADMIN_SYSTEM_ROLE.equals(targetRole);
+        if (Boolean.TRUE.equals(isBlocked) && isAdminUser) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Admin users cannot be blocked");
+        }
 
         user.setIsBlocked(isBlocked);
         return userMapper.toResponse(userRepository.save(user));

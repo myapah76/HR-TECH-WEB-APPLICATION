@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -13,10 +14,13 @@ import org.thymeleaf.context.Context;
 import sba301.hrtech.notification.abstractions.IEmailSender;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
+import sba301.hrtech.system.abstractions.services.SystemConfigService;
+import sba301.hrtech.system.entities.SystemConfig;
 
 import java.time.Year;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -24,11 +28,9 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class EmailSenderImpl implements IEmailSender {
 
-    private final JavaMailSender mailSender;
-    private final SpringTemplateEngine templateEngine;
+    private final SystemConfigService systemConfigService;
 
-    @Value("${spring.mail.from}")
-    private String fromEmail;
+    private final SpringTemplateEngine templateEngine;
 
     @Override
     @Async
@@ -136,15 +138,29 @@ public class EmailSenderImpl implements IEmailSender {
 
     private void sendHtmlEmail(String to, String subject, String html) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
+            SystemConfig config = systemConfigService.getSystemConfigEntity();
+            JavaMailSenderImpl dynamicSender  = new JavaMailSenderImpl();
+
+            dynamicSender.setHost(config.getSmtpHost());
+            dynamicSender.setPort(config.getSmtpPort());
+            dynamicSender.setUsername(config.getSmtpUsername());
+            dynamicSender.setPassword(config.getSmtpPassword());
+
+            Properties props = dynamicSender.getJavaMailProperties();
+            props.put("mail.transport.protocol", "smtp");
+            props.put("mail.smtp.auth", "true");
+            props.put("mail.smtp.starttls.enable", "true");
+            props.put("mail.debug", "false");
+
+            MimeMessage message = dynamicSender.createMimeMessage();
 
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setTo(to);
-            helper.setFrom(fromEmail);
+            helper.setFrom(config.getSmtpFromEmail());
             helper.setSubject(subject);
             helper.setText(html, true);
 
-            mailSender.send(message);
+            dynamicSender.send(message);
 
             log.info("Email sent to {}", to);
 

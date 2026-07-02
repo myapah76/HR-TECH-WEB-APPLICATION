@@ -4,10 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record SystemConfigRequest(
-        @NotBlank(message = "Tên website không được trống")
-        String websiteName,
-        @NotNull(message = "Dung lượng upload tối đa không được trống")
-        Integer maxFileSize,
+        @NotBlank(message = "Tên website không được trống") String websiteName,
+        @NotNull(message = "Dung lượng upload tối đa không được trống") Integer maxFileSize,
 
         String smtpHost,
         Integer smtpPort,
@@ -26,5 +24,5 @@ public record SystemConfigRequest(
 
         String payosClientId,
         String payosApiKey,
-        String payosChecksumKey
-) {}
+        String payosChecksumKey) {
+}

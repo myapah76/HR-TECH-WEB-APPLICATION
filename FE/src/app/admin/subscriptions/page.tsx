@@ -168,7 +168,7 @@ export default function AdminSubscriptionsPage() {
   const filteredPlans = plans?.filter((p) => p.subscriptionType === activeTab) || []
 
   return (
-    <div className="max-w-6xl space-y-6">
+    <div className="space-y-6">
       <PageHeader
         icon={CreditCard}
         title="Quản lý gói dịch vụ"

@@ -6,6 +6,8 @@ import sba301.hrtech.payment.abstractions.services.IPayOSService;
 import sba301.hrtech.payment.dtos.response.CreatePaymentResponse;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
+import sba301.hrtech.system.abstractions.services.SystemConfigService;
+import sba301.hrtech.system.entities.SystemConfig;
 import vn.payos.PayOS;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
@@ -15,7 +17,7 @@ import vn.payos.model.v2.paymentRequests.PaymentLinkItem;
 @RequiredArgsConstructor
 public class PayOSServiceImpl implements IPayOSService {
 
-    private final PayOS payOS;
+    private final SystemConfigService systemConfigService;
 
     @Override
     public CreatePaymentResponse createPaymentLink(
@@ -41,7 +43,7 @@ public class PayOSServiceImpl implements IPayOSService {
                             .build();
 
             CreatePaymentLinkResponse response =
-                    payOS.paymentRequests().create(request);
+                    getPayOSClient().paymentRequests().create(request);
 
             return new CreatePaymentResponse(response.getCheckoutUrl());
         } catch (Exception e) {
@@ -49,5 +51,15 @@ public class PayOSServiceImpl implements IPayOSService {
                     ErrorCode.HAS_ERROR,
                     "Lỗi khi tạo link thanh toán: " + e.getMessage());
         }
+    }
+
+    @Override
+    public PayOS getPayOSClient() {
+        SystemConfig config = systemConfigService.getSystemConfigEntity();
+        return new PayOS(
+                config.getPayosClientId(),
+                config.getPayosApiKey(),
+                config.getPayosChecksumKey()
+        );
     }
 }

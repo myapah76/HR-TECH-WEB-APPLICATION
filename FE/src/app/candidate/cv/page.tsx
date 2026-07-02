@@ -112,6 +112,9 @@ export default function CandidateCvPage() {
             { duration: 5000 }
           )
         },
+        onError: (error) => {
+          toast.error(getErrorMessage(error))
+        },
       }
     )
   }

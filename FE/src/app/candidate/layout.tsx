@@ -95,7 +95,7 @@ export default function CandidateLayout({ children }: { children: React.ReactNod
     return item
   })
 
-  if (!isInitialized || !user || user.roleResponse?.name !== RoleUser.CANDIDATE) {
+  if (!isInitialized || !user || user.requirePasswordChange || user.roleResponse?.name !== RoleUser.CANDIDATE) {
     return null
   }
 

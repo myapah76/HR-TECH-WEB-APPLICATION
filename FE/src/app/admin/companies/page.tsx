@@ -92,7 +92,7 @@ export default function CompaniesPage() {
   const companies = companiesPage?.content ?? []
 
   return (
-    <div className="max-w-5xl font-sans">
+    <div className="font-sans">
       <PageHeader
         icon={Building2}
         title="Quản lý công ty"

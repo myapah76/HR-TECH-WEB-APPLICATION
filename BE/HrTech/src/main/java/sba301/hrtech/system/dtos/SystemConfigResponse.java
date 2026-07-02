@@ -29,5 +29,6 @@ public record SystemConfigResponse(
         String payosChecksumKey,
 
         boolean dbOnline, // "Online" hoặc "Offline"
-        String dbSize    // Đo trực tiếp dung lượng DB
-) {}
+        String dbSize // Đo trực tiếp dung lượng DB
+) {
+}

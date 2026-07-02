@@ -96,4 +96,3 @@ public class SystemConfigSeeder implements CommandLineRunner {
         log.info("Default system configuration seeded successfully.");
     }
 }
-

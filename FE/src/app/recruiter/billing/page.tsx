@@ -15,7 +15,7 @@ export default function RecruiterBillingPage() {
   const { data: paymentRes, isLoading: isPaymentLoading } = useMyPaymentHistoryQuery(0, 50)
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
       <PageHeader
         title="Quản lý Gói & Thanh toán"
         subtitle="Theo dõi giới hạn sử dụng, thông tin gói đăng ký của doanh nghiệp và lịch sử các lần thanh toán."

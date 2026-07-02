@@ -85,7 +85,7 @@ export default function PostJobPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto pb-12">
+    <div className="pb-12">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
           <Briefcase className="w-6 h-6 text-emerald-600" />

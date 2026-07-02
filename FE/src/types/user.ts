@@ -13,6 +13,7 @@ export interface User {
   createdAt: string
   updatedAt: string
   roleResponse: RoleResponse
+  requirePasswordChange?: boolean
 }
 
 export interface RoleResponse {

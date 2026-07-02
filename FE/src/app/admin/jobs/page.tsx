@@ -7,7 +7,7 @@ import { INITIAL_JOBS } from '@/src/data'
 
 export default function JobsManagementPage() {
   return (
-    <div className="max-w-5xl">
+    <div>
       <PageHeader
         icon={Briefcase}
         title="Quản lý tin tuyển dụng"

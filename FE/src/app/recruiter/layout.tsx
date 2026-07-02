@@ -5,7 +5,7 @@ import { useAuthStore } from '@/src/stores/auth.store'
 import { RoleUser } from '@/src/enums/role.enum'
 import Sidebar from '@/src/components/layout/Sidebar'
 import { useGetCompanyApplicationCount } from '@/src/hooks/application'
-import { useGetMyCompany } from '@/src/hooks/company'
+import { useGetMyCompany, useGetCompanyMembers } from '@/src/hooks/company'
 import {
   LayoutDashboard,
   PlusCircle,
@@ -15,6 +15,7 @@ import {
   Building2,
   Settings,
   CreditCard,
+  UserCheck,
 } from 'lucide-react'
 
 const recruiterNavItems = [
@@ -66,15 +67,36 @@ export default function RecruiterLayout({ children }: { children: React.ReactNod
   const { data: myCompany } = useGetMyCompany(isInitialized && !!user)
   const { data: applicationCount } = useGetCompanyApplicationCount(myCompany?.id)
 
-  const navItems = useMemo(
-    () =>
-      recruiterNavItems.map((item) =>
-        item.path === '/recruiter/applications'
-          ? { ...item, badge: applicationCount ?? 0 }
-          : item
-      ),
-    [applicationCount]
+  const { data: companyMembers = [] } = useGetCompanyMembers(
+    myCompany?.id,
+    isInitialized && !!user && !!myCompany?.id
   )
+  const currentMember = companyMembers.find((m) => m.userId === user?.id)
+  const isOwner = currentMember?.role === 'OWNER'
+
+  const navItems = useMemo(() => {
+    let items = recruiterNavItems.map((item) =>
+      item.path === '/recruiter/applications'
+        ? { ...item, badge: applicationCount ?? 0 }
+        : item
+    )
+
+    if (isOwner) {
+      const settingsIndex = items.findIndex((item) => item.path === '/recruiter/settings')
+      const membersItem = {
+        icon: UserCheck,
+        label: 'Quản lý nhân sự',
+        path: '/recruiter/members',
+      }
+      if (settingsIndex !== -1) {
+        items.splice(settingsIndex, 0, membersItem)
+      } else {
+        items.push(membersItem)
+      }
+    }
+
+    return items
+  }, [applicationCount, isOwner])
 
   useEffect(() => {
     if (!isInitialized) return

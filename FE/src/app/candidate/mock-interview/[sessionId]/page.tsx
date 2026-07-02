@@ -221,7 +221,7 @@ export default function MockInterviewPracticePage() {
   const progressPercent = (currentQuestionIndex / totalQuestions) * 100
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-2 space-y-6">
+    <div className="py-8 px-2 space-y-6">
       {/* HEADER & TIẾN TRÌNH */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
