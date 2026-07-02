@@ -45,7 +45,8 @@ public class SecurityConfig {
             "/v3/api-docs/**",
             "/api/jobs/**",
             "/api/companies/**",
-            "/api/files/**"
+            "/api/files/**",
+            "/api/system/configs/public"
     };
 
     private final IJwtService jwtService;
