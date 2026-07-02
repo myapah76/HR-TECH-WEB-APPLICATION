@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Plus, X, Search, Tag, Check, AlertCircle } from 'lucide-react'
+import { Plus, X, Search, Tag, Check, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   getRoleAliases,
@@ -22,10 +22,13 @@ interface RoleAliasesTabProps {
   onGraphUpdate: () => Promise<void>
 }
 
+const ITEMS_PER_PAGE = 8
+
 export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTabProps) {
   const [rawAliases, setRawAliases] = useState<RoleAlias[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
 
   // Expand state for groups
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
@@ -89,6 +92,18 @@ export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTab
         g.aliases.some((a) => a.alias.toLowerCase().includes(query))
     )
   }, [groups, searchQuery])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery])
+
+  const totalPages = Math.ceil(filteredGroups.length / ITEMS_PER_PAGE) || 1
+  const paginatedGroups = useMemo(() => {
+    return filteredGroups.slice(
+      (currentPage - 1) * ITEMS_PER_PAGE,
+      currentPage * ITEMS_PER_PAGE
+    )
+  }, [filteredGroups, currentPage])
 
   const getAffectedSkills = (canonical: string) =>
     skills.filter(
@@ -311,7 +326,7 @@ export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTab
             <p className="text-sm font-bold">Không tìm thấy vai trò chuẩn nào khớp</p>
           </div>
         ) : (
-          filteredGroups.map((group) => (
+          paginatedGroups.map((group) => (
             <CanonicalRoleRow
               key={group.canonicalRole}
               group={group}
@@ -334,6 +349,50 @@ export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTab
           ))
         )}
       </div>
+
+      {/* Pagination Footer */}
+      {!loading && filteredGroups.length > 0 && (
+        <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-100 shrink-0">
+          <span className="text-xs font-bold text-slate-500">
+            Hiển thị {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredGroups.length)} -{' '}
+            {Math.min(currentPage * ITEMS_PER_PAGE, filteredGroups.length)} trên tổng số {filteredGroups.length}
+          </span>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="p-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+
+            <div className="flex items-center gap-1 px-2">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
+                    currentPage === page
+                      ? 'bg-violet-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="p-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Confirm Modal */}
       {confirmAction && (
