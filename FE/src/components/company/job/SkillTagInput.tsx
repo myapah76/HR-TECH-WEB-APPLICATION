@@ -38,13 +38,14 @@ export default function SkillTagInput({
     onChange(value.filter((s) => s.id !== id))
   }
 
-  const tagBgClass = colorTheme === 'emerald' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
+  const tagBgClass =
+    colorTheme === 'emerald' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
   const tagHoverClass = colorTheme === 'emerald' ? 'hover:bg-emerald-200' : 'hover:bg-blue-200'
 
   return (
     <div className="relative w-full" ref={wrapperRef}>
       <div
-        className={`min-h-[48px] border rounded-xl p-2 flex flex-wrap gap-2 items-center transition-colors bg-white ${
+        className={`min-h-12 border rounded-xl p-2 flex flex-wrap gap-2 items-center transition-colors bg-white ${
           isFocused ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200'
         }`}
         onClick={() => setIsFocused(true)}
@@ -67,8 +68,8 @@ export default function SkillTagInput({
             </button>
           </span>
         ))}
-        
-        <div className="flex-1 min-w-[120px] flex items-center gap-2">
+
+        <div className="flex-1 min-w-30 flex items-center gap-2">
           {inputValue.length === 0 && <Search className="w-4 h-4 text-slate-400 shrink-0" />}
           <input
             type="text"

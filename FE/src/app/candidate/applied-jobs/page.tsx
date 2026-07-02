@@ -94,18 +94,6 @@ export default function AppliedJobsPage() {
 
   return (
     <div className="max-w-6xl space-y-6 animate-fade-in">
-      {/* Tiêu đề trang */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-3">
-          <Send className="w-8 h-8 text-blue-600" />
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 animate-slide-in">
-            Việc đã ứng tuyển
-          </h1>
-        </div>
-        <p className="text-slate-500 font-semibold tracking-wide text-sm bg-slate-100/50 self-start px-3 py-1 rounded-full border border-slate-200/40">
-          Theo dõi trạng thái {applications.length} hồ sơ ứng tuyển của bạn
-        </p>
-      </div>
 
       {/* Danh sách ứng tuyển */}
       <div className="space-y-4">

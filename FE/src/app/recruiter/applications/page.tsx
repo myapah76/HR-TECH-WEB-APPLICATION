@@ -124,23 +124,8 @@ export default function HRApplicationsPage() {
       }
     )
   }
-
   return (
     <div className="max-w-7xl space-y-6 animate-fade-in pb-12">
-      {/* ─── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="flex items-center gap-2.5 text-2xl font-black text-slate-900">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
-              <Users className="w-5 h-5 text-emerald-600" />
-            </div>
-            Đơn ứng tuyển
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 font-medium ml-11">
-            Xem xét và quản lý hồ sơ ứng viên
-          </p>
-        </div>
-      </div>
 
       {/* ─── Stat Row ────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

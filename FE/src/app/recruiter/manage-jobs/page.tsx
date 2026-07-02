@@ -93,17 +93,7 @@ export default function ManageJobPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 pb-12">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900">
-            <Briefcase className="h-6 w-6 text-emerald-600" />
-            Quản lý tin tuyển dụng
-          </h1>
-          <p className="mt-1 text-slate-500">
-            Theo dõi và quản lý các tin tuyển dụng của công ty bạn.
-          </p>
-        </div>
-
+      <div className="flex justify-end">
         <Link
           href="/recruiter/post-job"
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm shadow-emerald-600/20 transition-colors hover:bg-emerald-700"

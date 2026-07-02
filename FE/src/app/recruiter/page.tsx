@@ -81,16 +81,7 @@ export default function RecruiterDashboardPage() {
 
   return (
     <div className="max-w-6xl space-y-8 animate-fade-in">
-      {/* Header Greeting */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900">
-            Chào, {user?.firstName || user?.email || 'Nhà tuyển dụng'}!
-          </h1>
-          <p className="text-base text-slate-500 font-medium mt-1">
-            Tổng quan hoạt động tuyển dụng và hiệu suất tin đăng của công ty bạn
-          </p>
-        </div>
+      <div className="flex justify-end">
         <Link
           href="/recruiter/post-job"
           className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm py-3 px-6 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"

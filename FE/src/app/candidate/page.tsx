@@ -70,14 +70,6 @@ export default function CandidateDashboardPage() {
 
   return (
     <div className="max-w-6xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-slate-900">
-          Chào mừng, {user?.firstName || 'Ứng viên'}!
-        </h1>
-        <p className="text-base text-slate-500 font-medium mt-1">
-          Tổng quan hoạt động tài khoản ứng viên
-        </p>
-      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
