@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { RoleUser } from '@/src/enums/role.enum'
 import Sidebar from '@/src/components/layout/Sidebar'
-import { LayoutDashboard, Users, Briefcase, Building2, FileBarChart, Settings, GitBranch } from 'lucide-react'
+import { LayoutDashboard, Users, Briefcase, Building2, Settings, GitBranch, CreditCard } from 'lucide-react'
 
 const adminNavItems = [
   { icon: LayoutDashboard, label: 'Bảng điều khiển', path: '/admin' },
@@ -13,7 +13,7 @@ const adminNavItems = [
   { icon: Briefcase, label: 'Quản lý tin tuyển', path: '/admin/jobs' },
   { icon: Building2, label: 'Quản lý công ty', path: '/admin/companies' },
   { icon: GitBranch, label: 'Quản lý kỹ năng', path: '/admin/skills' },
-  { icon: FileBarChart, label: 'Báo cáo', path: '/admin/reports' },
+  { icon: CreditCard, label: 'Quản lý gói dịch vụ', path: '/admin/subscriptions' },
   { icon: Settings, label: 'Cấu hình hệ thống', path: '/admin/settings' },
 ]
 

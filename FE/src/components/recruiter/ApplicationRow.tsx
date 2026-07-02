@@ -7,14 +7,54 @@ export const STATUS_CONFIG: Record<
   ApplicationStatus,
   { label: string; color: string; bg: string; dot: string }
 > = {
-  [ApplicationStatus.SUBMITTED]: { label: 'Mới nộp', color: 'text-blue-700', bg: 'bg-blue-50', dot: 'bg-blue-500' },
-  [ApplicationStatus.SCREENING]: { label: 'Đang xét', color: 'text-amber-700', bg: 'bg-amber-50', dot: 'bg-amber-500' },
-  [ApplicationStatus.SCORED]: { label: 'Đã chấm', color: 'text-violet-700', bg: 'bg-violet-50', dot: 'bg-violet-500' },
-  [ApplicationStatus.PENDING_INTERVIEW_SCHEDULE]: { label: 'CHỜ LỊCH PHỎNG VẤN', color: 'text-orange-700', bg: 'bg-orange-50', dot: 'bg-orange-500' },
-  [ApplicationStatus.INTERVIEW]: { label: 'PHỎNG VẤN', color: 'text-indigo-700', bg: 'bg-indigo-50', dot: 'bg-indigo-500' },
-  [ApplicationStatus.OFFER]: { label: 'Offer', color: 'text-emerald-700', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
-  [ApplicationStatus.REJECTED]: { label: 'TỪ CHỐI', color: 'text-rose-700', bg: 'bg-rose-50', dot: 'bg-rose-500' },
-  [ApplicationStatus.WITHDRAWN]: { label: 'Đã rút', color: 'text-slate-600', bg: 'bg-slate-100', dot: 'bg-slate-400' },
+  [ApplicationStatus.SUBMITTED]: {
+    label: 'Mới nộp',
+    color: 'text-blue-700',
+    bg: 'bg-blue-50',
+    dot: 'bg-blue-500',
+  },
+  [ApplicationStatus.SCREENING]: {
+    label: 'Đang xét',
+    color: 'text-amber-700',
+    bg: 'bg-amber-50',
+    dot: 'bg-amber-500',
+  },
+  [ApplicationStatus.SCORED]: {
+    label: 'Đã chấm',
+    color: 'text-violet-700',
+    bg: 'bg-violet-50',
+    dot: 'bg-violet-500',
+  },
+  [ApplicationStatus.PENDING_INTERVIEW_SCHEDULE]: {
+    label: 'CHỜ LỊCH PHỎNG VẤN',
+    color: 'text-orange-700',
+    bg: 'bg-orange-50',
+    dot: 'bg-orange-500',
+  },
+  [ApplicationStatus.INTERVIEW]: {
+    label: 'PHỎNG VẤN',
+    color: 'text-indigo-700',
+    bg: 'bg-indigo-50',
+    dot: 'bg-indigo-500',
+  },
+  [ApplicationStatus.OFFER]: {
+    label: 'Offer',
+    color: 'text-emerald-700',
+    bg: 'bg-emerald-50',
+    dot: 'bg-emerald-500',
+  },
+  [ApplicationStatus.REJECTED]: {
+    label: 'TỪ CHỐI',
+    color: 'text-rose-700',
+    bg: 'bg-rose-50',
+    dot: 'bg-rose-500',
+  },
+  [ApplicationStatus.WITHDRAWN]: {
+    label: 'Đã rút',
+    color: 'text-slate-600',
+    bg: 'bg-slate-100',
+    dot: 'bg-slate-400',
+  },
 }
 
 export const FILTER_STATUS_OPTIONS: { value: ApplicationStatus | ''; label: string }[] = [
@@ -68,7 +108,9 @@ export function RelativeTime({ dateStr }: { dateStr: string }) {
 export function StatusBadge({ status }: { status: ApplicationStatus }) {
   const cfg = STATUS_CONFIG[status]
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${cfg.bg} ${cfg.color}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${cfg.bg} ${cfg.color}`}
+    >
       <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
       {cfg.label}
     </span>
@@ -93,11 +135,13 @@ export function ApplicationRow({ app, onViewDetail }: ApplicationRowProps) {
       {/* Avatar + CV */}
       <td className="px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-xl ${colors[colorIdx]} flex items-center justify-center text-white text-xs font-black shrink-0`}>
+          <div
+            className={`w-9 h-9 rounded-xl ${colors[colorIdx]} flex items-center justify-center text-white text-xs font-black shrink-0`}
+          >
             {initials}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-slate-800 truncate max-w-[180px]">{app.cvTitle}</p>
+            <p className="text-sm font-bold text-slate-800 truncate max-w-45">{app.cvTitle}</p>
             <p className="text-xs text-slate-400 font-medium flex items-center gap-1 mt-0.5">
               <FileText className="w-3 h-3" />
               CV đính kèm
@@ -108,7 +152,7 @@ export function ApplicationRow({ app, onViewDetail }: ApplicationRowProps) {
 
       {/* Job */}
       <td className="px-4 py-4">
-        <p className="text-sm font-semibold text-slate-700 truncate max-w-[200px]">{app.jobTitle}</p>
+        <p className="text-sm font-semibold text-slate-700 truncate max-w-50">{app.jobTitle}</p>
       </td>
 
       {/* Status */}

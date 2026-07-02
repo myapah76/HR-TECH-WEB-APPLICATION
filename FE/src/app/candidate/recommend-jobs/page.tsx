@@ -202,19 +202,6 @@ export default function RecommendJobsPage() {
 
   return (
     <div className="space-y-8 animate-fade-in max-w-6xl mx-auto">
-      {/* Page header – always visible */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-3">
-          <Star className="w-8 h-8 text-blue-600" />
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">
-            AI Cố vấn: Gợi ý Việc làm
-          </h1>
-        </div>
-        <p className="text-slate-500 font-medium">
-          Sử dụng công nghệ Graph &amp; LLM để tìm kiếm và đề xuất những công việc phù hợp nhất với kỹ
-          năng trong CV của bạn.
-        </p>
-      </div>
 
       {/* Feature gate: show upgrade prompt for free users */}
       {!isSubLoading && !hasPaidPlan ? (

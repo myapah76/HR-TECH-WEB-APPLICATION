@@ -86,9 +86,9 @@ export default function AiAdvisorPage() {
   const handleSendMessage = (e?: React.FormEvent) => {
     e?.preventDefault()
     if (!messageText.trim() || !activeSessionId) return
-    const currentText = messageText;
-    setOptimisticMessage(currentText);
-    setMessageText('');
+    const currentText = messageText
+    setOptimisticMessage(currentText)
+    setMessageText('')
 
     sendMessageMut.mutate(
       {
@@ -97,11 +97,11 @@ export default function AiAdvisorPage() {
       },
       {
         onSuccess: () => {
-          setOptimisticMessage('');
+          setOptimisticMessage('')
         },
         onError: () => {
-          setMessageText(currentText);
-          setOptimisticMessage('');
+          setMessageText(currentText)
+          setOptimisticMessage('')
         },
       }
     )
@@ -110,7 +110,7 @@ export default function AiAdvisorPage() {
   return (
     <div className="flex h-[calc(100vh-140px)] gap-6 animate-fade-in">
       {/* LEFT SIDEBAR: Sessions List */}
-      <Card className="w-80 flex-shrink-0 flex flex-col bg-white border-slate-200 shadow-sm overflow-hidden h-full">
+      <Card className="w-80 shrink-0 flex flex-col bg-white border-slate-200 shadow-sm overflow-hidden h-full">
         <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
           <h2 className="font-black text-slate-800 flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-blue-600" /> Lịch sử Chat
@@ -145,9 +145,7 @@ export default function AiAdvisorPage() {
                     : 'bg-white border-transparent hover:bg-slate-50 hover:border-slate-200'
                 }`}
               >
-                <div className="font-bold text-sm text-slate-800 line-clamp-2">
-                  {session.title}
-                </div>
+                <div className="font-bold text-sm text-slate-800 line-clamp-2">{session.title}</div>
                 <div className="text-xs text-slate-500 mt-1 font-medium">
                   {formatDate(session.createdAt)}
                 </div>
@@ -175,7 +173,10 @@ export default function AiAdvisorPage() {
             </div>
 
             {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30" ref={chatContainerRef}>
+            <div
+              className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30"
+              ref={chatContainerRef}
+            >
               {loadingMessages ? (
                 <div className="flex justify-center p-8">
                   <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -200,7 +201,11 @@ export default function AiAdvisorPage() {
                           : 'bg-blue-600 text-white'
                       }`}
                     >
-                      {msg.sender === 'USER' ? <UserIcon className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                      {msg.sender === 'USER' ? (
+                        <UserIcon className="w-4 h-4" />
+                      ) : (
+                        <Bot className="w-4 h-4" />
+                      )}
                     </div>
                     <div
                       className={`p-4 rounded-2xl shadow-sm ${
@@ -212,7 +217,8 @@ export default function AiAdvisorPage() {
                       {msg.sender === 'USER' ? (
                         <p className="whitespace-pre-wrap text-sm font-medium">{msg.content}</p>
                       ) : (
-                        <div className="prose prose-sm max-w-none prose-blue 
+                        <div
+                          className="prose prose-sm max-w-none prose-blue 
                           prose-headings:font-black prose-headings:text-slate-800 
                           prose-p:leading-relaxed prose-p:text-slate-600
                           prose-a:text-blue-600 prose-a:font-bold prose-a:no-underline hover:prose-a:underline
@@ -224,10 +230,9 @@ export default function AiAdvisorPage() {
                           prose-td:p-2 prose-td:border prose-td:border-slate-200 prose-td:text-slate-600
                           prose-li:marker:text-blue-500
                           prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-50/50 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg prose-blockquote:not-italic
-                        ">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {msg.content}
-                          </ReactMarkdown>
+                        "
+                        >
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                         </div>
                       )}
                     </div>
@@ -242,7 +247,9 @@ export default function AiAdvisorPage() {
                     <UserIcon className="w-4 h-4" />
                   </div>
                   <div className="p-4 rounded-2xl shadow-sm bg-slate-800 text-white rounded-tr-none">
-                    <p className="whitespace-pre-wrap text-sm font-medium opacity-70">{optimisticMessage}</p>
+                    <p className="whitespace-pre-wrap text-sm font-medium opacity-70">
+                      {optimisticMessage}
+                    </p>
                   </div>
                 </div>
               )}
@@ -255,8 +262,14 @@ export default function AiAdvisorPage() {
                   </div>
                   <div className="p-4 rounded-2xl bg-white border border-slate-100 rounded-tl-none shadow-sm flex items-center gap-1">
                     <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                    <div
+                      className="w-2 h-2 bg-slate-300 rounded-full animate-bounce"
+                      style={{ animationDelay: '0.2s' }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-slate-300 rounded-full animate-bounce"
+                      style={{ animationDelay: '0.4s' }}
+                    ></div>
                   </div>
                 </div>
               )}
@@ -289,8 +302,13 @@ export default function AiAdvisorPage() {
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-500 space-y-4 bg-slate-50/50">
             <MessageSquare className="w-16 h-16 text-slate-300" />
-            <p className="font-bold text-lg text-slate-600">Chọn hoặc tạo một Phiên Chat để bắt đầu</p>
-            <Button onClick={() => setIsModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 font-bold">
+            <p className="font-bold text-lg text-slate-600">
+              Chọn hoặc tạo một Phiên Chat để bắt đầu
+            </p>
+            <Button
+              onClick={() => setIsModalOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 font-bold"
+            >
               <Plus className="w-4 h-4 mr-2" /> TẠO PHIÊN MỚI
             </Button>
           </div>
@@ -314,9 +332,10 @@ export default function AiAdvisorPage() {
             </div>
             <div className="p-6 space-y-6">
               <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm text-blue-800 font-medium">
-                Vui lòng chọn ít nhất 1 Công việc hoặc 1 Hồ sơ để AI có dữ liệu ngữ cảnh (Context) phân tích cho bạn.
+                Vui lòng chọn ít nhất 1 Công việc hoặc 1 Hồ sơ để AI có dữ liệu ngữ cảnh (Context)
+                phân tích cho bạn.
               </div>
-              
+
               <div className="space-y-3">
                 <Label className="font-bold text-slate-700">Công việc đã lưu (Tùy chọn)</Label>
                 <select

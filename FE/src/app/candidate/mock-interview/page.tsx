@@ -76,20 +76,8 @@ export default function MockInterviewSetupPage() {
       }
     )
   }
-
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-fade-in p-2">
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6">
-        <div>
-          <h1 className="text-3xl font-black text-slate-800 flex items-center gap-3">
-            <Bot className="w-9 h-9 text-blue-600 animate-pulse" /> AI Mock Interview
-          </h1>
-          <p className="text-slate-500 font-medium mt-1">
-            Luyện tập trả lời câu hỏi phỏng vấn kỹ thuật và hành vi được cá nhân hóa theo CV của bạn
-          </p>
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* SETUP FORM */}

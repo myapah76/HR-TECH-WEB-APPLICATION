@@ -46,7 +46,7 @@ export default function VerifyOtpPage() {
         className="w-full max-w-md"
       >
         <Card className="bg-white border border-slate-200/60 shadow-xl rounded-3xl overflow-hidden py-0 gap-0">
-          <div className="h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600"></div>
+          <div className="h-1.5 bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600"></div>
           <CardContent className="p-8">
             <Link
               href="/register"
