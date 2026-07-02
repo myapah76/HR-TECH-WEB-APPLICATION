@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import PageHeader from '@/src/components/ui/PageHeader'
 import Badge from '@/src/components/ui/Badge'
-import Pagination from '@/src/components/jobs/Pagination'
+import Pagination from '@/src/components/common/Pagination'
 import { RoleUser } from '@/src/enums/role.enum'
 import { useGetUsers, useUpdateUserBlockedStatus } from '@/src/hooks/user'
 import { useAuthStore } from '@/src/stores/auth.store'
@@ -14,7 +14,7 @@ import { AlertTriangle, Lock, Search, Shield, Unlock, Users, X } from 'lucide-re
 
 type BlockedFilter = 'ALL' | 'ACTIVE' | 'BLOCKED'
 
-const PAGE_SIZE = 8
+const DEFAULT_PAGE_SIZE = 10
 
 const roleLabels: Record<RoleUser, string> = {
   [RoleUser.CANDIDATE]: 'Ứng viên',
@@ -33,19 +33,22 @@ const getFullName = (user: User) => {
   return fullName || user.username || 'Chưa cập nhật tên'
 }
 
+const isAdminRole = (role?: string) => role === RoleUser.ADMIN_SYSTEM || role === 'ADMIN'
+
 export default function UsersPage() {
   const currentUser = useAuthStore((state) => state.user)
   const [emailSearch, setEmailSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<'ALL' | RoleUser>('ALL')
   const [blockedFilter, setBlockedFilter] = useState<BlockedFilter>('ALL')
   const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_PAGE_SIZE)
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null)
   const [confirmUser, setConfirmUser] = useState<User | null>(null)
 
   const queryParams = useMemo<AdminUsersParams>(() => {
     const params: AdminUsersParams = {
       page: currentPage - 1,
-      size: PAGE_SIZE,
+      size: itemsPerPage,
     }
     const trimmedEmail = emailSearch.trim()
 
@@ -54,7 +57,7 @@ export default function UsersPage() {
     if (blockedFilter !== 'ALL') params.isBlocked = blockedFilter === 'BLOCKED'
 
     return params
-  }, [blockedFilter, currentPage, emailSearch, roleFilter])
+  }, [blockedFilter, currentPage, emailSearch, itemsPerPage, roleFilter])
 
   const { data: usersPage, isLoading, isError, refetch } = useGetUsers(queryParams)
   const updateBlockedStatus = useUpdateUserBlockedStatus()
@@ -65,7 +68,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     if (usersPage && usersPage.totalPages > 0 && currentPage > usersPage.totalPages) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+        // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentPage(usersPage.totalPages)
     }
   }, [currentPage, usersPage])
@@ -77,11 +80,13 @@ export default function UsersPage() {
 
   const handleRequestToggleBlocked = (user: User) => {
     if (user.id === currentUser?.id) return
+    if (isAdminRole(user.roleResponse?.name)) return
     setConfirmUser(user)
   }
 
   const handleConfirmToggleBlocked = async () => {
     if (!confirmUser || confirmUser.id === currentUser?.id) return
+    if (isAdminRole(confirmUser.roleResponse?.name)) return
 
     setUpdatingUserId(confirmUser.id)
     try {
@@ -101,7 +106,7 @@ export default function UsersPage() {
   const confirmActionLabel = confirmUser?.isBlocked ? 'mở khóa' : 'khóa'
 
   return (
-    <div>
+    <div className="max-w-6xl">
       <PageHeader
         icon={Users}
         title="Quản lý người dùng"
@@ -121,9 +126,7 @@ export default function UsersPage() {
 
         <select
           value={roleFilter}
-          onChange={(event) =>
-            updateFilter(() => setRoleFilter(event.target.value as 'ALL' | RoleUser))
-          }
+          onChange={(event) => updateFilter(() => setRoleFilter(event.target.value as 'ALL' | RoleUser))}
           className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
         >
           <option value="ALL">Tất cả vai trò</option>
@@ -136,9 +139,7 @@ export default function UsersPage() {
 
         <select
           value={blockedFilter}
-          onChange={(event) =>
-            updateFilter(() => setBlockedFilter(event.target.value as BlockedFilter))
-          }
+          onChange={(event) => updateFilter(() => setBlockedFilter(event.target.value as BlockedFilter))}
           className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
         >
           <option value="ALL">Tất cả trạng thái</option>
@@ -196,8 +197,14 @@ export default function UsersPage() {
                 users.map((user) => {
                   const role = user.roleResponse?.name as RoleUser | undefined
                   const isCurrentUser = user.id === currentUser?.id
+                  const isAdminUser = isAdminRole(user.roleResponse?.name)
                   const isUpdating = updatingUserId === user.id
                   const actionLabel = user.isBlocked ? 'Mở khóa người dùng' : 'Khóa người dùng'
+                  const disabledReason = isCurrentUser
+                    ? 'Không thể tự khóa/mở khóa tài khoản hiện tại'
+                    : isAdminUser
+                      ? 'Quản trị viên không thể bị khóa'
+                      : actionLabel
 
                   return (
                     <tr key={user.id} className="border-b border-slate-50 hover:bg-slate-50/50">
@@ -207,9 +214,7 @@ export default function UsersPage() {
                             {getFullName(user).charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="text-xs font-extrabold text-slate-800">
-                              {getFullName(user)}
-                            </p>
+                            <p className="text-xs font-extrabold text-slate-800">{getFullName(user)}</p>
                             <p className="text-[10px] font-bold text-slate-400">{user.email}</p>
                           </div>
                         </div>
@@ -229,12 +234,8 @@ export default function UsersPage() {
                         <button
                           type="button"
                           onClick={() => handleRequestToggleBlocked(user)}
-                          disabled={isCurrentUser || isUpdating}
-                          title={
-                            isCurrentUser
-                              ? 'Không thể tự khóa/mở khóa tài khoản hiện tại'
-                              : actionLabel
-                          }
+                          disabled={isCurrentUser || isAdminUser || isUpdating}
+                          title={disabledReason}
                           className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition ${
                             user.isBlocked
                               ? 'text-emerald-500 hover:bg-emerald-50 hover:text-emerald-700'
@@ -256,11 +257,14 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {!isLoading && !isError && totalPages > 1 && (
+      {!isLoading && !isError && (
         <Pagination
           currentPage={safeCurrentPage}
           totalPages={totalPages}
+          totalItems={totalElements}
+          itemsPerPage={itemsPerPage}
           onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
         />
       )}
 
