@@ -49,7 +49,7 @@ public class User extends SoftDeleteEntity {
 
     private String address;
 
-    private Integer gender;
+    private Integer gender; // 0 - Male, 1 - Female
 
     @Column(name = "date_of_birth")
     private Instant dateOfBirth;
