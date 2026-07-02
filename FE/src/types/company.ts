@@ -12,6 +12,8 @@ export interface CompanyResponse {
   logoUrl: string;
   coverImageUrl: string;
   status: string;
+  industry?: string;
+  size?: string;
 }
 
 export interface CompanyMemberResponse {
