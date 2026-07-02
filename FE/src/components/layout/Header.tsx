@@ -1,10 +1,12 @@
 'use client'
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { Bell, ChevronDown, LogOut, User as UserIcon } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { logout as logoutService } from '@/src/services/auth.service'
 import { useRouter, usePathname } from 'next/navigation'
+import { useGetSystemConfig } from '@/src/hooks/system'
 
 const NAV_ITEMS = [
   { label: 'Trang chủ', path: '/', id: 'nav-home' },
@@ -17,6 +19,21 @@ export default function Header() {
   const { user, logout: clearAuth } = useAuthStore()
   const router = useRouter()
   const pathname = usePathname()
+  const { data: config } = useGetSystemConfig()
+
+  useEffect(() => {
+    if (config?.websiteName) {
+      const currentTitle = document.title
+      if (currentTitle.includes(' | ')) {
+        const parts = currentTitle.split(' | ')
+        parts[parts.length - 1] = config.websiteName
+        document.title = parts.join(' | ')
+      } else {
+        document.title = config.websiteName
+      }
+    }
+  }, [config, pathname])
+
   const handleLogout = async () => {
     try {
       await logoutService()
@@ -43,7 +60,7 @@ export default function Header() {
           >
             <div className="flex items-center gap-1.5">
               <span className="text-2xl font-black tracking-tight text-blue-900 font-sans transition-all group-hover:text-blue-800">
-                HR <span className="text-blue-500 font-black">- Tech</span>
+                {config?.websiteName || 'HR-Tech'}
               </span>
             </div>
             <div className="hidden lg:block h-6 w-px bg-slate-200"></div>

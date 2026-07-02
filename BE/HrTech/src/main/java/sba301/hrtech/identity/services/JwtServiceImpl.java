@@ -2,24 +2,27 @@ package sba301.hrtech.identity.services;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import sba301.hrtech.identity.abstractions.services.IJwtService;
+import sba301.hrtech.system.abstractions.services.SystemConfigService;
+import sba301.hrtech.system.entities.SystemConfig;
 
 import java.security.Key;
 import java.util.*;
 import java.util.function.Function;
 
 @Service
+@RequiredArgsConstructor
 public class JwtServiceImpl implements IJwtService {
 
     @Value("${jwt.secret}")
     private String secretKey;
 
-    @Value("${jwt.access-expiration}")
-    private long expirationMinutes;
+    private final SystemConfigService systemConfigService;
 
     private Key getSignInKey() {
         return Keys.hmacShaKeyFor(secretKey.getBytes());
@@ -66,19 +69,26 @@ public class JwtServiceImpl implements IJwtService {
                 userDetails.getAuthorities()
                         .stream()
                         .map(GrantedAuthority::getAuthority)
-                        .toList()
-        );
+                        .toList());
 
         return generateToken(extraClaims, userDetails);
     }
 
     private String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
 
-        long expirationMs = expirationMinutes * 60 * 1000;
+        SystemConfig config = systemConfigService.getSystemConfigEntity();
+
+        long expMinutes = config.getJwtAccessExpirationMinutes();
+        String issuer = config.getJwtIssuer();
+        String audience = config.getJwtAudience();
+
+        long expirationMs = expMinutes * 60 * 1000;
 
         return Jwts.builder()
                 .setClaims(extraClaims)
                 .setSubject(userDetails.getUsername())
+                .setIssuer(issuer)
+                .setAudience(audience)
                 .setId(UUID.randomUUID().toString())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationMs))

@@ -21,8 +21,7 @@ public class SystemConfigController {
     public ApiResponse<SystemConfigResponse> getSystemConfig() {
         return ApiResponse.success(
                 systemConfigService.getSystemConfig(),
-                "System configuration retrieved successfully"
-        );
+                "System configuration retrieved successfully");
     }
 
     @PutMapping
@@ -31,8 +30,6 @@ public class SystemConfigController {
             @Valid @RequestBody SystemConfigRequest request) {
         return ApiResponse.success(
                 systemConfigService.updateSystemConfig(request),
-                "System configuration updated successfully"
-        );
+                "System configuration updated successfully");
     }
 }
-

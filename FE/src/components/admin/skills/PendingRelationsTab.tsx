@@ -1,6 +1,7 @@
-import React from 'react'
-import { CheckCircle, XCircle } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Search, CheckCircle, XCircle, CheckCheck, Loader2 } from 'lucide-react'
 import { PendingRelationship } from '@/src/types/skill'
+import Pagination from '@/src/components/common/Pagination'
 
 interface PendingRelationsTabProps {
   pendingRels: PendingRelationship[]
@@ -9,18 +10,89 @@ interface PendingRelationsTabProps {
 }
 
 const PendingRelationsTab = ({ pendingRels, onApprove, onReject }: PendingRelationsTabProps) => {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [isApprovingAll, setIsApprovingAll] = useState(false)
+
+  const filtered = pendingRels.filter(
+    (rel) =>
+      rel.sourceSkillName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      rel.targetSkillName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      rel.relationshipType.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery])
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1
+  const paginatedRels = filtered.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  const handleApproveAll = async () => {
+    if (filtered.length === 0) return
+    if (!confirm(`Bạn có chắc chắn muốn duyệt tất cả ${filtered.length} mối quan hệ này không?`)) return
+
+    setIsApprovingAll(true)
+    try {
+      for (const rel of filtered) {
+        await onApprove(rel.sourceSkillId, rel.targetSkillId, rel.relationshipType)
+      }
+    } finally {
+      setIsApprovingAll(false)
+    }
+  }
+
   return (
-    <div className="flex-1 bg-white rounded-3xl border border-slate-200/60 p-6 shadow-sm overflow-y-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-black text-slate-800">
-          Danh sách Liên kết Chờ Duyệt (từ AI)
-        </h2>
+    <div className="flex-1 bg-white rounded-3xl border border-slate-200/60 p-6 shadow-sm flex flex-col min-h-0 overflow-hidden">
+      
+      {/* Header controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 shrink-0">
+        <div>
+          <h2 className="text-lg font-black text-slate-800">
+            Danh sách Liên kết Chờ Duyệt (từ AI)
+          </h2>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            Tổng cộng: {pendingRels.length} mối quan hệ đang chờ kiểm duyệt
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm liên kết..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4 py-2.5 w-64 text-sm rounded-xl border border-slate-200 focus:outline-hidden focus:border-violet-500 transition-all"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleApproveAll}
+            disabled={isApprovingAll || filtered.length === 0}
+            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed rounded-xl transition-all shadow-xs shrink-0"
+          >
+            {isApprovingAll ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <CheckCheck className="h-4 w-4" />
+            )}
+            {isApprovingAll ? 'Đang duyệt...' : 'Duyệt tất cả'}
+          </button>
+        </div>
       </div>
 
-      <div className="border border-slate-100 rounded-2xl overflow-hidden">
+      {/* Table Container */}
+      <div className="flex-1 border border-slate-100 rounded-2xl overflow-y-auto min-h-0">
         <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50 text-xs font-black text-slate-500 uppercase tracking-wider border-b border-slate-100">
+          <thead className="sticky top-0 bg-slate-50 z-10">
+            <tr className="text-xs font-black text-slate-500 uppercase tracking-wider border-b border-slate-100">
               <th className="px-6 py-4">Kỹ năng nguồn</th>
               <th className="px-6 py-4 text-center">Mối quan hệ</th>
               <th className="px-6 py-4">Kỹ năng đích</th>
@@ -28,7 +100,7 @@ const PendingRelationsTab = ({ pendingRels, onApprove, onReject }: PendingRelati
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm">
-            {pendingRels.map((rel, idx) => (
+            {paginatedRels.map((rel, idx) => (
               <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-6 py-4 font-bold text-slate-800 capitalize">
                   {rel.sourceSkillName}
@@ -71,9 +143,9 @@ const PendingRelationsTab = ({ pendingRels, onApprove, onReject }: PendingRelati
                 </td>
               </tr>
             ))}
-            {pendingRels.length === 0 && (
+            {filtered.length === 0 && (
               <tr>
-                <td colSpan={4} className="text-center py-10 text-slate-400 font-medium">
+                <td colSpan={4} className="text-center py-12 text-slate-400 font-medium">
                   Không có mối quan hệ nào chờ kiểm duyệt.
                 </td>
               </tr>
@@ -81,6 +153,16 @@ const PendingRelationsTab = ({ pendingRels, onApprove, onReject }: PendingRelati
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Footer */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filtered.length}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setCurrentPage}
+        onItemsPerPageChange={setItemsPerPage}
+      />
     </div>
   )
 }

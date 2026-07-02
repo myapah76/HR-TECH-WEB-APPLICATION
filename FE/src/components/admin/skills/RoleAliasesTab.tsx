@@ -11,6 +11,7 @@ import {
 } from '@/src/services/skill.service'
 import CanonicalRoleRow from './CanonicalRoleRow'
 import CanonicalRoleConfirmModal from './CanonicalRoleConfirmModal'
+import Pagination from '@/src/components/common/Pagination'
 
 interface CanonicalGroup {
   canonicalRole: string
@@ -26,6 +27,8 @@ export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTab
   const [rawAliases, setRawAliases] = useState<RoleAlias[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
 
   // Expand state for groups
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
@@ -89,6 +92,18 @@ export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTab
         g.aliases.some((a) => a.alias.toLowerCase().includes(query))
     )
   }, [groups, searchQuery])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery])
+
+  const totalPages = Math.ceil(filteredGroups.length / itemsPerPage) || 1
+  const paginatedGroups = useMemo(() => {
+    return filteredGroups.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    )
+  }, [filteredGroups, currentPage, itemsPerPage])
 
   const getAffectedSkills = (canonical: string) =>
     skills.filter(
@@ -311,7 +326,7 @@ export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTab
             <p className="text-sm font-bold">Không tìm thấy vai trò chuẩn nào khớp</p>
           </div>
         ) : (
-          filteredGroups.map((group) => (
+          paginatedGroups.map((group) => (
             <CanonicalRoleRow
               key={group.canonicalRole}
               group={group}
@@ -334,6 +349,18 @@ export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTab
           ))
         )}
       </div>
+
+      {/* Pagination Footer */}
+      {!loading && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredGroups.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+        />
+      )}
 
       {/* Confirm Modal */}
       {confirmAction && (
