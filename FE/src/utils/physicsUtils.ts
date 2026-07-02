@@ -101,7 +101,7 @@ export const formatInitialEdges = (edgesList: SkillEdge[]) => {
         id: `e-${e.sourceId}-${e.targetId}-${idx}`,
         source: e.sourceId,
         target: e.targetId,
-        type: 'straight',
+        type: 'floating',
         animated: e.status === 'PENDING',
         label: e.type === 'PARENT_OF' ? 'PARENT_OF' : 'RELATED_TO',
         labelStyle: {
