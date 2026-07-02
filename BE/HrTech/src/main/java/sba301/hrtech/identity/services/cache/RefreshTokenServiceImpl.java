@@ -1,7 +1,6 @@
 package sba301.hrtech.identity.services.cache;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import sba301.hrtech.identity.abstractions.repositories.RefreshTokenRepository;
 import sba301.hrtech.identity.abstractions.services.IRefreshTokenService;
@@ -9,6 +8,8 @@ import sba301.hrtech.identity.entities.RefreshToken;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.exceptions.AppException;
+import sba301.hrtech.system.abstractions.services.SystemConfigService;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
@@ -17,14 +18,14 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RefreshTokenServiceImpl implements IRefreshTokenService {
 
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final SystemConfigService systemConfigService;
 
-    @Value("${jwt.refresh-expiration}")
-    private long refreshTokenDays;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     public String createRefreshToken(User user) {
         RefreshToken token = new RefreshToken();
+        int refreshTokenDays = systemConfigService.getSystemConfigEntity().getJwtRefreshTokenExpirationDays();
 
         token.setToken(UUID.randomUUID().toString());
         token.setUser(user);
@@ -39,17 +40,18 @@ public class RefreshTokenServiceImpl implements IRefreshTokenService {
     @Override
     public RefreshToken validateRefreshToken(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
-                .orElseThrow(() -> new AppException(ErrorCode.TOKEN_INVALID,"Invalid refresh token"));
+                .orElseThrow(() -> new AppException(ErrorCode.TOKEN_INVALID, "Invalid refresh token"));
 
         if (Boolean.TRUE.equals(refreshToken.getIsRevoked())) {
             // REUSE DETECTION: Token is revoked but someone is trying to use it!
             // Revoke all tokens for this user to protect the account
             revokeAllUserTokens(refreshToken.getUser());
-            throw new AppException(ErrorCode.TOKEN_REVOKED,"Refresh token revoked (Reuse Detected! All tokens revoked)");
+            throw new AppException(ErrorCode.TOKEN_REVOKED,
+                    "Refresh token revoked (Reuse Detected! All tokens revoked)");
         }
 
         if (refreshToken.getExpiresAt().isBefore(Instant.now())) {
-            throw new AppException(ErrorCode.TOKEN_EXPIRED,"Refresh token expired");
+            throw new AppException(ErrorCode.TOKEN_EXPIRED, "Refresh token expired");
         }
 
         return refreshToken;

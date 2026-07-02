@@ -41,7 +41,6 @@ public class PaymentServiceImpl implements IPaymentService {
     private final ISubscriptionService subscriptionService;
     private final PaymentRepository paymentRepository;
     private final AuthUtils authUtils;
-    private final PayOS payOS;
 
     @Override
     @Transactional
@@ -54,7 +53,7 @@ public class PaymentServiceImpl implements IPaymentService {
             Payment pendingPayment = pendingPaymentOpt.get();
             try {
                 // Kiểm tra trạng thái thực tế của đơn hàng này trên PayOS
-                PaymentLink paymentInfo = payOS.paymentRequests().get(pendingPayment.getOrderCode());
+                PaymentLink paymentInfo = payOSService.getPayOSClient().paymentRequests().get(pendingPayment.getOrderCode());
                 PaymentLinkStatus payosStatus = paymentInfo.getStatus();
 
                 if (payosStatus == PaymentLinkStatus.PAID) {
@@ -122,7 +121,7 @@ public class PaymentServiceImpl implements IPaymentService {
     @Override
     public void handleWebhook(Webhook webhook) {
         try {
-            var data = payOS.webhooks().verify(webhook);
+            var data = payOSService.getPayOSClient().webhooks().verify(webhook);
             log.info("Received PayOS webhook: {}", data);
             if (!Boolean.TRUE.equals(webhook.getSuccess()))
                 return;
@@ -223,7 +222,7 @@ public class PaymentServiceImpl implements IPaymentService {
 
     private void processVerification(Payment payment) {
         try {
-            PaymentLink paymentInfo = payOS.paymentRequests().get(payment.getOrderCode());
+            PaymentLink paymentInfo = payOSService.getPayOSClient().paymentRequests().get(payment.getOrderCode());
             PaymentLinkStatus status = paymentInfo.getStatus();
 
             if (status == PaymentLinkStatus.PAID) {
