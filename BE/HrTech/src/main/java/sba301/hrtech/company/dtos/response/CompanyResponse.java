@@ -14,6 +14,7 @@ public record CompanyResponse(
         String address,
         String taxCode,
         String status,
+        Boolean isDeleted,
         Instant createdAt,
         Instant updatedAt,
         Double relatedWeight,

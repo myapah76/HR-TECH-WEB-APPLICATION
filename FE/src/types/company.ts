@@ -14,6 +14,7 @@ export interface CompanyResponse {
   status: string;
   industry?: string;
   size?: string;
+  isDeleted?: boolean;
 }
 
 export interface CompanyMemberResponse {
