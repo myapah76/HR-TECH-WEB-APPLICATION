@@ -35,6 +35,8 @@ public interface IJobService {
 
     Page<JobResponse> listJobs(Pageable pageable);
 
+    Page<JobResponse> getJobsForAdmin(String keyword, String status, Pageable pageable);
+
     List<JobResponse> getCompanyJobs(UUID companyId);
 
     List<JobResponse> getManageJobs(UUID companyId);

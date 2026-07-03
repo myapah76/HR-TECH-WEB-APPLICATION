@@ -286,6 +286,23 @@ public class JobServiceImpl implements IJobService {
         return jobRepository.findByStatus(JobStatus.APPROVED, pageable)
                 .map(jobMapper::toResponse);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<JobResponse> getJobsForAdmin(String keyword, String status, Pageable pageable) {
+        String keywordParam = (keyword != null && !keyword.trim().isEmpty()) ? "%" + keyword.trim().toLowerCase() + "%" : null;
+        
+        JobStatus jobStatusEnum = null;
+        if (status != null && !status.trim().isEmpty()) {
+            try {
+                jobStatusEnum = JobStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        
+        return jobRepository.findAllJobsForAdmin(keywordParam, jobStatusEnum, pageable)
+                .map(jobMapper::toResponse);
+    }
     @Override
     @Transactional(readOnly = true)
     public List<JobResponse> getCompanyJobs(UUID companyId) {

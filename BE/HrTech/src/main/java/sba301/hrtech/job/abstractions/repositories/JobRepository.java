@@ -82,4 +82,16 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
       @Param("jobType") JobType jobType,
       @Param("jobLevel") ExperienceLevel jobLevel,
       Pageable pageable);
+
+  @Query("""
+          SELECT j FROM Job j
+          LEFT JOIN j.company c
+          WHERE j.deleted = false
+            AND (:keyword IS NULL OR LOWER(j.title) LIKE :keyword OR LOWER(c.name) LIKE :keyword)
+            AND (:status IS NULL OR j.status = :status)
+      """)
+  Page<Job> findAllJobsForAdmin(
+      @Param("keyword") String keyword,
+      @Param("status") JobStatus status,
+      Pageable pageable);
 }

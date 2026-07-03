@@ -79,6 +79,9 @@ public class JobValidator {
     }
 
     public void validateCanApproveJob(User user, UUID companyId) {
+        if (user.getRole() != null && "ADMIN_SYSTEM".equals(user.getRole().getName())) {
+            return; // System admin bypass
+        }
         CompanyMember member = getActiveCompanyMember(user, companyId);
         if (member.getCompanyRole() != CompanyRole.HR_MANAGER
                 || !permissionService.hasPermission(user.getId(), companyId, CompanyPermission.APPROVE_JOB)) {
@@ -88,6 +91,9 @@ public class JobValidator {
     }
 
     public void validateCanSubmitJob(User user, Job job) {
+        if (user.getRole() != null && "ADMIN_SYSTEM".equals(user.getRole().getName())) {
+            return; // System admin bypass
+        }
         CompanyMember member = getActiveCompanyMember(user, job.getCompany().getId());
         boolean isCreator = job.getCreatedBy() != null && job.getCreatedBy().getId().equals(user.getId());
         boolean isHr = member.getCompanyRole() == CompanyRole.HR;
@@ -99,6 +105,9 @@ public class JobValidator {
     }
 
     public void validateCanCloseJob(User user, Job job) {
+        if (user.getRole() != null && "ADMIN_SYSTEM".equals(user.getRole().getName())) {
+            return; // System admin bypass
+        }
         CompanyMember member = getActiveCompanyMember(user, job.getCompany().getId());
         boolean isCreator = job.getCreatedBy() != null && job.getCreatedBy().getId().equals(user.getId());
         boolean isManager = member.getCompanyRole() == CompanyRole.HR_MANAGER;

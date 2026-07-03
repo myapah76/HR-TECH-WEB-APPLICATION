@@ -94,6 +94,13 @@ public class CompanySecurityExpression {
     public boolean hasJobRole(Object jobId, String... roles) {
         if (jobId == null) return false;
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
+                CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+                if (userDetails.user().getRole() != null && "ADMIN_SYSTEM".equals(userDetails.user().getRole().getName())) {
+                    return true;
+                }
+            }
             Job job = jobRepository.findById(UUID.fromString(jobId.toString())).orElse(null);
             if (job == null || job.getCompany() == null) {
                 return false;
