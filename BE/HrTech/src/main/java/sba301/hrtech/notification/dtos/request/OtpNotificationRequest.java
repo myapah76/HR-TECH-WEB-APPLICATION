@@ -1,4 +1,4 @@
-package sba301.hrtech.notification.dtos;
+package sba301.hrtech.notification.dtos.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

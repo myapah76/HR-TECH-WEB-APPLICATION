@@ -1,4 +1,4 @@
-package sba301.hrtech.notification.abstractions;
+package sba301.hrtech.notification.abstractions.services;
 
 import java.util.concurrent.CompletableFuture;
 

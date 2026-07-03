@@ -1,6 +1,7 @@
 package sba301.hrtech.identity.config;
 
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,18 +31,25 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain)
+                                    @NotNull HttpServletResponse response,
+                                    @NotNull FilterChain filterChain)
             throws ServletException, IOException {
 
+        String token = null;
         final String header = request.getHeader("Authorization");
 
-        if (header == null || !header.startsWith("Bearer ") || request.getServletPath().startsWith("/api/auth/login")
+        if (header != null && header.startsWith("Bearer ")) {
+            token = header.substring(7);
+        } else {
+            // 2. Dự phòng: Kiểm tra trong Query Parameter (dành riêng cho kết nối SSE Stream)
+            token = request.getParameter("token");
+        }
+
+        if (token == null || request.getServletPath().startsWith("/api/auth/login")
                 || request.getServletPath().startsWith("/api/auth/refresh")) {
             filterChain.doFilter(request, response);
             return;
         }
-        String token = header.substring(7);
 
         String path = request.getServletPath();
 

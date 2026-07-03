@@ -9,7 +9,6 @@ import sba301.hrtech.identity.dtos.user.response.UserResponse;
 import sba301.hrtech.identity.entities.User;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface IUserService {
@@ -27,5 +26,6 @@ public interface IUserService {
     User saveUserEntity(User user);
     User getUserEntityByEmail(String email);
     boolean existsByEmail(String email);
+    boolean existsById(UUID id);
 
 }
