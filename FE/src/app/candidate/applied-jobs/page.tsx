@@ -27,6 +27,7 @@ import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import { ApplicationMatchModal } from '@/src/components/candidate/application/ApplicationMatchModal'
 import { ApplicationStatus } from '@/src/types'
 import { formatDate, formatDateTime, formatSalary, getErrorMessage } from '@/src/utils'
+import Pagination from '@/src/components/common/Pagination'
 
 const statusConfig: Record<string, { label: string; bg: string; text: string; border: string }> = {
   SUBMITTED: {
@@ -80,7 +81,13 @@ const statusConfig: Record<string, { label: string; bg: string; text: string; bo
 }
 
 export default function AppliedJobsPage() {
-  const { data: applications = [], isLoading: loadingApps } = useGetMyApplications()
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+
+  const { data: applicationsPage, isLoading: loadingApps } = useGetMyApplications(currentPage - 1, itemsPerPage)
+  const applications = applicationsPage?.content || []
+  const totalPages = applicationsPage?.totalPages || 1
+  const totalElements = applicationsPage?.totalElements || 0
 
   const { data: jobsData, isLoading: loadingJobs } = useGetJobs(0, 100)
   const acceptScheduleMutation = useAcceptInterviewSchedule()
@@ -382,6 +389,18 @@ export default function AppliedJobsPage() {
           })
         )}
       </div>
+
+      {totalElements >= 10 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalElements}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+          pageSizeOptions={[5, 10, 20, 50]}
+        />
+      )}
 
       <ApplicationMatchModal
         isOpen={!!matchApp}

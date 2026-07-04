@@ -18,7 +18,8 @@ public interface CvRepository extends JpaRepository<Cv, UUID> {
     @Query("SELECT c FROM Cv c WHERE c.user.id = :userId ORDER BY c.isPrimary DESC, c.createdAt DESC")
     List<Cv> findByUserId(@Param("userId") UUID userId);
     Optional<Cv> findByUserIdAndIsPrimaryTrue(UUID userId);
-    Optional<Cv> findByUserIdAndFileHash(UUID userId, String fileHash);
+    @Query("SELECT c FROM Cv c WHERE c.user.id = :userId AND c.fileHash = :fileHash")
+    Optional<Cv> findByUserIdAndFileHash(@Param("userId") UUID userId, @Param("fileHash") String fileHash);
 
     @Query("SELECT c FROM Cv c WHERE c.extractionStatus IN :statuses AND c.updatedAt < :threshold")
     List<Cv> findStuckCvs(

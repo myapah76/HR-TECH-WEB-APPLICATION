@@ -48,19 +48,21 @@ public class CvServiceImpl implements ICvService {
         // Validate the file URL using CloudinaryService and get file hash (MD5)
         String fileHash = cloudinaryService.checkValidUrl(request.getFileUrl());
 
-        // Check if CV with the same content hash already exists for this user
-        Optional<Cv> duplicateCv = cvRepository.findByUserIdAndFileHash(user.getId(), fileHash);
-        if (duplicateCv.isPresent()) {
-            Cv existing = duplicateCv.get();
-            Map<String, Object> errorData = Map.of(
-                "duplicateCvId", existing.getId(),
-                "title", existing.getTitle()
-            );
-            throw new AppException(
-                ErrorCode.CV_ALREADY_EXISTS,
-                "Hồ sơ này đã được tải lên trước đó",
-                errorData
-            );
+        // Check if CV with the same content hash already exists for this user (only when fileHash is valid)
+        if (fileHash != null && !fileHash.isBlank()) {
+            Optional<Cv> duplicateCv = cvRepository.findByUserIdAndFileHash(user.getId(), fileHash);
+            if (duplicateCv.isPresent()) {
+                Cv existing = duplicateCv.get();
+                Map<String, Object> errorData = Map.of(
+                        "duplicateCvId", existing.getId(),
+                        "title", existing.getTitle()
+                );
+                throw new AppException(
+                        ErrorCode.CV_ALREADY_EXISTS,
+                        "Hồ sơ này đã được tải lên trước đó",
+                        errorData
+                );
+            }
         }
 
         // Check if this is the first CV for the user

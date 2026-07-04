@@ -10,6 +10,9 @@ import sba301.hrtech.system.abstractions.services.SystemConfigService;
 import sba301.hrtech.system.entities.SystemConfig;
 
 import sba301.hrtech.shared.dtos.CloudinarySignatureResponse;
+import org.springframework.util.DigestUtils;
+import java.io.InputStream;
+import java.net.URI;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.regex.Matcher;
@@ -26,7 +29,6 @@ public class CloudinaryService {
             throw new AppException(ErrorCode.INVALID_CLOUDINARY_URL);
         }
 
-        // Capture resource type (image, raw, video) as Group 1, and the file path as Group 2
         Pattern pattern = Pattern.compile(".*/(image|raw|video)/upload/(?:v\\d+/)?([^?#]+)$");
         Matcher matcher = pattern.matcher(url);
 
@@ -34,16 +36,11 @@ public class CloudinaryService {
             throw new AppException(ErrorCode.INVALID_CLOUDINARY_URL);
         }
 
-        String resourceType = matcher.group(1);
-        String publicId = getPublicId(matcher, resourceType);
-
-        try {
-            Cloudinary dynamicClient = getDynamicCloudinary();
-            var apiResult = dynamicClient.api().resource(publicId, ObjectUtils.asMap("resource_type", resourceType));
-            Object etagObj = apiResult.get("etag");
-            return etagObj != null ? etagObj.toString() : null;
+        // Calculate true MD5 hash of the file bytes from Cloudinary URL
+        try (InputStream is = new URI(url).toURL().openStream()) {
+            return DigestUtils.md5DigestAsHex(is);
         } catch (Exception e) {
-            throw new AppException(ErrorCode.INVALID_CLOUDINARY_URL);
+            throw new AppException(ErrorCode.INVALID_CLOUDINARY_URL, "Không thể đọc dữ liệu tệp từ Cloudinary");
         }
     }
 
@@ -52,10 +49,12 @@ public class CloudinaryService {
 
         String publicId;
         if ("raw".equals(resourceType)) {
-            // In Cloudinary, public IDs of 'raw' files include their extension (e.g. "cvs/my_cv.pdf")
+            // In Cloudinary, public IDs of 'raw' files include their extension (e.g.
+            // "cvs/my_cv.pdf")
             publicId = path;
         } else {
-            // For 'image' and 'video', public IDs exclude the extension (e.g. "images/sample")
+            // For 'image' and 'video', public IDs exclude the extension (e.g.
+            // "images/sample")
             int lastDotIdx = path.lastIndexOf('.');
             if (lastDotIdx != -1) {
                 publicId = path.substring(0, lastDotIdx);
@@ -69,14 +68,14 @@ public class CloudinaryService {
     public CloudinarySignatureResponse generateUploadSignature(String folder) {
         SystemConfig config = systemConfigService.getSystemConfigEntity();
         long timestamp = System.currentTimeMillis() / 1000L;
-        
+
         Map<String, Object> params = new HashMap<>();
         params.put("folder", folder);
         params.put("timestamp", timestamp);
 
         try {
             String signature = getDynamicCloudinary().apiSignRequest(params, config.getCloudinaryApiSecret());
-            
+
             return CloudinarySignatureResponse.builder()
                     .signature(signature)
                     .timestamp(timestamp)
@@ -93,7 +92,6 @@ public class CloudinaryService {
         return new Cloudinary(ObjectUtils.asMap(
                 "cloud_name", config.getCloudinaryCloudName(),
                 "api_key", config.getCloudinaryApiKey(),
-                "api_secret", config.getCloudinaryApiSecret()
-        ));
+                "api_secret", config.getCloudinaryApiSecret()));
     }
 }

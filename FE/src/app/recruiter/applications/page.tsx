@@ -38,6 +38,7 @@ import {
   FILTER_STATUS_OPTIONS,
   ApplicationRow,
 } from '@/src/components/recruiter/ApplicationRow'
+import Pagination from '@/src/components/common/Pagination'
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function HRApplicationsPage() {
@@ -46,6 +47,9 @@ export default function HRApplicationsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedApp, setSelectedApp] = useState<ApplicationSummaryResponse | null>(null)
 
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+
   const { data: myCompany } = useGetMyCompany()
   const { data: jobsPage, isLoading: isJobsLoading } = useGetManageJobs(myCompany?.id, {
     page: 0,
@@ -53,16 +57,20 @@ export default function HRApplicationsPage() {
   })
   const jobs = jobsPage?.content ?? []
 
-  // ─── Fetch đơn theo job đã chọn ────────────────────────────────────────────
-  const { data: singleJobData = [], isLoading: isSingleJobLoading } = useGetApplicationsByJob(
-    selectedJobId || undefined
+  // ─── Fetch đơn theo job đã chọn (Paginated if single job) ───────────────────
+  const { data: singleJobPage, isLoading: isSingleJobLoading } = useGetApplicationsByJob(
+    selectedJobId || undefined,
+    selectedJobId ? currentPage - 1 : 0,
+    selectedJobId ? itemsPerPage : 100
   )
+  const singleJobData = singleJobPage?.content || []
 
   // ─── Fetch tất cả jobs song song khi không chọn job cụ thể ─────────────────
   const allJobQueries = useQueries({
     queries: jobs.map((job) => ({
       queryKey: ['applications', 'job', job.id] as const,
-      queryFn: (): Promise<ApplicationSummaryResponse[]> => getApplicationsByJob(job.id),
+      queryFn: (): Promise<ApplicationSummaryResponse[]> =>
+        getApplicationsByJob(job.id, 0, 100).then((res) => res.content),
       enabled: selectedJobId === '' && jobs.length > 0,
     })),
   })
@@ -100,7 +108,7 @@ export default function HRApplicationsPage() {
     ).length,
   }
 
-  // ─── Filter ─────────────────────────────────────────────────────────────────
+  // ─── Filter & Pagination ───────────────────────────────────────────────────
   const filtered = applications.filter((app) => {
     const matchStatus = !filterStatus || app.status === filterStatus
     const matchSearch =
@@ -109,6 +117,14 @@ export default function HRApplicationsPage() {
       app.jobTitle.toLowerCase().includes(searchQuery.toLowerCase())
     return matchStatus && matchSearch
   })
+
+  const isServerPaginated = Boolean(selectedJobId) && !filterStatus && !searchQuery
+  const totalItems = isServerPaginated ? (singleJobPage?.totalElements || filtered.length) : filtered.length
+  const totalPages = isServerPaginated ? (singleJobPage?.totalPages || 1) : (Math.ceil(totalItems / itemsPerPage) || 1)
+
+  const displayApps = isServerPaginated
+    ? filtered
+    : filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   const handleStatusUpdate = (id: string, status: ApplicationStatus) => {
     updateStatus.mutate({ id, status })
@@ -269,7 +285,7 @@ export default function HRApplicationsPage() {
         {!isAppsLoading && filtered.length > 0 && (
           <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
             <p className="text-sm font-semibold text-slate-500">
-              <span className="text-slate-800 font-black">{filtered.length}</span> hồ sơ
+              <span className="text-slate-800 font-black">{totalItems}</span> hồ sơ
               {filterStatus && ` · ${STATUS_CONFIG[filterStatus].label}`}
             </p>
             <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-bold">
@@ -337,7 +353,7 @@ export default function HRApplicationsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {filtered.map((app) => (
+                {displayApps.map((app) => (
                   <ApplicationRow key={app.id} app={app} onViewDetail={setSelectedApp} />
                 ))}
               </tbody>
@@ -345,6 +361,18 @@ export default function HRApplicationsPage() {
           </div>
         )}
       </div>
+
+      {totalItems >= 10 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+          pageSizeOptions={[5, 10, 20, 50]}
+        />
+      )}
 
       {/* ─── Detail Modal ────────────────────────────────────────────────────── */}
       {selectedApp && (

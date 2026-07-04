@@ -42,6 +42,30 @@ public abstract class JobMapper {
     @Mapping(target = "requiredLevel", expression = "java(jobSkill.getRequiredLevel() != null ? jobSkill.getRequiredLevel().name() : null)")
     public abstract JobSkillResponse toSkillResponse(JobSkill jobSkill);
 
+    public void preloadSkillNames(List<Job> jobs) {
+        if (jobs == null || jobs.isEmpty()) return;
+
+        java.util.Set<String> missingIds = jobs.stream()
+                .filter(j -> j.getJobSkills() != null)
+                .flatMap(j -> j.getJobSkills().stream())
+                .map(JobSkill::getSkillNeo4jId)
+                .filter(id -> id != null && !skillNameCache.containsKey(id))
+                .collect(java.util.stream.Collectors.toSet());
+
+        if (!missingIds.isEmpty()) {
+            try {
+                List<SkillNode> nodes = skillNodeRepository.findAllByIds(new ArrayList<>(missingIds));
+                for (SkillNode node : nodes) {
+                    if (node.getId() != null && node.getName() != null) {
+                        skillNameCache.put(node.getId(), node.getName());
+                    }
+                }
+            } catch (Exception e) {
+                // Fallback gracefully if Neo4j is temporarily reconnecting
+            }
+        }
+    }
+
     protected String resolveSkillName(String skillNeo4jId) {
         if (skillNeo4jId == null) return null;
         return skillNameCache.computeIfAbsent(skillNeo4jId, id ->

@@ -29,8 +29,10 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
 
   List<Job> findByCompanyIdAndCreatedByIdAndDeletedFalse(UUID companyId, UUID createdById);
 
+  @EntityGraph(attributePaths = {"company", "createdBy", "jobSkills"})
   Page<Job> findByStatus(JobStatus status, Pageable pageable);
 
+  @EntityGraph(attributePaths = {"company", "createdBy", "jobSkills"})
   @Query("""
           SELECT j FROM Job j
           JOIN j.company c
@@ -67,6 +69,7 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
   @EntityGraph(attributePaths = { "jobSkills" })
   List<Job> findAllWithSkills();
 
+  @EntityGraph(attributePaths = {"company", "createdBy", "jobSkills"})
   @Query("""
           SELECT j FROM Job j
           WHERE j.deleted = false
@@ -83,6 +86,7 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
       @Param("jobLevel") ExperienceLevel jobLevel,
       Pageable pageable);
 
+  @EntityGraph(attributePaths = {"company", "createdBy", "jobSkills"})
   @Query("""
           SELECT j FROM Job j
           LEFT JOIN j.company c

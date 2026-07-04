@@ -18,6 +18,7 @@ import sba301.hrtech.application.dtos.response.ApplicationSummaryResponse;
 import sba301.hrtech.application.entities.Application;
 import sba301.hrtech.application.entities.ApplicationScore;
 import sba301.hrtech.application.entities.enums.ApplicationStatus;
+import sba301.hrtech.company.abstractions.repositories.CompanyMemberRepository;
 import sba301.hrtech.cv.abstractions.services.ICvService;
 import sba301.hrtech.identity.abstractions.services.IUserService;
 import sba301.hrtech.job.abstractions.services.IJobService;
@@ -40,11 +41,12 @@ import sba301.hrtech.notification.abstractions.services.INotificationService;
 import sba301.hrtech.notification.dtos.request.ApplicationStatusNotificationRequest;
 import sba301.hrtech.skill.dtos.response.SkillMatchDetail;
 import sba301.hrtech.subscription.abstractions.services.ICreditService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -55,6 +57,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final ApplicationRepository applicationRepository;
     private final ApplicationScoreRepository applicationScoreRepository;
     private final SkillMatchRepository skillMatchRepository;
+    private final CompanyMemberRepository companyMemberRepository;
     private final IJobService jobService;
     private final ICvService cvService;
     private final IUserService userService;
@@ -134,10 +137,9 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ApplicationSummaryResponse> getMyApplications(UUID userId) {
-        return applicationRepository.findByUserId(userId).stream()
-                .map(applicationMapper::toSummaryResponse)
-                .collect(Collectors.toList());
+    public Page<ApplicationSummaryResponse> getMyApplications(UUID userId, Pageable pageable) {
+        return applicationRepository.findByUserId(userId, pageable)
+                .map(applicationMapper::toSummaryResponse);
     }
 
     @Override
@@ -146,10 +148,16 @@ public class ApplicationServiceImpl implements ApplicationService {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Application not found"));
 
-        // Only applicant or HR can view. For now, just check if it belongs to user OR if user is HR (basic check)
-        // A more robust check would involve JobValidator, but for now we allow if user == applicant
-        // In a real scenario, HR would call a different endpoint or we validate role.
-        
+        boolean isApplicant = application.getUser().getId().equals(userId);
+        boolean isCompanyMember = application.getJob() != null
+                && application.getJob().getCompany() != null
+                && companyMemberRepository.findByCompanyIdAndUserIdAndDeletedFalse(
+                        application.getJob().getCompany().getId(), userId).isPresent();
+
+        if (!isApplicant && !isCompanyMember) {
+            throw new AppException(ErrorCode.FORBIDDEN, "You do not have permission to view this application");
+        }
+
         return applicationMapper.toDetailResponse(application);
     }
 
@@ -364,10 +372,9 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId) {
-        return applicationRepository.findByJobId(jobId).stream()
-                .map(applicationMapper::toSummaryResponse)
-                .toList();
+    public Page<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId, Pageable pageable) {
+        return applicationRepository.findByJobId(jobId, pageable)
+                .map(applicationMapper::toSummaryResponse);
     }
 
     @Override
@@ -472,5 +479,14 @@ public class ApplicationServiceImpl implements ApplicationService {
         }
 
         return applicationMapper.toDetailResponse(application);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasApplied(UUID userId, UUID jobId) {
+        return applicationRepository.existsByUserIdAndJobIdAndStatusNotIn(
+                userId,
+                jobId,
+                List.of(ApplicationStatus.REJECTED, ApplicationStatus.WITHDRAWN));
     }
 }

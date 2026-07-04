@@ -268,7 +268,7 @@ public class JobServiceImpl implements IJobService {
         String keywordParam = keyword != null && !keyword.trim().isEmpty() ? "%" + keyword.trim().toLowerCase() + "%" : null;
         String locationParam = criteria.location() != null && !criteria.location().trim().isEmpty() ? "%" + criteria.location().trim().toLowerCase() + "%" : null;
 
-        return jobRepository.searchOpenJobs(
+        Page<Job> page = jobRepository.searchOpenJobs(
                 keywordParam,
                 locationParam,
                 expLevel,
@@ -277,14 +277,17 @@ public class JobServiceImpl implements IJobService {
                 criteria.salaryMax(),
                 hasSkills,
                 skillIdsList,
-                pageable).map(jobMapper::toResponse);
+                pageable);
+        jobMapper.preloadSkillNames(page.getContent());
+        return page.map(jobMapper::toResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<JobResponse> listJobs(Pageable pageable) {
-        return jobRepository.findByStatus(JobStatus.APPROVED, pageable)
-                .map(jobMapper::toResponse);
+        Page<Job> page = jobRepository.findByStatus(JobStatus.APPROVED, pageable);
+        jobMapper.preloadSkillNames(page.getContent());
+        return page.map(jobMapper::toResponse);
     }
 
     @Override
@@ -300,8 +303,9 @@ public class JobServiceImpl implements IJobService {
             }
         }
         
-        return jobRepository.findAllJobsForAdmin(keywordParam, jobStatusEnum, pageable)
-                .map(jobMapper::toResponse);
+        Page<Job> page = jobRepository.findAllJobsForAdmin(keywordParam, jobStatusEnum, pageable);
+        jobMapper.preloadSkillNames(page.getContent());
+        return page.map(jobMapper::toResponse);
     }
     @Override
     @Transactional(readOnly = true)
@@ -395,8 +399,9 @@ public class JobServiceImpl implements IJobService {
                 // Invalid jobLevel, treat as null (no filter)
             }
         }
-        return jobRepository.findCompanyJobsWithFilters(companyId, jobStatusEnum, jobTypeEnum, jobLevelEnum, pageable)
-                .map(jobMapper::toResponse);
+        Page<Job> page = jobRepository.findCompanyJobsWithFilters(companyId, jobStatusEnum, jobTypeEnum, jobLevelEnum, pageable);
+        jobMapper.preloadSkillNames(page.getContent());
+        return page.map(jobMapper::toResponse);
     }
 
     @Override

@@ -1,6 +1,10 @@
 package sba301.hrtech.application.controllers;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +20,6 @@ import sba301.hrtech.shared.response.ApiResponse;
 
 import jakarta.validation.Valid;
 import java.net.URI;
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -40,9 +43,10 @@ public class ApplicationController {
 
     @GetMapping
     @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<ApiResponse<List<ApplicationSummaryResponse>>> getMyApplications() {
+    public ResponseEntity<ApiResponse<Page<ApplicationSummaryResponse>>> getMyApplications(
+            @PageableDefault(size = 10, sort = "appliedAt", direction = Sort.Direction.DESC) Pageable pageable) {
         UUID currentUserId = authUtils.getCurrentUserId();
-        return ResponseEntity.ok(ApiResponse.success(applicationService.getMyApplications(currentUserId)));
+        return ResponseEntity.ok(ApiResponse.success(applicationService.getMyApplications(currentUserId, pageable)));
     }
 
     @GetMapping("/{id}")
@@ -120,9 +124,10 @@ public class ApplicationController {
 
     @GetMapping("/jobs/{jobId}")
     @PreAuthorize("@companySecurity.hasJobRole(#jobId, 'OWNER', 'HR_MANAGER', 'HR')")
-    public ResponseEntity<ApiResponse<List<ApplicationSummaryResponse>>> getApplicationsByJob(
-            @PathVariable UUID jobId) {
-        return ResponseEntity.ok(ApiResponse.success(applicationService.getApplicationsByJob(jobId)));
+    public ResponseEntity<ApiResponse<Page<ApplicationSummaryResponse>>> getApplicationsByJob(
+            @PathVariable UUID jobId,
+            @PageableDefault(size = 10, sort = "appliedAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(applicationService.getApplicationsByJob(jobId, pageable)));
     }
 
     @PostMapping("/{id}/score")
@@ -131,5 +136,12 @@ public class ApplicationController {
             @PathVariable UUID id) {
         UUID currentUserId = authUtils.getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.success(applicationService.scoreApplication(currentUserId, id), "Chấm điểm thành công"));
+    }
+
+    @GetMapping("/check")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<ApiResponse<Boolean>> checkHasApplied(@RequestParam UUID jobId) {
+        UUID currentUserId = authUtils.getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse.success(applicationService.hasApplied(currentUserId, jobId)));
     }
 }

@@ -49,12 +49,12 @@ CV Text:
 OUTPUT FORMAT:
 Return ONLY a valid JSON array of objects, where each object has:
 - "name": normalized skill name string
-- "level": proficiency level string, MUST be one of ["BEGINNER", "MEDIUM", "ADVANCED"]
+- "level": proficiency level string, MUST be one of ["BEGINNER", "INTERMEDIATE", "ADVANCED", "EXPERT"]
 
 Example:
 [
   {{"name": "java", "level": "ADVANCED"}},
-  {{"name": "react", "level": "MEDIUM"}}
+  {{"name": "react", "level": "INTERMEDIATE"}}
 ]
 """)
 
@@ -110,11 +110,11 @@ Requirements:
 OUTPUT FORMAT:
 Return ONLY a valid JSON array of objects, where each object has:
 - "name": normalized skill name string
-- "level": requirement level string, MUST be one of ["BEGINNER", "MEDIUM", "ADVANCED"]
+- "level": requirement level string, MUST be one of ["BEGINNER", "INTERMEDIATE", "ADVANCED", "EXPERT"]
 
 Example:
 [
   {{"name": "java", "level": "ADVANCED"}},
-  {{"name": "react", "level": "MEDIUM"}}
+  {{"name": "react", "level": "INTERMEDIATE"}}
 ]
 """)

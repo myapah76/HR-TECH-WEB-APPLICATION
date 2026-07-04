@@ -8,13 +8,14 @@ import { useGetSavedJobs } from '@/src/hooks/job'
 import { useGetMyApplications } from '@/src/hooks/application'
 import { useGetAllCvs } from '@/src/hooks/cv'
 import { useRecommendJobsForCv } from '@/src/hooks/recommendation'
+import { useSubscriptionAccess } from '@/src/hooks/subscription'
 
 const getRelativeTime = (dateStr: string | number | Date) => {
   const date = new Date(dateStr)
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
   if (diffMs < 0) return 'Vừa xong'
-  
+
   const diffMins = Math.floor(diffMs / (1000 * 60))
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
@@ -26,13 +27,16 @@ const getRelativeTime = (dateStr: string | number | Date) => {
 
 export default function CandidateDashboardPage() {
   const { user } = useAuthStore()
+  const { hasPaidPlan } = useSubscriptionAccess()
   const { data: savedJobs = [] } = useGetSavedJobs()
-  const { data: appliedJobs = [] } = useGetMyApplications()
-  
+  const { data: appliedJobsPage } = useGetMyApplications(0, 10)
+  const appliedJobs = appliedJobsPage?.content || []
+  const appliedCount = appliedJobsPage?.totalElements || 0
+
   // AI recommendations count integration
   const { data: cvs = [] } = useGetAllCvs()
   const primaryCv = cvs.find((c) => c.isPrimary) || cvs[0]
-  const { data: recommendedJobs = [] } = useRecommendJobsForCv(primaryCv?.id || '', 10, !!primaryCv?.id)
+  const { data: recommendedJobs = [] } = useRecommendJobsForCv(primaryCv?.id || '', 10, hasPaidPlan && !!primaryCv?.id)
 
   // Combined recent activities from API data
   const appliedActivities = appliedJobs.map((app) => ({
@@ -75,7 +79,7 @@ export default function CandidateDashboardPage() {
         <StatCard
           icon={Send}
           label="Đã ứng tuyển"
-          value={appliedJobs.length}
+          value={appliedCount}
           color="blue"
         />
         <StatCard icon={Eye} label="Lượt xem hồ sơ" value={28} change={12} color="emerald" />
@@ -96,11 +100,10 @@ export default function CandidateDashboardPage() {
                   className="flex items-center gap-3.5 p-3 rounded-xl hover:bg-slate-50 transition-colors"
                 >
                   <div
-                    className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${
-                      item.status === 'submitted'
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'bg-rose-50 text-rose-605'
-                    }`}
+                    className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${item.status === 'submitted'
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'bg-rose-50 text-rose-605'
+                      }`}
                   >
                     {item.status === 'submitted' ? (
                       <Send className="h-4.5 w-4.5" />

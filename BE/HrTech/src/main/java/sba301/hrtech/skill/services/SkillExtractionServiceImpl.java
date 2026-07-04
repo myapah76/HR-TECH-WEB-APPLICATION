@@ -391,7 +391,12 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
      */
     private SkillProcessResult processAndGetSkillNode(String skillName) {
         String name = skillName.trim();
-        Optional<SkillNode> existing = skillNodeRepository.findByNameIgnoreCase(name);
+        Optional<SkillNode> existing = Optional.empty();
+        try {
+            existing = skillNodeRepository.findByNameIgnoreCase(name);
+        } catch (Exception e) {
+            log.warn("Neo4j lookup failed in processAndGetSkillNode for '{}': {}", name, e.getMessage());
+        }
 
         if (existing.isPresent()) {
             return new SkillProcessResult(existing.get(), false);
@@ -405,8 +410,12 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
                 .updatedAt(Instant.now())
                 .build();
 
-        skillNode = skillNodeRepository.save(skillNode);
-        log.info("Created new unverified skill: {}", skillNode.getName());
+        try {
+            skillNode = skillNodeRepository.save(skillNode);
+            log.info("Created new unverified skill: {}", skillNode.getName());
+        } catch (Exception e) {
+            log.error("Failed to save new SkillNode to Neo4j for '{}': {}", name, e.getMessage());
+        }
 
         return new SkillProcessResult(skillNode, true);
     }
@@ -417,8 +426,21 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
         if (level == null || level.isBlank()) {
             return SkillLevel.BEGINNER;
         }
+        String normalized = level.toUpperCase().trim();
+        if (normalized.equals("MEDIUM") || normalized.equals("MID") || normalized.equals("MID-LEVEL")) {
+            return SkillLevel.INTERMEDIATE;
+        }
+        if (normalized.equals("BASIC") || normalized.equals("LOW")) {
+            return SkillLevel.BEGINNER;
+        }
+        if (normalized.equals("SENIOR") || normalized.equals("HIGH")) {
+            return SkillLevel.ADVANCED;
+        }
+        if (normalized.equals("MASTER") || normalized.equals("LEAD")) {
+            return SkillLevel.EXPERT;
+        }
         try {
-            return SkillLevel.valueOf(level.toUpperCase().trim());
+            return SkillLevel.valueOf(normalized);
         } catch (IllegalArgumentException e) {
             log.warn("Unknown skill level '{}', defaulting to BEGINNER", level);
             return SkillLevel.BEGINNER;
@@ -442,10 +464,18 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
             name = name.trim();
             nameToDtoMap.put(name, extracted);
 
-            Optional<SkillNode> existing = skillNodeRepository.findByNameIgnoreCase(name);
-            if (existing.isPresent()) {
-                validCandidates.add(extracted);
-            } else {
+            boolean existsInNeo4j = false;
+            try {
+                Optional<SkillNode> existing = skillNodeRepository.findByNameIgnoreCase(name);
+                if (existing.isPresent()) {
+                    existsInNeo4j = true;
+                    validCandidates.add(extracted);
+                }
+            } catch (Exception e) {
+                log.warn("Neo4j lookup failed for skill '{}' due to database connection issue: {}", name, e.getMessage());
+            }
+
+            if (!existsInNeo4j) {
                 toValidate.add(name);
             }
         }

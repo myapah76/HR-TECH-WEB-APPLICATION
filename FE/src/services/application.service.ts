@@ -7,16 +7,25 @@ import {
     ScheduleInterviewRequest,
     SubmitApplicationRequest,
 } from '../types'
-import { ApiResponse } from '../types/api'
+import { ApiResponse, PageResponse } from '../types/api'
 import { getManageJobs } from './job.service'
 
-export const getMyApplications = async (): Promise<ApplicationSummaryResponse[]> => {
-  const response = await api.get<ApiResponse<ApplicationSummaryResponse[]>>('/applications')
+export const getMyApplications = async (page = 0, size = 10): Promise<PageResponse<ApplicationSummaryResponse>> => {
+  const response = await api.get<ApiResponse<PageResponse<ApplicationSummaryResponse>>>('/applications', {
+    params: { page, size },
+  })
   return response.data.data
 }
 
-export const getApplicationsByJob = async (jobId: string): Promise<ApplicationSummaryResponse[]> => {
-  const response = await api.get<ApiResponse<ApplicationSummaryResponse[]>>(`/applications/jobs/${jobId}`)
+export const getApplicationsByJob = async (
+  jobId: string,
+  page = 0,
+  size = 10
+): Promise<PageResponse<ApplicationSummaryResponse>> => {
+  const response = await api.get<ApiResponse<PageResponse<ApplicationSummaryResponse>>>(
+    `/applications/jobs/${jobId}`,
+    { params: { page, size } }
+  )
   return response.data.data
 }
 
@@ -30,7 +39,7 @@ export const getCompanyApplications = async (companyId: string): Promise<Applica
   }
 
   const applicationsByJob = await Promise.all(
-    jobs.map((job) => getApplicationsByJob(job.id))
+    jobs.map((job) => getApplicationsByJob(job.id, 0, 100).then((res) => res.content))
   )
   return applicationsByJob.flat()
 }
@@ -106,4 +115,11 @@ export const submitApplication = async (request: SubmitApplicationRequest): Prom
 
 export const withdrawApplication = async (id: string): Promise<void> => {
   await api.put<ApiResponse<void>>(`/applications/${id}/withdraw`)
+}
+
+export const checkHasApplied = async (jobId: string): Promise<boolean> => {
+  const response = await api.get<ApiResponse<boolean>>('/applications/check', {
+    params: { jobId },
+  })
+  return response.data.data
 }

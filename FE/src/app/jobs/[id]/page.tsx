@@ -31,7 +31,7 @@ import {
   useUpdateJobStatusMutation,
 } from '@/src/hooks/job'
 import { useGetCompanyMembers, useGetMyCompany } from '@/src/hooks/company'
-import { useGetMyApplications } from '@/src/hooks/application'
+import { useCheckHasApplied } from '@/src/hooks/application'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { RoleUser } from '@/src/enums/role.enum'
@@ -70,12 +70,9 @@ export default function JobDetailPage() {
 
   const { data: savedJobs = [] } = useGetSavedJobs(isCandidate)
 
-  const { data: appliedJobs = [] } = useGetMyApplications(isCandidate)
+  const { data: hasApplied = false } = useCheckHasApplied(jobId, isCandidate)
 
   const isSaved = savedJobs.some((j) => j.id === jobId)
-  const hasApplied = appliedJobs.some(
-    (app) => app.jobId === jobId && app.status !== 'REJECTED' && app.status !== 'WITHDRAWN'
-  )
 
   const saveMutation = useSaveJob()
   const unsaveMutation = useUnsaveJob()
