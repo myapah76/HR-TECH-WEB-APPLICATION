@@ -20,6 +20,7 @@ import sba301.hrtech.skill.mapper.SkillMapper;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -144,7 +145,12 @@ public class SkillServiceImpl implements ISkillService {
 
     @Override
     public List<PendingRelationshipResponse> getPendingRelationships() {
-        return skillNodeRepository.getPendingRelationships();
+        try {
+            return skillNodeRepository.getPendingRelationships();
+        } catch (Exception e) {
+            log.warn("Failed to fetch pending relationships from Neo4j (connection issue): {}", e.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     @Override

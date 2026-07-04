@@ -113,6 +113,7 @@ public enum ErrorCode {
     // Generic
     FORBIDDEN_ACTION(HttpStatus.FORBIDDEN, "Access denied"),
     INVALID_ROLE(HttpStatus.BAD_REQUEST, "Invalid role"),
+    DATABASE_CONNECTION_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "Cơ sở dữ liệu tạm thời gián đoạn kết nối, vui lòng thử lại sau"),
     UNCATEGORIZED_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "Uncategorized exception");
 
 

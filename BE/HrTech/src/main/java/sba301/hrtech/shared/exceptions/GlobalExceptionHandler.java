@@ -2,13 +2,17 @@ package sba301.hrtech.shared.exceptions;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.connector.ClientAbortException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.expression.spel.SpelEvaluationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import sba301.hrtech.shared.error.ErrorCode;
 import sba301.hrtech.shared.response.ApiResponse;
 
@@ -105,6 +109,26 @@ public class GlobalExceptionHandler {
                 ErrorCode.FORBIDDEN,
                 request.getRequestURI()
         );
+    }
+
+    @ExceptionHandler({TransactionSystemException.class, DataAccessException.class})
+    public ResponseEntity<ApiResponse<Void>> handleDatabaseException(
+            Exception ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Database connection issue for request {}: {}", request.getRequestURI(), ex.getMessage());
+        return buildError(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "Cơ sở dữ liệu tạm thời gián đoạn kết nối, vui lòng thử lại sau!",
+                ErrorCode.DATABASE_CONNECTION_ERROR,
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler({AsyncRequestNotUsableException.class, ClientAbortException.class})
+    public void handleClientAbortException(Exception ex, HttpServletRequest request) {
+        log.debug("Client cancelled/closed connection before response completion for request {}: {}",
+                request.getRequestURI(), ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
