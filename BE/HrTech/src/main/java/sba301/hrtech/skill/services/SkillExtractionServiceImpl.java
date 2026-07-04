@@ -353,25 +353,28 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
                     // === STEP 2: Create direct (1-hop) relationships, with duplicate guard ===
                     if (rel.getRelations() != null) {
                         for (SkillRelationDetail detail : rel.getRelations()) {
-                            String target = detail.getTarget();
                             String type = detail.getType();
-                            if (target == null || type == null || target.equalsIgnoreCase(newSkill)) continue;
+                            if (type == null) continue;
 
-                            // Guard: skip if any relationship already exists between the two nodes
-                            Boolean alreadyLinked = skillNodeRepository.anyRelationshipExistsByName(newSkill, target);
-                            if (Boolean.TRUE.equals(alreadyLinked)) {
-                                log.debug("Relationship between '{}' and '{}' already exists, skipping", newSkill, target);
-                                continue;
-                            }
+                            if ("PARENT_OF".equals(type)) {
+                                String parentName = (detail.getParent() != null && !detail.getParent().isBlank()) ? detail.getParent() : newSkill;
+                                String childName = (detail.getChild() != null && !detail.getChild().isBlank()) ? detail.getChild() : detail.getTarget();
 
-                            if ("CHILD_TO_PARENT".equals(type)) {
-                                // new_skill is the child → target is the parent
-                                skillNodeRepository.createPendingParentOfByName(target, newSkill);
-                            } else if ("PARENT_TO_CHILD".equals(type)) {
-                                // new_skill is the parent → target is the child
-                                skillNodeRepository.createPendingParentOfByName(newSkill, target);
+                                if (parentName == null || childName == null || parentName.equalsIgnoreCase(childName)) continue;
+
+                                Boolean alreadyLinked = skillNodeRepository.anyRelationshipExistsByName(parentName, childName);
+                                if (Boolean.TRUE.equals(alreadyLinked)) {
+                                    log.debug("Relationship between '{}' and '{}' already exists, skipping", parentName, childName);
+                                    continue;
+                                }
+                                skillNodeRepository.createPendingParentOfByName(parentName, childName);
                             } else if ("RELATED_TO".equals(type)) {
-                                skillNodeRepository.createPendingRelatedToByName(newSkill, target);
+                                String target = detail.getTarget();
+                                if (target == null || target.equalsIgnoreCase(newSkill)) continue;
+                                Boolean alreadyLinked = skillNodeRepository.anyRelationshipExistsByName(newSkill, target);
+                                if (!Boolean.TRUE.equals(alreadyLinked)) {
+                                    skillNodeRepository.createPendingRelatedToByName(newSkill, target);
+                                }
                             }
                         }
                     }

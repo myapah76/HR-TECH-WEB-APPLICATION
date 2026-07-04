@@ -10,6 +10,9 @@ class EmbedRequest(BaseModel):
     text: Optional[str] = None
     texts: Optional[List[str]] = None
 
+class ParseExtractRequest(BaseModel):
+    file_url: str
+
 # --- Responses ---
 class ExtractedSkill(BaseModel):
     name: str
@@ -21,9 +24,6 @@ class JobExtractionResponse(BaseModel):
 class EmbedResponse(BaseModel):
     embeddings: List[List[float]]
 
-class ParseExtractRequest(BaseModel):
-    file_url: str
-
 class ParseExtractResponse(BaseModel):
     parsed_content: str
     skills: List[ExtractedSkill]
@@ -34,7 +34,9 @@ class MapRelationshipsRequest(BaseModel):
     roles: List[str] = []
 
 class SkillRelationDetail(BaseModel):
-    target: str
+    target: Optional[str] = None
+    parent: Optional[str] = None
+    child: Optional[str] = None
     type: str
 
 class SkillRelationship(BaseModel):
@@ -91,6 +93,7 @@ class AiMatchingAdviceRequest(BaseModel):
 class AiMatchingAdviceResponse(BaseModel):
     improvement_tips: str
     action_plan: List[str]
+
 # --- AI Skill Validation ---
 class ValidateSkillsRequest(BaseModel):
     skills: List[str]

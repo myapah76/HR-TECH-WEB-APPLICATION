@@ -4,16 +4,17 @@ MAP_RELATIONSHIPS_PROMPT = PromptTemplate.from_template("""
 You are an expert IT Skill Taxonomy System.
 Given a list of NEW extracted skills and the FULL existing DB of skills, plus a list of canonical roles, determine:
 1. "suggested_roles": Which canonical roles apply to each new skill (e.g. "react" -> ["frontend", "fullstack"]). Pick ONLY from the provided roles list: {roles}. If no role applies, return [].
-2. "relations": Any direct relationship between each new skill and ANY existing skill in the DB (or other new skills).
+2. "relations": Direct relationships between the new skill and skills in the DB (or other new skills).
 
 RELATIONSHIP TYPES:
-- "PARENT_OF": Skill A is a broader category or parent technology of Skill B (e.g. "javascript" PARENT_OF "react", "python" PARENT_OF "django", "devops" PARENT_OF "docker").
-- "RELATED_TO": Skill A and Skill B are complementary or frequently used together in the same stack, but neither is a parent of the other (e.g. "react" RELATED_TO "redux", "docker" RELATED_TO "kubernetes", "springboot" RELATED_TO "postgresql").
+- "PARENT_OF": Skill A is a broader category / parent technology of Skill B (e.g. "javascript" PARENT_OF "react", "python" PARENT_OF "django", "devops" PARENT_OF "docker").
+- "RELATED_TO": Skill A and Skill B are complementary or frequently used together in the same stack (e.g. "react" RELATED_TO "redux", "docker" RELATED_TO "kubernetes", "springboot" RELATED_TO "postgresql").
 
 RULES:
 - Only declare a relationship if you are 100% confident it is valid in IT domain.
 - Do NOT create self-relationships (A -> A).
 - Use exact lowercase normalized skill names as provided.
+- For PARENT_OF relations, explicitly specify which skill is "parent" and which is "child".
 - Target skill in relation MUST exist in the DB skills or new skills list.
 
 OUTPUT FORMAT:
@@ -23,7 +24,7 @@ Return a JSON array of objects. Each object represents one new skill:
     "new_skill": "react",
     "suggested_roles": ["frontend", "fullstack"],
     "relations": [
-      {{ "target": "javascript", "type": "PARENT_OF" }},
+      {{ "parent": "javascript", "child": "react", "type": "PARENT_OF" }},
       {{ "target": "redux", "type": "RELATED_TO" }}
     ]
   }}

@@ -9,5 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SkillRelationDetail {
     private String target;
+    private String parent;
+    private String child;
     private String type;
 }

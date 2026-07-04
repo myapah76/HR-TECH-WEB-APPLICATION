@@ -5,7 +5,7 @@ from models import (
     JobExtractionRequest, JobExtractionResponse, 
     ParseExtractRequest, ParseExtractResponse, 
     MapRelationshipsRequest, MapRelationshipsResponse, 
-    SkillRelationship,
+    SkillRelationship, SkillRelationDetail,
     GenerateQuestionsRequest, EvaluateSessionRequest,
     EvaluateSessionResponse, AiMatchingAdviceRequest, AiMatchingAdviceResponse,
     ValidateSkillsRequest, ValidateSkillsResponse
@@ -61,10 +61,10 @@ def api_extract_job_skills(req: JobExtractionRequest):
 def api_parse_and_extract_cv(req: ParseExtractRequest):
     try:
         # 1. Download and parse text
-        text = download_and_extract_pdf_text(req.file_url)
+        text_content = download_and_extract_pdf_text(req.file_url)
         
         # 2. Extract skills via LLM
-        skills_data = extract_skills(text)
+        skills_data = extract_skills(text_content)
         
         # 3. Parse into Pydantic models
         parsed_skills = []
@@ -73,7 +73,7 @@ def api_parse_and_extract_cv(req: ParseExtractRequest):
                 parsed_skills.append(ExtractedSkill(name=s["name"], level=s["level"]))
                 
         return ParseExtractResponse(
-            parsed_content=text,
+            parsed_content=text_content,
             skills=parsed_skills
         )
     except Exception as e:
@@ -90,8 +90,17 @@ def api_map_relationships(req: MapRelationshipsRequest):
         parsed_rels = []
         for r in relationships_data:
             if "new_skill" in r and "relations" in r:
-                from models import SkillRelationDetail
-                relations_details = [SkillRelationDetail(target=rel["target"], type=rel["type"]) for rel in r["relations"] if "target" in rel and "type" in rel]
+                relations_details = []
+                for rel in r.get("relations", []):
+                    if isinstance(rel, dict) and "type" in rel:
+                        relations_details.append(
+                            SkillRelationDetail(
+                                target=rel.get("target"),
+                                parent=rel.get("parent"),
+                                child=rel.get("child"),
+                                type=rel["type"]
+                            )
+                        )
                 suggested_roles = r.get("suggested_roles", [])
                 parsed_rels.append(SkillRelationship(new_skill=r["new_skill"], suggested_roles=suggested_roles, relations=relations_details))
                 
@@ -163,10 +172,6 @@ def api_candidate_matching_advice(req: AiMatchingAdviceRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
 @app.post("/api/validate-skills", response_model=ValidateSkillsResponse)
 def api_validate_skills(req: ValidateSkillsRequest):
     try:
@@ -177,3 +182,6 @@ def api_validate_skills(req: ValidateSkillsRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
