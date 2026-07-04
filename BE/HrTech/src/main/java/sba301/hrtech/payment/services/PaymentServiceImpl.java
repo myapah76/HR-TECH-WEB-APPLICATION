@@ -34,6 +34,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class PaymentServiceImpl implements IPaymentService {
 
     private final ISubscriptionPlanService subscriptionPlanService;

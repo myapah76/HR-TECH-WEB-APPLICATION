@@ -3,9 +3,11 @@ package sba301.hrtech.notification.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import sba301.hrtech.identity.abstractions.services.IUserService;
+import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.notification.abstractions.repositories.NotificationRepository;
 import sba301.hrtech.notification.dtos.response.NotificationResponse;
 import sba301.hrtech.notification.entities.Notification;
@@ -32,6 +34,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class NotificationServiceImpl implements INotificationService {
 
     private final IRedisOtpService otpService;
@@ -72,40 +75,72 @@ public class NotificationServiceImpl implements INotificationService {
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void ApplicationStatusNotificationHandler(ApplicationStatusNotificationRequest request) {
-        if (!"PENDING_INTERVIEW_SCHEDULE".equals(request.getNewStatus()) && !"OFFER".equals(request.getNewStatus())) {
-            return;
+        // Gửi email: chỉ khi là PENDING_INTERVIEW_SCHEDULE hoặc OFFER
+        if ("PENDING_INTERVIEW_SCHEDULE".equals(request.getNewStatus()) || "OFFER".equals(request.getNewStatus())) {
+            try {
+                emailSender
+                        .sendApplicationStatusUpdateEmailAsync(
+                                request.getEmail(),
+                                request.getFullName(),
+                                request.getJobTitle(),
+                                request.getNewStatus(),
+                                request.getInterviewDateTime(),
+                                request.getInterviewLocation(),
+                                request.getInterviewMeetingLink(),
+                                request.getNote(),
+                                request.getActionLink(),
+                                request.getActionLabel()
+                        )
+                        .whenComplete((result, throwable) -> {
+                            if (throwable != null) {
+                                log.error("Failed to send {} email for application {} to {}",
+                                        request.getNewStatus(),
+                                        request.getApplicationId(),
+                                        request.getEmail(),
+                                        throwable);
+                            }
+                        });
+            } catch (Exception e) {
+                log.error("Failed to dispatch {} email for application {} to {}",
+                        request.getNewStatus(),
+                        request.getApplicationId(),
+                        request.getEmail(),
+                        e);
+            }
         }
 
+        // Gửi thông báo hệ thống và push qua SSE
         try {
-            emailSender
-                    .sendApplicationStatusUpdateEmailAsync(
-                            request.getEmail(),
-                            request.getFullName(),
-                            request.getJobTitle(),
-                            request.getNewStatus(),
-                            request.getInterviewDateTime(),
-                            request.getInterviewLocation(),
-                            request.getInterviewMeetingLink(),
-                            request.getNote(),
-                            request.getActionLink(),
-                            request.getActionLabel()
-                    )
-                    .whenComplete((result, throwable) -> {
-                        if (throwable != null) {
-                            log.error("Failed to send {} email for application {} to {}",
-                                    request.getNewStatus(),
-                                    request.getApplicationId(),
-                                    request.getEmail(),
-                                    throwable);
-                        }
-                    });
+            User user = userService.getUserEntityByEmail(request.getEmail());
+            if (user != null) {
+                String title = "";
+                String content = "";
+                NotificationType type = NotificationType.APPLICATION_STATUS_UPDATED;
+
+                if ("PENDING_INTERVIEW_SCHEDULE".equals(request.getNewStatus())) {
+                    title = "Lịch phỏng vấn mới";
+                    content = "Bạn có lịch phỏng vấn mới cho vị trí " + request.getJobTitle();
+                    type = NotificationType.INTERVIEW_SCHEDULED;
+                } else if ("OFFER".equals(request.getNewStatus())) {
+                    title = "Lời mời nhận việc";
+                    content = "Chúc mừng! Bạn đã nhận được lời mời nhận việc cho vị trí " + request.getJobTitle();
+                    type = NotificationType.APPLICATION_STATUS_UPDATED;
+                } else if ("REJECTED".equals(request.getNewStatus())) {
+                    title = "Cập nhật hồ sơ ứng tuyển";
+                    content = "Rất tiếc, hồ sơ của bạn cho vị trí " + request.getJobTitle() + " không phù hợp ở thời điểm hiện tại.";
+                    type = NotificationType.APPLICATION_STATUS_UPDATED;
+                } else {
+                    title = "Cập nhật trạng thái ứng tuyển";
+                    content = "Hồ sơ của bạn cho vị trí " + request.getJobTitle() + " đã được chuyển sang trạng thái: " + request.getNewStatus();
+                    type = NotificationType.APPLICATION_STATUS_UPDATED;
+                }
+
+                createAndSendNotification(user.getId(), title, content, type, request.getApplicationId());
+            }
         } catch (Exception e) {
-            log.error("Failed to dispatch {} email for application {} to {}",
-                    request.getNewStatus(),
-                    request.getApplicationId(),
-                    request.getEmail(),
-                    e);
+            log.error("Failed to create and send real-time notification for application status change", e);
         }
     }
 
@@ -142,7 +177,7 @@ public class NotificationServiceImpl implements INotificationService {
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public NotificationResponse createAndSendNotification(
             UUID targetUserId, String title, String content, NotificationType type, String referenceId
     ) {
@@ -158,8 +193,8 @@ public class NotificationServiceImpl implements INotificationService {
                 .referenceId(referenceId)
                 .isRead(false)
                 .build();
-
-        NotificationResponse notificationResponse = notificationMapper.toResponse(notification);
+        Notification saved = notificationRepository.save(notification);
+        NotificationResponse notificationResponse = notificationMapper.toResponse(saved);
 
         // Gửi Real-time qua TOÀN BỘ các luồng SSE đang mở của user này
         List<SseEmitter> userEmitters = emitters.get(targetUserId);

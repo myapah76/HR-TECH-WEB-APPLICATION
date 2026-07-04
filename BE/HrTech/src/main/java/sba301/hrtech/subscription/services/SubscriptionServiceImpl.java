@@ -26,6 +26,8 @@ import sba301.hrtech.subscription.entities.CandidateFeatureRateUsage;
 import sba301.hrtech.subscription.entities.CompanyFeatureRateUsage;
 import sba301.hrtech.company.entities.Company;
 import org.springframework.transaction.annotation.Transactional;
+import sba301.hrtech.notification.abstractions.services.INotificationService;
+import sba301.hrtech.notification.entities.enums.NotificationType;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -38,6 +40,7 @@ import sba301.hrtech.identity.utils.AuthUtils;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class SubscriptionServiceImpl implements ISubscriptionService {
 
     private final IUserService userService;
@@ -52,6 +55,7 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
     private final ICompanyService companyService;
     private final CompanyRepository companyRepository;
     private final AuthUtils authUtils;
+    private final INotificationService notificationService;
 
 
     @Override
@@ -311,7 +315,7 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
             sub.setStatus(SubscriptionStatus.ACTIVE);
             sub.setStartDate(now);
             sub.setEndDate(newEndDate);
-            candidateSubscriptionRepository.save(sub);
+            CandidateSubscription savedSub = candidateSubscriptionRepository.save(sub);
 
             // Nạp Token vào ví của User
             if (plan.getPlanFeatures() != null) {
@@ -325,6 +329,19 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
                 if (walletChanged) {
                     userService.saveUserEntity(user);
                 }
+            }
+
+            // Gửi thông báo hệ thống
+            try {
+                notificationService.createAndSendNotification(
+                        userId,
+                        "Nâng cấp tài khoản thành công",
+                        "Tài khoản của bạn đã được nâng cấp thành công lên gói " + plan.getName() + ".",
+                        NotificationType.SUBSCRIPTION_UPGRADED,
+                        savedSub.getId().toString()
+                );
+            } catch (Exception e) {
+                // log error
             }
         } else if (type == SubscriptionType.COMPANY && planObj instanceof CompanySubscriptionPlan plan) {
             CompanyMember member = companyService.getMemberEntityByUserId(userId);
@@ -355,7 +372,7 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
             sub.setStatus(SubscriptionStatus.ACTIVE);
             sub.setStartDate(now);
             sub.setEndDate(newEndDate);
-            companySubscriptionRepository.save(sub);
+            CompanySubscription savedSub = companySubscriptionRepository.save(sub);
 
             // Nạp Token vào ví của công ty
             if (plan.getPlanFeatures() != null) {
@@ -372,6 +389,19 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
                 if (walletChanged) {
                     companyRepository.save(company);
                 }
+            }
+
+            // Gửi thông báo hệ thống
+            try {
+                notificationService.createAndSendNotification(
+                        userId,
+                        "Nâng cấp gói doanh nghiệp thành công",
+                        "Doanh nghiệp " + company.getName() + " đã được nâng cấp lên gói " + plan.getName() + ".",
+                        NotificationType.SUBSCRIPTION_UPGRADED,
+                        savedSub.getId().toString()
+                );
+            } catch (Exception e) {
+                // log error
             }
         }
     }

@@ -1,6 +1,8 @@
 package sba301.hrtech.company.services;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import sba301.hrtech.notification.entities.enums.NotificationType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -53,6 +55,8 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
+@Slf4j
 public class CompanyServiceImpl implements ICompanyService {
 
     private final CompanyRepository companyRepository;
@@ -397,6 +401,7 @@ public class CompanyServiceImpl implements ICompanyService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CompanyMemberResponse> getMembers(UUID companyId) {
         getCurrentUser();
 
@@ -494,6 +499,23 @@ public class CompanyServiceImpl implements ICompanyService {
 
         company.setStatus(CompanyStatus.APPROVED);
         Company savedCompany = companyRepository.save(company);
+
+        // Gửi thông báo đến chủ doanh nghiệp
+        List<CompanyMember> owners = companyMemberRepository.findAllByCompanyIdAndCompanyRoleAndDeletedFalse(companyId, CompanyRole.OWNER);
+        if (!owners.isEmpty()) {
+            try {
+                notificationService.createAndSendNotification(
+                        owners.get(0).getUser().getId(),
+                        "Đăng ký công ty được chấp nhận",
+                        "Hồ sơ đăng ký công ty " + company.getName() + " của bạn đã được Admin phê duyệt thành công.",
+                        NotificationType.APPLICATION_STATUS_UPDATED,
+                        companyId.toString()
+                );
+            } catch (Exception e) {
+                log.error("Failed to send notification for company approval", e);
+            }
+        }
+
         return companyMapper.toResponse(savedCompany);
     }
 
@@ -508,6 +530,23 @@ public class CompanyServiceImpl implements ICompanyService {
 
         company.setStatus(CompanyStatus.REJECTED);
         Company savedCompany = companyRepository.save(company);
+
+        // Gửi thông báo đến chủ doanh nghiệp
+        List<CompanyMember> owners = companyMemberRepository.findAllByCompanyIdAndCompanyRoleAndDeletedFalse(companyId, CompanyRole.OWNER);
+        if (!owners.isEmpty()) {
+            try {
+                notificationService.createAndSendNotification(
+                        owners.get(0).getUser().getId(),
+                        "Đăng ký công ty bị từ chối",
+                        "Hồ sơ đăng ký công ty " + company.getName() + " của bạn đã bị từ chối.",
+                        NotificationType.APPLICATION_STATUS_UPDATED,
+                        companyId.toString()
+                );
+            } catch (Exception e) {
+                log.error("Failed to send notification for company rejection", e);
+            }
+        }
+
         return companyMapper.toResponse(savedCompany);
     }
 

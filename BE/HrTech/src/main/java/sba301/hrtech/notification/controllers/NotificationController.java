@@ -1,6 +1,5 @@
 package sba301.hrtech.notification.controllers;
 
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,19 +25,18 @@ public class NotificationController {
     }
 
     @GetMapping
-    public ApiResponse<List<NotificationResponse>> getMyNotifications(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ApiResponse<List<NotificationResponse>> getMyNotifications(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ApiResponse.success(
                 notificationService.getNotificationsForUser(userDetails.user().getId()),
-                "Notifications retrieved successfully"
-        );
+                "Notifications retrieved successfully");
     }
 
     @GetMapping("/unread-count")
     public ApiResponse<Long> getMyUnreadCount(@AuthenticationPrincipal CustomUserDetails userDetails) {
         return ApiResponse.success(
                 notificationService.getUnreadCount(userDetails.user().getId()),
-                "Unread notification count retrieved successfully"
-        );
+                "Unread notification count retrieved successfully");
     }
 
     @PatchMapping("/{id}/read")

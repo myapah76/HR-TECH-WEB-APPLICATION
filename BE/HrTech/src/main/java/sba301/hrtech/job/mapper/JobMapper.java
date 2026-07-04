@@ -25,6 +25,8 @@ public abstract class JobMapper {
     @Autowired
     protected SkillNodeRepository skillNodeRepository;
 
+    private final java.util.Map<String, String> skillNameCache = new java.util.concurrent.ConcurrentHashMap<>();
+
     @Mapping(target = "companyId", source = "company.id")
     @Mapping(target = "companyName", source = "company.name")
     @Mapping(target = "companyLogoUrl", source = "company.logoUrl")
@@ -42,9 +44,11 @@ public abstract class JobMapper {
 
     protected String resolveSkillName(String skillNeo4jId) {
         if (skillNeo4jId == null) return null;
-        return skillNodeRepository.findById(skillNeo4jId)
-                .map(SkillNode::getName)
-                .orElse(skillNeo4jId);
+        return skillNameCache.computeIfAbsent(skillNeo4jId, id ->
+                skillNodeRepository.findById(id)
+                        .map(SkillNode::getName)
+                        .orElse(id)
+        );
     }
 
     public void applyJobFields(Job job, JobRequest request) {

@@ -24,6 +24,7 @@ import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.shared.enums.ScoreGrade;
 import sba301.hrtech.application.mapper.ApplicationMapper;
 import sba301.hrtech.identity.entities.User;
+import sba301.hrtech.notification.entities.enums.NotificationType;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.job.entities.enums.JobStatus;
@@ -100,7 +101,23 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         application = applicationRepository.save(application);
 
-
+        // Gửi thông báo đến nhà tuyển dụng (người đăng tuyển công việc này)
+        if (job.getCreatedBy() != null) {
+            try {
+                String candidateName = user.getFirstName() + " " + user.getLastName();
+                String title = "Hồ sơ ứng tuyển mới";
+                String content = candidateName + " đã ứng tuyển vào vị trí " + job.getTitle();
+                notificationService.createAndSendNotification(
+                        job.getCreatedBy().getId(),
+                        title,
+                        content,
+                        NotificationType.APPLICATION_STATUS_UPDATED,
+                        application.getId().toString()
+                );
+            } catch (Exception e) {
+                log.error("Failed to send notification to recruiter for new application", e);
+            }
+        }
 
         log.info("User {} applied for job {}", userId, job.getId());
         return applicationMapper.toSummaryResponse(application);

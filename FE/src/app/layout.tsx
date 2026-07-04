@@ -2,6 +2,7 @@ import QueryProvider from '@/src/providers/QueryProvider'
 import AuthProvider from '../providers/AuthProvider'
 import GoogleProvider from '../providers/GoogleProvider'
 import { ThemeProvider } from '../providers/ThemeProvider'
+import { NotificationProvider } from '@/src/providers/NotificationProvider'
 import Footer from '@/src/components/layout/Footer'
 import Header from '@/src/components/layout/Header'
 import '@/src/styles/global.css'
@@ -49,10 +50,12 @@ export default function RootLayout({
           <GoogleProvider>
             <QueryProvider>
               <AuthProvider>
-                <Header />
-                {children}
-                <Toaster position="top-right" richColors closeButton />
-                <CookieWarningPopup />
+                <NotificationProvider>
+                  <Header />
+                  {children}
+                  <Toaster position="top-right" richColors closeButton />
+                  <CookieWarningPopup />
+                </NotificationProvider>
               </AuthProvider>
             </QueryProvider>
           </GoogleProvider>
@@ -62,3 +65,4 @@ export default function RootLayout({
     </html>
   )
 }
+

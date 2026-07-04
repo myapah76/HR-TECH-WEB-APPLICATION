@@ -25,6 +25,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class UserServiceImpl implements IUserService {
     private static final String ADMIN_ROLE = "ADMIN";
     private static final String ADMIN_SYSTEM_ROLE = "ADMIN_SYSTEM";

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Bell, ChevronDown, LogOut, User as UserIcon } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
 import { ThemeToggle } from '@/src/components/layout/ThemeToggle'
+import NotificationDropdown from '@/src/components/layout/NotificationDropdown'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { logout as logoutService } from '@/src/services/auth.service'
 import { useRouter, usePathname } from 'next/navigation'
@@ -95,16 +96,11 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-3.5 lg:gap-4.5" id="header-actions">
             <ThemeToggle />
             {/* Notifications */}
-            <div className="relative animate-fade-in">
-              <Button
-                variant="ghost"
-                className="relative p-2 text-slate-500 dark:text-slate-455 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full transition-all cursor-pointer hover:scale-105 h-auto w-auto"
-                id="btn-notification"
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900 animate-pulse"></span>
-              </Button>
-            </div>
+            {user && (
+              <div className="relative animate-fade-in">
+                <NotificationDropdown />
+              </div>
+            )}
 
             {user ? (
               <div className="relative group animate-fade-in" id="user-dropdown">
