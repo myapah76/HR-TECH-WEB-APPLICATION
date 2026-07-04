@@ -39,6 +39,11 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
       queryClient.invalidateQueries({ queryKey: ['notifications'] })
       queryClient.invalidateQueries({ queryKey: ['unreadNotificationCount'] })
+
+      if (payload.type === 'SUBSCRIPTION_UPGRADED') {
+        queryClient.invalidateQueries({ queryKey: ['myPaymentHistory'] })
+        queryClient.invalidateQueries({ queryKey: ['myCurrentSubscription'] })
+      }
     })
 
     eventSource.onerror = (err) => {

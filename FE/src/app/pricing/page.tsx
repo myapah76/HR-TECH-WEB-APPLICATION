@@ -22,8 +22,9 @@ import { PricingCard, PricingPackage } from '@/src/components/pricing/PricingCar
 import { PricingStats } from '@/src/components/pricing/PricingStats'
 import { PricingFaq } from '@/src/components/pricing/PricingFaq'
 import { CheckoutModal } from '@/src/components/pricing/CheckoutModal'
+import Loading from '../loading'
 
-function PricingContent() {
+export default function PricingPage() {
   const { user, setAuth } = useAuthStore()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -38,7 +39,11 @@ function PricingContent() {
   const { data: currentSubRes, isLoading: isSubLoading } = useMyCurrentSubscriptionQuery(!!user)
   const currentSubscription = currentSubRes
 
-  const { data: paymentHistoryRes, refetch: refetchHistory } = useMyPaymentHistoryQuery(0, 10, !!user)
+  const { data: paymentHistoryRes, refetch: refetchHistory } = useMyPaymentHistoryQuery(
+    0,
+    10,
+    !!user
+  )
   const verifyMutation = useVerifyPaymentMutation()
   const payments = paymentHistoryRes?.content || []
   const pendingPayment = payments.find((p) => p.status === 'PENDING')
@@ -77,30 +82,37 @@ function PricingContent() {
     }
   }, [isModalOpen, payments, activePaymentOrderCode])
 
-  // Automatically close modal and activate package when active payment shifts to PAID
+  // Automatically close modal and activate package when active payment shifts to PAID or CANCELLED
   useEffect(() => {
     if (!isModalOpen || !activePaymentOrderCode) return
 
     const activePayment = payments.find((p) => p.orderCode === activePaymentOrderCode)
-    if (activePayment && activePayment.status === 'PAID') {
-      const handleSuccess = async () => {
+    if (activePayment) {
+      if (activePayment.status === 'PAID') {
+        const handleSuccess = async () => {
+          setIsModalOpen(false)
+          setActivePaymentOrderCode(null)
+          toast.success('Thanh toán thành công! Đang kích hoạt gói dịch vụ...')
+          try {
+            const res = await refreshToken()
+            setAuth({
+              user: res.userResponse!,
+              accessToken: res.accessToken!,
+            })
+            toast.success('Gói dịch vụ đã được kích hoạt thành công!')
+          } catch (err) {
+            toast.error(getErrorMessage(err))
+          }
+        }
+        handleSuccess()
+      } else if (activePayment.status === 'CANCELLED') {
         setIsModalOpen(false)
         setActivePaymentOrderCode(null)
-        toast.success('Thanh toán thành công! Đang kích hoạt gói dịch vụ...')
-        try {
-          const res = await refreshToken()
-          setAuth({
-            user: res.userResponse!,
-            accessToken: res.accessToken!,
-          })
-          toast.success('Gói dịch vụ đã được kích hoạt thành công!')
-        } catch (err) {
-          toast.error(getErrorMessage(err))
-        }
+        toast.error('Thanh toán đã bị hủy hoặc thất bại.')
+        refetchHistory()
       }
-      handleSuccess()
     }
-  }, [payments, activePaymentOrderCode, isModalOpen, setAuth])
+  }, [payments, activePaymentOrderCode, isModalOpen, setAuth, refetchHistory])
 
   useEffect(() => {
     const handlePaymentResult = async () => {
@@ -110,7 +122,7 @@ function PricingContent() {
 
       if (status === 'PAID' || (code === '00' && cancel === 'false')) {
         toast.success('Thanh toán thành công! Đang kích hoạt gói dịch vụ...')
-        
+
         // Cập nhật lại lịch sử thanh toán trên UI
         refetchHistory()
 
@@ -138,7 +150,7 @@ function PricingContent() {
           verifyMutation.mutate(Number(orderCode), {
             onSettled: () => {
               refetchHistory()
-            }
+            },
           })
         } else {
           refetchHistory()
@@ -305,6 +317,10 @@ function PricingContent() {
     },
   ]
 
+  if (isLoading) {
+    return <Loading />
+  }
+
   return (
     <div className="min-h-screen bg-slate-50/50 relative overflow-hidden pb-24 font-sans">
       {/* Premium background patterns */}
@@ -377,7 +393,10 @@ function PricingContent() {
         {selectedPackage && (
           <CheckoutModal
             isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
+            onClose={() => {
+              setIsModalOpen(false)
+              setActivePaymentOrderCode(null)
+            }}
             pkg={selectedPackage}
             checkoutUrl={checkoutUrl}
             isCreatingLink={isCreatingLink}
@@ -385,23 +404,5 @@ function PricingContent() {
         )}
       </div>
     </div>
-  )
-}
-
-export default function PricingPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex flex-col items-center justify-center py-32 space-y-4">
-          <div className="relative w-12 h-12">
-            <div className="absolute inset-0 rounded-full border-4 border-indigo-100 animate-pulse"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-t-indigo-600 animate-spin"></div>
-          </div>
-          <p className="text-sm font-semibold text-slate-500">Đang tải bảng giá dịch vụ...</p>
-        </div>
-      }
-    >
-      <PricingContent />
-    </Suspense>
   )
 }
