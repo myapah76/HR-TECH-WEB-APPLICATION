@@ -1,22 +1,22 @@
 'use client'
-import { useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/src/stores/auth.store'
-import { RoleUser } from '@/src/enums/role.enum'
 import Sidebar from '@/src/components/layout/Sidebar'
+import { RoleUser } from '@/src/enums/role.enum'
 import { useGetCompanyApplicationCount } from '@/src/hooks/application'
-import { useGetMyCompany, useGetCompanyMembers } from '@/src/hooks/company'
+import { useGetCompanyMembers, useGetMyCompany } from '@/src/hooks/company'
+import { useAuthStore } from '@/src/stores/auth.store'
 import {
-  LayoutDashboard,
-  PlusCircle,
-  List,
-  Search,
-  Users,
   Building2,
-  Settings,
   CreditCard,
+  LayoutDashboard,
+  List,
+  PlusCircle,
+  Search,
+  Settings,
   UserCheck,
+  Users,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useMemo } from 'react'
 
 const recruiterNavItems = [
   {
@@ -109,7 +109,7 @@ export default function RecruiterLayout({ children }: { children: React.ReactNod
     }
   }, [user, isInitialized, router])
 
-  if (!isInitialized || !user || user.roleResponse?.name !== RoleUser.RECRUITER) {
+  if (!isInitialized || !user || user.requirePasswordChange || user.roleResponse?.name !== RoleUser.RECRUITER) {
     return null
   }
 

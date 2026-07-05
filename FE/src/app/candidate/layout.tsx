@@ -1,22 +1,22 @@
 'use client'
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/src/stores/auth.store'
-import { RoleUser } from '@/src/enums/role.enum'
 import Sidebar from '@/src/components/layout/Sidebar'
-import { useQuery } from '@tanstack/react-query'
+import { RoleUser } from '@/src/enums/role.enum'
 import { getSavedJobs } from '@/src/services/job.service'
+import { useAuthStore } from '@/src/stores/auth.store'
+import { useQuery } from '@tanstack/react-query'
 import {
-  LayoutDashboard,
-  UserCircle,
-  FolderOpen,
-  Heart,
-  Send,
-  MessageSquare,
-  Brain,
-  Star,
-  CreditCard,
+    Brain,
+    CreditCard,
+    FolderOpen,
+    Heart,
+    LayoutDashboard,
+    MessageSquare,
+    Send,
+    Star,
+    UserCircle,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 import { getMyApplications } from '@/src/services/application.service'
 
@@ -79,7 +79,7 @@ export default function CandidateLayout({ children }: { children: React.ReactNod
     enabled: isInitialized && !!user && user.roleResponse?.name === RoleUser.CANDIDATE,
   })
 
-  const { data: appliedJobs = [] } = useQuery({
+  const { data: appliedJobs } = useQuery({
     queryKey: ['appliedJobs'],
     queryFn: () => getMyApplications(),
     enabled: isInitialized && !!user && user.roleResponse?.name === RoleUser.CANDIDATE,
@@ -90,7 +90,7 @@ export default function CandidateLayout({ children }: { children: React.ReactNod
       return { ...item, badge: savedJobs.length }
     }
     if (item.path === '/candidate/applied-jobs') {
-      return { ...item, badge: appliedJobs.length }
+      return { ...item, badge: appliedJobs?.totalElements ?? 0 }
     }
     return item
   })

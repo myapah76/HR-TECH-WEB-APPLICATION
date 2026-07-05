@@ -1,19 +1,19 @@
 'use client'
-import { useState } from 'react'
-import Link from 'next/link'
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
-import { motion } from 'motion/react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { loginSchema, LoginFormData } from '@/src/schemas/auth.schema'
 import { Button } from '@/src/components/ui/button'
-import { Input } from '@/src/components/ui/input'
-import { Checkbox } from '@/src/components/ui/checkbox'
 import { Card, CardContent } from '@/src/components/ui/card'
+import { Checkbox } from '@/src/components/ui/checkbox'
+import { Input } from '@/src/components/ui/input'
 import { Label } from '@/src/components/ui/label'
-import { useRouter } from 'next/navigation'
-import { useLogin, useGoogleLoginMutation } from '@/src/hooks/auth'
+import { useGoogleLoginMutation, useLogin } from '@/src/hooks/auth'
+import { LoginFormData, loginSchema } from '@/src/schemas/auth.schema'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useGoogleLogin } from '@react-oauth/google'
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
+import { motion } from 'motion/react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 
 import { toast } from 'sonner'
 
@@ -58,6 +58,16 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     loginMutation.mutate(data, {
       onSuccess: (response) => {
+        if (response.needsPasswordSetup) {
+          router.push(`/setup-password?token=${encodeURIComponent(response.setupToken || '')}`)
+          toast.info('Vui lòng đặt mật khẩu mới để tiếp tục.')
+          return
+        }
+        if (response.userResponse?.requirePasswordChange) {
+          router.push('/change-password')
+          toast.info('Bạn bắt buộc phải đổi mật khẩu trước khi sử dụng hệ thống.')
+          return
+        }
         router.push('/')
         toast.success('Đăng nhập thành công')
         console.log(response)

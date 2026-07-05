@@ -1,16 +1,24 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { useAuthStore } from '@/src/stores/auth.store'
-import { refreshToken, logout } from '@/src/services/auth.service'
-import { useRouter } from 'next/navigation'
-import { checkCookiesEnabled } from '@/src/utils'
 import Loading from '@/src/app/loading'
+import { logout, refreshToken } from '@/src/services/auth.service'
+import { useAuthStore } from '@/src/stores/auth.store'
+import { checkCookiesEnabled } from '@/src/utils'
+import { useRouter, usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const { user } = useAuthStore()
   const setAuth = useAuthStore.getState().setAuth
   const clearAuth = useAuthStore.getState().logout
   const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    if (!isLoading && user?.requirePasswordChange && pathname !== '/change-password') {
+      router.replace('/change-password')
+    }
+  }, [user, isLoading, pathname, router])
 
   useEffect(() => {
     const initAuth = async () => {

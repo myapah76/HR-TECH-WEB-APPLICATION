@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/src/stores/auth.store'
-import { RoleUser } from '@/src/enums/role.enum'
 import Sidebar from '@/src/components/layout/Sidebar'
-import { LayoutDashboard, Users, Briefcase, Building2, Settings, GitBranch, CreditCard } from 'lucide-react'
+import { RoleUser } from '@/src/enums/role.enum'
+import { useAuthStore } from '@/src/stores/auth.store'
+import { Briefcase, Building2, CreditCard, GitBranch, LayoutDashboard, Settings, Users } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 const adminNavItems = [
   { icon: LayoutDashboard, label: 'Bảng điều khiển', path: '/admin' },
@@ -32,7 +32,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [user, isInitialized, router])
 
-  if (!isInitialized || !user || user.roleResponse?.name !== RoleUser.ADMIN_SYSTEM) {
+  if (!isInitialized || !user || user.requirePasswordChange || user.roleResponse?.name !== RoleUser.ADMIN_SYSTEM) {
     return null
   }
 
