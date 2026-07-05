@@ -24,6 +24,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -35,6 +37,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
     private final RoleAliasRepository roleAliasRepository;
     private final AiServiceClient aiServiceClient;
     private final SkillMapper skillMapper;
+    private final Map<String, SkillNode> skillCache = new ConcurrentHashMap<>();
 
     @Override
     @Async
@@ -391,6 +394,12 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
      */
     private SkillProcessResult processAndGetSkillNode(String skillName) {
         String name = skillName.trim();
+        String cacheKey = name.toLowerCase();
+
+        if (skillCache.containsKey(cacheKey)) {
+            return new SkillProcessResult(skillCache.get(cacheKey), false);
+        }
+
         Optional<SkillNode> existing = Optional.empty();
         try {
             existing = skillNodeRepository.findByNameIgnoreCase(name);
@@ -399,6 +408,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
         }
 
         if (existing.isPresent()) {
+            skillCache.put(cacheKey, existing.get());
             return new SkillProcessResult(existing.get(), false);
         }
 
@@ -412,6 +422,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
 
         try {
             skillNode = skillNodeRepository.save(skillNode);
+            skillCache.put(cacheKey, skillNode);
             log.info("Created new unverified skill: {}", skillNode.getName());
         } catch (Exception e) {
             log.error("Failed to save new SkillNode to Neo4j for '{}': {}", name, e.getMessage());
@@ -453,48 +464,17 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
      */
     private List<ExtractedSkillDto> filterAndValidateSkills(List<ExtractedSkillDto> rawSkills) {
         List<ExtractedSkillDto> validCandidates = new ArrayList<>();
-        List<String> toValidate = new ArrayList<>();
-        Map<String, ExtractedSkillDto> nameToDtoMap = new HashMap<>();
+        Set<String> seenNames = new HashSet<>();
 
         for (ExtractedSkillDto extracted : rawSkills) {
             String name = extracted.getName();
             if (name == null || name.isBlank() || !isValidSkillName(name)) {
                 continue;
             }
-            name = name.trim();
-            nameToDtoMap.put(name, extracted);
-
-            boolean existsInNeo4j = false;
-            try {
-                Optional<SkillNode> existing = skillNodeRepository.findByNameIgnoreCase(name);
-                if (existing.isPresent()) {
-                    existsInNeo4j = true;
-                    validCandidates.add(extracted);
-                }
-            } catch (Exception e) {
-                log.warn("Neo4j lookup failed for skill '{}' due to database connection issue: {}", name, e.getMessage());
-            }
-
-            if (!existsInNeo4j) {
-                toValidate.add(name);
-            }
-        }
-
-        if (!toValidate.isEmpty()) {
-            try {
-                ValidateSkillsResponse aiResponse = aiServiceClient.validateSkills(toValidate);
-                    
-                if (aiResponse != null && aiResponse.getValidSkills() != null) {
-                    for (String validName : aiResponse.getValidSkills()) {
-                        ExtractedSkillDto dto = nameToDtoMap.get(validName);
-                        if (dto != null) {
-                            validCandidates.add(dto);
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                log.error("Failed to validate new skills with AI: {}", e.getMessage(), e);
-                // Strict approach: if AI fails, we drop the new skills.
+            String trimmed = name.trim();
+            if (seenNames.add(trimmed.toLowerCase())) {
+                extracted.setName(trimmed);
+                validCandidates.add(extracted);
             }
         }
         return validCandidates;
