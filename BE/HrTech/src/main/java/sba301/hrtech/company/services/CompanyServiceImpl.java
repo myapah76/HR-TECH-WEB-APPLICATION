@@ -442,16 +442,55 @@ public class CompanyServiceImpl implements ICompanyService {
             }
         }
 
-        targetMember.setMembershipStatus(MembershipStatus.REMOVED);
-        targetMember.setDeleted(true);
+        targetMember.setMembershipStatus(MembershipStatus.INACTIVE);
         companyMemberRepository.save(targetMember);
 
-        // Revert global role to CANDIDATE
+        // Block login but keep company role and association
         User targetUser = targetMember.getUser();
-        Role candidateRole = roleService.getRoleEntityByName("CANDIDATE");
-        if (candidateRole != null) {
-            targetUser.setRole(candidateRole);
-              userService.saveUserEntity(targetUser);       }
+        targetUser.setIsBlocked(true);
+        userService.saveUserEntity(targetUser);
+    }
+
+    @Override
+    @Transactional
+    public void reactivateMember(UUID companyId, UUID memberId, boolean resetPassword) {
+        User currentUser = getCurrentUser();
+
+        if (!companyPermissionService.hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Access Denied");
+        }
+
+        CompanyMember targetMember = companyMemberRepository.findById(memberId)
+                .orElseThrow(() -> new AppException(ErrorCode.MEMBER_NOT_FOUND, "Member not found."));
+
+        if (!targetMember.getCompany().getId().equals(companyId)) {
+            throw new AppException(ErrorCode.INVALID_MEMBER_ASSOCIATION, "User does not belong to this company.");
+        }
+
+        targetMember.setMembershipStatus(MembershipStatus.ACTIVE);
+        companyMemberRepository.save(targetMember);
+
+        User targetUser = targetMember.getUser();
+        targetUser.setIsBlocked(false);
+
+        if (resetPassword) {
+            String randomPassword = java.util.UUID.randomUUID().toString().substring(0, 8);
+            targetUser.setPassword(passwordEncoder.encode(randomPassword));
+            targetUser.setRequirePasswordChange(true);
+
+            String fullName = (targetUser.getLastName() + " " + targetUser.getFirstName()).trim();
+            if (fullName.isEmpty()) {
+                fullName = "Thành viên";
+            }
+            emailSender.sendWelcomeEmailAsync(
+                    targetUser.getEmail(),
+                    fullName,
+                    randomPassword,
+                    targetMember.getCompany().getName()
+            );
+        }
+
+        userService.saveUserEntity(targetUser);
     }
 
     @Override

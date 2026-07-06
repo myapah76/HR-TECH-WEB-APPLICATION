@@ -24,6 +24,7 @@ export interface CompanyMemberResponse {
   firstName: string
   lastName: string
   role: CompanyRole
+  status?: 'ACTIVE' | 'INACTIVE' | 'REMOVED'
   createdAt: string
 }
 

@@ -43,6 +43,8 @@ public interface ICompanyService {
 
     void removeMember(UUID companyId, UUID memberId);
 
+    void reactivateMember(UUID companyId, UUID memberId, boolean resetPassword);
+
     void transferOwnership(UUID companyId, UUID currentOwnerId, UUID targetMemberId);
 
     // Admin Approval

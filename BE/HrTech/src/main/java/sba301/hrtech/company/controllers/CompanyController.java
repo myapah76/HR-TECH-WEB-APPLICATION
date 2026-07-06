@@ -96,6 +96,17 @@ public class CompanyController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
+    @PostMapping("/{id}/members/{memberId}/reactivate")
+    @PreAuthorize("@companySecurity.isOwner(#id)")
+    public ResponseEntity<ApiResponse<Void>> reactivateMember(
+            @PathVariable UUID id,
+            @PathVariable UUID memberId,
+            @RequestParam(defaultValue = "false") boolean resetPassword
+    ) {
+        companyService.reactivateMember(id, memberId, resetPassword);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
     @PostMapping("/{id}/transfer-ownership")
     @PreAuthorize("@companySecurity.isOwner(#id)")
     public ResponseEntity<ApiResponse<Void>> transferOwnership(

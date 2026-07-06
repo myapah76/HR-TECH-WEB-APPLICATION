@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import Badge from '@/src/components/ui/Badge'
 import {
   UserCheck,
-  Trash2,
+  UserX,
   UserPlus,
   X,
   Loader2,
@@ -17,6 +17,7 @@ import {
   useGetCompanyMembers,
   useAddCompanyMember,
   useRemoveCompanyMember,
+  useReactivateCompanyMember,
 } from '@/src/hooks/company'
 
 const ROLE_BADGES: Record<
@@ -46,8 +47,15 @@ export default function RecruiterMembersPage() {
   const [newFullName, setNewFullName] = useState('')
   const [newRole, setNewRole] = useState('HR')
 
+  const [isReactivateModalOpen, setIsReactivateModalOpen] = useState(false)
+  const [reactivateTarget, setReactivateTarget] = useState<{ id: string; name: string } | null>(null)
+
+  const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false)
+  const [revokeTarget, setRevokeTarget] = useState<{ id: string; name: string } | null>(null)
+
   const addMemberMutation = useAddCompanyMember()
   const removeMemberMutation = useRemoveCompanyMember()
+  const reactivateMemberMutation = useReactivateCompanyMember()
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -75,18 +83,37 @@ export default function RecruiterMembersPage() {
     }
   }
 
-  const handleRemoveMember = async (memberId: string, memberName: string) => {
-    if (
-      !window.confirm(`Bạn có chắc chắn muốn xoá nhân sự "${memberName}" khỏi công ty?`)
-    ) {
-      return
-    }
+  const handleRevokeMember = async () => {
+    if (!revokeTarget || !companyId) return
     try {
-      await removeMemberMutation.mutateAsync({ companyId: companyId!, memberId })
-      toast.success('Đã xoá nhân sự thành công.')
+      await removeMemberMutation.mutateAsync({ companyId, memberId: revokeTarget.id })
+      toast.success(`Đã vô hiệu hóa nhân sự "${revokeTarget.name}" thành công.`)
+      setIsRevokeModalOpen(false)
+      setRevokeTarget(null)
     } catch (error: any) {
       console.error(error)
-      toast.error('Có lỗi xảy ra khi xoá nhân sự.')
+      toast.error('Có lỗi xảy ra khi vô hiệu hóa nhân sự.')
+    }
+  }
+
+  const handleReactivateMember = async (resetPassword: boolean) => {
+    if (!reactivateTarget || !companyId) return
+    try {
+      await reactivateMemberMutation.mutateAsync({
+        companyId,
+        memberId: reactivateTarget.id,
+        resetPassword,
+      })
+      toast.success(
+        resetPassword
+          ? `Kích hoạt lại thành công! Mật khẩu mới đã được gửi tới email của ${reactivateTarget.name}.`
+          : `Kích hoạt lại thành công cho nhân sự ${reactivateTarget.name}.`
+      )
+      setIsReactivateModalOpen(false)
+      setReactivateTarget(null)
+    } catch (error: any) {
+      console.error(error)
+      toast.error('Có lỗi xảy ra khi kích hoạt lại nhân sự.')
     }
   }
 
@@ -141,6 +168,7 @@ export default function RecruiterMembersPage() {
                 <th className="pb-3">Họ và tên</th>
                 <th className="pb-3">Email công việc</th>
                 <th className="pb-3">Vai trò</th>
+                <th className="pb-3">Trạng thái</th>
                 <th className="pb-3 text-right">Hành động</th>
               </tr>
             </thead>
@@ -154,6 +182,7 @@ export default function RecruiterMembersPage() {
                   label: member.role,
                   variant: 'default',
                 }
+                const isActive = member.status !== 'INACTIVE'
                 return (
                   <tr key={member.id} className="hover:bg-slate-50/50">
                     <td className="py-4">
@@ -179,16 +208,46 @@ export default function RecruiterMembersPage() {
                         {roleBadge.label}
                       </Badge>
                     </td>
+                    <td className="py-4">
+                      {isActive ? (
+                        <Badge variant="success" size="sm">
+                          Hoạt động
+                        </Badge>
+                      ) : (
+                        <Badge variant="default" size="sm">
+                          Vô hiệu hóa
+                        </Badge>
+                      )}
+                    </td>
                     <td className="py-4 text-right">
                       {!isSelf && member.role !== 'OWNER' && (
-                        <button
-                          onClick={() => handleRemoveMember(member.id, memberFullName)}
-                          disabled={removeMemberMutation.isPending}
-                          className="p-1.5 text-rose-450 hover:text-rose-650 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors disabled:opacity-50"
-                          title="Xoá nhân sự"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <div className="inline-flex gap-1.5 justify-end">
+                          {isActive ? (
+                            <button
+                              onClick={() => {
+                                setRevokeTarget({ id: member.id, name: memberFullName })
+                                setIsRevokeModalOpen(true)
+                              }}
+                              disabled={removeMemberMutation.isPending}
+                              className="p-1.5 text-rose-450 hover:text-rose-650 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors disabled:opacity-50"
+                              title="Vô hiệu hóa nhân sự"
+                            >
+                              <UserX className="h-4 w-4" />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setReactivateTarget({ id: member.id, name: memberFullName })
+                                setIsReactivateModalOpen(true)
+                              }}
+                              disabled={reactivateMemberMutation.isPending}
+                              className="p-1.5 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-lg cursor-pointer transition-colors disabled:opacity-50"
+                              title="Kích hoạt lại nhân sự"
+                            >
+                              <UserCheck className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -273,6 +332,118 @@ export default function RecruiterMembersPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reactivate Member Modal (Option C) */}
+      {isReactivateModalOpen && reactivateTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full overflow-hidden animate-scale-up">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+              <h3 className="text-base font-black text-slate-900">Kích hoạt lại nhân sự</h3>
+              <button
+                onClick={() => {
+                  setIsReactivateModalOpen(false)
+                  setReactivateTarget(null)
+                }}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-xs font-bold text-slate-500 leading-relaxed">
+                Bạn đang chuẩn bị kích hoạt lại tài khoản cho nhân sự <strong className="text-slate-800">"{reactivateTarget.name}"</strong>.
+                Hệ thống hỗ trợ tự động đặt lại mật khẩu mới nếu nhân sự cũ không bàn giao lại mật khẩu.
+              </p>
+
+              <div className="pt-2 flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleReactivateMember(true)}
+                  disabled={reactivateMemberMutation.isPending}
+                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-sm hover:shadow"
+                >
+                  {reactivateMemberMutation.isPending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : null}
+                  <span>Đặt lại mật khẩu & Gửi Email</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleReactivateMember(false)}
+                  disabled={reactivateMemberMutation.isPending}
+                  className="w-full py-3 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-extrabold text-xs cursor-pointer transition-colors"
+                >
+                  Chỉ kích hoạt (Giữ nguyên mật khẩu cũ)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsReactivateModalOpen(false)
+                    setReactivateTarget(null)
+                  }}
+                  className="w-full py-2.5 rounded-xl text-slate-450 hover:text-slate-600 font-extrabold text-xs cursor-pointer transition-colors mt-1"
+                >
+                  Hủy bỏ
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Revoke Member Modal Confirmation */}
+      {isRevokeModalOpen && revokeTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full overflow-hidden animate-scale-up">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+              <h3 className="text-base font-black text-slate-900">Vô hiệu hóa nhân sự</h3>
+              <button
+                onClick={() => {
+                  setIsRevokeModalOpen(false)
+                  setReactivateTarget(null)
+                }}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-xs font-bold text-slate-500 leading-relaxed">
+                Bạn có chắc chắn muốn vô hiệu hóa nhân sự <strong className="text-slate-850">"{revokeTarget.name}"</strong>? 
+                Họ sẽ bị chặn đăng nhập hệ thống ngay lập tức.
+              </p>
+
+              <div className="pt-2 flex justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRevokeModalOpen(false)
+                    setRevokeTarget(null)
+                  }}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-extrabold text-xs hover:bg-slate-50 cursor-pointer transition-colors"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRevokeMember}
+                  disabled={removeMemberMutation.isPending}
+                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-sm hover:shadow"
+                >
+                  {removeMemberMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Đang xử lý...</span>
+                    </>
+                  ) : (
+                    <span>Vô hiệu hóa</span>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

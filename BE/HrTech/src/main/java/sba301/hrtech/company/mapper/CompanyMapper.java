@@ -52,5 +52,6 @@ public interface CompanyMapper {
     @Mapping(target = "firstName", source = "user.firstName")
     @Mapping(target = "lastName", source = "user.lastName")
     @Mapping(target = "role", expression = "java(member.getCompanyRole() != null ? member.getCompanyRole().name() : null)")
+    @Mapping(target = "status", expression = "java(member.getMembershipStatus() != null ? member.getMembershipStatus().name() : null)")
     CompanyMemberResponse toMemberResponse(CompanyMember member);
 }

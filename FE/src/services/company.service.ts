@@ -65,3 +65,15 @@ export const removeCompanyMember = async (
 ): Promise<void> => {
   await api.delete<ApiResponse<void>>(`/companies/${companyId}/members/${memberId}`)
 }
+
+export const reactivateCompanyMember = async (
+  companyId: string,
+  memberId: string,
+  resetPassword: boolean
+): Promise<void> => {
+  await api.post<ApiResponse<void>>(
+    `/companies/${companyId}/members/${memberId}/reactivate`,
+    null,
+    { params: { resetPassword } }
+  )
+}

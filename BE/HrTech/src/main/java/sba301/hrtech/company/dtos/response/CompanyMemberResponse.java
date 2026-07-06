@@ -10,6 +10,7 @@ public record CompanyMemberResponse(
         String firstName,
         String lastName,
         String role,
+        String status,
         Instant createdAt
 ) {}
 
