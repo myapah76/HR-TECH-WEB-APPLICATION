@@ -13,6 +13,7 @@ public class ApplicationStatusNotificationRequest {
     private String email;
     private String fullName;
     private String jobTitle;
+    private String companyName;
     private String newStatus;
     private String applicationId;
     private Instant interviewDateTime;
@@ -21,4 +22,7 @@ public class ApplicationStatusNotificationRequest {
     private String note;
     private String actionLink;
     private String actionLabel;
+    private Instant acceptedStartDateTime;
+    private String acceptedWorkAddress;
+    private String acceptedNote;
 }

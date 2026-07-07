@@ -1,11 +1,11 @@
 import { api } from '@/src/lib/axios'
 import {
     ApplicationDetailResponse,
-    ApplicationStatus,
     ApplicationSummaryResponse,
     ChangeInterviewScheduleRequest,
     ScheduleInterviewRequest,
     SubmitApplicationRequest,
+    UpdateApplicationStatusRequest,
 } from '../types'
 import { ApiResponse, PageResponse } from '../types/api'
 import { getManageJobs } from './job.service'
@@ -57,10 +57,11 @@ export const getApplicationDetail = async (id: string): Promise<ApplicationDetai
 
 export const updateApplicationStatus = async (
   id: string,
-  status: ApplicationStatus
+  request: UpdateApplicationStatusRequest
 ): Promise<ApplicationSummaryResponse> => {
   const response = await api.put<ApiResponse<ApplicationSummaryResponse>>(
-    `/applications/${id}/status?status=${status}`
+    `/applications/${id}/status`,
+    request
   )
   return response.data.data
 }

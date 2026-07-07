@@ -16,6 +16,8 @@ public class ApplicationDetailResponse {
     private UUID id;
     private UUID jobId;
     private String jobTitle;
+    private String companyName;
+    private String companyAddress;
     private UUID cvId;
     private String cvTitle;
     private String coverLetter;

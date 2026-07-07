@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body style="font-family: Verdana, sans-serif; background-color: #f8f1e7; padding: 40px;">
+
+<div style="max-width: 520px; margin: auto; background: #fff;
+            border-radius: 16px; padding: 30px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);">
+
+    <h1 style="text-align:center; color:#4b2e2a;">HR Tech</h1>
+
+    <h2 style="color:#4b2e2a;">Application Accepted</h2>
+
+    <p>Xin chào <span th:text="${fullName}"></span>,</p>
+
+    <p>
+        Chúc mừng bạn! Hồ sơ ứng tuyển của bạn cho vị trí
+        <b th:text="${jobTitle}"></b>
+        <span th:if="${companyName != null}">
+            tại <b th:text="${companyName}"></b>
+        </span>
+        đã được chấp nhận.
+    </p>
+
+    <div style="background:#f8f1e7; padding:18px; border-radius:12px; margin:24px 0;">
+        <p style="margin:6px 0;">
+            <b>Thời gian nhận việc :</b>
+            <span th:text="${#temporals.format(acceptedStartDateTime, 'HH:mm dd/MM/yyyy')}"></span>
+        </p>
+        <p style="margin:6px 0;">
+            <b>Địa điểm làm việc :</b>
+            <span th:text="${acceptedWorkAddress}"></span>
+        </p>
+        <p style="margin:6px 0;" th:if="${acceptedNote != null}">
+            <b>Ghi chú:</b>
+            <span th:text="${acceptedNote}"></span>
+        </p>
+    </div>
+
+    <p>Bộ phận tuyển dụng sẽ tiếp tục hỗ trợ bạn trong các bước tiếp theo. Rất mong được chào đón bạn.</p>
+
+    <div th:replace="~{email/fragments/footer :: footer}"></div>
+
+</div>
+</body>
+</html>

@@ -13,6 +13,7 @@ import sba301.hrtech.application.abstractions.services.ApplicationService;
 import sba301.hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
 import sba301.hrtech.application.dtos.request.ScheduleInterviewRequest;
 import sba301.hrtech.application.dtos.request.SubmitApplicationRequest;
+import sba301.hrtech.application.dtos.request.UpdateApplicationStatusRequest;
 import sba301.hrtech.application.dtos.response.ApplicationDetailResponse;
 import sba301.hrtech.application.dtos.response.ApplicationSummaryResponse;
 import sba301.hrtech.application.entities.Application;
@@ -175,31 +176,53 @@ public class ApplicationServiceImpl implements ApplicationService {
     }
 
     @Override
-    public ApplicationSummaryResponse updateStatus(UUID applicationId, ApplicationStatus newStatus) {
+    public ApplicationSummaryResponse updateStatus(UUID applicationId, UpdateApplicationStatusRequest request) {
+        if (request == null || request.getStatus() == null) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "Application status is required");
+        }
+
+        ApplicationStatus newStatus = request.getStatus();
+        if (newStatus == ApplicationStatus.ACCEPTED) {
+            if (request.getAcceptedStartDateTime() == null) {
+                throw new AppException(ErrorCode.INVALID_INPUT, "Accepted start date/time is required");
+            }
+            if (normalizeBlank(request.getAcceptedWorkAddress()) == null) {
+                throw new AppException(ErrorCode.INVALID_INPUT, "Accepted work address is required");
+            }
+        }
+
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Application not found"));
 
         application.setStatus(newStatus);
         application = applicationRepository.save(application);
 
-        notifyCandidateAfterStatusCommit(application, newStatus);
+        notifyCandidateAfterStatusCommit(application, request);
 
         return applicationMapper.toSummaryResponse(application);
     }
 
-    private void notifyCandidateAfterStatusCommit(Application application, ApplicationStatus newStatus) {
+    private void notifyCandidateAfterStatusCommit(Application application, UpdateApplicationStatusRequest request) {
+        Job job = application.getJob();
+        String jobTitle = job == null ? null : job.getTitle();
+        String companyName = job == null || job.getCompany() == null ? null : job.getCompany().getName();
+
         ApplicationStatusNotificationRequest notificationRequest = new ApplicationStatusNotificationRequest(
                 application.getUser().getEmail(),
                 buildFullName(application.getUser()),
-                application.getJob().getTitle(),
-                newStatus.name(),
+                jobTitle,
+                companyName,
+                request.getStatus().name(),
                 application.getId().toString(),
                 null,
                 null,
                 null,
                 null,
                 null,
-                null
+                null,
+                request.getAcceptedStartDateTime(),
+                normalizeBlank(request.getAcceptedWorkAddress()),
+                normalizeBlank(request.getAcceptedNote())
         );
 
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
@@ -292,6 +315,7 @@ public class ApplicationServiceImpl implements ApplicationService {
                 application.getUser().getEmail(),
                 buildFullName(application.getUser()),
                 application.getJob().getTitle(),
+                application.getJob().getCompany() == null ? null : application.getJob().getCompany().getName(),
                 ApplicationStatus.PENDING_INTERVIEW_SCHEDULE.name(),
                 application.getId().toString(),
                 application.getInterviewDateTime(),
@@ -299,7 +323,10 @@ public class ApplicationServiceImpl implements ApplicationService {
                 application.getInterviewMeetingLink(),
                 application.getInterviewNote(),
                 actionLink,
-                "Phản hồi lịch phỏng vấn"
+                "Phản hồi lịch phỏng vấn",
+                null,
+                null,
+                null
         );
 
         if (TransactionSynchronizationManager.isSynchronizationActive()) {

@@ -21,21 +21,25 @@ import {
 } from 'lucide-react'
 import { useGetApplicationDetail } from '@/src/hooks/application'
 import { useGetCvDetail } from '@/src/hooks/cv'
-import { ApplicationStatus, ScheduleInterviewRequest } from '@/src/types'
+import { ApplicationStatus, ScheduleInterviewRequest, UpdateApplicationStatusRequest } from '@/src/types'
 
 // ─── Status config ────────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<
   ApplicationStatus,
   { label: string; color: string; bg: string; border: string; dot: string }
 > = {
-  [ApplicationStatus.SUBMITTED]: { label: 'Mới nộp', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-500' },
-  [ApplicationStatus.SCORED]: { label: 'Đã chấm', color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200', dot: 'bg-violet-500' },
-  [ApplicationStatus.PENDING_INTERVIEW_SCHEDULE]: { label: 'CHỜ LỊCH PHỎNG VẤN', color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-200', dot: 'bg-orange-500' },
-  [ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE]: { label: 'ỨNG VIÊN XIN ĐỔI LỊCH', color: 'text-cyan-700', bg: 'bg-cyan-50', border: 'border-cyan-200', dot: 'bg-cyan-500' },
-  [ApplicationStatus.INTERVIEW]: { label: 'PHỎNG VẤN', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200', dot: 'bg-indigo-500' },
-  [ApplicationStatus.REJECTED]: { label: 'TỪ CHỐI', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200', dot: 'bg-rose-500' },
-  [ApplicationStatus.WITHDRAWN]: { label: 'Đã rút', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200', dot: 'bg-slate-400' },
-}
+    [ApplicationStatus.SUBMITTED]: { label: 'Mới nộp', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-500' },
+    [ApplicationStatus.SCORED]: { label: 'Đã chấm', color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200', dot: 'bg-violet-500' },
+    [ApplicationStatus.PENDING_INTERVIEW_SCHEDULE]: { label: 'CHỜ LỊCH PHỎNG VẤN', color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-200', dot: 'bg-orange-500' },
+    [ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE]: { label: 'ỨNG VIÊN XIN ĐỔI LỊCH', color: 'text-cyan-700', bg: 'bg-cyan-50', border: 'border-cyan-200', dot: 'bg-cyan-500' },
+    [ApplicationStatus.INTERVIEW]: { label: 'PHỎNG VẤN', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200', dot: 'bg-indigo-500' },
+
+    [ApplicationStatus.INTERVIEW_COMPLETED]: { label: 'ĐÃ PHỎNG VẤN', color: 'text-teal-700', bg: 'bg-teal-50', border: 'border-teal-200', dot: 'bg-teal-500' },
+    [ApplicationStatus.NO_SHOW]: { label: 'KHÔNG THAM GIA', color: 'text-gray-700', bg: 'bg-gray-100', border: 'border-gray-200', dot: 'bg-gray-500' },
+    [ApplicationStatus.ACCEPTED]: { label: 'ĐÃ NHẬN', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200', dot: 'bg-green-500' },
+
+    [ApplicationStatus.REJECTED]: { label: 'TỪ CHỐI', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200', dot: 'bg-rose-500' },
+    [ApplicationStatus.WITHDRAWN]: { label: 'Đã rút', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200', dot: 'bg-slate-400' },}
 
 const NEXT_ACTIONS: Partial<Record<ApplicationStatus, { status: ApplicationStatus; label: string; style: string }[]>> = {
   [ApplicationStatus.SUBMITTED]: [
@@ -45,7 +49,15 @@ const NEXT_ACTIONS: Partial<Record<ApplicationStatus, { status: ApplicationStatu
   [ApplicationStatus.SCORED]: [
     { status: ApplicationStatus.INTERVIEW, label: 'Mời Phỏng vấn', style: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
     { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
-  ]
+  ],
+    [ApplicationStatus.INTERVIEW]:[
+    { status: ApplicationStatus.INTERVIEW_COMPLETED, label: 'Hoàn tất Phỏng vấn', style: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
+        { status: ApplicationStatus.NO_SHOW, label: 'Ứng viên vắng mặt', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
+    ],
+    [ApplicationStatus.INTERVIEW_COMPLETED]:[
+        { status: ApplicationStatus.ACCEPTED, label: 'Chấp nhận', style: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
+        { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
+    ]
 }
 
 function gradeColor(grade?: string) {
@@ -117,7 +129,7 @@ function toDateTimeLocalValue(dateStr?: string) {
 interface Props {
   applicationId: string
   onClose: () => void
-  onStatusChange: (id: string, status: ApplicationStatus) => void
+  onStatusChange: (id: string, request: UpdateApplicationStatusRequest) => void
   onScheduleInterview: (id: string, request: ScheduleInterviewRequest) => void
   onAcceptCandidateReschedule: (id: string) => void
   onRejectCandidateReschedule: (id: string) => void
@@ -141,6 +153,10 @@ export default function ApplicationDetailModal({
   const [interviewLocation, setInterviewLocation] = useState('')
   const [interviewMeetingLink, setInterviewMeetingLink] = useState('')
   const [interviewNote, setInterviewNote] = useState('')
+  const [isAcceptanceOpen, setIsAcceptanceOpen] = useState(false)
+  const [acceptedStartDateTime, setAcceptedStartDateTime] = useState('')
+  const [acceptedWorkAddress, setAcceptedWorkAddress] = useState('')
+  const [acceptedNote, setAcceptedNote] = useState('')
   const { data: app, isLoading } = useGetApplicationDetail(applicationId)
   const { data: cvDetail, isLoading: isCvLoading } = useGetCvDetail(app?.cvId ?? '', !!app?.cvId)
   // Hook ở component level (tuân thủ Rules of Hooks)
@@ -165,6 +181,9 @@ export default function ApplicationDetailModal({
   useEffect(() => {
     if (app?.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE) {
       setIsScheduleOpen(false)
+    }
+    if (app?.status === ApplicationStatus.ACCEPTED) {
+      setIsAcceptanceOpen(false)
     }
   }, [app?.status])
 
@@ -192,7 +211,14 @@ export default function ApplicationDetailModal({
       openScheduleForm(false)
       return
     }
-    if (app) onStatusChange(app.id, status)
+    if (status === ApplicationStatus.ACCEPTED && app) {
+      setAcceptedStartDateTime('')
+      setAcceptedWorkAddress(app.companyAddress ?? '')
+      setAcceptedNote('')
+      setIsAcceptanceOpen(true)
+      return
+    }
+    if (app) onStatusChange(app.id, { status })
   }
 
   const handleScheduleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -204,6 +230,18 @@ export default function ApplicationDetailModal({
       interviewLocation: interviewLocation.trim() || undefined,
       interviewMeetingLink: interviewMeetingLink.trim() || undefined,
       note: interviewNote.trim() || undefined,
+    })
+  }
+
+  const handleAcceptanceSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!app || !acceptedStartDateTime || !acceptedWorkAddress.trim()) return
+
+    onStatusChange(app.id, {
+      status: ApplicationStatus.ACCEPTED,
+      acceptedStartDateTime: new Date(acceptedStartDateTime).toISOString(),
+      acceptedWorkAddress: acceptedWorkAddress.trim(),
+      acceptedNote: acceptedNote.trim() || undefined,
     })
   }
 
@@ -543,6 +581,83 @@ export default function ApplicationDetailModal({
               >
                 {isSchedulingInterview && <Loader2 className="w-4 h-4 animate-spin" />}
                 Gửi lịch phỏng vấn
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {isAcceptanceOpen && app && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50">
+          <form
+            onSubmit={handleAcceptanceSubmit}
+            className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden"
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <h3 className="text-base font-black text-slate-900">Thông tin nhận việc</h3>
+              <button
+                type="button"
+                onClick={() => setIsAcceptanceOpen(false)}
+                className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center"
+              >
+                <X className="w-4 h-4 text-slate-600" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <label className="block">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Thời gian nhận việc / báo cáo</span>
+                <input
+                  id="accepted-start-date-time"
+                  type="datetime-local"
+                  required
+                  value={acceptedStartDateTime}
+                  onChange={(e) => setAcceptedStartDateTime(e.target.value)}
+                  className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Địa điểm làm việc / báo cáo</span>
+                <textarea
+                  id="accepted-work-address"
+                  required
+                  value={acceptedWorkAddress}
+                  onChange={(e) => setAcceptedWorkAddress(e.target.value)}
+                  rows={3}
+                  placeholder="VD: Văn phòng công ty, tầng 5"
+                  className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 resize-none"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Ghi chú</span>
+                <textarea
+                  id="accepted-note"
+                  value={acceptedNote}
+                  onChange={(e) => setAcceptedNote(e.target.value)}
+                  rows={3}
+                  placeholder="Thông tin cần chuẩn bị, người liên hệ..."
+                  className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 resize-none"
+                />
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-2 px-5 py-4 border-t border-slate-100 bg-slate-50">
+              <button
+                type="button"
+                onClick={() => setIsAcceptanceOpen(false)}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={!acceptedStartDateTime || !acceptedWorkAddress.trim()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                Xác nhận và gửi email
               </button>
             </div>
           </form>

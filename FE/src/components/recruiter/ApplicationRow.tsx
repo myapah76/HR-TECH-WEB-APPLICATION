@@ -4,64 +4,88 @@ import { ApplicationStatus, ApplicationSummaryResponse } from '@/src/types'
 
 // ─── Status config ────────────────────────────────────────────────────────────
 export const STATUS_CONFIG: Record<
-  ApplicationStatus,
-  { label: string; color: string; bg: string; dot: string }
+    ApplicationStatus,
+    { label: string; color: string; bg: string; dot: string }
 > = {
-  [ApplicationStatus.SUBMITTED]: {
-    label: 'Mới nộp',
-    color: 'text-blue-700',
-    bg: 'bg-blue-50',
-    dot: 'bg-blue-500',
-  },
-  [ApplicationStatus.SCORED]: {
-    label: 'Đã chấm',
-    color: 'text-violet-700',
-    bg: 'bg-violet-50',
-    dot: 'bg-violet-500',
-  },
-  [ApplicationStatus.PENDING_INTERVIEW_SCHEDULE]: {
-    label: 'CHỜ LỊCH PHỎNG VẤN',
-    color: 'text-orange-700',
-    bg: 'bg-orange-50',
-    dot: 'bg-orange-500',
-  },
-  [ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE]: {
-    label: 'ỨNG VIÊN XIN ĐỔI LỊCH',
-    color: 'text-cyan-700',
-    bg: 'bg-cyan-50',
-    dot: 'bg-cyan-500',
-  },
-  [ApplicationStatus.INTERVIEW]: {
-    label: 'PHỎNG VẤN',
-    color: 'text-indigo-700',
-    bg: 'bg-indigo-50',
-    dot: 'bg-indigo-500',
-  },
-  [ApplicationStatus.REJECTED]: {
-    label: 'TỪ CHỐI',
-    color: 'text-rose-700',
-    bg: 'bg-rose-50',
-    dot: 'bg-rose-500',
-  },
-  [ApplicationStatus.WITHDRAWN]: {
-    label: 'Đã rút',
-    color: 'text-slate-600',
-    bg: 'bg-slate-100',
-    dot: 'bg-slate-400',
-  },
-}
+    [ApplicationStatus.SUBMITTED]: {
+        label: 'Mới nộp',
+        color: 'text-blue-700',
+        bg: 'bg-blue-50',
+        dot: 'bg-blue-500',
+    },
+    [ApplicationStatus.SCORED]: {
+        label: 'Đã chấm',
+        color: 'text-violet-700',
+        bg: 'bg-violet-50',
+        dot: 'bg-violet-500',
+    },
+    [ApplicationStatus.PENDING_INTERVIEW_SCHEDULE]: {
+        label: 'CHỜ LỊCH PHỎNG VẤN',
+        color: 'text-orange-700',
+        bg: 'bg-orange-50',
+        dot: 'bg-orange-500',
+    },
+    [ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE]: {
+        label: 'ỨNG VIÊN XIN ĐỔI LỊCH',
+        color: 'text-cyan-700',
+        bg: 'bg-cyan-50',
+        dot: 'bg-cyan-500',
+    },
+    [ApplicationStatus.INTERVIEW]: {
+        label: 'PHỎNG VẤN',
+        color: 'text-indigo-700',
+        bg: 'bg-indigo-50',
+        dot: 'bg-indigo-500',
+    },
+
+    [ApplicationStatus.INTERVIEW_COMPLETED]: {
+        label: 'ĐÃ PHỎNG VẤN',
+        color: 'text-teal-700',
+        bg: 'bg-teal-50',
+        dot: 'bg-teal-500',
+    },
+    [ApplicationStatus.NO_SHOW]: {
+        label: 'KHÔNG THAM GIA',
+        color: 'text-gray-700',
+        bg: 'bg-gray-100',
+        dot: 'bg-gray-500',
+    },
+    [ApplicationStatus.ACCEPTED]: {
+        label: 'ĐÃ NHẬN',
+        color: 'text-green-700',
+        bg: 'bg-green-50',
+        dot: 'bg-green-500',
+    },
+
+    [ApplicationStatus.REJECTED]: {
+        label: 'TỪ CHỐI',
+        color: 'text-rose-700',
+        bg: 'bg-rose-50',
+        dot: 'bg-rose-500',
+    },
+    [ApplicationStatus.WITHDRAWN]: {
+        label: 'Đã rút',
+        color: 'text-slate-600',
+        bg: 'bg-slate-100',
+        dot: 'bg-slate-400',
+    },
+};
 
 export const FILTER_STATUS_OPTIONS: { value: ApplicationStatus | ''; label: string }[] = [
-  { value: '', label: 'Tất cả trạng thái' },
-  { value: ApplicationStatus.SUBMITTED, label: 'Mới nộp' },
-  { value: ApplicationStatus.SCORED, label: 'Đã chấm điểm AI' },
-  { value: ApplicationStatus.PENDING_INTERVIEW_SCHEDULE, label: 'Chờ lịch phỏng vấn' },
-  { value: ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE, label: 'Ứng viên xin đổi lịch' },
-  { value: ApplicationStatus.INTERVIEW, label: 'Phỏng vấn' },
-  { value: ApplicationStatus.REJECTED, label: 'Từ chối' },
-  { value: ApplicationStatus.WITHDRAWN, label: 'Đã rút' },
-]
+    { value: '', label: 'Tất cả trạng thái' },
+    { value: ApplicationStatus.SUBMITTED, label: 'Mới nộp' },
+    { value: ApplicationStatus.SCORED, label: 'Đã chấm điểm AI' },
+    { value: ApplicationStatus.PENDING_INTERVIEW_SCHEDULE, label: 'Chờ lịch phỏng vấn' },
+    { value: ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE, label: 'Ứng viên xin đổi lịch' },
+    { value: ApplicationStatus.INTERVIEW, label: 'Phỏng vấn' },
 
+    { value: ApplicationStatus.INTERVIEW_COMPLETED, label: 'Đã phỏng vấn' },
+    { value: ApplicationStatus.NO_SHOW, label: 'Không tham gia' },
+    { value: ApplicationStatus.ACCEPTED, label: 'Đã nhận' },
+
+    { value: ApplicationStatus.REJECTED, label: 'Từ chối' },
+    { value: ApplicationStatus.WITHDRAWN, label: 'Đã rút' },
+];
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function calcTimeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()

@@ -12,6 +12,7 @@ import sba301.hrtech.application.abstractions.services.ApplicationService;
 import sba301.hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
 import sba301.hrtech.application.dtos.request.ScheduleInterviewRequest;
 import sba301.hrtech.application.dtos.request.SubmitApplicationRequest;
+import sba301.hrtech.application.dtos.request.UpdateApplicationStatusRequest;
 import sba301.hrtech.application.dtos.response.ApplicationDetailResponse;
 import sba301.hrtech.application.dtos.response.ApplicationSummaryResponse;
 import sba301.hrtech.application.entities.enums.ApplicationStatus;
@@ -69,8 +70,13 @@ public class ApplicationController {
     @PreAuthorize("@companySecurity.isApplicationOwnerOrManagerOrHr(#id)")
     public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> updateStatus(
             @PathVariable UUID id,
-            @RequestParam ApplicationStatus status) {
-        return ResponseEntity.ok(ApiResponse.success(applicationService.updateStatus(id, status)));
+            @RequestParam(required = false) ApplicationStatus status,
+            @RequestBody(required = false) UpdateApplicationStatusRequest request) {
+        UpdateApplicationStatusRequest updateRequest = request == null ? new UpdateApplicationStatusRequest() : request;
+        if (updateRequest.getStatus() == null) {
+            updateRequest.setStatus(status);
+        }
+        return ResponseEntity.ok(ApiResponse.success(applicationService.updateStatus(id, updateRequest)));
     }
 
     @PutMapping("/{id}/interview-schedule")

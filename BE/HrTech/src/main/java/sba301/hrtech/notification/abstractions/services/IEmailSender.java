@@ -12,12 +12,16 @@ public interface IEmailSender {
             String toEmail,
             String fullName,
             String jobTitle,
+            String companyName,
             String newStatus,
             java.time.Instant interviewDateTime,
             String interviewLocation,
             String interviewMeetingLink,
             String note,
             String actionLink,
-            String actionLabel);
+            String actionLabel,
+            java.time.Instant acceptedStartDateTime,
+            String acceptedWorkAddress,
+            String acceptedNote);
 
 }

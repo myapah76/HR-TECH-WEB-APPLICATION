@@ -5,7 +5,7 @@ import sba301.hrtech.application.dtos.response.ApplicationSummaryResponse;
 import sba301.hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
 import sba301.hrtech.application.dtos.request.ScheduleInterviewRequest;
 import sba301.hrtech.application.dtos.request.SubmitApplicationRequest;
-import sba301.hrtech.application.entities.enums.ApplicationStatus;
+import sba301.hrtech.application.dtos.request.UpdateApplicationStatusRequest;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,7 +16,7 @@ public interface ApplicationService {
     Page<ApplicationSummaryResponse> getMyApplications(UUID userId, Pageable pageable);
     ApplicationDetailResponse getApplicationDetail(UUID userId, UUID applicationId);
     void withdrawApplication(UUID userId, UUID applicationId);
-    ApplicationSummaryResponse updateStatus(UUID applicationId, ApplicationStatus newStatus);
+    ApplicationSummaryResponse updateStatus(UUID applicationId, UpdateApplicationStatusRequest request);
     ApplicationSummaryResponse scheduleInterview(UUID applicationId, ScheduleInterviewRequest request);
     ApplicationSummaryResponse acceptInterviewSchedule(UUID userId, UUID applicationId);
     ApplicationSummaryResponse changeInterviewSchedule(UUID userId, UUID applicationId, ChangeInterviewScheduleRequest request);

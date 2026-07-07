@@ -16,6 +16,8 @@ export interface ApplicationDetailResponse {
   id: string;
   jobId: string;
   jobTitle: string;
+  companyName?: string;
+  companyAddress?: string;
   cvId: string;
   cvTitle: string;
   coverLetter?: string;
@@ -41,6 +43,9 @@ export interface SubmitApplicationRequest {
 
 export interface UpdateApplicationStatusRequest {
   status: ApplicationStatus;
+  acceptedStartDateTime?: string;
+  acceptedWorkAddress?: string;
+  acceptedNote?: string;
 }
 
 export interface ScheduleInterviewRequest {

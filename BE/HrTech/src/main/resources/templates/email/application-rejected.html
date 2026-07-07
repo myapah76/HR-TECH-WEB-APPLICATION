@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body style="font-family: Verdana, sans-serif; background-color: #f8f1e7; padding: 40px;">
+
+<div style="max-width: 520px; margin: auto; background: #fff;
+            border-radius: 16px; padding: 30px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);">
+
+    <h1 style="text-align:center; color:#4b2e2a;">HR Tech</h1>
+
+    <h2 style="color:#4b2e2a;">Application Update</h2>
+
+    <p>Xin chào <span th:text="${fullName}"></span>,</p>
+
+    <p>
+        Cảm ơn bạn đã ứng tuyển vào vị trí
+        <b th:text="${jobTitle}"></b>
+        <span th:if="${companyName != null}">
+            tại <b th:text="${companyName}"></b>
+        </span>.
+    </p>
+
+    <div style="background:#f8f1e7; padding:18px; border-radius:12px; margin:24px 0;">
+        <p style="margin:6px 0;">
+            Sau khi xem xét kỹ hồ sơ, rất tiếc chúng tôi chưa thể tiếp tục với hồ sơ của bạn cho vị trí này ở thời điểm hiện tại.
+        </p>
+        <p style="margin:12px 0 6px;">
+            Chúng tôi trân trọng thời gian và sự quan tâm của bạn, và chúc bạn nhiều thành công trong hành trình nghề nghiệp sắp tới.
+        </p>
+    </div>
+
+    <p>Hy vọng sẽ có cơ hội phù hợp hơn để đồng hành cùng bạn trong tương lai.</p>
+
+    <div th:replace="~{email/fragments/footer :: footer}"></div>
+
+</div>
+</body>
+</html>

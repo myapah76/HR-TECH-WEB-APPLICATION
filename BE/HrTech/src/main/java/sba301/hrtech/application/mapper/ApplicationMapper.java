@@ -28,6 +28,8 @@ public interface ApplicationMapper {
     @Mapping(target = "cvId", source = "cv.id")
     @Mapping(target = "cvTitle", source = "cv.title")
     @Mapping(target = "appliedAt", source = "appliedAt")
+    @Mapping(target = "companyName", source = "job.company.name")
+    @Mapping(target = "companyAddress", source = "job.company.address")
     @Mapping(target = "interviewDateTime", source = "interviewDateTime")
     @Mapping(target = "interviewLocation", source = "interviewLocation")
     @Mapping(target = "interviewMeetingLink", source = "interviewMeetingLink")

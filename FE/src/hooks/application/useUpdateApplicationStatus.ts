@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { updateApplicationStatus } from '@/src/services/application.service'
-import { ApplicationStatus } from '@/src/types'
+import { UpdateApplicationStatusRequest } from '@/src/types'
 
 export const useUpdateApplicationStatus = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: ApplicationStatus }) =>
-      updateApplicationStatus(id, status),
+    mutationFn: ({ id, request }: { id: string; request: UpdateApplicationStatusRequest }) =>
+      updateApplicationStatus(id, request),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['applications'] })
       queryClient.invalidateQueries({ queryKey: ['application', variables.id] })

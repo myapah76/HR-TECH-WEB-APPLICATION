@@ -77,21 +77,27 @@ public class NotificationServiceImpl implements INotificationService {
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void ApplicationStatusNotificationHandler(ApplicationStatusNotificationRequest request) {
-        // Gửi email: chỉ khi là PENDING_INTERVIEW_SCHEDULE hoặc OFFER
-        if ("PENDING_INTERVIEW_SCHEDULE".equals(request.getNewStatus()) || "OFFER".equals(request.getNewStatus())) {
+        // Gửi email: chỉ khi trạng thái có template email tương ứng
+        if ("PENDING_INTERVIEW_SCHEDULE".equals(request.getNewStatus())
+                || "ACCEPTED".equals(request.getNewStatus())
+                || "REJECTED".equals(request.getNewStatus())) {
             try {
                 emailSender
                         .sendApplicationStatusUpdateEmailAsync(
                                 request.getEmail(),
                                 request.getFullName(),
                                 request.getJobTitle(),
+                                request.getCompanyName(),
                                 request.getNewStatus(),
                                 request.getInterviewDateTime(),
                                 request.getInterviewLocation(),
                                 request.getInterviewMeetingLink(),
                                 request.getNote(),
                                 request.getActionLink(),
-                                request.getActionLabel()
+                                request.getActionLabel(),
+                                request.getAcceptedStartDateTime(),
+                                request.getAcceptedWorkAddress(),
+                                request.getAcceptedNote()
                         )
                         .whenComplete((result, throwable) -> {
                             if (throwable != null) {
@@ -123,9 +129,9 @@ public class NotificationServiceImpl implements INotificationService {
                     title = "Lịch phỏng vấn mới";
                     content = "Bạn có lịch phỏng vấn mới cho vị trí " + request.getJobTitle();
                     type = NotificationType.INTERVIEW_SCHEDULED;
-                } else if ("OFFER".equals(request.getNewStatus())) {
-                    title = "Lời mời nhận việc";
-                    content = "Chúc mừng! Bạn đã nhận được lời mời nhận việc cho vị trí " + request.getJobTitle();
+                } else if ("ACCEPTED".equals(request.getNewStatus())) {
+                    title = "Hồ sơ ứng tuyển được chấp nhận";
+                    content = "Chúc mừng! Hồ sơ của bạn cho vị trí " + request.getJobTitle() + " đã được chấp nhận.";
                     type = NotificationType.APPLICATION_STATUS_UPDATED;
                 } else if ("REJECTED".equals(request.getNewStatus())) {
                     title = "Cập nhật hồ sơ ứng tuyển";

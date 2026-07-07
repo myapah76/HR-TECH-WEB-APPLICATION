@@ -28,6 +28,7 @@ import {
   ApplicationStatus,
   ApplicationSummaryResponse,
   ScheduleInterviewRequest,
+  UpdateApplicationStatusRequest,
 } from '@/src/types'
 import ApplicationDetailModal from '@/src/components/recruiter/ApplicationDetailModal'
 import { toast } from 'sonner'
@@ -126,10 +127,10 @@ export default function HRApplicationsPage() {
     ? filtered
     : filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
-  const handleStatusUpdate = (id: string, status: ApplicationStatus) => {
-    updateStatus.mutate({ id, status })
+  const handleStatusUpdate = (id: string, request: UpdateApplicationStatusRequest) => {
+    updateStatus.mutate({ id, request })
     if (selectedApp?.id === id) {
-      setSelectedApp({ ...selectedApp, status })
+      setSelectedApp({ ...selectedApp, status: request.status })
     }
   }
 
