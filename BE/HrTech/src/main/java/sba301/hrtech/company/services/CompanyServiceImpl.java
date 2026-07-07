@@ -14,6 +14,7 @@ import sba301.hrtech.company.abstractions.services.ICompanyService;
 import sba301.hrtech.company.dtos.request.AddMemberRequest;
 import sba301.hrtech.company.dtos.request.CompanyRegisterRequest;
 import sba301.hrtech.company.dtos.request.CompanyUpdateRequest;
+import sba301.hrtech.company.dtos.request.UpdateMemberRoleRequest;
 import sba301.hrtech.company.dtos.response.CompanyMemberResponse;
 import sba301.hrtech.company.dtos.response.CompanyResponse;
 import sba301.hrtech.identity.abstractions.services.IRoleService;
@@ -491,6 +492,42 @@ public class CompanyServiceImpl implements ICompanyService {
         }
 
         userService.saveUserEntity(targetUser);
+    }
+
+    @Override
+    @Transactional
+    public void updateMemberRole(UUID companyId, UUID memberId, UpdateMemberRoleRequest request) {
+        User currentUser = getCurrentUser();
+
+        if (!companyPermissionService.hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Access Denied");
+        }
+
+        CompanyMember targetMember = companyMemberRepository.findById(memberId)
+                .orElseThrow(() -> new AppException(ErrorCode.MEMBER_NOT_FOUND, "Member not found."));
+
+        if (!targetMember.getCompany().getId().equals(companyId)) {
+            throw new AppException(ErrorCode.INVALID_MEMBER_ASSOCIATION, "User does not belong to this company.");
+        }
+
+        if (targetMember.getCompanyRole() == CompanyRole.OWNER) {
+            throw new AppException(ErrorCode.CANNOT_ASSIGN_OWNER, "Cannot change OWNER role. Use transfer ownership instead.");
+        }
+
+        String requestedRole = request.role();
+        if ("OWNER".equalsIgnoreCase(requestedRole)) {
+            throw new AppException(ErrorCode.CANNOT_ASSIGN_OWNER, "Cannot assign OWNER role via member management.");
+        }
+
+        CompanyRole newRole;
+        try {
+            newRole = CompanyRole.valueOf(requestedRole.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new AppException(ErrorCode.INVALID_ROLE, "Invalid company role. Must be HR or HR_MANAGER.");
+        }
+
+        targetMember.setCompanyRole(newRole);
+        companyMemberRepository.save(targetMember);
     }
 
     @Override

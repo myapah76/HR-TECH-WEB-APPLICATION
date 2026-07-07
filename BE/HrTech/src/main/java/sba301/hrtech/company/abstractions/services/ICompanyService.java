@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import sba301.hrtech.company.dtos.request.AddMemberRequest;
 import sba301.hrtech.company.dtos.request.CompanyRegisterRequest;
 import sba301.hrtech.company.dtos.request.CompanyUpdateRequest;
+import sba301.hrtech.company.dtos.request.UpdateMemberRoleRequest;
 import sba301.hrtech.company.dtos.response.CompanyMemberResponse;
 import sba301.hrtech.company.dtos.response.CompanyResponse;
 import sba301.hrtech.identity.dtos.auth.response.ConfirmOtpResult;
@@ -44,6 +45,8 @@ public interface ICompanyService {
     void removeMember(UUID companyId, UUID memberId);
 
     void reactivateMember(UUID companyId, UUID memberId, boolean resetPassword);
+
+    void updateMemberRole(UUID companyId, UUID memberId, UpdateMemberRoleRequest request);
 
     void transferOwnership(UUID companyId, UUID currentOwnerId, UUID targetMemberId);
 

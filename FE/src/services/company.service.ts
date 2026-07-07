@@ -77,3 +77,14 @@ export const reactivateCompanyMember = async (
     { params: { resetPassword } }
   )
 }
+
+export const updateMemberRole = async (
+  companyId: string,
+  memberId: string,
+  role: string
+): Promise<void> => {
+  await api.patch<ApiResponse<void>>(
+    `/companies/${companyId}/members/${memberId}/role`,
+    { role }
+  )
+}

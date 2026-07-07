@@ -14,6 +14,7 @@ import sba301.hrtech.company.abstractions.services.ICompanyService;
 import sba301.hrtech.company.dtos.request.AddMemberRequest;
 import sba301.hrtech.company.dtos.request.CompanyRegisterRequest;
 import sba301.hrtech.company.dtos.request.CompanyUpdateRequest;
+import sba301.hrtech.company.dtos.request.UpdateMemberRoleRequest;
 import sba301.hrtech.company.dtos.response.CompanyMemberResponse;
 import sba301.hrtech.company.dtos.response.CompanyResponse;
 import sba301.hrtech.identity.dtos.auth.response.EmailActionResponse;
@@ -93,6 +94,17 @@ public class CompanyController {
             @PathVariable UUID memberId
     ) {
         companyService.removeMember(id, memberId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @PatchMapping("/{id}/members/{memberId}/role")
+    @PreAuthorize("@companySecurity.isOwner(#id)")
+    public ResponseEntity<ApiResponse<Void>> updateMemberRole(
+            @PathVariable UUID id,
+            @PathVariable UUID memberId,
+            @Valid @RequestBody UpdateMemberRoleRequest request
+    ) {
+        companyService.updateMemberRole(id, memberId, request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

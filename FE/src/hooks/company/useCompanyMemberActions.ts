@@ -3,6 +3,7 @@ import {
   addCompanyMember,
   removeCompanyMember,
   reactivateCompanyMember,
+  updateMemberRole,
   AddMemberRequest,
 } from '@/src/services/company.service'
 
@@ -43,6 +44,25 @@ export const useReactivateCompanyMember = () => {
       memberId: string;
       resetPassword: boolean;
     }) => reactivateCompanyMember(companyId, memberId, resetPassword),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['companyMembers', variables.companyId] })
+    },
+  })
+}
+
+export const useUpdateMemberRole = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      companyId,
+      memberId,
+      role,
+    }: {
+      companyId: string
+      memberId: string
+      role: string
+    }) => updateMemberRole(companyId, memberId, role),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['companyMembers', variables.companyId] })
     },

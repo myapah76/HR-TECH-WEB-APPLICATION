@@ -7,6 +7,7 @@ import {
   UserCheck,
   UserX,
   UserPlus,
+  UserCog,
   X,
   Loader2,
   ShieldAlert,
@@ -18,6 +19,7 @@ import {
   useAddCompanyMember,
   useRemoveCompanyMember,
   useReactivateCompanyMember,
+  useUpdateMemberRole,
 } from '@/src/hooks/company'
 
 const ROLE_BADGES: Record<
@@ -53,9 +55,14 @@ export default function RecruiterMembersPage() {
   const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false)
   const [revokeTarget, setRevokeTarget] = useState<{ id: string; name: string } | null>(null)
 
+  const [isChangeRoleModalOpen, setIsChangeRoleModalOpen] = useState(false)
+  const [changeRoleTarget, setChangeRoleTarget] = useState<{ id: string; name: string; currentRole: string } | null>(null)
+  const [selectedNewRole, setSelectedNewRole] = useState('HR')
+
   const addMemberMutation = useAddCompanyMember()
   const removeMemberMutation = useRemoveCompanyMember()
   const reactivateMemberMutation = useReactivateCompanyMember()
+  const updateRoleMutation = useUpdateMemberRole()
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -80,6 +87,27 @@ export default function RecruiterMembersPage() {
       const errorMsg =
         error?.response?.data?.message || 'Có lỗi xảy ra khi thêm nhân sự.'
       toast.error(errorMsg)
+    }
+  }
+
+  const handleChangeRole = async () => {
+    if (!changeRoleTarget || !companyId) return
+    if (selectedNewRole === changeRoleTarget.currentRole) {
+      setIsChangeRoleModalOpen(false)
+      return
+    }
+    try {
+      await updateRoleMutation.mutateAsync({
+        companyId,
+        memberId: changeRoleTarget.id,
+        role: selectedNewRole,
+      })
+      toast.success(`Đã đổi vai trò của "${changeRoleTarget.name}" thành ${ROLE_BADGES[selectedNewRole]?.label ?? selectedNewRole}.`)
+      setIsChangeRoleModalOpen(false)
+      setChangeRoleTarget(null)
+    } catch (error: any) {
+      console.error(error)
+      toast.error(error?.response?.data?.message || 'Có lỗi xảy ra khi thay đổi vai trò.')
     }
   }
 
@@ -223,17 +251,31 @@ export default function RecruiterMembersPage() {
                       {!isSelf && member.role !== 'OWNER' && (
                         <div className="inline-flex gap-1.5 justify-end">
                           {isActive ? (
-                            <button
-                              onClick={() => {
-                                setRevokeTarget({ id: member.id, name: memberFullName })
-                                setIsRevokeModalOpen(true)
-                              }}
-                              disabled={removeMemberMutation.isPending}
-                              className="p-1.5 text-rose-450 hover:text-rose-650 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors disabled:opacity-50"
-                              title="Vô hiệu hóa nhân sự"
-                            >
-                              <UserX className="h-4 w-4" />
-                            </button>
+                            <>
+                              <button
+                                onClick={() => {
+                                  setChangeRoleTarget({ id: member.id, name: memberFullName, currentRole: member.role })
+                                  setSelectedNewRole(member.role === 'HR' ? 'HR_MANAGER' : 'HR')
+                                  setIsChangeRoleModalOpen(true)
+                                }}
+                                disabled={updateRoleMutation.isPending}
+                                className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer transition-colors disabled:opacity-50"
+                                title="Thay đổi vai trò"
+                              >
+                                <UserCog className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setRevokeTarget({ id: member.id, name: memberFullName })
+                                  setIsRevokeModalOpen(true)
+                                }}
+                                disabled={removeMemberMutation.isPending}
+                                className="p-1.5 text-rose-450 hover:text-rose-650 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors disabled:opacity-50"
+                                title="Vô hiệu hóa nhân sự"
+                              >
+                                <UserX className="h-4 w-4" />
+                              </button>
+                            </>
                           ) : (
                             <button
                               onClick={() => {
@@ -257,6 +299,74 @@ export default function RecruiterMembersPage() {
           </table>
         </div>
       </div>
+
+      {/* Change Role Modal */}
+      {isChangeRoleModalOpen && changeRoleTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full overflow-hidden animate-scale-up">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+              <h3 className="text-base font-black text-slate-900">Thay đổi vai trò</h3>
+              <button
+                onClick={() => {
+                  setIsChangeRoleModalOpen(false)
+                  setChangeRoleTarget(null)
+                }}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-xs font-bold text-slate-500 leading-relaxed">
+                Thay đổi vai trò cho nhân sự{' '}
+                <strong className="text-slate-800">"{changeRoleTarget.name}"</strong>.
+                Vai trò hiện tại:{' '}
+                <span className="text-slate-700">{ROLE_BADGES[changeRoleTarget.currentRole]?.label ?? changeRoleTarget.currentRole}</span>
+              </p>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-slate-700">Vai trò mới</label>
+                <select
+                  value={selectedNewRole}
+                  onChange={(e) => setSelectedNewRole(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                >
+                  <option value="HR">Tuyển dụng (HR)</option>
+                  <option value="HR_MANAGER">Quản lý HR (HR Manager)</option>
+                </select>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsChangeRoleModalOpen(false)
+                    setChangeRoleTarget(null)
+                  }}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-extrabold text-xs hover:bg-slate-50 cursor-pointer transition-colors"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="button"
+                  onClick={handleChangeRole}
+                  disabled={updateRoleMutation.isPending || selectedNewRole === changeRoleTarget.currentRole}
+                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-sm hover:shadow"
+                >
+                  {updateRoleMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Đang cập nhật...</span>
+                    </>
+                  ) : (
+                    <span>Xác nhận thay đổi</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Member Modal */}
       {isAddModalOpen && (
