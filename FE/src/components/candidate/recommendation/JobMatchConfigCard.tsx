@@ -42,7 +42,7 @@ export function JobMatchConfigCard({
   isStarting,
   isProcessActive,
   taskStatus,
-  onReset
+  onReset,
 }: JobMatchConfigCardProps) {
   return (
     <Card

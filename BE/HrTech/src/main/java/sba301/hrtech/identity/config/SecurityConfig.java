@@ -1,6 +1,7 @@
 package sba301.hrtech.identity.config;
 
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -86,6 +87,7 @@ public class SecurityConfig {
                 // Vô hiệu hóa HTTP Basic auth vì chúng ta sẽ dùng JWT
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll() // cho phép truy cập công khai với các endpoint
                         .requestMatchers(HttpMethod.GET, "/api/skills").permitAll()
                         .anyRequest().authenticated()) // yêu cầu xác thực với các endpoint khác

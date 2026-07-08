@@ -1,5 +1,6 @@
 package sba301.hrtech.skill.services;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +12,11 @@ import sba301.hrtech.chat.dtos.response.RagChatResponseDto;
 import sba301.hrtech.skill.dtos.request.ValidateSkillsRequest;
 import sba301.hrtech.skill.dtos.response.*;
 
+import java.io.InputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 
 @Service
@@ -210,6 +216,37 @@ public class AiServiceClient {
             log.error("AI service RAG chat error: {}", e.getMessage(), e);
         }
         return null;
+    }
+
+    public InputStream chatWithRagStream(String query, List<String> documentIds, int topK) {
+        try {
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("query", query);
+            if (documentIds != null && !documentIds.isEmpty()) {
+                requestBody.put("document_ids", documentIds);
+            }
+            requestBody.put("top_k", topK);
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(aiServiceUrl + "/api/rag/chat/stream"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(
+                            new ObjectMapper().writeValueAsString(requestBody)))
+                    .build();
+
+            HttpResponse<InputStream> response = client.send(
+                    httpRequest, HttpResponse.BodyHandlers.ofInputStream());
+
+            if (response.statusCode() != 200) {
+                throw new RuntimeException("Python AI service returned status code " + response.statusCode());
+            }
+
+            return response.body();
+        } catch (Exception e) {
+            log.error("AI service RAG chat stream error: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to initiate RAG chat stream", e);
+        }
     }
 
     public AiMatchingAdviceResponseDto getMatchingAdvice(String cvText, String jdText, List<String> missingSkills) {

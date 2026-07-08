@@ -89,6 +89,7 @@ public enum ErrorCode {
     INVALID_TAX_CODE(HttpStatus.BAD_REQUEST, "Invalid tax code"),
     //Chat
     CHAT_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "Chat session not found"),
+    MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "Message not found"),
     // Interview
     GENERATE_QUESTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to generate interview question"),
     INTERVIEW_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "Interview session not found"),

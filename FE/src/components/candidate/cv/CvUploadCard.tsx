@@ -19,9 +19,7 @@ export function CvUploadCard({
     <Card className="border-blue-100 shadow-sm overflow-hidden bg-white relative h-fit">
       <CardHeader className="bg-blue-50/50 border-b border-blue-50">
         <CardTitle className="text-blue-800">Tải lên CV mới</CardTitle>
-        <CardDescription>
-          Chọn tệp PDF và hệ thống AI sẽ tự động phân tích kỹ năng.
-        </CardDescription>
+        <CardDescription>Chọn tệp PDF và hệ thống AI sẽ tự động phân tích kỹ năng.</CardDescription>
       </CardHeader>
       <CardContent className="pt-6 relative">
         {isPending && (

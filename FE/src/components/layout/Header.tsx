@@ -1,7 +1,7 @@
 'use client'
 import { useEffect } from 'react'
 import Link from 'next/link'
-import { Bell, ChevronDown, LogOut, User as UserIcon } from 'lucide-react'
+import { ChevronDown, LogOut, User as UserIcon } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
 import { ThemeToggle } from '@/src/components/layout/ThemeToggle'
 import NotificationDropdown from '@/src/components/layout/NotificationDropdown'

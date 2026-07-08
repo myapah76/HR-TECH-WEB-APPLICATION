@@ -1,9 +1,11 @@
 package sba301.hrtech.chat.controllers;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import sba301.hrtech.chat.abstractions.services.IChatService;
 import sba301.hrtech.chat.dtos.request.CreateChatSessionRequest;
 import sba301.hrtech.chat.dtos.request.SendChatMessageRequest;
@@ -23,7 +25,8 @@ public class ChatController {
 
     @PostMapping
     @PreAuthorize("hasRole('CANDIDATE') or hasRole('HR') or hasRole('HR_MANAGER')")
-    public ResponseEntity<ApiResponse<ChatSessionResponse>> createSession(@RequestBody CreateChatSessionRequest request) {
+    public ResponseEntity<ApiResponse<ChatSessionResponse>> createSession(
+            @RequestBody CreateChatSessionRequest request) {
         return ResponseEntity.ok(ApiResponse.success(chatService.createSession(request)));
     }
 
@@ -45,5 +48,13 @@ public class ChatController {
             @PathVariable UUID id,
             @RequestBody SendChatMessageRequest request) {
         return ResponseEntity.ok(ApiResponse.success(chatService.sendMessage(id, request)));
+    }
+
+    @PostMapping(value = "/{id}/messages/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PreAuthorize("hasRole('CANDIDATE') or hasRole('HR') or hasRole('HR_MANAGER')")
+    public SseEmitter sendMessageStream(
+            @PathVariable UUID id,
+            @RequestBody SendChatMessageRequest request) {
+        return chatService.sendMessageStream(id, request);
     }
 }

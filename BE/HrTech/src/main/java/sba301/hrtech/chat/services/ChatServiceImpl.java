@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import sba301.hrtech.chat.abstractions.repositories.ChatMessageRepository;
 import sba301.hrtech.chat.abstractions.repositories.ChatSessionRepository;
 import sba301.hrtech.chat.abstractions.services.IChatService;
@@ -17,12 +18,11 @@ import sba301.hrtech.chat.dtos.response.RagChatResponseDto;
 import sba301.hrtech.chat.entities.ChatMessage;
 import sba301.hrtech.chat.entities.ChatSession;
 import sba301.hrtech.chat.enums.SenderType;
-import sba301.hrtech.cv.abstractions.repositories.CvRepository;
+import sba301.hrtech.chat.mapper.ChatMapper;
 import sba301.hrtech.cv.abstractions.services.ICvService;
 import sba301.hrtech.cv.entities.Cv;
 import sba301.hrtech.identity.entities.User;
 import sba301.hrtech.identity.utils.AuthUtils;
-import sba301.hrtech.job.abstractions.repositories.JobRepository;
 import sba301.hrtech.job.abstractions.services.IJobService;
 import sba301.hrtech.job.entities.Job;
 import sba301.hrtech.shared.error.ErrorCode;
@@ -31,11 +31,9 @@ import sba301.hrtech.skill.services.AiServiceClient;
 
 import sba301.hrtech.subscription.abstractions.services.ICreditService;
 
+import java.io.InputStream;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -50,6 +48,7 @@ public class ChatServiceImpl implements IChatService {
     private final AiServiceClient aiServiceClient;
     private final ObjectMapper objectMapper;
     private final ICreditService creditService;
+    private final ChatMapper chatMapper;
 
     @Override
     @Transactional
@@ -79,7 +78,7 @@ public class ChatServiceImpl implements IChatService {
                 .build();
 
         session = chatSessionRepository.save(session);
-        return toSessionResponse(session);
+        return chatMapper.toSessionResponse(session);
     }
 
     @Override
@@ -87,8 +86,8 @@ public class ChatServiceImpl implements IChatService {
     public List<ChatSessionResponse> getSessions() {
         User currentUser = authUtils.getCurrentUser();
         return chatSessionRepository.findByUserOrderByUpdatedAtDesc(currentUser).stream()
-                .map(this::toSessionResponse)
-                .collect(Collectors.toList());
+                .map(chatMapper::toSessionResponse)
+                .toList();
     }
 
     @Override
@@ -96,8 +95,8 @@ public class ChatServiceImpl implements IChatService {
     public List<ChatMessageResponse> getMessages(UUID sessionId) {
         ChatSession session = getSessionAndVerifyOwnership(sessionId);
         return chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(session.getId()).stream()
-                .map(this::toMessageResponse)
-                .collect(Collectors.toList());
+                .map(chatMapper::toMessageResponse)
+                .toList();
     }
 
     @Override
@@ -153,11 +152,93 @@ public class ChatServiceImpl implements IChatService {
                 .build();
         aiMessage = chatMessageRepository.save(aiMessage);
 
-        // Cập nhật session updatedAt
         session.setUpdatedAt(Instant.now());
         chatSessionRepository.save(session);
 
-        return toMessageResponse(aiMessage);
+        return chatMapper.toMessageResponse(aiMessage);
+    }
+
+
+
+    @Override
+    public SseEmitter sendMessageStream(UUID sessionId,
+                                        SendChatMessageRequest request) {
+        ChatSession session = getSessionAndVerifyOwnership(sessionId);
+        User currentUser = authUtils.getCurrentUser();
+
+        // 0. Deduct 5 AI Credits based on role
+        if (currentUser.getRole().getName().equalsIgnoreCase("CANDIDATE")) {
+            creditService.deductCandidateQuota(currentUser.getId(), "AI_CREDIT", 5);
+        } else {
+            creditService.deductCompanyFeatureQuota(currentUser.getId(), "AI_CREDIT", 5);
+        }
+
+        // 1. Lưu tin nhắn của User
+        ChatMessage userMessage = ChatMessage.builder()
+                .session(session)
+                .sender(SenderType.USER)
+                .content(request.getContent())
+                .build();
+        chatMessageRepository.save(userMessage);
+
+        SseEmitter emitter = new SseEmitter(
+                180000L); // 3 mins timeout
+
+        List<String> documentIds = new ArrayList<>();
+        if (session.getJob() != null) {
+            documentIds.add(session.getJob().getId().toString());
+        }
+        if (session.getCv() != null) {
+            documentIds.add(session.getCv().getId().toString());
+        }
+
+        UUID finalSessionId = session.getId();
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                InputStream is = aiServiceClient.chatWithRagStream(request.getContent(), documentIds, 20);
+                StringBuilder fullResponseBuilder = new StringBuilder();
+
+                try (Scanner scanner = new Scanner(is, "UTF-8")) {
+                    while (scanner.hasNextLine()) {
+                        String line = scanner.nextLine();
+                        if (line.startsWith("data: ")) {
+                            String data = line.substring(6);
+                            emitter.send(SseEmitter.event()
+                                    .data(data));
+
+                            try {
+                                Map map = objectMapper.readValue(data, Map.class);
+                                String text = (String) map.get("text");
+                                if (text != null) {
+                                    fullResponseBuilder.append(text);
+                                }
+                            } catch (JsonProcessingException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
+                }
+
+                String fullAnswer = fullResponseBuilder.toString();
+                if (fullAnswer.trim().isEmpty()) {
+                    fullAnswer = "Xin lỗi, không nhận được phản hồi từ AI.";
+                }
+
+                // Save to database
+                saveAiMessage(finalSessionId, fullAnswer);
+                emitter.complete();
+            } catch (Exception e) {
+                log.error("Error during RAG chat stream", e);
+                try {
+                    emitter.send(SseEmitter.event().name("error")
+                            .data("Lỗi RAG stream: " + e.getMessage()));
+                } catch (Exception ignored) {
+                }
+                emitter.completeWithError(e);
+            }
+        });
+
+        return emitter;
     }
 
     private ChatSession getSessionAndVerifyOwnership(UUID sessionId) {
@@ -171,24 +252,18 @@ public class ChatServiceImpl implements IChatService {
         return session;
     }
 
-    private ChatSessionResponse toSessionResponse(ChatSession session) {
-        return ChatSessionResponse.builder()
-                .id(session.getId())
-                .title(session.getTitle())
-                .jobId(session.getJob() != null ? session.getJob().getId() : null)
-                .jobTitle(session.getJob() != null ? session.getJob().getTitle() : null)
-                .cvId(session.getCv() != null ? session.getCv().getId() : null)
-                .createdAt(session.getCreatedAt())
-                .build();
-    }
+    private void saveAiMessage(UUID sessionId, String content) {
+        ChatSession session = chatSessionRepository.findById(sessionId).orElse(null);
+        if (session != null) {
+            ChatMessage aiMessage = ChatMessage.builder()
+                    .session(session)
+                    .sender(SenderType.AI)
+                    .content(content)
+                    .build();
+            chatMessageRepository.save(aiMessage);
 
-    private ChatMessageResponse toMessageResponse(ChatMessage message) {
-        return ChatMessageResponse.builder()
-                .id(message.getId())
-                .sender(message.getSender())
-                .content(message.getContent())
-                .citations(message.getCitations())
-                .createdAt(message.getCreatedAt())
-                .build();
+            session.setUpdatedAt(Instant.now());
+            chatSessionRepository.save(session);
+        }
     }
 }

@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, Header, HTTPException, BackgroundTasks
+from fastapi.responses import StreamingResponse
+import json
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -23,23 +25,6 @@ class IndexRequest(BaseModel):
     text: str
     metadata: dict = {}
 
-def indexing_task(req: IndexRequest, db: Session):
-    try:
-        chunks = chunk_document(req.text)
-        process_and_store_chunks(db, req.document_id, chunks, req.metadata)
-    except Exception as e:
-        logger.error(f"Indexing failed for {req.document_id}: {str(e)}")
-        logger.error(traceback.format_exc())
-
-@router.post("/index")
-def index_document(req: IndexRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    """
-    Background indexing of JD or CV text for RAG.
-    """
-    background_tasks.add_task(indexing_task, req, db)
-    return {"message": "Indexing started", "documentId": req.document_id}
-
-# --- CHAT ---
 class ChatRequest(BaseModel):
     document_id: str | None = None # Legacy support
     document_ids: list[str] | None = None # Support multiple docs
@@ -50,14 +35,19 @@ class ChatResponse(BaseModel):
     answer: str
     citations: list[dict]
 
-@router.post("/chat", response_model=ChatResponse)
-def chat_with_rag(req: ChatRequest, db: Session = Depends(get_db)):
-    """
-    Chat with the RAG knowledge base.
-    """
+def indexing_task(req: IndexRequest, db: Session):
+    try:
+        chunks = chunk_document(req.text)
+        process_and_store_chunks(db, req.document_id, chunks, req.metadata)
+    except Exception as e:
+        logger.error(f"Indexing failed for {req.document_id}: {str(e)}")
+        logger.error(traceback.format_exc())
+
+def prepare_rag_context_and_prompt(req: ChatRequest, db: Session):
     if not settings.gemini_api_key:
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY is missing")
 
+    # 1. Vector Search ngữ cảnh từ SQLite
     embeddings = OllamaEmbeddings(
         model=settings.embedding_model,
         base_url=settings.ollama_base_url
@@ -103,12 +93,14 @@ def chat_with_rag(req: ChatRequest, db: Session = Depends(get_db)):
 
     context_block = "\n\n---\n\n".join(context_texts)
 
+    # 2. Khởi tạo LLM Gemini
     llm = ChatGoogleGenerativeAI(
         model=settings.llm_model, 
         temperature=0,
         google_api_key=settings.gemini_api_key
     )
     
+    # 3. Tạo Prompt đầy đủ
     prompt = f"""You are a helpful HR assistant for a smart recruitment platform.
 Your main role is to answer questions about Job Descriptions or CVs based on the provided Context.
 
@@ -126,6 +118,26 @@ Question:
 
 Answer:"""
 
+    return prompt, citations, llm
+
+
+@router.post("/index")
+def index_document(req: IndexRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """
+    Background indexing of JD or CV text for RAG.
+    """
+    background_tasks.add_task(indexing_task, req, db)
+    return {"message": "Indexing started", "documentId": req.document_id}
+
+# --- CHAT ---
+
+@router.post("/chat", response_model=ChatResponse)
+def chat_with_rag(req: ChatRequest, db: Session = Depends(get_db)):
+    """
+    Chat đồng bộ với RAG
+    """
+    prompt, citations, llm = prepare_rag_context_and_prompt(req, db)
+
     response = llm.invoke(prompt)
     content = response.content
     
@@ -142,3 +154,17 @@ Answer:"""
         "answer": str(content),
         "citations": citations
     }
+
+@router.post("/chat/stream")
+async def chat_with_rag_stream(req: ChatRequest, db: Session = Depends(get_db)):
+    """
+    Chat bất đồng bộ dạng Stream (Nhận kết quả từng từ qua SSE)
+    """
+    prompt, citations, llm = prepare_rag_context_and_prompt(req, db)
+
+    async def event_generator():
+        import asyncio
+        async for chunk in llm.astream(prompt):
+            yield f"data: {json.dumps({'text': chunk.content}, ensure_ascii=False)}\n\n"
+    
+    return StreamingResponse(event_generator(), media_type="text/event-stream")

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect } from 'react'
 import { Sparkles } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/src/stores/auth.store'
