@@ -1,5 +1,7 @@
 package hrtech.job.services;
 
+import com.querydsl.core.BooleanBuilder;
+import hrtech.job.entities.QJob;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -40,22 +42,24 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class JobServiceImpl implements IJobService {
 
+    private final ICreditService creditService;
+
     private final JobRepository jobRepository;
     private final JobSkillRepository jobSkillRepository;
     private final CompanyMemberRepository companyMemberRepository;
-    private final ApplicationEventPublisher eventPublisher;
-    private final JobMapper jobMapper;
-    private final JobValidator jobValidator;
-    private final ICreditService creditService;
     private final RoleAliasRepository roleAliasRepository;
     private final SkillNodeRepository skillNodeRepository;
+
+    private final JobMapper jobMapper;
+
+    private final ApplicationEventPublisher eventPublisher;
+    private final JobValidator jobValidator;
 
     @Override
     @Transactional
@@ -220,70 +224,50 @@ public class JobServiceImpl implements IJobService {
     @Override
     @Transactional(readOnly = true)
     public Page<JobResponse> searchJobs(JobSearchCriteria criteria, Pageable pageable) {
-        ExperienceLevel expLevel = null;
-        JobType jobType = null;
+        // Lấy Q-class của Job sinh ra bởi QueryDSL
+        QJob qJob = QJob.job;
+        BooleanBuilder builder = new BooleanBuilder();
 
-        if (criteria.experienceLevel() != null) {
-            try {
-                expLevel = ExperienceLevel.valueOf(criteria.experienceLevel());
-            } catch (IllegalArgumentException ignored) {
+        //1. Chỉ tìm kiếm các Job chưa xóa và status là APPROVED
+        builder.and(qJob.deleted.isFalse());
+        builder.and(qJob.status.eq(JobStatus.APPROVED));
+
+        //2. Lọc theo Keyword
+        if (criteria.keyword() != null && !criteria.keyword().trim().isEmpty()) {
+            builder.and(buildKeywordPredicate(criteria.keyword().trim(), qJob));
+        }
+        //3. Lọc theo location
+        if(criteria.location()!= null && !criteria.location().isEmpty()){
+            builder.and(qJob.location.containsIgnoreCase(criteria.location().trim()));
+        }
+        //4. Lọc theo JobType
+        if(criteria.jobType() != null){
+            builder.and(qJob.jobType.eq(criteria.jobType()));
+        }
+        //5. Lọc theo ExperienceLevel
+        if(criteria.experienceLevel() != null){
+            builder.and(qJob.experienceLevel.eq(criteria.experienceLevel()));
+        }
+        //6. Lọc theo Salary Range
+        if(criteria.salaryMin() != null){
+            builder.and(qJob.salaryMax.goe(criteria.salaryMin()));
+        }
+        if(criteria.salaryMax() != null){
+            builder.and(qJob.salaryMin.loe(criteria.salaryMax()));
+        }
+        //7. Lọc theo Skills được chọn
+        if(criteria.skills() != null && !criteria.skills().isEmpty()){
+            for(String skillName : criteria.skills()){
+                skillNodeRepository.findByNameIgnoreCase(skillName)
+                        .map(skillNode -> skillNode.getId())
+                        .ifPresent(skillId -> builder.and(qJob.jobSkills.any().skillNeo4jId.eq(skillId)));
             }
         }
-        if (criteria.jobType() != null) {
-            try {
-                jobType = JobType.valueOf(criteria.jobType());
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
+        // Thực hiện truy vấn với các điều kiện đã xây dựng
+        Page<Job> jobPage = jobRepository.findAll(builder, pageable);
 
-        // 1. Normalize keyword using the database role_aliases table
-        String keyword = criteria.keyword();
-        String trimmedKeyword = (keyword != null) ? keyword.trim() : null;
-        String normalizedRole = null;
-        if (trimmedKeyword != null && !trimmedKeyword.isEmpty()) {
-            String trimmedLower = trimmedKeyword.toLowerCase();
-            normalizedRole = roleAliasRepository.findByAliasIgnoreCase(trimmedLower)
-                    .map(role -> role.getCanonicalRole())
-                    .orElse(trimmedLower);
-        }
-
-        // 2. Fetch skill IDs matching the normalized role or skill name
-        Set<String> skillIds = new HashSet<>();
-        if (normalizedRole != null) {
-            // Find by role tag
-            List<String> idsByRole = skillNodeRepository.findIdsByRole(normalizedRole);
-            if (idsByRole != null) {
-                skillIds.addAll(idsByRole);
-            }
-            // Find by skill name (substring match)
-            List<String> idsByName = skillNodeRepository.findIdsByNameContaining(trimmedKeyword);
-            if (idsByName != null) {
-                skillIds.addAll(idsByName);
-            }
-        }
-
-        boolean hasSkills = !skillIds.isEmpty();
-        List<String> skillIdsList = hasSkills ? new ArrayList<>(skillIds) : null;
-
-        String keywordParam = (trimmedKeyword != null && !trimmedKeyword.isEmpty())
-                ? "%" + trimmedKeyword.toLowerCase() + "%"
-                : null;
-        String locationParam = criteria.location() != null && !criteria.location().trim().isEmpty()
-                ? "%" + criteria.location().trim().toLowerCase() + "%"
-                : null;
-
-        Page<Job> page = jobRepository.searchOpenJobs(
-                keywordParam,
-                locationParam,
-                expLevel,
-                jobType,
-                criteria.salaryMin(),
-                criteria.salaryMax(),
-                hasSkills,
-                skillIdsList,
-                pageable);
-        jobMapper.preloadSkillNames(page.getContent());
-        return page.map(jobMapper::toResponse);
+        jobMapper.preloadSkillNames(jobPage.getContent());
+        return jobPage.map(jobMapper::toResponse);
     }
 
     @Override
@@ -320,8 +304,9 @@ public class JobServiceImpl implements IJobService {
         jobValidator.validateCompanyApproved(companyId);
         jobValidator.validateCanViewCompanyJobs(currentUser, companyId);
 
-        return jobRepository.findByCompanyIdAndDeletedFalse(companyId)
-                .stream().map(jobMapper::toResponse).collect(Collectors.toList());
+        return jobRepository.findByCompanyIdAndDeletedFalse(companyId).stream()
+                .map(jobMapper::toResponse)
+                .toList();
     }
 
     @Override
@@ -348,7 +333,9 @@ public class JobServiceImpl implements IJobService {
         jobValidator.validateCanApproveJob(currentUser, companyId);
 
         return jobRepository.findByCompanyIdAndStatusAndDeletedFalse(companyId, JobStatus.PENDING_APPROVAL)
-                .stream().map(jobMapper::toResponse).collect(Collectors.toList());
+                .stream()
+                .map(jobMapper::toResponse)
+                .toList();
     }
 
     @Override
@@ -359,7 +346,9 @@ public class JobServiceImpl implements IJobService {
         jobValidator.validateCanPostJob(currentUser, companyId);
 
         return jobRepository.findByCompanyIdAndCreatedByIdAndDeletedFalse(companyId, currentUser.getId())
-                .stream().map(jobMapper::toResponse).collect(Collectors.toList());
+                .stream()
+                .map(jobMapper::toResponse)
+                .toList();
     }
 
     @Override
@@ -438,5 +427,30 @@ public class JobServiceImpl implements IJobService {
     @Transactional
     public void saveJobSkill(JobSkill jobSkill) {
         jobSkillRepository.save(jobSkill);
+    }
+
+    private BooleanBuilder buildKeywordPredicate(String trimmedKeyword, QJob qJob) {
+        BooleanBuilder keywordBuilder = new BooleanBuilder();
+        String trimmedLower = trimmedKeyword.toLowerCase();
+        // Chuẩn hóa vai trò
+        String normalizedRole = roleAliasRepository.findByAliasIgnoreCase(trimmedLower)
+                .map(role -> role.getCanonicalRole())
+                .orElse(trimmedLower);
+        // Tìm IDs các skill liên quan
+        Set<String> skillIds = new HashSet<>();
+        List<String> idsByRole = skillNodeRepository.findIdsByRole(normalizedRole);
+        if (idsByRole != null) skillIds.addAll(idsByRole);
+
+        List<String> idsByName = skillNodeRepository.findIdsByNameContaining(trimmedLower);
+        if (idsByName != null) skillIds.addAll(idsByName);
+        // Gộp điều kiện
+        keywordBuilder.or(qJob.title.toLowerCase().contains(trimmedLower))
+                .or(qJob.description.toLowerCase().contains(trimmedLower))
+                .or(qJob.company.name.toLowerCase().contains(trimmedLower));
+
+        if (!skillIds.isEmpty()) {
+            keywordBuilder.or(qJob.jobSkills.any().skillNeo4jId.in(skillIds));
+        }
+        return keywordBuilder;
     }
 }

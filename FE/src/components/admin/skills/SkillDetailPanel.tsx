@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { XCircle, FileText, Tag, Plus, Check, Network, Trash2 } from 'lucide-react'
 import { Skill, SkillEdge } from '@/src/types/skill'
 
@@ -31,13 +31,15 @@ const SkillDetailPanel = ({
   const [relTargetId, setRelTargetId] = useState('')
   const [relType, setRelType] = useState<'PARENT_OF' | 'RELATED_TO'>('RELATED_TO')
 
-  // Keep state in sync with selectedNode changes
-  useEffect(() => {
+  // Sync state with selectedNode changes during render
+  const [prevSelectedNodeId, setPrevSelectedNodeId] = useState(selectedNode.id)
+  if (selectedNode.id !== prevSelectedNodeId) {
+    setPrevSelectedNodeId(selectedNode.id)
     setEditDesc(selectedNode.description ?? '')
     setEditRoles(selectedNode.roles ?? [])
     setNewRole('')
     setRelTargetId('')
-  }, [selectedNode])
+  }
 
   const addRoleTag = () => {
     const trimmed = newRole.trim()
@@ -102,7 +104,7 @@ const SkillDetailPanel = ({
           value={editDesc}
           onChange={(e) => setEditDesc(e.target.value)}
           placeholder="Nhập mô tả kỹ năng..."
-          className="w-full text-sm p-3.5 rounded-xl border border-slate-200 focus:border-violet-500 focus:outline-hidden min-h-[90px] resize-none bg-slate-50/50"
+          className="w-full text-sm p-3.5 rounded-xl border border-slate-200 focus:border-violet-500 focus:outline-hidden min-h-22.5 resize-none bg-slate-50/50"
         />
       </div>
 
@@ -184,9 +186,7 @@ const SkillDetailPanel = ({
                 className="flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-100 transition-colors"
               >
                 <div className="flex flex-col">
-                  <span className="text-xs font-black text-slate-800 capitalize">
-                    {targetName}
-                  </span>
+                  <span className="text-xs font-black text-slate-800 capitalize">{targetName}</span>
                   <span className="text-[9px] font-black text-violet-600 uppercase tracking-wider">
                     {edge.type}
                   </span>

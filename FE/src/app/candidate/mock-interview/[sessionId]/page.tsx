@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Card } from '@/src/components/ui/card'
 import { Button } from '@/src/components/ui/button'
@@ -43,22 +43,24 @@ export default function MockInterviewPracticePage() {
   const evaluateSessionMut = useSubmitAndEvaluateInterview()
   const submitAnswerMut = useSubmitInterviewAnswer()
 
-  const currentSession = history.find((s) => s.sessionId === sessionId)
+  const currentSession = useMemo(() => history.find((s) => s.sessionId === sessionId), [history, sessionId])
   const totalQuestions = currentSession?.totalQuestions || 5
 
-  useEffect(() => {
-    if (currentSession && currentSession.currentQuestion && !currentQuestion) {
-      setCurrentQuestion(currentSession.currentQuestion)
-    }
-  }, [currentSession, currentQuestion])
+  const [prevSessionQuestionId, setPrevSessionQuestionId] = useState<string | null>(null)
+  if (currentSession?.currentQuestion && !currentQuestion && prevSessionQuestionId !== currentSession.currentQuestion.id) {
+    setPrevSessionQuestionId(currentSession.currentQuestion.id)
+    setCurrentQuestion(currentSession.currentQuestion)
+  }
 
   // Reset khi đổi câu hỏi
-  useEffect(() => {
+  const [prevQuestionId, setPrevQuestionId] = useState<string | undefined>(undefined)
+  if (currentQuestion?.id !== prevQuestionId) {
+    setPrevQuestionId(currentQuestion?.id)
     setPracticeState('IDLE')
     setAudioUrlLocal(null)
     setAudioBlob(null)
     audioChunksRef.current = []
-  }, [currentQuestion?.id])
+  }
 
   // Bắt đầu ghi âm bằng MediaRecorder
   const handleStartRecording = async () => {

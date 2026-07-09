@@ -94,21 +94,21 @@ export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTab
     )
   }, [groups, searchQuery])
 
-  useEffect(() => {
+  const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery)
+  if (searchQuery !== prevSearchQuery) {
+    setPrevSearchQuery(searchQuery)
     setCurrentPage(1)
-  }, [searchQuery])
+  }
 
   const totalPages = Math.ceil(filteredGroups.length / itemsPerPage) || 1
   const paginatedGroups = useMemo(() => {
-    return filteredGroups.slice(
-      (currentPage - 1) * itemsPerPage,
-      currentPage * itemsPerPage
-    )
+    return filteredGroups.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
   }, [filteredGroups, currentPage, itemsPerPage])
 
   const getAffectedSkills = (canonical: string) =>
     skills.filter(
-      (s) => s.roles && s.roles.map((r: string) => r.toLowerCase()).includes(canonical.toLowerCase())
+      (s) =>
+        s.roles && s.roles.map((r: string) => r.toLowerCase()).includes(canonical.toLowerCase())
     )
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -253,7 +253,6 @@ export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTab
 
   return (
     <div className="flex-1 bg-white rounded-3xl border border-slate-200/60 p-6 shadow-xs overflow-hidden flex flex-col min-h-0">
-
       {/* Header controls */}
       <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -290,7 +289,10 @@ export default function RoleAliasesTab({ skills, onGraphUpdate }: RoleAliasesTab
 
       {/* New Canonical Role Form */}
       {isAddingCanonical && (
-        <form onSubmit={handleCreateCanonical} className="mb-6 bg-slate-50 border border-slate-200/50 p-5 rounded-2xl flex flex-col sm:flex-row gap-4 items-end animate-fadeIn">
+        <form
+          onSubmit={handleCreateCanonical}
+          className="mb-6 bg-slate-50 border border-slate-200/50 p-5 rounded-2xl flex flex-col sm:flex-row gap-4 items-end animate-fadeIn"
+        >
           <div className="flex-1 flex flex-col gap-1.5">
             <label className="text-xs font-black text-slate-500 uppercase tracking-wider">
               Tên vai trò chuẩn mới (Canonical Role)

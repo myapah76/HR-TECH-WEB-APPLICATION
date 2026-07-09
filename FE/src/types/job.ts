@@ -81,6 +81,7 @@ export interface JobSearchParams {
   experienceLevel?: string
   salaryMin?: number
   salaryMax?: number
+  skills?: string[]
   page?: number
   size?: number
 }

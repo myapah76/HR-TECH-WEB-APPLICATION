@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback, type FormEvent } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo, type FormEvent } from 'react'
 import {
   X,
   FileText,
@@ -21,43 +21,142 @@ import {
 } from 'lucide-react'
 import { useGetApplicationDetail } from '@/src/hooks/application'
 import { useGetCvDetail } from '@/src/hooks/cv'
-import { ApplicationStatus, ScheduleInterviewRequest, UpdateApplicationStatusRequest } from '@/src/types'
+import {
+  ApplicationStatus,
+  ScheduleInterviewRequest,
+  UpdateApplicationStatusRequest,
+} from '@/src/types'
 
 // ─── Status config ────────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<
   ApplicationStatus,
   { label: string; color: string; bg: string; border: string; dot: string }
 > = {
-    [ApplicationStatus.SUBMITTED]: { label: 'Mới nộp', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-500' },
-    [ApplicationStatus.SCORED]: { label: 'Đã chấm', color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200', dot: 'bg-violet-500' },
-    [ApplicationStatus.PENDING_INTERVIEW_SCHEDULE]: { label: 'CHỜ LỊCH PHỎNG VẤN', color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-200', dot: 'bg-orange-500' },
-    [ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE]: { label: 'ỨNG VIÊN XIN ĐỔI LỊCH', color: 'text-cyan-700', bg: 'bg-cyan-50', border: 'border-cyan-200', dot: 'bg-cyan-500' },
-    [ApplicationStatus.INTERVIEW]: { label: 'PHỎNG VẤN', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200', dot: 'bg-indigo-500' },
+  [ApplicationStatus.SUBMITTED]: {
+    label: 'Mới nộp',
+    color: 'text-blue-700',
+    bg: 'bg-blue-50',
+    border: 'border-blue-200',
+    dot: 'bg-blue-500',
+  },
+  [ApplicationStatus.SCORED]: {
+    label: 'Đã chấm',
+    color: 'text-violet-700',
+    bg: 'bg-violet-50',
+    border: 'border-violet-200',
+    dot: 'bg-violet-500',
+  },
+  [ApplicationStatus.PENDING_INTERVIEW_SCHEDULE]: {
+    label: 'CHỜ LỊCH PHỎNG VẤN',
+    color: 'text-orange-700',
+    bg: 'bg-orange-50',
+    border: 'border-orange-200',
+    dot: 'bg-orange-500',
+  },
+  [ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE]: {
+    label: 'ỨNG VIÊN XIN ĐỔI LỊCH',
+    color: 'text-cyan-700',
+    bg: 'bg-cyan-50',
+    border: 'border-cyan-200',
+    dot: 'bg-cyan-500',
+  },
+  [ApplicationStatus.INTERVIEW]: {
+    label: 'PHỎNG VẤN',
+    color: 'text-indigo-700',
+    bg: 'bg-indigo-50',
+    border: 'border-indigo-200',
+    dot: 'bg-indigo-500',
+  },
 
-    [ApplicationStatus.INTERVIEW_COMPLETED]: { label: 'ĐÃ PHỎNG VẤN', color: 'text-teal-700', bg: 'bg-teal-50', border: 'border-teal-200', dot: 'bg-teal-500' },
-    [ApplicationStatus.NO_SHOW]: { label: 'KHÔNG THAM GIA', color: 'text-gray-700', bg: 'bg-gray-100', border: 'border-gray-200', dot: 'bg-gray-500' },
-    [ApplicationStatus.ACCEPTED]: { label: 'ĐÃ NHẬN', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200', dot: 'bg-green-500' },
+  [ApplicationStatus.INTERVIEW_COMPLETED]: {
+    label: 'ĐÃ PHỎNG VẤN',
+    color: 'text-teal-700',
+    bg: 'bg-teal-50',
+    border: 'border-teal-200',
+    dot: 'bg-teal-500',
+  },
+  [ApplicationStatus.NO_SHOW]: {
+    label: 'KHÔNG THAM GIA',
+    color: 'text-gray-700',
+    bg: 'bg-gray-100',
+    border: 'border-gray-200',
+    dot: 'bg-gray-500',
+  },
+  [ApplicationStatus.ACCEPTED]: {
+    label: 'ĐÃ NHẬN',
+    color: 'text-green-700',
+    bg: 'bg-green-50',
+    border: 'border-green-200',
+    dot: 'bg-green-500',
+  },
 
-    [ApplicationStatus.REJECTED]: { label: 'TỪ CHỐI', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200', dot: 'bg-rose-500' },
-    [ApplicationStatus.WITHDRAWN]: { label: 'Đã rút', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200', dot: 'bg-slate-400' },}
+  [ApplicationStatus.REJECTED]: {
+    label: 'TỪ CHỐI',
+    color: 'text-rose-700',
+    bg: 'bg-rose-50',
+    border: 'border-rose-200',
+    dot: 'bg-rose-500',
+  },
+  [ApplicationStatus.WITHDRAWN]: {
+    label: 'Đã rút',
+    color: 'text-slate-600',
+    bg: 'bg-slate-100',
+    border: 'border-slate-200',
+    dot: 'bg-slate-400',
+  },
+}
 
-const NEXT_ACTIONS: Partial<Record<ApplicationStatus, { status: ApplicationStatus; label: string; style: string }[]>> = {
+const NEXT_ACTIONS: Partial<
+  Record<ApplicationStatus, { status: ApplicationStatus; label: string; style: string }[]>
+> = {
   [ApplicationStatus.SUBMITTED]: [
-    { status: ApplicationStatus.INTERVIEW, label: 'Lên lịch Phỏng vấn', style: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
-    { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
+    {
+      status: ApplicationStatus.INTERVIEW,
+      label: 'Lên lịch Phỏng vấn',
+      style: 'bg-indigo-500 hover:bg-indigo-600 text-white',
+    },
+    {
+      status: ApplicationStatus.REJECTED,
+      label: 'Từ chối',
+      style: 'bg-rose-500 hover:bg-rose-600 text-white',
+    },
   ],
   [ApplicationStatus.SCORED]: [
-    { status: ApplicationStatus.INTERVIEW, label: 'Mời Phỏng vấn', style: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
-    { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
+    {
+      status: ApplicationStatus.INTERVIEW,
+      label: 'Mời Phỏng vấn',
+      style: 'bg-indigo-500 hover:bg-indigo-600 text-white',
+    },
+    {
+      status: ApplicationStatus.REJECTED,
+      label: 'Từ chối',
+      style: 'bg-rose-500 hover:bg-rose-600 text-white',
+    },
   ],
-    [ApplicationStatus.INTERVIEW]:[
-    { status: ApplicationStatus.INTERVIEW_COMPLETED, label: 'Hoàn tất Phỏng vấn', style: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
-        { status: ApplicationStatus.NO_SHOW, label: 'Ứng viên vắng mặt', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
-    ],
-    [ApplicationStatus.INTERVIEW_COMPLETED]:[
-        { status: ApplicationStatus.ACCEPTED, label: 'Chấp nhận', style: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
-        { status: ApplicationStatus.REJECTED, label: 'Từ chối', style: 'bg-rose-500 hover:bg-rose-600 text-white' },
-    ]
+  [ApplicationStatus.INTERVIEW]: [
+    {
+      status: ApplicationStatus.INTERVIEW_COMPLETED,
+      label: 'Hoàn tất Phỏng vấn',
+      style: 'bg-emerald-500 hover:bg-emerald-600 text-white',
+    },
+    {
+      status: ApplicationStatus.NO_SHOW,
+      label: 'Ứng viên vắng mặt',
+      style: 'bg-rose-500 hover:bg-rose-600 text-white',
+    },
+  ],
+  [ApplicationStatus.INTERVIEW_COMPLETED]: [
+    {
+      status: ApplicationStatus.ACCEPTED,
+      label: 'Chấp nhận',
+      style: 'bg-emerald-500 hover:bg-emerald-600 text-white',
+    },
+    {
+      status: ApplicationStatus.REJECTED,
+      label: 'Từ chối',
+      style: 'bg-rose-500 hover:bg-rose-600 text-white',
+    },
+  ],
 }
 
 function gradeColor(grade?: string) {
@@ -79,7 +178,9 @@ function ScoreRing({ score }: { score: number }) {
     <svg width="96" height="96" viewBox="0 0 96 96">
       <circle cx="48" cy="48" r={r} fill="none" stroke="#f1f5f9" strokeWidth="8" />
       <circle
-        cx="48" cy="48" r={r}
+        cx="48"
+        cy="48"
+        r={r}
         fill="none"
         stroke={color}
         strokeWidth="8"
@@ -89,8 +190,12 @@ function ScoreRing({ score }: { score: number }) {
         transform="rotate(-90 48 48)"
         style={{ transition: 'stroke-dashoffset 1s ease' }}
       />
-      <text x="48" y="44" textAnchor="middle" fontSize="16" fontWeight="800" fill="#0f172a">{pct}</text>
-      <text x="48" y="58" textAnchor="middle" fontSize="10" fontWeight="600" fill="#94a3b8">/ 100</text>
+      <text x="48" y="44" textAnchor="middle" fontSize="16" fontWeight="800" fill="#0f172a">
+        {pct}
+      </text>
+      <text x="48" y="58" textAnchor="middle" fontSize="10" fontWeight="600" fill="#94a3b8">
+        / 100
+      </text>
     </svg>
   )
 }
@@ -109,8 +214,14 @@ function calcTimeAgo(dateStr: string) {
 function useRelativeTime(dateStr: string) {
   const compute = useCallback(() => calcTimeAgo(dateStr), [dateStr])
   const [label, setLabel] = useState(compute)
-  useEffect(() => {
+
+  const [prevDateStr, setPrevDateStr] = useState(dateStr)
+  if (dateStr !== prevDateStr) {
+    setPrevDateStr(dateStr)
     setLabel(compute())
+  }
+
+  useEffect(() => {
     const id = setInterval(() => setLabel(compute()), 30_000)
     return () => clearInterval(id)
   }, [compute])
@@ -170,30 +281,32 @@ export default function ApplicationDetailModal({
 
   // Close on Esc
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [onClose])
 
-  const cfg = app ? STATUS_CONFIG[app.status] : null
-  const nextActions = app ? (NEXT_ACTIONS[app.status] ?? []) : []
+  const cfg = useMemo(() => (app ? STATUS_CONFIG[app.status] : null), [app])
+  const nextActions = useMemo(() => (app ? (NEXT_ACTIONS[app.status] ?? []) : []), [app])
 
-  useEffect(() => {
+  const [prevStatus, setPrevStatus] = useState<ApplicationStatus | undefined>(app?.status)
+  if (app?.status !== prevStatus) {
+    setPrevStatus(app?.status)
     if (app?.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE) {
       setIsScheduleOpen(false)
     }
     if (app?.status === ApplicationStatus.ACCEPTED) {
       setIsAcceptanceOpen(false)
     }
-  }, [app?.status])
+  }
 
   const openScheduleForm = (prefill = false) => {
     if (prefill && app) {
-        setInterviewDateTime(
-            toDateTimeLocalValue(
-                app.candidatePreferredInterviewDateTime || app.interviewDateTime
-            )
-        )
+      setInterviewDateTime(
+        toDateTimeLocalValue(app.candidatePreferredInterviewDateTime || app.interviewDateTime)
+      )
       setInterviewLocation(app.interviewLocation ?? '')
       setInterviewMeetingLink(app.interviewMeetingLink ?? '')
       setInterviewNote(app.interviewNote ?? '')
@@ -207,7 +320,10 @@ export default function ApplicationDetailModal({
   }
 
   const handleActionClick = (status: ApplicationStatus) => {
-    if (status === ApplicationStatus.INTERVIEW && app?.status !== ApplicationStatus.PENDING_INTERVIEW_SCHEDULE) {
+    if (
+      status === ApplicationStatus.INTERVIEW &&
+      app?.status !== ApplicationStatus.PENDING_INTERVIEW_SCHEDULE
+    ) {
       openScheduleForm(false)
       return
     }
@@ -223,7 +339,8 @@ export default function ApplicationDetailModal({
 
   const handleScheduleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!app || !interviewDateTime || (!interviewLocation.trim() && !interviewMeetingLink.trim())) return
+    if (!app || !interviewDateTime || (!interviewLocation.trim() && !interviewMeetingLink.trim()))
+      return
 
     onScheduleInterview(app.id, {
       interviewDateTime: new Date(interviewDateTime).toISOString(),
@@ -249,7 +366,9 @@ export default function ApplicationDetailModal({
     <div
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
-      onClick={(e) => { if (e.target === overlayRef.current) onClose() }}
+      onClick={(e) => {
+        if (e.target === overlayRef.current) onClose()
+      }}
     >
       <div
         id="application-detail-modal"
@@ -281,7 +400,7 @@ export default function ApplicationDetailModal({
             <>
               {/* ── Info header ────────────────────────────────────────────────── */}
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-lg font-black shrink-0">
+                <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-lg font-black shrink-0">
                   {app.cvTitle?.slice(0, 2).toUpperCase() || 'UV'}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -325,7 +444,9 @@ export default function ApplicationDetailModal({
                   </div>
                 </div>
                 {cfg && (
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border shrink-0 ${cfg.bg} ${cfg.color} ${cfg.border}`}>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border shrink-0 ${cfg.bg} ${cfg.color} ${cfg.border}`}
+                  >
                     <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
                     {cfg.label}
                   </span>
@@ -339,13 +460,15 @@ export default function ApplicationDetailModal({
                     <MessageSquare className="w-3.5 h-3.5" />
                     Thư giới thiệu
                   </h3>
-                  <p className="text-sm text-slate-700 leading-relaxed font-medium">{app.coverLetter}</p>
+                  <p className="text-sm text-slate-700 leading-relaxed font-medium">
+                    {app.coverLetter}
+                  </p>
                 </div>
               )}
 
               {/* ── AI Score Panel ────────────────────────────────────────────── */}
               {app.overallScore !== undefined && app.overallScore !== null ? (
-                <div className="rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50 to-indigo-50 p-5">
+                <div className="rounded-2xl border border-violet-100 bg-linear-to-br from-violet-50 to-indigo-50 p-5">
                   <h3 className="flex items-center gap-2 text-xs font-black text-violet-600 uppercase tracking-wider mb-4">
                     <Brain className="w-3.5 h-3.5" />
                     Đánh giá AI
@@ -354,11 +477,15 @@ export default function ApplicationDetailModal({
                     <ScoreRing score={app.overallScore} />
                     <div className="flex-1 space-y-2">
                       <div className="flex items-baseline gap-2">
-                        <span className={`text-3xl font-black ${gradeColor(app.grade)}`}>{app.grade || '—'}</span>
+                        <span className={`text-3xl font-black ${gradeColor(app.grade)}`}>
+                          {app.grade || '—'}
+                        </span>
                         <span className="text-sm font-semibold text-slate-500">Xếp loại</span>
                       </div>
                       {app.aiSummary && (
-                        <p className="text-sm text-slate-700 font-medium leading-relaxed">{app.aiSummary}</p>
+                        <p className="text-sm text-slate-700 font-medium leading-relaxed">
+                          {app.aiSummary}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -369,7 +496,9 @@ export default function ApplicationDetailModal({
                         <Lightbulb className="w-3.5 h-3.5" />
                         Gợi ý từ AI
                       </h4>
-                      <p className="text-sm text-slate-600 font-medium leading-relaxed">{app.aiSuggestion}</p>
+                      <p className="text-sm text-slate-600 font-medium leading-relaxed">
+                        {app.aiSuggestion}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -380,7 +509,9 @@ export default function ApplicationDetailModal({
                   </div>
                   <div>
                     <p className="text-sm font-bold text-slate-600">Chưa có điểm AI</p>
-                    <p className="text-xs text-slate-400 mt-0.5">Hệ thống đang phân tích hồ sơ này</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Hệ thống đang phân tích hồ sơ này
+                    </p>
                   </div>
                 </div>
               )}
@@ -447,13 +578,18 @@ export default function ApplicationDetailModal({
                     )}
                     {app.candidatePreferredInterviewDateTime && (
                       <p className="text-sm font-black text-slate-800">
-                        Lịch ứng viên đề xuất: {new Date(app.candidatePreferredInterviewDateTime).toLocaleString('vi-VN')}
+                        Lịch ứng viên đề xuất:{' '}
+                        {new Date(app.candidatePreferredInterviewDateTime).toLocaleString('vi-VN')}
                       </p>
                     )}
                     {app.candidateInterviewResponseMessage && (
                       <div className="rounded-xl bg-white/70 border border-cyan-100 p-3">
-                        <p className="text-xs font-black text-cyan-700 uppercase tracking-wider mb-1">Lý do</p>
-                        <p className="text-sm font-medium text-slate-700">{app.candidateInterviewResponseMessage}</p>
+                        <p className="text-xs font-black text-cyan-700 uppercase tracking-wider mb-1">
+                          Lý do
+                        </p>
+                        <p className="text-sm font-medium text-slate-700">
+                          {app.candidateInterviewResponseMessage}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -465,7 +601,11 @@ export default function ApplicationDetailModal({
                       disabled={isReviewingCandidateReschedule}
                       className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      {isReviewingCandidateReschedule ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                      {isReviewingCandidateReschedule ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4" />
+                      )}
                       Accept new schedule
                     </button>
                     <button
@@ -500,7 +640,7 @@ export default function ApplicationDetailModal({
       </div>
 
       {isScheduleOpen && app && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/50">
           <form
             onSubmit={handleScheduleSubmit}
             className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden"
@@ -518,7 +658,9 @@ export default function ApplicationDetailModal({
 
             <div className="p-5 space-y-4">
               <label className="block">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Thời gian phỏng vấn</span>
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
+                  Thời gian phỏng vấn
+                </span>
                 <input
                   id="interview-date-time"
                   type="datetime-local"
@@ -530,7 +672,9 @@ export default function ApplicationDetailModal({
               </label>
 
               <label className="block">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Địa điểm</span>
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
+                  Địa điểm
+                </span>
                 <input
                   id="interview-location"
                   type="text"
@@ -542,7 +686,9 @@ export default function ApplicationDetailModal({
               </label>
 
               <label className="block">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Meeting link</span>
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
+                  Meeting link
+                </span>
                 <input
                   id="interview-meeting-link"
                   type="url"
@@ -554,7 +700,9 @@ export default function ApplicationDetailModal({
               </label>
 
               <label className="block">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Ghi chú</span>
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
+                  Ghi chú
+                </span>
                 <textarea
                   id="interview-note"
                   value={interviewNote}
@@ -576,7 +724,11 @@ export default function ApplicationDetailModal({
               </button>
               <button
                 type="submit"
-                disabled={isSchedulingInterview || !interviewDateTime || (!interviewLocation.trim() && !interviewMeetingLink.trim())}
+                disabled={
+                  isSchedulingInterview ||
+                  !interviewDateTime ||
+                  (!interviewLocation.trim() && !interviewMeetingLink.trim())
+                }
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isSchedulingInterview && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -588,7 +740,7 @@ export default function ApplicationDetailModal({
       )}
 
       {isAcceptanceOpen && app && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/50">
           <form
             onSubmit={handleAcceptanceSubmit}
             className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden"
@@ -606,7 +758,9 @@ export default function ApplicationDetailModal({
 
             <div className="p-5 space-y-4">
               <label className="block">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Thời gian nhận việc / báo cáo</span>
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
+                  Thời gian nhận việc / báo cáo
+                </span>
                 <input
                   id="accepted-start-date-time"
                   type="datetime-local"
@@ -618,7 +772,9 @@ export default function ApplicationDetailModal({
               </label>
 
               <label className="block">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Địa điểm làm việc / báo cáo</span>
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
+                  Địa điểm làm việc / báo cáo
+                </span>
                 <textarea
                   id="accepted-work-address"
                   required
@@ -631,7 +787,9 @@ export default function ApplicationDetailModal({
               </label>
 
               <label className="block">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Ghi chú</span>
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
+                  Ghi chú
+                </span>
                 <textarea
                   id="accepted-note"
                   value={acceptedNote}

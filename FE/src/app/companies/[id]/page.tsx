@@ -2,9 +2,11 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/src/lib/axios'
-import { ArrowLeft, MapPin, Users, Star, Calendar, Globe, CheckCircle, Briefcase } from 'lucide-react'
+import { ArrowLeft, MapPin, Users, Calendar, Globe, CheckCircle, Briefcase } from 'lucide-react'
 import { motion } from 'motion/react'
 
 // Define interfaces locally or import them
@@ -35,6 +37,7 @@ export default function CompanyDetailPage() {
   const params = useParams()
   const router = useRouter()
   const id = params?.id as string
+  const [imgError, setImgError] = useState(false)
 
   // 1. Fetch Company details from API /api/companies/{id}
   const { data: company, isLoading: isLoadingCompany } = useQuery<CompanyDetail>({
@@ -43,7 +46,7 @@ export default function CompanyDetailPage() {
       const res = await api.get(`/companies/${id}`)
       return res.data.data
     },
-    enabled: !!id
+    enabled: !!id,
   })
 
   // 2. Fetch Jobs of this company from API /api/companies/{id}/jobs (or public list filtered by company)
@@ -53,7 +56,7 @@ export default function CompanyDetailPage() {
       const res = await api.get(`/companies/${id}/jobs`)
       return res.data.data
     },
-    enabled: !!id
+    enabled: !!id,
   })
 
   // Extract jobs from Spring Page wrapper
@@ -75,7 +78,10 @@ export default function CompanyDetailPage() {
     return (
       <div className="mx-auto max-w-4xl px-4 py-20 text-center font-sans">
         <h2 className="text-xl font-black text-slate-800">Không tìm thấy công ty</h2>
-        <Link href="/companies" className="text-blue-600 font-bold text-sm mt-3 inline-block hover:underline">
+        <Link
+          href="/companies"
+          className="text-blue-600 font-bold text-sm mt-3 inline-block hover:underline"
+        >
           ← Quay lại danh sách
         </Link>
       </div>
@@ -83,8 +89,22 @@ export default function CompanyDetailPage() {
   }
 
   // Generate deterministic logo background/initials if no logo exists
-  const initials = company.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
-  const bgColors = ['bg-emerald-600', 'bg-blue-600', 'bg-amber-600', 'bg-purple-600', 'bg-rose-600', 'bg-teal-600', 'bg-indigo-600', 'bg-cyan-600']
+  const initials = company.name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase()
+  const bgColors = [
+    'bg-emerald-600',
+    'bg-blue-600',
+    'bg-amber-600',
+    'bg-purple-600',
+    'bg-rose-600',
+    'bg-teal-600',
+    'bg-indigo-600',
+    'bg-cyan-600',
+  ]
   const colorIdx = company.name.length % bgColors.length
   const logoBg = bgColors[colorIdx]
 
@@ -103,27 +123,28 @@ export default function CompanyDetailPage() {
         className="bg-white rounded-2xl border border-slate-200/60 p-8 shadow-xs mb-6"
       >
         <div className="flex flex-col md:flex-row items-start gap-6">
-          {company.logoUrl ? (
-            <img
+          {company.logoUrl && !imgError ? (
+            <Image
               src={company.logoUrl}
               alt={company.name}
+              width={112}
+              height={112}
+              unoptimized
               className="h-28 w-28 rounded-2xl object-contain bg-white p-1 border border-slate-200 shadow-md"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none'
-                const sibling = (e.target as HTMLElement).nextElementSibling
-                if (sibling) sibling.removeAttribute('style')
-              }}
+              onError={() => setImgError(true)}
             />
-          ) : null}
-          <div
-            className={`h-28 w-28 rounded-2xl text-white font-black text-3xl flex items-center justify-center shrink-0 border-2 border-white shadow-md ${logoBg}`}
-            style={company.logoUrl ? { display: 'none' } : undefined}
-          >
-            {initials}
-          </div>
+          ) : (
+            <div
+              className={`h-28 w-28 rounded-2xl text-white font-black text-3xl flex items-center justify-center shrink-0 border-2 border-white shadow-md ${logoBg}`}
+            >
+              {initials}
+            </div>
+          )}
           <div className="flex-1">
             <h1 className="text-2xl font-black text-slate-900">{company.name}</h1>
-            <p className="text-sm font-bold text-slate-400 mt-1">{company.industry || 'Doanh nghiệp công nghệ'}</p>
+            <p className="text-sm font-bold text-slate-400 mt-1">
+              {company.industry || 'Doanh nghiệp công nghệ'}
+            </p>
             <div className="flex flex-wrap gap-3 mt-4">
               <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg">
                 <MapPin className="h-3.5 w-3.5" />
@@ -153,7 +174,8 @@ export default function CompanyDetailPage() {
               <Globe className="h-5 w-5 text-blue-600" /> Giới thiệu công ty
             </h2>
             <p className="text-sm text-slate-600 leading-relaxed font-medium">
-              {company.description || `Chào mừng bạn đến với ${company.name}. Chúng tôi liên tục tìm kiếm và chào đón những tài năng mới gia nhập đội ngũ chuyên nghiệp.`}
+              {company.description ||
+                `Chào mừng bạn đến với ${company.name}. Chúng tôi liên tục tìm kiếm và chào đón những tài năng mới gia nhập đội ngũ chuyên nghiệp.`}
             </p>
           </div>
 
@@ -164,7 +186,7 @@ export default function CompanyDetailPage() {
                 'Môi trường làm việc năng động, sáng tạo',
                 'Đào tạo phát triển kỹ năng liên tục',
                 'Bảo hiểm sức khỏe toàn diện',
-                'Du lịch công ty hàng năm'
+                'Du lịch công ty hàng năm',
               ].map((b, i) => (
                 <div
                   key={i}

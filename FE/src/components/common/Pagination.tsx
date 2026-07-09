@@ -20,11 +20,11 @@ const Pagination = ({
   onItemsPerPageChange,
   pageSizeOptions = [5, 10, 20, 50],
 }: PaginationProps) => {
-  if (totalItems < 10) return null
+  if (totalItems === 0) return null
 
   // Calculate 5 page numbers (1 active current page + up to 4 neighboring pages)
   let startPage = Math.max(1, currentPage - 2)
-  let endPage = Math.min(totalPages, startPage + 4)
+  const endPage = Math.min(totalPages, startPage + 4)
 
   if (endPage - startPage < 4) {
     startPage = Math.max(1, endPage - 4)

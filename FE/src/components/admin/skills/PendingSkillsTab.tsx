@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Search, CheckCircle, XCircle, CheckCheck, Loader2 } from 'lucide-react'
 import { Skill } from '@/src/types/skill'
 import Pagination from '@/src/components/common/Pagination'
@@ -27,10 +27,12 @@ const PendingSkillsTab = ({
     s.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // Reset page when search changes
-  useEffect(() => {
+  // Reset page when search changes during render
+  const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery)
+  if (searchQuery !== prevSearchQuery) {
+    setPrevSearchQuery(searchQuery)
     setCurrentPage(1)
-  }, [searchQuery])
+  }
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1
   const paginatedSkills = filtered.slice(
@@ -103,10 +105,14 @@ const PendingSkillsTab = ({
               <tr key={skill.id} className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-6 py-4 font-bold text-slate-800 capitalize">{skill.name}</td>
                 <td className="px-6 py-4 text-slate-500 max-w-xs truncate">
-                  {skill.description || <span className="italic text-slate-300">Không có mô tả</span>}
+                  {skill.description || (
+                    <span className="italic text-slate-300">Không có mô tả</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-slate-400">
-                  {skill.createdAt ? new Date(skill.createdAt).toLocaleDateString('vi-VN') : 'Unknown'}
+                  {skill.createdAt
+                    ? new Date(skill.createdAt).toLocaleDateString('vi-VN')
+                    : 'Unknown'}
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-center gap-2">

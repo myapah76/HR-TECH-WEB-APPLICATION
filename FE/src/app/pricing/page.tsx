@@ -73,14 +73,12 @@ export default function PricingPage() {
   }, [isModalOpen, refetchHistory])
 
   // Track and set active pending payment ID when checkout modal is opened
-  useEffect(() => {
-    if (isModalOpen && !activePaymentOrderCode && payments.length > 0) {
-      const pending = payments.find((p) => p.status === 'PENDING')
-      if (pending) {
-        setActivePaymentOrderCode(pending.orderCode)
-      }
+  if (isModalOpen && !activePaymentOrderCode && payments.length > 0) {
+    const pending = payments.find((p) => p.status === 'PENDING')
+    if (pending) {
+      setActivePaymentOrderCode(pending.orderCode)
     }
-  }, [isModalOpen, payments, activePaymentOrderCode])
+  }
 
   // Automatically close modal and activate package when active payment shifts to PAID or CANCELLED
   useEffect(() => {

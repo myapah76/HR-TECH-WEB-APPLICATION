@@ -15,7 +15,6 @@ import hrtech.job.dtos.request.JobSearchCriteria;
 import hrtech.job.dtos.response.JobResponse;
 import hrtech.shared.response.ApiResponse;
 
-import java.math.BigDecimal;
 import java.net.URI;
 import java.util.UUID;
 
@@ -33,17 +32,9 @@ public class JobController {
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<Page<JobResponse>>> searchJobs(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String location,
-            @RequestParam(required = false) String experienceLevel,
-            @RequestParam(required = false) String jobType,
-            @RequestParam(required = false) BigDecimal salaryMin,
-            @RequestParam(required = false) BigDecimal salaryMax,
+            @Valid JobSearchCriteria criteria,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        JobSearchCriteria criteria = new JobSearchCriteria(
-                keyword, location, experienceLevel, jobType, salaryMin, salaryMax
-        );
         return ResponseEntity.ok(ApiResponse.success(jobService.searchJobs(criteria, pageable)));
     }
 

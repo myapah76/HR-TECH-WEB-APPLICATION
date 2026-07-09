@@ -31,12 +31,14 @@ export function ApplicationMatchModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, cvId, jobId])
 
-  // Reset when closed
-  useEffect(() => {
+  // Reset when closed during render
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen)
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen)
     if (!isOpen) {
       setMatchScore(null)
     }
-  }, [isOpen])
+  }
 
   if (!isOpen) return null
 

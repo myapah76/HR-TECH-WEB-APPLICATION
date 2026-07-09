@@ -2,8 +2,7 @@ import { ArrowRight, Star } from 'lucide-react'
 import { useGetCompanies } from '@/src/hooks/company'
 import { useState } from 'react'
 import Link from 'next/link'
-
-interface TopEmployersProps {}
+import Image from 'next/image'
 
 const getGradientClass = (name: string) => {
   const code = name.charCodeAt(0) % 5
@@ -21,7 +20,7 @@ const getGradientClass = (name: string) => {
   }
 }
 
-export default function TopEmployers({}: TopEmployersProps) {
+export default function TopEmployers() {
   const { data, isLoading } = useGetCompanies({ page: 0, size: 6 })
   const companies = data?.content || []
   const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({})
@@ -82,10 +81,12 @@ export default function TopEmployers({}: TopEmployersProps) {
                       </span>
                     </div>
                   ) : (
-                    <img
+                    <Image
                       src={company.logoUrl}
                       alt={company.name}
-                      referrerPolicy="no-referrer"
+                      width={120}
+                      height={40}
+                      unoptimized
                       onError={() => setFailedLogos((prev) => ({ ...prev, [company.id]: true }))}
                       className="h-10 w-auto object-contain filter grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
                       id={`employer-img-${company.id}`}
@@ -107,4 +108,3 @@ export default function TopEmployers({}: TopEmployersProps) {
     </section>
   )
 }
-

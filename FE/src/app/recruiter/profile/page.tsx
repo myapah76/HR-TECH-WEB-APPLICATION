@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { useGetMyCompany, useUpdateCompany, useGetCompanyMembers } from '@/src/hooks/company'
 import { useAuthStore } from '@/src/stores/auth.store'
@@ -11,7 +10,6 @@ import {
   Globe,
   MapPin,
   Users,
-  Star,
   ExternalLink,
   Upload,
   Loader2,
@@ -22,10 +20,11 @@ import {
 import Loading from '@/src/app/loading'
 
 export default function RecruiterCompanyProfilePage() {
-  const router = useRouter()
   const { user } = useAuthStore()
   const { data: myCompany, isLoading: isCompanyLoading } = useGetMyCompany()
-  const { data: companyMembers = [], isLoading: isMembersLoading } = useGetCompanyMembers(myCompany?.id)
+  const { data: companyMembers = [], isLoading: isMembersLoading } = useGetCompanyMembers(
+    myCompany?.id
+  )
   const currentMember = companyMembers.find((m) => m.userId === user?.id)
   const isOwner = currentMember?.role === 'OWNER'
   const updateCompanyMutation = useUpdateCompany()
@@ -43,8 +42,10 @@ export default function RecruiterCompanyProfilePage() {
   const [size, setSize] = useState('')
   const [description, setDescription] = useState('')
 
-  // Sync state with company data
-  useEffect(() => {
+  // Sync state with company data during render
+  const [prevMyCompany, setPrevMyCompany] = useState(myCompany)
+  if (myCompany !== prevMyCompany) {
+    setPrevMyCompany(myCompany)
     if (myCompany) {
       setName(myCompany.name || '')
       setWebsite(myCompany.website || '')
@@ -54,14 +55,12 @@ export default function RecruiterCompanyProfilePage() {
       setDescription(myCompany.description || '')
       setLogoPreview(myCompany.logoUrl || '')
     }
-  }, [myCompany])
+  }
 
-  // Redirect to preview if not owner but on edit tab
-  useEffect(() => {
-    if (!isMembersLoading && !isOwner && activeTab === 'edit') {
-      setActiveTab('preview')
-    }
-  }, [isOwner, isMembersLoading, activeTab])
+  // Redirect to preview if not owner but on edit tab during render
+  if (!isMembersLoading && !isOwner && activeTab === 'edit') {
+    setActiveTab('preview')
+  }
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -294,25 +293,33 @@ export default function RecruiterCompanyProfilePage() {
                 </h3>
                 <div className="space-y-3.5">
                   <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Mã số thuế</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">
+                      Mã số thuế
+                    </span>
                     <p className="text-sm font-extrabold text-slate-800 mt-0.5">
                       {myCompany.taxCode || 'Chưa cập nhật'}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Địa chỉ email</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">
+                      Địa chỉ email
+                    </span>
                     <p className="text-sm font-extrabold text-slate-800 mt-0.5">
                       {user?.email || 'Chưa cập nhật'}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Điện thoại liên hệ</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">
+                      Điện thoại liên hệ
+                    </span>
                     <p className="text-sm font-extrabold text-slate-800 mt-0.5">
                       {user?.phone || 'Chưa cập nhật'}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Trạng thái hồ sơ</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">
+                      Trạng thái hồ sơ
+                    </span>
                     <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 mt-1 uppercase">
                       {myCompany.status}
                     </span>

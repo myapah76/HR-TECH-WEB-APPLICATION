@@ -17,7 +17,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Get the saved theme or fallback to system
     const savedTheme = (localStorage.getItem('theme') as Theme) || 'system'
-    setThemeState(savedTheme)
+    const timer = setTimeout(() => {
+      setThemeState(savedTheme)
+    }, 0)
+
+    return () => clearTimeout(timer)
   }, [])
 
   const setTheme = (newTheme: Theme) => {
@@ -53,11 +57,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [theme])
 
-  return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  )
+  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>
 }
 
 export function useTheme() {

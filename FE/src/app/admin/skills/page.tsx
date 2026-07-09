@@ -7,9 +7,22 @@ import { Network, UserCheck, GitBranch, GitMerge, Workflow } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
 import { getErrorMessage } from '@/src/utils'
 import {
-  getSkillGraph, createSkill, updateSkill, deleteSkill, addRelatedSkill,
-  addParentChild, deleteRelationship, getPendingSkills, approveSkill, approveAllSkills, rejectSkill,
-  getPendingRelationships, approveRelationship, approveAllPendingRelationships, rejectRelationship, getDistinctCanonicalRoles,
+  getSkillGraph,
+  createSkill,
+  updateSkill,
+  deleteSkill,
+  addRelatedSkill,
+  addParentChild,
+  deleteRelationship,
+  getPendingSkills,
+  approveSkill,
+  approveAllSkills,
+  rejectSkill,
+  getPendingRelationships,
+  approveRelationship,
+  approveAllPendingRelationships,
+  rejectRelationship,
+  getDistinctCanonicalRoles,
 } from '@/src/services/skill.service'
 import { Skill, SkillEdge, PendingRelationship } from '@/src/types/skill'
 import { SkillTab } from '@/src/enums/skill.enum'
@@ -43,13 +56,8 @@ export default function AdminSkillsDashboard() {
     handleNodeDragStop,
   } = useSkillPhysics(selectedNode?.id || null)
 
-  const {
-    visibleNodesData,
-    visibleEdgesData,
-    expandAll,
-    collapseAll,
-    expandPathToSkill,
-  } = useDrillDownGraph(skills, edgesList, availableRoles, selectedNode?.id || null)
+  const { visibleNodesData, visibleEdgesData, expandAll, collapseAll, expandPathToSkill } =
+    useDrillDownGraph(skills, edgesList, availableRoles, selectedNode?.id || null)
 
   const nodeTypes = useMemo(() => ({ skillNode: SkillNodeComponent }), [])
 
@@ -267,7 +275,10 @@ export default function AdminSkillsDashboard() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] p-6 bg-slate-50 overflow-hidden" id="skills-admin-page">
+    <div
+      className="flex flex-col h-[calc(100vh-4rem)] p-6 bg-slate-50 overflow-hidden"
+      id="skills-admin-page"
+    >
       <Toaster position="top-right" richColors />
 
       {/* Header Tabs */}
@@ -292,10 +303,11 @@ export default function AdminSkillsDashboard() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === tab.id
-                ? 'bg-white text-violet-600 shadow-xs'
-                : 'text-slate-500 hover:text-slate-800'
-                }`}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${
+                activeTab === tab.id
+                  ? 'bg-white text-violet-600 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
             >
               <tab.icon className="h-4 w-4" />
               {tab.label}

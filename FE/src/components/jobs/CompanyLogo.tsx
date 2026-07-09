@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Image from 'next/image'
 
 interface CompanyLogoProps {
   url?: string | null
@@ -39,12 +40,14 @@ export function CompanyLogo({ url, name }: CompanyLogoProps) {
         </div>
       ) : (
         <div className="w-full h-full relative flex items-center justify-center">
-          <img
+          <Image
             src={url!}
             alt={name}
-            referrerPolicy="no-referrer"
+            fill
+            sizes="64px"
+            unoptimized
             onError={() => setImgError(true)}
-            className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
+            className="object-contain p-2 group-hover:scale-105 transition-transform duration-300"
           />
         </div>
       )}

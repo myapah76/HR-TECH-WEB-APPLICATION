@@ -102,8 +102,13 @@ function useRelativeTime(dateStr: string) {
   const compute = useCallback(() => calcTimeAgo(dateStr), [dateStr])
   const [label, setLabel] = useState(compute)
 
-  useEffect(() => {
+  const [prevDateStr, setPrevDateStr] = useState(dateStr)
+  if (dateStr !== prevDateStr) {
+    setPrevDateStr(dateStr)
     setLabel(compute())
+  }
+
+  useEffect(() => {
     // Update every 30s
     const id = setInterval(() => setLabel(compute()), 30_000)
     return () => clearInterval(id)

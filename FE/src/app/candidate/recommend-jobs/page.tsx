@@ -1,15 +1,10 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useRef, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useGetAllCvs, useUploadCv } from '@/src/hooks/cv'
-import {
-  useStartJobMatching,
-  useGetJobMatchingStatus,
-} from '@/src/hooks/recommendation'
-import { JobMatchingTaskResponse } from '@/src/types/recommendation'
+import { useStartJobMatching, useGetJobMatchingStatus } from '@/src/hooks/recommendation'
 import { JobMatchingStatus } from '@/src/enums/recommendation.enum'
-import { Star } from 'lucide-react'
 import { useSubscriptionAccess } from '@/src/hooks/subscription'
 import { FeatureGate } from '@/src/components/common/FeatureGate'
 
@@ -17,7 +12,6 @@ import { FeatureGate } from '@/src/components/common/FeatureGate'
 import { JobMatchConfigCard } from '@/src/components/candidate/recommendation/JobMatchConfigCard'
 import { JobMatchProgressCard } from '@/src/components/candidate/recommendation/JobMatchProgressCard'
 import { JobMatchResultList } from '@/src/components/candidate/recommendation/JobMatchResultList'
-
 
 export default function RecommendJobsPage() {
   const queryClient = useQueryClient()
@@ -28,17 +22,8 @@ export default function RecommendJobsPage() {
   const startJobMatchingMutation = useStartJobMatching()
 
   // Input states
-  const [cvMode, setCvMode] = useState<'existing' | 'new'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem('rec_cvMode')
-      if (saved === 'existing' || saved === 'new') return saved
-    }
-    return 'existing'
-  })
-  const [selectedCvId, setSelectedCvId] = useState<string>(() => {
-    if (typeof window !== 'undefined') return sessionStorage.getItem('rec_selectedCvId') || ''
-    return ''
-  })
+  const [cvMode, setCvMode] = useState<'existing' | 'new'>('existing')
+  const [selectedCvId, setSelectedCvId] = useState<string>('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [cvTitle, setCvTitle] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -49,24 +34,17 @@ export default function RecommendJobsPage() {
 
   const { data: taskStatus } = useGetJobMatchingStatus(taskId, !!taskId)
 
-  // Persist states for CV inputs only
-  useEffect(() => {
-    sessionStorage.setItem('rec_cvMode', cvMode)
-  }, [cvMode])
-
-  useEffect(() => {
-    if (selectedCvId) {
-      sessionStorage.setItem('rec_selectedCvId', selectedCvId)
-    }
-  }, [selectedCvId])
-
-  useEffect(() => {
+  const [prevCvsLength, setPrevCvsLength] = useState(cvs.length)
+  const [prevLoadingCvs, setPrevLoadingCvs] = useState(loadingCvs)
+  if (cvs.length !== prevCvsLength || loadingCvs !== prevLoadingCvs) {
+    setPrevCvsLength(cvs.length)
+    setPrevLoadingCvs(loadingCvs)
     if (cvs.length > 0 && !selectedCvId) {
       setSelectedCvId(cvs.find((c) => c.isPrimary)?.id || cvs[0].id)
     } else if (cvs.length === 0 && !loadingCvs) {
       setCvMode('new')
     }
-  }, [cvs, loadingCvs, selectedCvId])
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -131,8 +109,11 @@ export default function RecommendJobsPage() {
     })
   }
 
-  const isProcessActive = !!(taskId && taskStatus && taskStatus.status !== JobMatchingStatus.DONE)
-  const isDone = taskStatus?.status === JobMatchingStatus.DONE
+  const isProcessActive = useMemo(
+    () => !!(taskId && taskStatus && taskStatus.status !== JobMatchingStatus.DONE),
+    [taskId, taskStatus]
+  )
+  const isDone = useMemo(() => taskStatus?.status === JobMatchingStatus.DONE, [taskStatus?.status])
 
   const handleReset = () => {
     if (taskId) {
@@ -146,10 +127,7 @@ export default function RecommendJobsPage() {
     <>
       {isDone && taskStatus?.recommendedJobs ? (
         /* RESULT UI */
-        <JobMatchResultList
-          recommendedJobs={taskStatus.recommendedJobs}
-          onReset={handleReset}
-        />
+        <JobMatchResultList recommendedJobs={taskStatus.recommendedJobs} onReset={handleReset} />
       ) : (
         /* UPLOAD & MOCKUP UI */
         <div
@@ -202,7 +180,6 @@ export default function RecommendJobsPage() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-
       {/* Feature gate: show upgrade prompt for free users */}
       {!isSubLoading && !hasPaidPlan ? (
         <FeatureGate
@@ -218,4 +195,3 @@ export default function RecommendJobsPage() {
     </div>
   )
 }
-

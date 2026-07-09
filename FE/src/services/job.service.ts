@@ -11,7 +11,7 @@ export const getJobs = async (page = 0, size = 10): Promise<PageResponse<Job>> =
 }
 
 export const searchJobs = async (params: JobSearchParams): Promise<PageResponse<Job>> => {
-  const { page = 0, size = 10, keyword, location, jobType, experienceLevel, salaryMin, salaryMax } = params
+  const { page = 0, size = 10, keyword, location, jobType, experienceLevel, salaryMin, salaryMax, skills } = params
 
   // Build query params, only include non-empty values
   const queryParams = new URLSearchParams()
@@ -23,6 +23,9 @@ export const searchJobs = async (params: JobSearchParams): Promise<PageResponse<
   if (experienceLevel) queryParams.set('experienceLevel', experienceLevel)
   if (salaryMin !== undefined && salaryMin >= 0) queryParams.set('salaryMin', String(salaryMin))
   if (salaryMax !== undefined && salaryMax >= 0) queryParams.set('salaryMax', String(salaryMax))
+  if (skills && skills.length > 0) {
+    skills.forEach((skill) => queryParams.append('skills', skill))
+  }
 
   const response = await api.get<ApiResponse<PageResponse<Job>>>(`/jobs/search?${queryParams.toString()}`)
   return response.data.data

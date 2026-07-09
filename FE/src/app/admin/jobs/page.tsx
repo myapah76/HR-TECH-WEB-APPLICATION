@@ -30,8 +30,6 @@ import {
 } from '@/src/hooks/job/useAdminJobs'
 import {
   JobStatus,
-  JobType,
-  ExperienceLevel,
   JOB_STATUS_LABELS,
   JOB_TYPE_LABELS,
   EXPERIENCE_LEVEL_LABELS,
@@ -137,7 +135,8 @@ const TRANSITION_CONFIG: Record<
   },
   reject: {
     title: 'Từ chối tin tuyển dụng',
-    description: 'Tin tuyển dụng sẽ bị từ chối và doanh nghiệp sẽ nhận được thông báo về việc tin đăng bị từ chối.',
+    description:
+      'Tin tuyển dụng sẽ bị từ chối và doanh nghiệp sẽ nhận được thông báo về việc tin đăng bị từ chối.',
     confirmLabel: 'Xác nhận Từ chối',
     confirmClass: 'bg-rose-600 hover:bg-rose-700',
     iconBg: 'bg-rose-50',
@@ -196,7 +195,12 @@ function JobsManagementContent() {
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null)
   const [confirmDeleteJob, setConfirmDeleteJob] = useState<Job | null>(null)
 
-  const updateUrlParams = (newParams: { keyword?: string; status?: string; page?: number; size?: number }) => {
+  const updateUrlParams = (newParams: {
+    keyword?: string
+    status?: string
+    page?: number
+    size?: number
+  }) => {
     const params = new URLSearchParams(searchParams.toString())
     if (newParams.keyword !== undefined) {
       if (newParams.keyword.trim()) params.set('keyword', newParams.keyword.trim())
@@ -255,9 +259,7 @@ function JobsManagementContent() {
   const safeCurrentPage = Math.min(urlPage, totalPages)
 
   const isAnyPending =
-    approveMutation.isPending ||
-    rejectMutation.isPending ||
-    closeMutation.isPending
+    approveMutation.isPending || rejectMutation.isPending || closeMutation.isPending
 
   return (
     <div className="space-y-6">
@@ -277,7 +279,10 @@ function JobsManagementContent() {
       {/* Filters */}
       <div className="grid gap-3 rounded-2xl border border-slate-200/60 bg-white p-4 shadow-xs md:grid-cols-[1fr_200px]">
         <form
-          onSubmit={(e) => { e.preventDefault(); updateUrlParams({ keyword: keywordInput }) }}
+          onSubmit={(e) => {
+            e.preventDefault()
+            updateUrlParams({ keyword: keywordInput })
+          }}
           className="relative block"
         >
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -290,7 +295,10 @@ function JobsManagementContent() {
           {keywordInput && (
             <button
               type="button"
-              onClick={() => { setKeywordInput(''); updateUrlParams({ keyword: '' }) }}
+              onClick={() => {
+                setKeywordInput('')
+                updateUrlParams({ keyword: '' })
+              }}
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50"
             >
               <X className="h-3 w-3" />
@@ -305,7 +313,9 @@ function JobsManagementContent() {
         >
           <option value="ALL">Tất cả trạng thái</option>
           {Object.values(JobStatus).map((status) => (
-            <option key={status} value={status}>{JOB_STATUS_LABELS[status]}</option>
+            <option key={status} value={status}>
+              {JOB_STATUS_LABELS[status]}
+            </option>
           ))}
         </select>
       </div>
@@ -339,7 +349,9 @@ function JobsManagementContent() {
               {isError && !isLoading && (
                 <tr>
                   <td colSpan={6} className="p-12 text-center">
-                    <p className="mb-3 text-xs font-bold text-rose-500">Không thể tải danh sách tin tuyển dụng</p>
+                    <p className="mb-3 text-xs font-bold text-rose-500">
+                      Không thể tải danh sách tin tuyển dụng
+                    </p>
                     <button
                       onClick={() => refetch()}
                       className="rounded-lg bg-slate-950 px-3.5 py-2 text-xs font-extrabold text-white transition hover:bg-slate-800"
@@ -358,116 +370,125 @@ function JobsManagementContent() {
                 </tr>
               )}
 
-              {!isLoading && !isError && jobsList.map((job) => {
-                const transitions = getAvailableTransitions(job.status)
-                return (
-                  <tr key={job.id} className="border-b border-slate-50 hover:bg-slate-50/30 transition-colors">
-                    {/* Job title */}
-                    <td className="p-4 max-w-80">
-                      <p
-                        className="text-xs font-extrabold text-slate-800 hover:text-violet-600 transition-colors cursor-pointer line-clamp-1"
-                        onClick={() => setSelectedJob(job)}
-                      >
-                        {job.title}
-                      </p>
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-400 font-bold">
-                        <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-sm">
-                          {JOB_TYPE_LABELS[job.jobType] || job.jobType}
-                        </span>
-                        <span>•</span>
-                        <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-sm">
-                          {EXPERIENCE_LEVEL_LABELS[job.experienceLevel] || job.experienceLevel}
-                        </span>
-                        <span>•</span>
-                        <span>{job.location}</span>
-                      </div>
-                    </td>
-
-                    {/* Company */}
-                    <td className="p-4">
-                      <div className="flex items-center gap-2.5">
-                        {job.companyLogoUrl ? (
-                          <img
-                            src={job.companyLogoUrl}
-                            alt={job.companyName}
-                            className="h-8 w-8 rounded-lg object-cover border border-slate-100 shrink-0"
-                          />
-                        ) : (
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[10px] font-black text-slate-500">
-                            {job.companyName?.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <div>
-                          <p className="text-xs font-bold text-slate-700 line-clamp-1">{job.companyName}</p>
-                          <p className="text-[9px] font-extrabold text-emerald-600">
-                            {formatSalary(job.salaryMin, job.salaryMax)}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Created At */}
-                    <td className="p-4 text-xs font-semibold text-slate-500">
-                      {job.createdAt ? new Date(job.createdAt).toLocaleDateString('vi-VN') : '—'}
-                    </td>
-
-                    {/* Deadline */}
-                    <td className="p-4 text-xs font-semibold text-slate-500">
-                      {job.deadline ? new Date(job.deadline).toLocaleDateString('vi-VN') : '—'}
-                    </td>
-
-                    {/* Status */}
-                    <td className="p-4">
-                      <Badge variant={getStatusBadgeVariant(job.status)} size="md">
-                        {JOB_STATUS_LABELS[job.status] || job.status}
-                      </Badge>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {/* Detail */}
-                        <button
-                          type="button"
+              {!isLoading &&
+                !isError &&
+                jobsList.map((job) => {
+                  const transitions = getAvailableTransitions(job.status)
+                  return (
+                    <tr
+                      key={job.id}
+                      className="border-b border-slate-50 hover:bg-slate-50/30 transition-colors"
+                    >
+                      {/* Job title */}
+                      <td className="p-4 max-w-80">
+                        <p
+                          className="text-xs font-extrabold text-slate-800 hover:text-violet-600 transition-colors cursor-pointer line-clamp-1"
                           onClick={() => setSelectedJob(job)}
-                          title="Xem chi tiết"
-                          className="p-1.5 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg cursor-pointer transition-colors"
                         >
-                          <Eye className="h-3.5 w-3.5" />
-                        </button>
+                          {job.title}
+                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-400 font-bold">
+                          <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-sm">
+                            {JOB_TYPE_LABELS[job.jobType] || job.jobType}
+                          </span>
+                          <span>•</span>
+                          <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-sm">
+                            {EXPERIENCE_LEVEL_LABELS[job.experienceLevel] || job.experienceLevel}
+                          </span>
+                          <span>•</span>
+                          <span>{job.location}</span>
+                        </div>
+                      </td>
 
-                        {/* Status transition buttons */}
-                        {transitions.map((t) => (
+                      {/* Company */}
+                      <td className="p-4">
+                        <div className="flex items-center gap-2.5">
+                          {job.companyLogoUrl ? (
+                            <img
+                              src={job.companyLogoUrl}
+                              alt={job.companyName}
+                              className="h-8 w-8 rounded-lg object-cover border border-slate-100 shrink-0"
+                            />
+                          ) : (
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[10px] font-black text-slate-500">
+                              {job.companyName?.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-xs font-bold text-slate-700 line-clamp-1">
+                              {job.companyName}
+                            </p>
+                            <p className="text-[9px] font-extrabold text-emerald-600">
+                              {formatSalary(job.salaryMin, job.salaryMax)}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Created At */}
+                      <td className="p-4 text-xs font-semibold text-slate-500">
+                        {job.createdAt ? new Date(job.createdAt).toLocaleDateString('vi-VN') : '—'}
+                      </td>
+
+                      {/* Deadline */}
+                      <td className="p-4 text-xs font-semibold text-slate-500">
+                        {job.deadline ? new Date(job.deadline).toLocaleDateString('vi-VN') : '—'}
+                      </td>
+
+                      {/* Status */}
+                      <td className="p-4">
+                        <Badge variant={getStatusBadgeVariant(job.status)} size="md">
+                          {JOB_STATUS_LABELS[job.status] || job.status}
+                        </Badge>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {/* Detail */}
                           <button
-                            key={t.action}
                             type="button"
-                            title={t.label}
-                            onClick={() => openTransitionDialog(job, t.action)}
-                            className={`p-1.5 ${t.colorClass} ${t.hoverClass} ${t.bgClass} rounded-lg cursor-pointer transition-colors`}
+                            onClick={() => setSelectedJob(job)}
+                            title="Xem chi tiết"
+                            className="p-1.5 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg cursor-pointer transition-colors"
                           >
-                            {t.icon}
+                            <Eye className="h-3.5 w-3.5" />
                           </button>
-                        ))}
 
-                        {/* No transitions available label */}
-                        {transitions.length === 0 && job.status === JobStatus.CLOSED && (
-                          <span className="text-[10px] font-bold text-slate-300 px-1">Đã đóng</span>
-                        )}
+                          {/* Status transition buttons */}
+                          {transitions.map((t) => (
+                            <button
+                              key={t.action}
+                              type="button"
+                              title={t.label}
+                              onClick={() => openTransitionDialog(job, t.action)}
+                              className={`p-1.5 ${t.colorClass} ${t.hoverClass} ${t.bgClass} rounded-lg cursor-pointer transition-colors`}
+                            >
+                              {t.icon}
+                            </button>
+                          ))}
 
-                        {/* Delete */}
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDeleteJob(job)}
-                          title="Xóa bài đăng"
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
+                          {/* No transitions available label */}
+                          {transitions.length === 0 && job.status === JobStatus.CLOSED && (
+                            <span className="text-[10px] font-bold text-slate-300 px-1">
+                              Đã đóng
+                            </span>
+                          )}
+
+                          {/* Delete */}
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteJob(job)}
+                            title="Xóa bài đăng"
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
             </tbody>
           </table>
         </div>
@@ -504,9 +525,13 @@ function JobsManagementContent() {
                   </div>
                 )}
                 <div>
-                  <h3 className="text-sm font-extrabold text-slate-800 line-clamp-1">{selectedJob.title}</h3>
+                  <h3 className="text-sm font-extrabold text-slate-800 line-clamp-1">
+                    {selectedJob.title}
+                  </h3>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <p className="text-xs font-semibold text-slate-500">{selectedJob.companyName}</p>
+                    <p className="text-xs font-semibold text-slate-500">
+                      {selectedJob.companyName}
+                    </p>
                     <Badge variant={getStatusBadgeVariant(selectedJob.status)} size="sm">
                       {JOB_STATUS_LABELS[selectedJob.status] || selectedJob.status}
                     </Badge>
@@ -540,24 +565,31 @@ function JobsManagementContent() {
                   </span>
                 </div>
                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col">
-                  <span className="text-[9px] font-black text-slate-400 uppercase">Kinh Nghiệm</span>
+                  <span className="text-[9px] font-black text-slate-400 uppercase">
+                    Kinh Nghiệm
+                  </span>
                   <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1 mt-0.5">
                     <Award className="h-3 w-3 text-amber-500 shrink-0" />
-                    {EXPERIENCE_LEVEL_LABELS[selectedJob.experienceLevel] || selectedJob.experienceLevel}
+                    {EXPERIENCE_LEVEL_LABELS[selectedJob.experienceLevel] ||
+                      selectedJob.experienceLevel}
                   </span>
                 </div>
                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col">
                   <span className="text-[9px] font-black text-slate-400 uppercase">Hạn Nộp</span>
                   <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1 mt-0.5">
                     <Calendar className="h-3 w-3 text-rose-500 shrink-0" />
-                    {selectedJob.deadline ? new Date(selectedJob.deadline).toLocaleDateString('vi-VN') : 'Không giới hạn'}
+                    {selectedJob.deadline
+                      ? new Date(selectedJob.deadline).toLocaleDateString('vi-VN')
+                      : 'Không giới hạn'}
                   </span>
                 </div>
               </div>
 
               <div className="text-xs space-y-4 text-slate-600 leading-relaxed">
                 <div>
-                  <h4 className="font-extrabold text-slate-800 text-[11px] uppercase tracking-wider mb-1">Địa điểm làm việc</h4>
+                  <h4 className="font-extrabold text-slate-800 text-[11px] uppercase tracking-wider mb-1">
+                    Địa điểm làm việc
+                  </h4>
                   <p className="flex items-center gap-1">
                     <MapPin className="h-3.5 w-3.5 text-slate-400" />
                     {selectedJob.location}
@@ -566,21 +598,31 @@ function JobsManagementContent() {
 
                 {selectedJob.description && (
                   <div>
-                    <h4 className="font-extrabold text-slate-800 text-[11px] uppercase tracking-wider mb-1">Mô tả công việc</h4>
-                    <p className="whitespace-pre-line bg-slate-50/50 p-3 rounded-xl border border-slate-100">{selectedJob.description}</p>
+                    <h4 className="font-extrabold text-slate-800 text-[11px] uppercase tracking-wider mb-1">
+                      Mô tả công việc
+                    </h4>
+                    <p className="whitespace-pre-line bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+                      {selectedJob.description}
+                    </p>
                   </div>
                 )}
 
                 {selectedJob.requirements && (
                   <div>
-                    <h4 className="font-extrabold text-slate-800 text-[11px] uppercase tracking-wider mb-1">Yêu cầu công việc</h4>
-                    <p className="whitespace-pre-line bg-slate-50/50 p-3 rounded-xl border border-slate-100">{selectedJob.requirements}</p>
+                    <h4 className="font-extrabold text-slate-800 text-[11px] uppercase tracking-wider mb-1">
+                      Yêu cầu công việc
+                    </h4>
+                    <p className="whitespace-pre-line bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+                      {selectedJob.requirements}
+                    </p>
                   </div>
                 )}
 
                 {selectedJob.skills && selectedJob.skills.length > 0 && (
                   <div>
-                    <h4 className="font-extrabold text-slate-800 text-[11px] uppercase tracking-wider mb-2">Kỹ năng yêu cầu</h4>
+                    <h4 className="font-extrabold text-slate-800 text-[11px] uppercase tracking-wider mb-2">
+                      Kỹ năng yêu cầu
+                    </h4>
                     <div className="flex flex-wrap gap-1.5">
                       {selectedJob.skills.map((skill) => (
                         <div
@@ -588,7 +630,9 @@ function JobsManagementContent() {
                           className="inline-flex items-center bg-violet-50/60 text-violet-700 border border-violet-100 rounded-lg px-2.5 py-1 text-xs font-semibold gap-1"
                         >
                           <span>{skill.skillName}</span>
-                          <span className="text-[10px] bg-violet-200/50 text-violet-800 px-1 rounded-sm">Lv: {skill.requiredLevel}</span>
+                          <span className="text-[10px] bg-violet-200/50 text-violet-800 px-1 rounded-sm">
+                            Lv: {skill.requiredLevel}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -601,7 +645,12 @@ function JobsManagementContent() {
             <div className="p-4 border-t border-slate-100 bg-slate-50/50">
               {/* Status flow indicator */}
               <div className="flex items-center gap-1.5 mb-3 overflow-x-auto pb-1">
-                {[JobStatus.DRAFT, JobStatus.PENDING_APPROVAL, JobStatus.APPROVED, JobStatus.CLOSED].map((s, idx, arr) => (
+                {[
+                  JobStatus.DRAFT,
+                  JobStatus.PENDING_APPROVAL,
+                  JobStatus.APPROVED,
+                  JobStatus.CLOSED,
+                ].map((s, idx, arr) => (
                   <div key={s} className="flex items-center gap-1.5 shrink-0">
                     <span
                       className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
@@ -612,7 +661,9 @@ function JobsManagementContent() {
                     >
                       {JOB_STATUS_LABELS[s]}
                     </span>
-                    {idx < arr.length - 1 && <ChevronDown className="h-3 w-3 text-slate-300 rotate-[-90deg]" />}
+                    {idx < arr.length - 1 && (
+                      <ChevronDown className="h-3 w-3 text-slate-300 -rotate-90" />
+                    )}
                   </div>
                 ))}
                 {selectedJob.status === JobStatus.REJECTED && (
@@ -644,10 +695,10 @@ function JobsManagementContent() {
                       t.action === 'approve'
                         ? 'bg-emerald-600 hover:bg-emerald-700'
                         : t.action === 'reject'
-                        ? 'bg-rose-600 hover:bg-rose-700'
-                        : t.action === 'close'
-                        ? 'bg-slate-700 hover:bg-slate-900'
-                        : 'bg-blue-600 hover:bg-blue-700'
+                          ? 'bg-rose-600 hover:bg-rose-700'
+                          : t.action === 'close'
+                            ? 'bg-slate-700 hover:bg-slate-900'
+                            : 'bg-blue-600 hover:bg-blue-700'
                     }`}
                   >
                     {t.icon}
@@ -656,7 +707,9 @@ function JobsManagementContent() {
                 ))}
 
                 {getAvailableTransitions(selectedJob.status).length === 0 && (
-                  <span className="text-xs font-bold text-slate-400 italic">Không có thao tác chuyển trạng thái</span>
+                  <span className="text-xs font-bold text-slate-400 italic">
+                    Không có thao tác chuyển trạng thái
+                  </span>
                 )}
               </div>
             </div>
@@ -665,45 +718,53 @@ function JobsManagementContent() {
       )}
 
       {/* ── Transition Confirmation Modal ── */}
-      {confirmState && (() => {
-        const cfg = TRANSITION_CONFIG[confirmState.action]
-        const isPending = approveMutation.isPending || rejectMutation.isPending || closeMutation.isPending
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
-            <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
-              <div className="mb-4 flex items-start gap-3">
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${cfg.iconBg} ${cfg.iconColor}`}>
-                  {cfg.icon}
+      {confirmState &&
+        (() => {
+          const cfg = TRANSITION_CONFIG[confirmState.action]
+          const isPending =
+            approveMutation.isPending || rejectMutation.isPending || closeMutation.isPending
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
+              <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
+                <div className="mb-4 flex items-start gap-3">
+                  <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${cfg.iconBg} ${cfg.iconColor}`}
+                  >
+                    {cfg.icon}
+                  </div>
+                  <div>
+                    <p className="text-sm font-extrabold text-slate-800">{cfg.title}</p>
+                    <p className="text-xs font-semibold text-slate-500 line-clamp-1">
+                      {confirmState.job.title}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-extrabold text-slate-800">{cfg.title}</p>
-                  <p className="text-xs font-semibold text-slate-500 line-clamp-1">{confirmState.job.title}</p>
+
+                <p className="mb-5 text-xs font-semibold leading-5 text-slate-600">
+                  {cfg.description}
+                </p>
+
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmState(null)}
+                    className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-extrabold text-slate-600 transition hover:bg-slate-50"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleTransition}
+                    disabled={isPending || isAnyPending}
+                    className={`rounded-lg px-4 py-2 text-xs font-extrabold text-white transition disabled:opacity-60 ${cfg.confirmClass}`}
+                  >
+                    {isPending ? 'Đang xử lý...' : cfg.confirmLabel}
+                  </button>
                 </div>
-              </div>
-
-              <p className="mb-5 text-xs font-semibold leading-5 text-slate-600">{cfg.description}</p>
-
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setConfirmState(null)}
-                  className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-extrabold text-slate-600 transition hover:bg-slate-50"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  onClick={handleTransition}
-                  disabled={isPending || isAnyPending}
-                  className={`rounded-lg px-4 py-2 text-xs font-extrabold text-white transition disabled:opacity-60 ${cfg.confirmClass}`}
-                >
-                  {isPending ? 'Đang xử lý...' : cfg.confirmLabel}
-                </button>
               </div>
             </div>
-          </div>
-        )
-      })()}
+          )
+        })()}
 
       {/* ── Delete Confirmation Modal ── */}
       {confirmDeleteJob && (
@@ -715,12 +776,15 @@ function JobsManagementContent() {
               </div>
               <div>
                 <p className="text-sm font-extrabold text-slate-800">Xác nhận xóa bài tuyển dụng</p>
-                <p className="text-xs font-semibold text-slate-500 line-clamp-1">{confirmDeleteJob.title}</p>
+                <p className="text-xs font-semibold text-slate-500 line-clamp-1">
+                  {confirmDeleteJob.title}
+                </p>
               </div>
             </div>
 
             <p className="mb-5 text-xs font-semibold leading-5 text-slate-600">
-              Hành động này sẽ xóa bài tuyển dụng khỏi hệ thống. Người tuyển dụng và ứng viên sẽ không thể xem lại bài đăng này nữa. Bạn có chắc chắn muốn thực hiện?
+              Hành động này sẽ xóa bài tuyển dụng khỏi hệ thống. Người tuyển dụng và ứng viên sẽ
+              không thể xem lại bài đăng này nữa. Bạn có chắc chắn muốn thực hiện?
             </p>
 
             <div className="flex justify-end gap-2">
@@ -749,12 +813,14 @@ function JobsManagementContent() {
 
 export default function JobsManagementPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-[400px] flex-col items-center justify-center gap-2">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-600 border-t-transparent" />
-        <span className="text-xs font-bold text-slate-400">Đang tải trang quản lý tin...</span>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex min-h-100 flex-col items-center justify-center gap-2">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-600 border-t-transparent" />
+          <span className="text-xs font-bold text-slate-400">Đang tải trang quản lý tin...</span>
+        </div>
+      }
+    >
       <JobsManagementContent />
     </Suspense>
   )

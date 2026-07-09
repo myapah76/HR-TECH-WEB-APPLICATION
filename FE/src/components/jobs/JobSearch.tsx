@@ -1,7 +1,7 @@
 'use client'
 
 import { Search, MapPin, X } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 interface JobSearchProps {
   keyword?: string
@@ -19,14 +19,22 @@ export default function JobSearch({
   onSearch,
 }: JobSearchProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const popularKeywords = ['React', 'Golang', 'Node.js', 'Remote', 'Senior']
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Cập nhật URL params
-    const params = new URLSearchParams()
+    // Cập nhật URL params và giữ lại các param hiện có (như size)
+    const params = new URLSearchParams(searchParams.toString())
     if (keyword.trim()) params.set('keyword', keyword.trim())
+    else params.delete('keyword')
+
     if (location.trim()) params.set('location', location.trim())
+    else params.delete('location')
+
+    // Luôn reset về trang 1 khi search từ khóa mới
+    params.set('page', '1')
+
     const query = params.toString()
     router.push(`/jobs${query ? `?${query}` : ''}`)
     onSearch?.()
@@ -34,9 +42,13 @@ export default function JobSearch({
 
   const handleTagClick = (tag: string) => {
     onKeywordChange?.(tag)
-    const params = new URLSearchParams()
+    const params = new URLSearchParams(searchParams.toString())
     params.set('keyword', tag)
     if (location.trim()) params.set('location', location.trim())
+    else params.delete('location')
+
+    params.set('page', '1')
+
     router.push(`/jobs?${params.toString()}`)
     onSearch?.()
   }

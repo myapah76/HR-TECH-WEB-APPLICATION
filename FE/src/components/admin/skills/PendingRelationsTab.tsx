@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Search, CheckCircle, XCircle, CheckCheck, Loader2 } from 'lucide-react'
 import { PendingRelationship } from '@/src/types/skill'
 import Pagination from '@/src/components/common/Pagination'
@@ -30,15 +30,14 @@ const PendingRelationsTab = ({
       rel.relationshipType.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  useEffect(() => {
+  const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery)
+  if (searchQuery !== prevSearchQuery) {
+    setPrevSearchQuery(searchQuery)
     setCurrentPage(1)
-  }, [searchQuery])
+  }
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1
-  const paginatedRels = filtered.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  )
+  const paginatedRels = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   const handleConfirmApproveAll = async () => {
     setIsApprovingAll(true)
@@ -55,7 +54,9 @@ const PendingRelationsTab = ({
       {/* Header controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 shrink-0">
         <div>
-          <h2 className="text-lg font-black text-slate-800">Danh sách Liên kết Chờ Duyệt (từ AI)</h2>
+          <h2 className="text-lg font-black text-slate-800">
+            Danh sách Liên kết Chờ Duyệt (từ AI)
+          </h2>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
             Tổng cộng: {pendingRels.length} mối quan hệ đang chờ kiểm duyệt
           </p>

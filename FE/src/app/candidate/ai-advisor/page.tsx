@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { flushSync } from 'react-dom'
 import { Card } from '@/src/components/ui/card'
 import { Button } from '@/src/components/ui/button'
@@ -37,7 +37,10 @@ export default function AiAdvisorPage() {
 
   // Data fetching
   const { data: sessions = [], isLoading: loadingSessions } = useGetChatSessions()
-  const { data: messages = [], isLoading: loadingMessages } = useGetChatMessages(activeSessionId)
+  const currentActiveSessionId = useMemo(() => {
+    return activeSessionId || (sessions.length > 0 ? sessions[0].id : null)
+  }, [activeSessionId, sessions])
+  const { data: messages = [], isLoading: loadingMessages } = useGetChatMessages(currentActiveSessionId)
   const { data: cvs = [] } = useGetAllCvs()
   const { data: savedJobs = [] } = useGetSavedJobs()
 
@@ -63,12 +66,7 @@ export default function AiAdvisorPage() {
     scrollToBottom()
   }, [messages, sendMessageMut.isPending, optimisticMessage, streamingContent])
 
-  // Select the latest session automatically if none selected
-  useEffect(() => {
-    if (!activeSessionId && sessions.length > 0) {
-      setActiveSessionId(sessions[0].id)
-    }
-  }, [sessions, activeSessionId])
+
 
   // Cleanup abort controller on unmount
   useEffect(() => {
@@ -112,7 +110,7 @@ export default function AiAdvisorPage() {
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault()
-    if (!messageText.trim() || !activeSessionId || isStreaming) return
+    if (!messageText.trim() || !currentActiveSessionId || isStreaming) return
     const currentText = messageText
 
     setOptimisticMessage(currentText)
@@ -128,7 +126,7 @@ export default function AiAdvisorPage() {
       const token = useAuthStore.getState().accessToken
 
       await sendChatMessageStream(
-        activeSessionId,
+        currentActiveSessionId,
         { content: currentText },
         token!,
         (chunk) => {
@@ -141,9 +139,10 @@ export default function AiAdvisorPage() {
         controller.signal
       )
 
-      await queryClient.invalidateQueries({ queryKey: ['chatMessages', activeSessionId] })
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
+      await queryClient.invalidateQueries({ queryKey: ['chatMessages', currentActiveSessionId] })
+    } catch (err) {
+      const error = err as Error
+      if (error.name === 'AbortError') {
         console.log('Stream aborted by user')
       } else {
         toast.error('Có lỗi xảy ra: ' + err)
@@ -161,7 +160,7 @@ export default function AiAdvisorPage() {
       {/* LEFT SIDEBAR: Sessions List */}
       <ChatHistorySidebar
         sessions={sessions}
-        activeSessionId={activeSessionId}
+        activeSessionId={currentActiveSessionId}
         setActiveSessionId={setActiveSessionId}
         loadingSessions={loadingSessions}
         onOpenCreateModal={() => setIsModalOpen(true)}
@@ -169,7 +168,7 @@ export default function AiAdvisorPage() {
 
       {/* MAIN CONTENT: Chat Area */}
       <Card className="flex-1 flex flex-col bg-white border-slate-200 shadow-sm overflow-hidden h-full relative">
-        {activeSessionId ? (
+        {currentActiveSessionId ? (
           <>
             <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3 shrink-0">
               <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">

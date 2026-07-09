@@ -1,6 +1,5 @@
 package hrtech.job.mapper;
 
-import lombok.RequiredArgsConstructor;
 import org.mapstruct.*;
 import hrtech.job.dtos.request.JobRequest;
 import hrtech.job.dtos.request.JobSkillRequest;
