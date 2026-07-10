@@ -49,12 +49,6 @@ export default function JobFilter({
     }))
   }
 
-  const formatSalaryLimit = (val: number) => {
-    if (val === 100000000) return '100tr+'
-    if (val === 0) return '0đ'
-    return `${val / 1000000}tr`
-  }
-
   const jobTypes = [
     { id: JobType.FULL_TIME, label: JOB_TYPE_LABELS[JobType.FULL_TIME] },
     { id: JobType.PART_TIME, label: JOB_TYPE_LABELS[JobType.PART_TIME] },
@@ -198,13 +192,6 @@ export default function JobFilter({
               >
                 Áp dụng mức lương
               </button>
-
-              <div className="flex justify-between items-center text-xs font-bold text-slate-500 pt-1">
-                <span>Đang lọc:</span>
-                <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-xs font-extrabold border border-blue-100">
-                  {formatSalaryLimit(salaryRange[0])} - {formatSalaryLimit(salaryRange[1])}
-                </span>
-              </div>
             </div>
           )}
         </div>

@@ -1,5 +1,5 @@
 import { api } from '@/src/lib/axios'
-import { CreateJobRequest, Job, ManageJobsParams, JobStatusAction, JobSearchParams } from '@/src/types/job'
+import { CreateJobRequest, Job, ManageJobsParams, JobStatusAction, JobSearchParams, LandingStatsResponse } from '@/src/types/job'
 import { ApiResponse, PageResponse } from '../types/api'
 
 export const getJobs = async (page = 0, size = 10): Promise<PageResponse<Job>> => {
@@ -11,7 +11,7 @@ export const getJobs = async (page = 0, size = 10): Promise<PageResponse<Job>> =
 }
 
 export const searchJobs = async (params: JobSearchParams): Promise<PageResponse<Job>> => {
-  const { page = 0, size = 10, keyword, location, jobType, experienceLevel, salaryMin, salaryMax, skills } = params
+  const { page = 0, size = 10, keyword, location, jobType, experienceLevel, salaryMin, salaryMax, skills, sort } = params
 
   // Build query params, only include non-empty values
   const queryParams = new URLSearchParams()
@@ -26,6 +26,7 @@ export const searchJobs = async (params: JobSearchParams): Promise<PageResponse<
   if (skills && skills.length > 0) {
     skills.forEach((skill) => queryParams.append('skills', skill))
   }
+  if (sort) queryParams.set('sort', sort)
 
   const response = await api.get<ApiResponse<PageResponse<Job>>>(`/jobs/search?${queryParams.toString()}`)
   return response.data.data
@@ -108,5 +109,10 @@ export const updateJobStatus = async (
   action: JobStatusAction
 ): Promise<Job> => {
   const response = await api.put<ApiResponse<Job>>(`/jobs/${jobId}/${action}`)
+  return response.data.data
+}
+
+export const getLandingStats = async (): Promise<LandingStatsResponse> => {
+  const response = await api.get<ApiResponse<LandingStatsResponse>>('/jobs/landing-stats')
   return response.data.data
 }

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 interface JobSearchProps {
   keyword?: string
-  onKeywordChange?: (val: string) => void
+  setKeyword?: (val: string) => void
   location?: string
   onLocationChange?: (val: string) => void
   onSearch?: () => void
@@ -13,7 +13,7 @@ interface JobSearchProps {
 
 export default function JobSearch({
   keyword = '',
-  onKeywordChange,
+  setKeyword,
   location = '',
   onLocationChange,
   onSearch,
@@ -41,7 +41,7 @@ export default function JobSearch({
   }
 
   const handleTagClick = (tag: string) => {
-    onKeywordChange?.(tag)
+    setKeyword?.(tag)
     const params = new URLSearchParams(searchParams.toString())
     params.set('keyword', tag)
     if (location.trim()) params.set('location', location.trim())
@@ -53,11 +53,31 @@ export default function JobSearch({
     onSearch?.()
   }
 
+  const handleClearKeyword = () => {
+    setKeyword?.('')
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('keyword')
+    params.set('page', '1')
+    const query = params.toString()
+    router.push(`/jobs${query ? `?${query}` : ''}`)
+    onSearch?.()
+  }
+
+  const handleClearLocation = () => {
+    onLocationChange?.('')
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('location')
+    params.set('page', '1')
+    const query = params.toString()
+    router.push(`/jobs${query ? `?${query}` : ''}`)
+    onSearch?.()
+  }
+
   return (
     <div className="w-full max-w-5xl mx-auto px-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-[0_20px_50px_rgba(0,0,0,0.08)] flex flex-col md:flex-row overflow-hidden transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.12)] hover:border-slate-300 dark:hover:border-slate-600 p-1.5 gap-1 md:gap-0"
+        className="w-full bg-white rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-[0_20px_50px_rgba(0,0,0,0.08)] flex flex-col md:flex-row overflow-hidden transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.12)] hover:border-slate-300 dark:hover:border-slate-600 p-1.5 gap-1 md:gap-0"
       >
         {/* Keyword Search */}
         <div className="flex-1 flex items-center px-4 py-3 rounded-xl hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition-colors group relative">
@@ -65,14 +85,14 @@ export default function JobSearch({
           <input
             type="text"
             value={keyword}
-            onChange={(e) => onKeywordChange?.(e.target.value)}
+            onChange={(e) => setKeyword?.(e.target.value)}
             placeholder="Chức danh, từ khóa hoặc tên công ty..."
             className="w-full outline-none bg-transparent text-slate-800 dark:text-slate-100 font-bold text-sm placeholder:text-slate-400 placeholder:font-medium"
           />
           {keyword && (
             <button
               type="button"
-              onClick={() => onKeywordChange?.('')}
+              onClick={handleClearKeyword}
               className="ml-2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
@@ -96,7 +116,7 @@ export default function JobSearch({
           {location && (
             <button
               type="button"
-              onClick={() => onLocationChange?.('')}
+              onClick={handleClearLocation}
               className="ml-2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
@@ -122,7 +142,7 @@ export default function JobSearch({
             key={tag}
             type="button"
             onClick={() => handleTagClick(tag)}
-            className="px-3 py-1 bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/5 rounded-full transition-all duration-200 cursor-pointer select-none text-white text-[11px]"
+            className="px-3 py-1 bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/5 rounded-full transition-all duration-200 select-none text-white text-[11px] cursor-pointer"
           >
             {tag}
           </button>

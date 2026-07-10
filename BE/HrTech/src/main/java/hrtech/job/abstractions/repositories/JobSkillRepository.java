@@ -8,4 +8,3 @@ import java.util.UUID;
 @Repository
 public interface JobSkillRepository extends JpaRepository<JobSkill, UUID> {
 }
-

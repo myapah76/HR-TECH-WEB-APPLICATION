@@ -20,13 +20,29 @@ const getGradientClass = (name: string) => {
   }
 }
 
-export default function TopEmployers() {
-  const { data, isLoading } = useGetCompanies({ page: 0, size: 6 })
-  const companies = data?.content || []
+interface TopCompany {
+  id: string
+  name: string
+  logoUrl: string
+  activeJobsCount: number
+}
+
+interface TopEmployersProps {
+  companies?: TopCompany[]
+  isLoading?: boolean
+}
+
+export default function TopEmployers({ companies: propCompanies, isLoading: propIsLoading }: TopEmployersProps) {
+  const { data, isLoading: queryIsLoading } = useGetCompanies({ page: 0, size: 6 })
+  const fallbackCompanies = data?.content || []
+  
+  const isLoading = propIsLoading !== undefined ? propIsLoading : queryIsLoading
+  const companies = propCompanies !== undefined ? propCompanies : fallbackCompanies
+
   const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({})
 
   return (
-    <section className="bg-white py-12 border-b border-gray-50" id="top-employers-section">
+    <section className="bg-white py-12 border-b border-slate-100 transition-colors" id="top-employers-section">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header container */}
         <div className="flex items-end justify-between mb-8" id="top-employers-header">
@@ -37,13 +53,13 @@ export default function TopEmployers() {
                 {'Được xác minh'}
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
               {'NHÀ TUYỂN DỤNG HÀNG ĐẦU'}
             </h2>
           </div>
           <Link
             href="/companies"
-            className="flex items-center gap-1 text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors group"
+            className="flex items-center gap-1 text-sm font-bold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors group"
             id="link-view-more-employers"
           >
             <span>{'Xem thêm'}</span>
@@ -52,13 +68,13 @@ export default function TopEmployers() {
         </div>
 
         {/* Recruiter Logos grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4" id="employers-grid">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-5" id="employers-grid">
           {isLoading ? (
             // Loading Skeletons
             Array.from({ length: 6 }).map((_, idx) => (
               <div
                 key={idx}
-                className="animate-pulse bg-slate-100 border border-slate-150 rounded-xl h-28"
+                className="animate-pulse bg-slate-50 border border-slate-200/70 rounded-3xl h-36"
               />
             ))
           ) : companies.length > 0 ? (
@@ -69,32 +85,40 @@ export default function TopEmployers() {
                 <Link
                   key={company.id}
                   href={`/companies/${company.id}`}
-                  className="group relative flex flex-col items-center justify-center bg-white border border-gray-150 rounded-xl hover:border-blue-300 hover:shadow-md transition-all duration-300 overflow-hidden cursor-pointer h-28"
+                  className="group relative flex flex-col items-center justify-center bg-white rounded-3xl border border-slate-200/70 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-md hover:border-blue-500/40 hover:-translate-y-1 transition-all duration-300 overflow-hidden cursor-pointer p-4 h-36"
                   id={`employer-card-${company.id}`}
                 >
                   {showFallback ? (
                     <div
-                      className={`w-full h-full bg-linear-to-br ${getGradientClass(company.name)} flex flex-col items-center justify-center p-3 select-none`}
+                      className={`w-12 h-12 rounded-2xl bg-linear-to-br ${getGradientClass(company.name)} flex items-center justify-center shadow-inner select-none mb-3`}
                     >
-                      <span className="text-white font-black text-2xl drop-shadow-md">
+                      <span className="text-white font-black text-xl">
                         {initial}
                       </span>
                     </div>
                   ) : (
-                    <Image
-                      src={company.logoUrl}
-                      alt={company.name}
-                      width={120}
-                      height={40}
-                      unoptimized
-                      onError={() => setFailedLogos((prev) => ({ ...prev, [company.id]: true }))}
-                      className="h-10 w-auto object-contain filter grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
-                      id={`employer-img-${company.id}`}
-                    />
+                    <div className="h-12 flex items-center justify-center mb-3">
+                      <img
+                        src={company.logoUrl}
+                        alt={company.name}
+                        onError={() => setFailedLogos((prev) => ({ ...prev, [company.id]: true }))}
+                        className="max-h-full max-w-full object-contain transition-transform group-hover:scale-105 duration-300"
+                        id={`employer-img-${company.id}`}
+                      />
+                    </div>
                   )}
-                  <span className="absolute bottom-2 text-[10px] font-bold text-gray-400 group-hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0">
+                  
+                  {/* Company Name (Always visible) */}
+                  <span className="text-[11px] font-black text-slate-800 text-center line-clamp-1 max-w-full group-hover:text-blue-600 transition-colors">
                     {company.name}
                   </span>
+
+                  {/* Jobs Count Badge (Always visible) */}
+                  {'activeJobsCount' in company && company.activeJobsCount !== undefined && (
+                    <span className="mt-2.5 bg-blue-50 text-blue-650 text-[9px] font-black px-2 py-0.5 rounded-lg border border-blue-100/50 uppercase tracking-wider">
+                      {company.activeJobsCount} Jobs
+                    </span>
+                  )}
                 </Link>
               )
             })

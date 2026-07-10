@@ -84,4 +84,14 @@ export interface JobSearchParams {
   skills?: string[]
   page?: number
   size?: number
+  sort?: string
+}
+
+export interface LandingStatsResponse {
+  totalJobs: number
+  totalCompanies: number
+  totalApplications: number
+  trendingSkills: { name: string; jobCount: number }[]
+  topCompanies: { id: string; name: string; logoUrl: string; activeJobsCount: number }[]
+  hotRoles: { name: string; jobCount: number }[]
 }
