@@ -12,7 +12,6 @@ import hrtech.skill.dtos.request.UpdateSkillRequest;
 import hrtech.skill.dtos.response.PendingRelationshipResponse;
 import hrtech.skill.dtos.response.SkillResponse;
 import hrtech.skill.dtos.response.SkillWithRelationsResponse;
-
 import hrtech.skill.dtos.response.SkillGraphResponse;
 
 import java.util.List;

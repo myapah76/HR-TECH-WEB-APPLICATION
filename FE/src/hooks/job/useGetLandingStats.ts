@@ -32,7 +32,7 @@ export const useGetLandingStats = () => {
             { id: '5', name: 'Viettel Telecom', logoUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=150&q=80', activeJobsCount: 20 },
             { id: '6', name: 'HDBank Group', logoUrl: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=150&q=80', activeJobsCount: 11 }
           ],
-          hotRoles: [
+          hotPositions: [
             { name: 'Frontend Developer', jobCount: 45 },
             { name: 'Backend Developer', jobCount: 52 },
             { name: 'DevOps Engineer', jobCount: 22 },

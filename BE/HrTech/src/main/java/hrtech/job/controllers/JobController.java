@@ -13,22 +13,34 @@ import hrtech.job.abstractions.services.IJobService;
 import hrtech.job.dtos.request.JobRequest;
 import hrtech.job.dtos.request.JobSearchCriteria;
 import hrtech.job.dtos.response.JobResponse;
+import hrtech.job.dtos.response.TrendingSkillResponse;
 import hrtech.shared.response.ApiResponse;
+import hrtech.job.dtos.response.HotPositionResponse;
+import java.util.List;
 
 import java.net.URI;
 import java.util.UUID;
 
-/**
- * Public-facing + HR endpoints.
- * - Candidates: GET /api/jobs (search OPEN only), GET /api/jobs/{id}
- * - HR: POST (create), PUT (update own draft), PATCH (submit for approval)
- */
 @RestController
 @RequestMapping("/api/jobs")
 @RequiredArgsConstructor
 public class JobController {
 
     private final IJobService jobService;
+
+    @GetMapping("/hot-positions")
+    public ResponseEntity<ApiResponse<List<HotPositionResponse>>> getHotPositions(
+            @RequestParam(defaultValue = "6") int limit
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(jobService.getHotPositions(limit)));
+    }
+
+    @GetMapping("/trending-skills")
+    public ResponseEntity<ApiResponse<List<TrendingSkillResponse>>> getTrendingSkills(
+            @RequestParam(defaultValue = "8") int limit
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(jobService.getTrendingSkills(limit)));
+    }
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<Page<JobResponse>>> searchJobs(
@@ -60,7 +72,7 @@ public class JobController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("@companySecurity.hasJobRole(#id, 'OWNER', 'HR_MANAGER', 'HR')")
+    @PreAuthorize("@jobSecurity.hasJobRole(#id, 'OWNER', 'HR_MANAGER', 'HR')")
     public ResponseEntity<ApiResponse<JobResponse>> updateOwnJob(
             @PathVariable UUID id,
             @Valid @RequestBody JobRequest request
@@ -69,25 +81,25 @@ public class JobController {
     }
 
     @PutMapping("/{id}/submit")
-    @PreAuthorize("@companySecurity.isJobCreatorOrHr(#id)")
+    @PreAuthorize("@jobSecurity.isJobCreatorOrHr(#id)")
     public ResponseEntity<ApiResponse<JobResponse>> submitJob(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(jobService.submitJob(id)));
     }
 
     @PutMapping("/{id}/approve")
-    @PreAuthorize("@companySecurity.isJobManager(#id)")
+    @PreAuthorize("@jobSecurity.isJobManager(#id)")
     public ResponseEntity<ApiResponse<JobResponse>> approveJob(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(jobService.approveJob(id)));
     }
 
     @PutMapping("/{id}/reject")
-    @PreAuthorize("@companySecurity.isJobManager(#id)")
+    @PreAuthorize("@jobSecurity.isJobManager(#id)")
     public ResponseEntity<ApiResponse<JobResponse>> rejectJob(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(jobService.rejectJob(id)));
     }
 
     @PutMapping("/{id}/close")
-    @PreAuthorize("@companySecurity.isJobCreatorOrManager(#id)")
+    @PreAuthorize("@jobSecurity.isJobCreatorOrManager(#id)")
     public ResponseEntity<ApiResponse<JobResponse>> closeJob(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(jobService.closeJob(id)));
     }

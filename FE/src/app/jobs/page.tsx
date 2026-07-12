@@ -28,25 +28,37 @@ export default function JobListPage() {
   const urlPage = Number(searchParams.get('page')) || 1
   const urlSize = Number(searchParams.get('size')) || 10
   const urlSort = searchParams.get('sort') || 'createdAt,desc'
+  const urlSkillsParam = searchParams.get('skills') ?? ''
+
+  const urlSkills = useMemo(() => {
+    return urlSkillsParam ? urlSkillsParam.split(',').filter(Boolean) : []
+  }, [urlSkillsParam])
 
   const [keyword, setKeyword] = useState(urlKeyword)
   const [location, setLocation] = useState(urlLocation)
+  const [selectedTechs, setSelectedTechs] = useState<string[]>(urlSkills)
 
   // Đồng bộ lại ô input khi URL thay đổi (ví dụ: click tag từ khóa phổ biến hoặc nhấn back/forward)
   const [prevUrlKeyword, setPrevUrlKeyword] = useState(urlKeyword)
   const [prevUrlLocation, setPrevUrlLocation] = useState(urlLocation)
+  const [prevUrlSkillsParam, setPrevUrlSkillsParam] = useState(urlSkillsParam)
 
-  if (urlKeyword !== prevUrlKeyword || urlLocation !== prevUrlLocation) {
+  if (
+    urlKeyword !== prevUrlKeyword ||
+    urlLocation !== prevUrlLocation ||
+    urlSkillsParam !== prevUrlSkillsParam
+  ) {
     setPrevUrlKeyword(urlKeyword)
     setPrevUrlLocation(urlLocation)
+    setPrevUrlSkillsParam(urlSkillsParam)
     setKeyword(urlKeyword)
     setLocation(urlLocation)
+    setSelectedTechs(urlSkills)
   }
 
   const [selectedType, setSelectedType] = useState<string | null>(null)
   const [salaryRange, setSalaryRange] = useState<[number, number]>([0, 100000000])
   const [selectedExp, setSelectedExp] = useState<string | null>(null)
-  const [selectedTechs, setSelectedTechs] = useState<string[]>([])
 
   const [currentPage, setCurrentPage] = useState(urlPage)
   const [pageSize, setPageSize] = useState(urlSize)
@@ -154,12 +166,27 @@ export default function JobListPage() {
     return data?.totalElements ?? 0
   }, [data?.totalElements])
 
-
   const handleClearAll = () => {
     setSelectedType(null)
     setSalaryRange([0, 100000000])
     setSelectedExp(null)
     setSelectedTechs([])
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('skills')
+    params.set('page', '1')
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
+  const handleSkillsChange = (techs: string[]) => {
+    setSelectedTechs(techs)
+    const params = new URLSearchParams(searchParams.toString())
+    if (techs.length > 0) {
+      params.set('skills', techs.join(','))
+    } else {
+      params.delete('skills')
+    }
+    params.set('page', '1')
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
   const handleSearch = () => {
@@ -168,14 +195,14 @@ export default function JobListPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <section 
+      <section
         className="relative overflow-hidden py-16 sm:py-20 text-white bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80')`
+          backgroundImage: `url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80')`,
         }}
       >
         {/* Dimming and gradient overlay for high contrast and readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/85 via-slate-900/80 to-slate-950/85 z-0" />
+        <div className="absolute inset-0 bg-linear-to-b from-slate-950/85 via-slate-900/80 to-slate-950/85 z-0" />
 
         <div className="relative z-10 max-w-5xl mx-auto text-center px-4 mb-8">
           <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-tight drop-shadow-md">
@@ -209,10 +236,7 @@ export default function JobListPage() {
           </aside>
 
           <div className="flex-1">
-            <SkillFilter
-              selectedSkills={selectedTechs}
-              onSkillsChange={setSelectedTechs}
-            />
+            <SkillFilter selectedSkills={selectedTechs} onSkillsChange={handleSkillsChange} />
 
             <div className="flex justify-between items-center mb-6">
               <p className="text-sm font-bold text-slate-800">

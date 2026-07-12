@@ -5,8 +5,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import hrtech.identity.dtos.user.CustomUserDetails;
 import hrtech.identity.entities.User;
-import hrtech.company.abstractions.repositories.CompanyRepository;
-import hrtech.company.abstractions.repositories.CompanyMemberRepository;
+import hrtech.company.abstractions.services.ICompanyService;
 import hrtech.company.entities.Company;
 import hrtech.company.entities.CompanyMember;
 import hrtech.company.entities.enums.CompanyPermission;
@@ -26,8 +25,7 @@ import java.util.UUID;
 public class JobValidator {
 
     private final JobRepository jobRepository;
-    private final CompanyRepository companyRepository;
-    private final CompanyMemberRepository companyMemberRepository;
+    private final ICompanyService companyService;
     private final CompanyPermissionService permissionService;
 
     public User getCurrentUser() {
@@ -39,8 +37,7 @@ public class JobValidator {
     }
 
     public Company validateCompanyApproved(UUID companyId) {
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Company not found: " + companyId));
+        Company company = companyService.getCompanyEntityById(companyId);
         if (company.isDeleted()) {
             throw new AppException(ErrorCode.NOT_FOUND, "Company not found: " + companyId);
         }
@@ -60,7 +57,7 @@ public class JobValidator {
 
     public void validateCanEditJob(User user, Job job) {
         UUID companyId = job.getCompany().getId();
-        CompanyMember member = companyMemberRepository.findByCompanyIdAndUserIdAndDeletedFalse(companyId, user.getId())
+        CompanyMember member = companyService.getMemberByCompanyIdAndUserId(companyId, user.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.JOB_PERMISSION_DENIED,
                         "You do not belong to this company."));
 
@@ -128,7 +125,7 @@ public class JobValidator {
     public boolean hasViewCompanyJobsPermission(User user, UUID companyId) {
         if (user == null) return false;
         try {
-            CompanyMember member = companyMemberRepository.findByCompanyIdAndUserIdAndDeletedFalse(companyId, user.getId())
+            CompanyMember member = companyService.getMemberByCompanyIdAndUserId(companyId, user.getId())
                     .orElse(null);
             if (member == null || member.getMembershipStatus() != MembershipStatus.ACTIVE) {
                 return false;
@@ -156,8 +153,7 @@ public class JobValidator {
     }
 
     private CompanyMember getActiveCompanyMember(User user, UUID companyId) {
-        CompanyMember member = companyMemberRepository
-                .findByCompanyIdAndUserIdAndDeletedFalse(companyId, user.getId())
+        CompanyMember member = companyService.getMemberByCompanyIdAndUserId(companyId, user.getId())
                 .orElseThrow(() -> new AppException(
                         ErrorCode.JOB_PERMISSION_DENIED,
                         "You do not belong to this company."));

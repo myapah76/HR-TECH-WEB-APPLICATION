@@ -87,11 +87,16 @@ export interface JobSearchParams {
   sort?: string
 }
 
+export interface HotPosition {
+  name: string
+  jobCount: number
+}
+
 export interface LandingStatsResponse {
   totalJobs: number
   totalCompanies: number
   totalApplications: number
   trendingSkills: { name: string; jobCount: number }[]
   topCompanies: { id: string; name: string; logoUrl: string; activeJobsCount: number }[]
-  hotRoles: { name: string; jobCount: number }[]
+  hotPositions: HotPosition[]
 }

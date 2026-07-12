@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.StreamSupport;
+
 import hrtech.skill.dtos.response.SkillGraphResponse;
 import hrtech.skill.dtos.response.RelationshipResponse;
 
@@ -104,7 +106,7 @@ public class SkillServiceImpl implements ISkillService {
     public List<SkillResponse> searchSkills(String keyword) {
         String safeKeyword = keyword != null ? keyword.trim() : "";
         String canonicalRole = safeKeyword;
-        
+
         Optional<RoleAlias> alias = roleAliasRepository.findByAliasIgnoreCase(safeKeyword);
         if (alias.isPresent()) {
             canonicalRole = alias.get().getCanonicalRole();
@@ -252,13 +254,15 @@ public class SkillServiceImpl implements ISkillService {
 
     private List<String> validateAndGetRoles(List<String> roles) {
         if (roles == null || roles.isEmpty()) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "Kỹ năng mới bắt buộc phải thuộc ít nhất 1 vai trò tuyển dụng");
+            throw new AppException(ErrorCode.BAD_REQUEST,
+                    "Kỹ năng mới bắt buộc phải thuộc ít nhất 1 vai trò tuyển dụng");
         }
         List<String> validRoles = roleAliasRepository.findDistinctCanonicalRoles();
         List<String> normalized = new ArrayList<>();
         for (String r : roles) {
             String trimmed = r.trim();
-            if (trimmed.isEmpty()) continue;
+            if (trimmed.isEmpty())
+                continue;
             String matchingCanonical = validRoles.stream()
                     .filter(vr -> vr.equalsIgnoreCase(trimmed))
                     .findFirst()
@@ -267,5 +271,44 @@ public class SkillServiceImpl implements ISkillService {
             normalized.add(matchingCanonical);
         }
         return normalized;
+    }
+
+    @Override
+    public List<SkillResponse> getSkillsByIds(Iterable<String> ids) {
+        if (ids == null || !ids.iterator().hasNext()) {
+            return Collections.emptyList();
+        }
+        return StreamSupport.stream(skillNodeRepository.findAllById(ids).spliterator(), false)
+                .map(skillMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    public List<String> getSkillIdsByRole(String role) {
+        return skillNodeRepository.findIdsByRole(role);
+    }
+
+    @Override
+    public List<String> getSkillIdsByNameContaining(String keyword) {
+        return skillNodeRepository.findIdsByNameContaining(keyword);
+    }
+
+    @Override
+    public String resolveCanonicalRole(String alias) {
+        return roleAliasRepository.findByAliasIgnoreCase(alias)
+                .map(RoleAlias::getCanonicalRole)
+                .orElse(alias);
+    }
+
+    @Override
+    public Optional<SkillResponse> getSkillByName(String name) {
+        return skillNodeRepository.findByNameIgnoreCase(name)
+                .map(skillMapper::toResponse);
+    }
+
+    @Override
+    public Optional<SkillResponse> findSkillById(String id) {
+        return skillNodeRepository.findById(id)
+                .map(skillMapper::toResponse);
     }
 }

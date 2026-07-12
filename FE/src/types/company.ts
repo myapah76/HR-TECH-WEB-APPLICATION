@@ -33,3 +33,11 @@ export interface GetCompaniesParams {
   page?: number
   size?: number
 }
+
+export interface TopCompany {
+  id: string
+  name: string
+  logoUrl: string
+  activeJobsCount: number
+}
+

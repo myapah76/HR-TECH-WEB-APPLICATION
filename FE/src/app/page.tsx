@@ -7,7 +7,7 @@ import PromoBanners from '@/src/components/home/PromoBanners'
 import JobsSection from '@/src/components/home/JobsSection'
 import MarketStats from '@/src/components/home/MarketStats'
 import TrendingSkills from '@/src/components/home/TrendingSkills'
-import HotRoles from '@/src/components/home/HotRoles'
+import HotPositions from '@/src/components/home/HotPositions'
 
 import { Job } from '@/src/types'
 import { useGetLandingStats } from '@/src/hooks/job'
@@ -27,11 +27,11 @@ export default function HomePage() {
         onViewAllLatestClick={() => router.push('/jobs')}
       />
 
-      <TopEmployers companies={stats?.topCompanies} isLoading={statsLoading} />
+      <TopEmployers />
 
-      <TrendingSkills skills={stats?.trendingSkills || []} />
+      <TrendingSkills />
 
-      <HotRoles roles={stats?.hotRoles || []} />
+      <HotPositions />
       <MarketStats
         totalJobs={stats?.totalJobs || 0}
         totalCompanies={stats?.totalCompanies || 0}

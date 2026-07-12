@@ -1,17 +1,37 @@
 import { api } from '@/src/lib/axios'
-import { CreateJobRequest, Job, ManageJobsParams, JobStatusAction, JobSearchParams, LandingStatsResponse } from '@/src/types/job'
+import {
+  CreateJobRequest,
+  Job,
+  ManageJobsParams,
+  JobStatusAction,
+  JobSearchParams,
+  LandingStatsResponse,
+  HotPosition,
+} from '@/src/types/job'
 import { ApiResponse, PageResponse } from '../types/api'
+import { TrendingSkill } from '@/src/types/skill'
 
 export const getJobs = async (page = 0, size = 10): Promise<PageResponse<Job>> => {
   const response = await api.get<ApiResponse<PageResponse<Job>>>(`/jobs`, {
-    params: { page, size }
+    params: { page, size },
   })
 
   return response.data.data
 }
 
 export const searchJobs = async (params: JobSearchParams): Promise<PageResponse<Job>> => {
-  const { page = 0, size = 10, keyword, location, jobType, experienceLevel, salaryMin, salaryMax, skills, sort } = params
+  const {
+    page = 0,
+    size = 10,
+    keyword,
+    location,
+    jobType,
+    experienceLevel,
+    salaryMin,
+    salaryMax,
+    skills,
+    sort,
+  } = params
 
   // Build query params, only include non-empty values
   const queryParams = new URLSearchParams()
@@ -28,7 +48,9 @@ export const searchJobs = async (params: JobSearchParams): Promise<PageResponse<
   }
   if (sort) queryParams.set('sort', sort)
 
-  const response = await api.get<ApiResponse<PageResponse<Job>>>(`/jobs/search?${queryParams.toString()}`)
+  const response = await api.get<ApiResponse<PageResponse<Job>>>(
+    `/jobs/search?${queryParams.toString()}`
+  )
   return response.data.data
 }
 
@@ -87,10 +109,9 @@ export const getManageJobs = async (
     }
   }
 
-  const response = await api.get<ApiResponse<PageResponse<Job>>>(
-    `/companies/${companyId}/jobs`,
-    { params }
-  )
+  const response = await api.get<ApiResponse<PageResponse<Job>>>(`/companies/${companyId}/jobs`, {
+    params,
+  })
   return response.data.data
 }
 
@@ -104,15 +125,26 @@ export const updateJob = async (id: string, data: CreateJobRequest): Promise<Job
   return response.data.data
 }
 
-export const updateJobStatus = async (
-  jobId: string,
-  action: JobStatusAction
-): Promise<Job> => {
+export const updateJobStatus = async (jobId: string, action: JobStatusAction): Promise<Job> => {
   const response = await api.put<ApiResponse<Job>>(`/jobs/${jobId}/${action}`)
   return response.data.data
 }
 
 export const getLandingStats = async (): Promise<LandingStatsResponse> => {
   const response = await api.get<ApiResponse<LandingStatsResponse>>('/jobs/landing-stats')
+  return response.data.data
+}
+
+export const getTrendingSkills = async (limit = 8): Promise<TrendingSkill[]> => {
+  const response = await api.get<ApiResponse<TrendingSkill[]>>(`/jobs/trending-skills`, {
+    params: { limit },
+  })
+  return response.data.data
+}
+
+export const getHotPositions = async (limit = 6): Promise<HotPosition[]> => {
+  const response = await api.get<ApiResponse<HotPosition[]>>('/jobs/hot-positions', {
+    params: { limit },
+  })
   return response.data.data
 }

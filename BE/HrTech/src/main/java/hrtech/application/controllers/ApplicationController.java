@@ -67,7 +67,7 @@ public class ApplicationController {
     }
 
     @PutMapping("/{id}/status")
-    @PreAuthorize("@companySecurity.isApplicationOwnerOrManagerOrHr(#id)")
+    @PreAuthorize("@applicationSecurity.isApplicationOwnerOrManagerOrHr(#id)")
     public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> updateStatus(
             @PathVariable UUID id,
             @RequestParam(required = false) ApplicationStatus status,
@@ -80,7 +80,7 @@ public class ApplicationController {
     }
 
     @PutMapping("/{id}/interview-schedule")
-    @PreAuthorize("@companySecurity.isApplicationOwnerOrManagerOrHr(#id)")
+    @PreAuthorize("@applicationSecurity.isApplicationOwnerOrManagerOrHr(#id)")
     public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> scheduleInterview(
             @PathVariable UUID id,
             @Valid @RequestBody ScheduleInterviewRequest request) {
@@ -111,7 +111,7 @@ public class ApplicationController {
     }
 
     @PostMapping("/{id}/interview-schedule/reschedule/accept")
-    @PreAuthorize("@companySecurity.isApplicationOwnerOrManagerOrHr(#id)")
+    @PreAuthorize("@applicationSecurity.isApplicationOwnerOrManagerOrHr(#id)")
     public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> acceptCandidateReschedule(
             @PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(
@@ -120,7 +120,7 @@ public class ApplicationController {
     }
 
     @PostMapping("/{id}/interview-schedule/reschedule/reject")
-    @PreAuthorize("@companySecurity.isApplicationOwnerOrManagerOrHr(#id)")
+    @PreAuthorize("@applicationSecurity.isApplicationOwnerOrManagerOrHr(#id)")
     public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> rejectCandidateReschedule(
             @PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(
@@ -129,7 +129,7 @@ public class ApplicationController {
     }
 
     @GetMapping("/jobs/{jobId}")
-    @PreAuthorize("@companySecurity.hasJobRole(#jobId, 'OWNER', 'HR_MANAGER', 'HR')")
+    @PreAuthorize("@jobSecurity.hasJobRole(#jobId, 'OWNER', 'HR_MANAGER', 'HR')")
     public ResponseEntity<ApiResponse<Page<ApplicationSummaryResponse>>> getApplicationsByJob(
             @PathVariable UUID jobId,
             @PageableDefault(size = 10, sort = "appliedAt", direction = Sort.Direction.DESC) Pageable pageable) {

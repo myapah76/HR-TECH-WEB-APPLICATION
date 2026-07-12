@@ -26,3 +26,9 @@ export interface PendingRelationship {
   targetSkillName: string
   relationshipType: 'PARENT_OF' | 'RELATED_TO'
 }
+
+export interface TrendingSkill {
+  name: string
+  jobCount: number
+}
+

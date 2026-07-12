@@ -4,7 +4,6 @@ import hrtech.subscription.entities.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import hrtech.company.abstractions.services.ICompanyService;
-import hrtech.company.abstractions.repositories.CompanyRepository;
 import hrtech.company.entities.CompanyMember;
 import hrtech.company.entities.enums.CompanyRole;
 import hrtech.identity.abstractions.services.IUserService;
@@ -51,7 +50,6 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
     private final CandidateFeatureRateUsageRepository CandidateFeatureRateUsageRepository;
     private final CompanyFeatureRateUsageRepository companyFeatureRateUsageRepository;
     private final ICompanyService companyService;
-    private final CompanyRepository companyRepository;
     private final AuthUtils authUtils;
     private final INotificationService notificationService;
 
@@ -199,9 +197,7 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
         if (freePlan == null)
             return;
 
-        Company company = companyRepository.findById(companyId).orElse(null);
-        if (company == null)
-            return;
+        Company company = companyService.getCompanyEntityById(companyId);
 
         User purchasedBy = userService.getUserEntityById(userId);
 
@@ -217,18 +213,17 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
 
         // Add Tokens to Wallet
         if (freePlan.getPlanFeatures() != null) {
-            boolean walletChanged = false;
+            int aiCreditDelta = 0;
+            int jobPostDelta = 0;
             for (CompanyPlanFeature pf : freePlan.getPlanFeatures()) {
                 if ("AI_CREDIT".equals(pf.getFeature().getCode())) {
-                    company.setAiCreditBalance(company.getAiCreditBalance() + pf.getTotalQuota());
-                    walletChanged = true;
+                    aiCreditDelta += pf.getTotalQuota();
                 } else if ("JOB_POSTING".equals(pf.getFeature().getCode())) {
-                    company.setJobPostBalance(company.getJobPostBalance() + pf.getTotalQuota());
-                    walletChanged = true;
+                    jobPostDelta += pf.getTotalQuota();
                 }
             }
-            if (walletChanged) {
-                companyRepository.save(company);
+            if (aiCreditDelta != 0 || jobPostDelta != 0) {
+                companyService.updateCompanyBalances(company.getId(), aiCreditDelta, jobPostDelta);
             }
         }
     }
@@ -371,18 +366,17 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
 
             // Nạp Token vào ví của công ty
             if (plan.getPlanFeatures() != null) {
-                boolean walletChanged = false;
+                int aiCreditDelta = 0;
+                int jobPostDelta = 0;
                 for (CompanyPlanFeature pf : plan.getPlanFeatures()) {
                     if ("AI_CREDIT".equals(pf.getFeature().getCode())) {
-                        company.setAiCreditBalance(company.getAiCreditBalance() + pf.getTotalQuota());
-                        walletChanged = true;
+                        aiCreditDelta += pf.getTotalQuota();
                     } else if ("JOB_POSTING".equals(pf.getFeature().getCode())) {
-                        company.setJobPostBalance(company.getJobPostBalance() + pf.getTotalQuota());
-                        walletChanged = true;
+                        jobPostDelta += pf.getTotalQuota();
                     }
                 }
-                if (walletChanged) {
-                    companyRepository.save(company);
+                if (aiCreditDelta != 0 || jobPostDelta != 0) {
+                    companyService.updateCompanyBalances(company.getId(), aiCreditDelta, jobPostDelta);
                 }
             }
 

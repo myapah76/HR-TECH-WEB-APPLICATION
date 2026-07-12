@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import hrtech.shared.error.ErrorCode;
 import hrtech.shared.exceptions.AppException;
 import hrtech.company.abstractions.services.ICompanyService;
-import hrtech.company.abstractions.repositories.CompanyRepository;
 import hrtech.company.entities.CompanyMember;
 import hrtech.subscription.abstractions.services.ICreditService;
 import hrtech.subscription.abstractions.repositories.CandidateSubscriptionRepository;
@@ -45,7 +44,6 @@ public class CreditServiceImpl implements ICreditService {
     private final CompanyFeatureRateUsageRepository companyFeatureRateUsageRepository;
     private final IUserService userService;
     private final ICompanyService companyService;
-    private final CompanyRepository companyRepository;
 
     // ─── Candidate ────────────────────────────────────────────────────────────
 
@@ -171,15 +169,13 @@ public class CreditServiceImpl implements ICreditService {
             if (company.getAiCreditBalance() < amount) {
                 throw new AppException(ErrorCode.INSUFFICIENT_QUOTA, "Not enough AI Credits.");
             }
-            company.setAiCreditBalance(company.getAiCreditBalance() - amount);
-            companyRepository.save(company);
+            companyService.updateCompanyBalances(company.getId(), -amount, 0);
             return;
         } else if ("JOB_POSTING".equals(featureCode)) {
             if (company.getJobPostBalance() < amount) {
                 throw new AppException(ErrorCode.INSUFFICIENT_QUOTA, "Not enough Job Post balance.");
             }
-            company.setJobPostBalance(company.getJobPostBalance() - amount);
-            companyRepository.save(company);
+            companyService.updateCompanyBalances(company.getId(), 0, -amount);
             return;
         }
 
@@ -236,7 +232,7 @@ public class CreditServiceImpl implements ICreditService {
     @Override
     @Transactional(readOnly = true)
     public boolean hasCompanyFeatureAccess(UUID companyId, String featureCode) {
-        Company company = companyRepository.findById(companyId).orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR, "Company not found"));
+        Company company = companyService.getCompanyEntityById(companyId);
 
         if ("AI_CREDIT".equals(featureCode)) {
             return company.getAiCreditBalance() > 0;

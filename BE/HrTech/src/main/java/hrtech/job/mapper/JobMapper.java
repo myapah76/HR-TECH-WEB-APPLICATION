@@ -12,8 +12,8 @@ import hrtech.job.entities.enums.JobType;
 import hrtech.shared.error.ErrorCode;
 import hrtech.shared.enums.SkillLevel;
 import hrtech.shared.exceptions.AppException;
-import hrtech.skill.abstractions.repositories.SkillNodeRepository;
-import hrtech.skill.entities.SkillNode;
+import hrtech.skill.abstractions.services.ISkillService;
+import hrtech.skill.dtos.response.SkillResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 public abstract class JobMapper {
 
     @Autowired
-    protected SkillNodeRepository skillNodeRepository;
+    protected ISkillService skillService;
 
     private final Map<String, String> skillNameCache = new ConcurrentHashMap<>();
 
@@ -47,7 +47,8 @@ public abstract class JobMapper {
     public abstract JobSkillResponse toSkillResponse(JobSkill jobSkill);
 
     public void preloadSkillNames(List<Job> jobs) {
-        if (jobs == null || jobs.isEmpty()) return;
+        if (jobs == null || jobs.isEmpty())
+            return;
 
         Set<String> missingIds = jobs.stream()
                 .filter(j -> j.getJobSkills() != null)
@@ -58,8 +59,8 @@ public abstract class JobMapper {
 
         if (!missingIds.isEmpty()) {
             try {
-                Iterable<SkillNode> nodes = skillNodeRepository.findAllById(missingIds);
-                for (SkillNode node : nodes) {
+                List<SkillResponse> nodes = skillService.getSkillsByIds(missingIds);
+                for (SkillResponse node : nodes) {
                     if (node.getId() != null && node.getName() != null) {
                         skillNameCache.put(node.getId(), node.getName());
                     }
@@ -71,16 +72,16 @@ public abstract class JobMapper {
     }
 
     protected String resolveSkillName(String skillNeo4jId) {
-        if (skillNeo4jId == null) return null;
-        return skillNameCache.computeIfAbsent(skillNeo4jId, id ->
-                skillNodeRepository.findById(id)
-                        .map(node -> node.getName())
-                        .orElse(id)
-        );
+        if (skillNeo4jId == null)
+            return null;
+        return skillNameCache.computeIfAbsent(skillNeo4jId, id -> skillService.findSkillById(id)
+                .map(node -> node.getName())
+                .orElse(id));
     }
 
     public void applyJobFields(Job job, JobRequest request) {
         job.setTitle(request.title());
+        job.setPosition(request.position());
         job.setDescription(request.description());
         job.setRequirements(request.requirements());
         job.setLocation(request.location());
@@ -113,7 +114,7 @@ public abstract class JobMapper {
         List<JobSkill> result = new ArrayList<>();
         for (JobSkillRequest sr : skillRequests) {
             // Validate skill exists in Neo4j
-            if (!skillNodeRepository.existsById(sr.skillNeo4jId())) {
+            if (skillService.findSkillById(sr.skillNeo4jId()).isEmpty()) {
                 throw new AppException(
                         ErrorCode.JOB_SKILL_NOT_FOUND,
                         "Skill not found in skill graph: " + sr.skillNeo4jId());
