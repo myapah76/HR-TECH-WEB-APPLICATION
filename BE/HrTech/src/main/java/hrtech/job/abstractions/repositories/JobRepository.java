@@ -1,5 +1,6 @@
 package hrtech.job.abstractions.repositories;
 
+import hrtech.job.projections.PositionJobCountProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -7,7 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 import hrtech.job.entities.Job;
 import hrtech.job.entities.enums.JobStatus;
 import hrtech.job.entities.enums.ExperienceLevel;
@@ -18,7 +18,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-@Repository
 public interface JobRepository extends JpaRepository<Job, UUID>, QuerydslPredicateExecutor<Job> {
 
   List<Job> findByCompanyIdAndDeletedFalse(UUID companyId);
@@ -29,13 +28,13 @@ public interface JobRepository extends JpaRepository<Job, UUID>, QuerydslPredica
 
   List<Job> findByCompanyIdAndCreatedByIdAndDeletedFalse(UUID companyId, UUID createdById);
 
-  @EntityGraph(attributePaths = {"company", "createdBy", "jobSkills"})
+  @EntityGraph(attributePaths = { "company", "createdBy", "jobSkills" })
   Page<Job> findByStatus(JobStatus status, Pageable pageable);
 
   @Query("SELECT j FROM Job j WHERE j.deleted = false AND j.extractionStatus IN :statuses AND j.updatedAt < :threshold")
   List<Job> findStuckJobs(@Param("statuses") List<ExtractionStatus> statuses, @Param("threshold") Instant threshold);
 
-  @EntityGraph(attributePaths = {"company", "createdBy", "jobSkills"})
+  @EntityGraph(attributePaths = { "company", "createdBy", "jobSkills" })
   @Query("""
           SELECT j FROM Job j
           WHERE j.deleted = false
@@ -52,7 +51,7 @@ public interface JobRepository extends JpaRepository<Job, UUID>, QuerydslPredica
       @Param("jobLevel") ExperienceLevel jobLevel,
       Pageable pageable);
 
-  @EntityGraph(attributePaths = {"company", "createdBy", "jobSkills"})
+  @EntityGraph(attributePaths = { "company", "createdBy", "jobSkills" })
   @Query("""
           SELECT j FROM Job j
           LEFT JOIN j.company c
@@ -62,6 +61,15 @@ public interface JobRepository extends JpaRepository<Job, UUID>, QuerydslPredica
       """)
   Page<Job> findAllJobsForAdmin(
       @Param("keyword") String keyword,
+      @Param("status") JobStatus status,
+      Pageable pageable);
+
+  @Query("SELECT j.position as name, COUNT(j) as jobCount " +
+      "FROM Job j " +
+      "WHERE j.status = :status AND j.deleted = false AND j.position IS NOT NULL " +
+      "GROUP BY j.position " +
+      "ORDER BY COUNT(j) DESC")
+  List<PositionJobCountProjection> findHotPositionsByStatus(
       @Param("status") JobStatus status,
       Pageable pageable);
 }

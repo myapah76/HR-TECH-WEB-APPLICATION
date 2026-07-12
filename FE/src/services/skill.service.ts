@@ -15,6 +15,7 @@ export const getSkills = async (): Promise<Skill[]> => {
   return response.data.data
 }
 
+
 export const getSkillGraph = async (): Promise<SkillGraph> => {
   const response = await api.get<ApiResponse<SkillGraph>>(`/skills/graph`)
   return response.data.data

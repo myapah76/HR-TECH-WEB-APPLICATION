@@ -28,25 +28,37 @@ export default function JobListPage() {
   const urlPage = Number(searchParams.get('page')) || 1
   const urlSize = Number(searchParams.get('size')) || 10
   const urlSort = searchParams.get('sort') || 'createdAt,desc'
+  const urlSkillsParam = searchParams.get('skills') ?? ''
+
+  const urlSkills = useMemo(() => {
+    return urlSkillsParam ? urlSkillsParam.split(',').filter(Boolean) : []
+  }, [urlSkillsParam])
 
   const [keyword, setKeyword] = useState(urlKeyword)
   const [location, setLocation] = useState(urlLocation)
+  const [selectedTechs, setSelectedTechs] = useState<string[]>(urlSkills)
 
   // Đồng bộ lại ô input khi URL thay đổi (ví dụ: click tag từ khóa phổ biến hoặc nhấn back/forward)
   const [prevUrlKeyword, setPrevUrlKeyword] = useState(urlKeyword)
   const [prevUrlLocation, setPrevUrlLocation] = useState(urlLocation)
+  const [prevUrlSkillsParam, setPrevUrlSkillsParam] = useState(urlSkillsParam)
 
-  if (urlKeyword !== prevUrlKeyword || urlLocation !== prevUrlLocation) {
+  if (
+    urlKeyword !== prevUrlKeyword ||
+    urlLocation !== prevUrlLocation ||
+    urlSkillsParam !== prevUrlSkillsParam
+  ) {
     setPrevUrlKeyword(urlKeyword)
     setPrevUrlLocation(urlLocation)
+    setPrevUrlSkillsParam(urlSkillsParam)
     setKeyword(urlKeyword)
     setLocation(urlLocation)
+    setSelectedTechs(urlSkills)
   }
 
   const [selectedType, setSelectedType] = useState<string | null>(null)
   const [salaryRange, setSalaryRange] = useState<[number, number]>([0, 100000000])
   const [selectedExp, setSelectedExp] = useState<string | null>(null)
-  const [selectedTechs, setSelectedTechs] = useState<string[]>([])
 
   const [currentPage, setCurrentPage] = useState(urlPage)
   const [pageSize, setPageSize] = useState(urlSize)
@@ -160,6 +172,22 @@ export default function JobListPage() {
     setSalaryRange([0, 100000000])
     setSelectedExp(null)
     setSelectedTechs([])
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('skills')
+    params.set('page', '1')
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
+  const handleSkillsChange = (techs: string[]) => {
+    setSelectedTechs(techs)
+    const params = new URLSearchParams(searchParams.toString())
+    if (techs.length > 0) {
+      params.set('skills', techs.join(','))
+    } else {
+      params.delete('skills')
+    }
+    params.set('page', '1')
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
   const handleSearch = () => {
@@ -211,7 +239,7 @@ export default function JobListPage() {
           <div className="flex-1">
             <SkillFilter
               selectedSkills={selectedTechs}
-              onSkillsChange={setSelectedTechs}
+              onSkillsChange={handleSkillsChange}
             />
 
             <div className="flex justify-between items-center mb-6">

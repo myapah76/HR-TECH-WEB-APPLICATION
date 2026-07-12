@@ -268,4 +268,43 @@ public class SkillServiceImpl implements ISkillService {
         }
         return normalized;
     }
+
+    @Override
+    public List<SkillResponse> getSkillsByIds(List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return skillNodeRepository.findAllByIds(ids).stream()
+                .map(skillMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    public List<String> getSkillIdsByRole(String role) {
+        return skillNodeRepository.findIdsByRole(role);
+    }
+
+    @Override
+    public List<String> getSkillIdsByNameContaining(String keyword) {
+        return skillNodeRepository.findIdsByNameContaining(keyword);
+    }
+
+    @Override
+    public String resolveCanonicalRole(String alias) {
+        return roleAliasRepository.findByAliasIgnoreCase(alias)
+                .map(RoleAlias::getCanonicalRole)
+                .orElse(alias);
+    }
+
+    @Override
+    public Optional<SkillResponse> getSkillByName(String name) {
+        return skillNodeRepository.findByNameIgnoreCase(name)
+                .map(skillMapper::toResponse);
+    }
+
+    @Override
+    public Optional<SkillResponse> findSkillById(String id) {
+        return skillNodeRepository.findById(id)
+                .map(skillMapper::toResponse);
+    }
 }

@@ -16,6 +16,7 @@ import hrtech.company.dtos.request.CompanyRegisterRequest;
 import hrtech.company.dtos.request.CompanyUpdateRequest;
 import hrtech.company.dtos.request.UpdateMemberRoleRequest;
 import hrtech.company.dtos.response.CompanyMemberResponse;
+import hrtech.company.dtos.response.TopCompanyResponse;
 import hrtech.company.dtos.response.CompanyResponse;
 import hrtech.identity.dtos.auth.response.EmailActionResponse;
 import hrtech.identity.dtos.user.CustomUserDetails;
@@ -35,6 +36,13 @@ public class CompanyController {
             @Valid @RequestBody CompanyRegisterRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(companyService.registerCompany(request)));
+    }
+
+    @GetMapping("/top")
+    public ResponseEntity<ApiResponse<List<TopCompanyResponse>>> getTopCompanies(
+            @RequestParam(defaultValue = "6") int limit
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(companyService.getTopCompanies(limit)));
     }
 
     @GetMapping

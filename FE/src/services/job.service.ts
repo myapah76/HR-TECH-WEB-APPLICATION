@@ -1,6 +1,7 @@
 import { api } from '@/src/lib/axios'
-import { CreateJobRequest, Job, ManageJobsParams, JobStatusAction, JobSearchParams, LandingStatsResponse } from '@/src/types/job'
+import { CreateJobRequest, Job, ManageJobsParams, JobStatusAction, JobSearchParams, LandingStatsResponse, HotPosition } from '@/src/types/job'
 import { ApiResponse, PageResponse } from '../types/api'
+import { TrendingSkill } from '@/src/types/skill'
 
 export const getJobs = async (page = 0, size = 10): Promise<PageResponse<Job>> => {
   const response = await api.get<ApiResponse<PageResponse<Job>>>(`/jobs`, {
@@ -114,5 +115,17 @@ export const updateJobStatus = async (
 
 export const getLandingStats = async (): Promise<LandingStatsResponse> => {
   const response = await api.get<ApiResponse<LandingStatsResponse>>('/jobs/landing-stats')
+  return response.data.data
+}
+
+export const getTrendingSkills = async (limit = 8): Promise<TrendingSkill[]> => {
+  const response = await api.get<ApiResponse<TrendingSkill[]>>(`/jobs/trending-skills`, {
+    params: { limit }
+  })
+  return response.data.data
+}
+
+export const getHotPositions = async (): Promise<HotPosition[]> => {
+  const response = await api.get<ApiResponse<HotPosition[]>>('/jobs/hot-positions')
   return response.data.data
 }

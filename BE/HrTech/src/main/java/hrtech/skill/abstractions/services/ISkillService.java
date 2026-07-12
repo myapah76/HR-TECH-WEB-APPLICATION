@@ -8,29 +8,59 @@ import hrtech.skill.dtos.response.SkillWithRelationsResponse;
 import hrtech.skill.dtos.response.SkillGraphResponse;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ISkillService {
 
     // CRUD
     SkillResponse createSkill(CreateSkillRequest request);
+
     SkillResponse updateSkill(String id, UpdateSkillRequest request);
+
     void deleteSkill(String id);
+
     SkillWithRelationsResponse getSkillById(String id);
+
     List<SkillResponse> getAllSkills();
+
     List<SkillResponse> searchSkills(String keyword);
 
     // Admin review
     List<SkillResponse> getPendingSkills();
+
     SkillResponse approveSkill(String id);
+
     void approveAllSkills();
+
     void rejectSkill(String id);
+
     List<PendingRelationshipResponse> getPendingRelationships();
+
     void approvePendingRelationship(String sourceId, String targetId, String type);
+
     void approveAllPendingRelationships();
+
     void rejectPendingRelationship(String sourceId, String targetId, String type);
+
     void addRelatedSkill(String skillId, String relatedSkillId);
+
     void addParentChild(String parentId, String childId);
+
     List<SkillResponse> getRelatedSkills(String skillId);
+
     SkillGraphResponse getSkillGraph();
+
     void deleteRelationship(String sourceId, String targetId, String type);
+
+    List<SkillResponse> getSkillsByIds(List<String> ids);
+
+    List<String> getSkillIdsByRole(String role);
+
+    List<String> getSkillIdsByNameContaining(String keyword);
+
+    String resolveCanonicalRole(String alias);
+
+    Optional<SkillResponse> getSkillByName(String name);
+
+    Optional<SkillResponse> findSkillById(String id);
 }

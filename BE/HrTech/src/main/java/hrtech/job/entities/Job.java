@@ -41,6 +41,8 @@ public class Job extends SoftDeleteEntity {
     @Column(nullable = false)
     private String title;
 
+    private String position;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 

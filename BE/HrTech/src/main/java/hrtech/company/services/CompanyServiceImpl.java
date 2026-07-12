@@ -40,6 +40,9 @@ import hrtech.company.entities.enums.CompanyRole;
 import hrtech.company.entities.enums.CompanySize;
 import hrtech.company.entities.enums.CompanyStatus;
 import hrtech.company.entities.enums.MembershipStatus;
+import hrtech.company.dtos.response.TopCompanyResponse;
+import hrtech.job.entities.enums.JobStatus;
+import org.springframework.data.domain.PageRequest;
 import hrtech.company.mapper.CompanyMapper;
 import hrtech.identity.dtos.user.CustomUserDetails;
 import hrtech.identity.entities.Role;
@@ -649,4 +652,45 @@ public class CompanyServiceImpl implements ICompanyService {
 
         return companyMapper.toResponse(savedCompany);
     }
+
+    @Override
+    public List<TopCompanyResponse> getTopCompanies(int limit) {
+        return companyRepository.findTopCompanies(
+                JobStatus.APPROVED,
+                CompanyStatus.APPROVED,
+                PageRequest.of(0, limit)
+        ).stream().map(p -> new TopCompanyResponse(
+                p.getId(),
+                p.getName(),
+                p.getLogoUrl(),
+                p.getActiveJobsCount()
+        )).toList();
+    }
+
+    @Override
+    public Company getCompanyEntityById(UUID companyId) {
+        return companyRepository.findById(companyId)
+                .orElseThrow(() -> new AppException(ErrorCode.COMPANY_NOT_FOUND, "Company not found: " + companyId));
+    }
+
+    @Override
+    public Optional<CompanyMember> getMemberByCompanyIdAndUserId(UUID companyId, UUID userId) {
+        return companyMemberRepository.findByCompanyIdAndUserIdAndDeletedFalse(companyId, userId);
+    }
+
+    @Override
+    @Transactional
+    public void updateCompanyBalances(UUID companyId, int aiCreditDelta, int jobPostDelta) {
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new AppException(ErrorCode.COMPANY_NOT_FOUND, "Company not found: " + companyId));
+        company.setAiCreditBalance(company.getAiCreditBalance() + aiCreditDelta);
+        company.setJobPostBalance(company.getJobPostBalance() + jobPostDelta);
+        companyRepository.save(company);
+    }
+
+    @Override
+    public long countApprovedCompanies() {
+        return companyRepository.countByStatus(CompanyStatus.APPROVED);
+    }
 }
+

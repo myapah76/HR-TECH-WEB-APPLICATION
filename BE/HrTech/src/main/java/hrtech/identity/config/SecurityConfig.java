@@ -40,6 +40,7 @@ public class SecurityConfig {
             "/api/payments/webhook",
             "/api/applications/interview-schedule/**",
             "/api/subscription-plans/active",
+            "/api/jobs/trending-skills", // homepage trending skills
             // Swagger
             "/swagger-ui/**",
             "/v3/api-docs/**",

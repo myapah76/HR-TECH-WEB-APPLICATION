@@ -11,11 +11,16 @@ import hrtech.company.dtos.response.CompanyResponse;
 import hrtech.identity.dtos.auth.response.ConfirmOtpResult;
 import hrtech.identity.dtos.auth.response.EmailActionResponse;
 
+import hrtech.company.dtos.response.TopCompanyResponse;
 import java.util.List;
 import java.util.UUID;
 import hrtech.company.entities.CompanyMember;
 
 public interface ICompanyService {
+
+    // Landing / Top Employers
+    List<TopCompanyResponse> getTopCompanies(int limit);
+
 
     // Registration
     EmailActionResponse registerCompany(CompanyRegisterRequest request);
@@ -56,5 +61,13 @@ public interface ICompanyService {
     CompanyResponse rejectCompany(UUID companyId);
 
     CompanyResponse restoreCompany(UUID companyId);
+
+    hrtech.company.entities.Company getCompanyEntityById(UUID companyId);
+
+    java.util.Optional<CompanyMember> getMemberByCompanyIdAndUserId(UUID companyId, UUID userId);
+
+    void updateCompanyBalances(UUID companyId, int aiCreditDelta, int jobPostDelta);
+
+    long countApprovedCompanies();
 }
 

@@ -16,6 +16,9 @@ public record JobRequest(
         @NotBlank(message = "Job title is required")
         String title,
 
+        @NotBlank(message = "Job position category is required")
+        String position,
+
         String description,
         String location,
         BigDecimal salaryMin,

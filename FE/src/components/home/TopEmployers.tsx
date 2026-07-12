@@ -1,5 +1,5 @@
 import { ArrowRight, Star } from 'lucide-react'
-import { useGetCompanies } from '@/src/hooks/company'
+import { useGetTopCompanies } from '@/src/hooks/company'
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -20,29 +20,17 @@ const getGradientClass = (name: string) => {
   }
 }
 
-interface TopCompany {
-  id: string
-  name: string
-  logoUrl: string
-  activeJobsCount: number
-}
-
-interface TopEmployersProps {
-  companies?: TopCompany[]
-  isLoading?: boolean
-}
-
-export default function TopEmployers({ companies: propCompanies, isLoading: propIsLoading }: TopEmployersProps) {
-  const { data, isLoading: queryIsLoading } = useGetCompanies({ page: 0, size: 6 })
-  const fallbackCompanies = data?.content || []
-  
-  const isLoading = propIsLoading !== undefined ? propIsLoading : queryIsLoading
-  const companies = propCompanies !== undefined ? propCompanies : fallbackCompanies
+export default function TopEmployers() {
+  const { data, isLoading } = useGetTopCompanies(6)
+  const companies = data || []
 
   const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({})
 
   return (
-    <section className="bg-white py-12 border-b border-slate-100 transition-colors" id="top-employers-section">
+    <section
+      className="bg-white py-12 border-b border-slate-100 transition-colors"
+      id="top-employers-section"
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header container */}
         <div className="flex items-end justify-between mb-8" id="top-employers-header">
@@ -92,9 +80,7 @@ export default function TopEmployers({ companies: propCompanies, isLoading: prop
                     <div
                       className={`w-12 h-12 rounded-2xl bg-linear-to-br ${getGradientClass(company.name)} flex items-center justify-center shadow-inner select-none mb-3`}
                     >
-                      <span className="text-white font-black text-xl">
-                        {initial}
-                      </span>
+                      <span className="text-white font-black text-xl">{initial}</span>
                     </div>
                   ) : (
                     <div className="h-12 flex items-center justify-center mb-3">
@@ -107,7 +93,7 @@ export default function TopEmployers({ companies: propCompanies, isLoading: prop
                       />
                     </div>
                   )}
-                  
+
                   {/* Company Name (Always visible) */}
                   <span className="text-[11px] font-black text-slate-800 text-center line-clamp-1 max-w-full group-hover:text-blue-600 transition-colors">
                     {company.name}

@@ -6,3 +6,5 @@ export * from './useGetPendingRelationships'
 export * from './useGetDistinctCanonicalRoles'
 export * from './useApproveSkillMutation'
 export * from './useApproveRelationshipMutation'
+export * from './useGetTrendingSkills'
+

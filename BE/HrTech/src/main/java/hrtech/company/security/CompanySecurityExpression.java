@@ -4,13 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import hrtech.application.abstractions.repositories.ApplicationRepository;
-import hrtech.application.entities.Application;
 import hrtech.company.abstractions.repositories.CompanyMemberRepository;
 import hrtech.company.entities.enums.CompanyRole;
 import hrtech.identity.dtos.user.CustomUserDetails;
-import hrtech.job.abstractions.repositories.JobRepository;
-import hrtech.job.entities.Job;
 
 import java.util.Arrays;
 import java.util.List;
@@ -22,8 +18,6 @@ import java.util.stream.Collectors;
 public class CompanySecurityExpression {
 
     private final CompanyMemberRepository companyMemberRepository;
-    private final JobRepository jobRepository;
-    private final ApplicationRepository applicationRepository;
 
     /**
      * Checks if the currently authenticated user has ANY of the provided roles in the specified company.
@@ -86,118 +80,5 @@ public class CompanySecurityExpression {
         } catch (Exception e) {
             return false;
         }
-    }
-
-    /**
-     * Checks if the currently authenticated user has the required roles for the company that owns the specified job.
-     */
-    public boolean hasJobRole(Object jobId, String... roles) {
-        if (jobId == null) return false;
-        try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
-                CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-                if (userDetails.user().getRole() != null && "ADMIN_SYSTEM".equals(userDetails.user().getRole().getName())) {
-                    return true;
-                }
-            }
-            Job job = jobRepository.findById(UUID.fromString(jobId.toString())).orElse(null);
-            if (job == null || job.getCompany() == null) {
-                return false;
-            }
-            return hasRole(job.getCompany().getId(), roles);
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    public boolean isJobOwnerOrManager(Object jobId) {
-        return hasJobRole(jobId, "OWNER", "HR_MANAGER");
-    }
-
-    public boolean isJobManager(Object jobId) {
-        return hasJobRole(jobId, "HR_MANAGER");
-    }
-
-    public boolean isJobCreatorOrManager(Object jobId) {
-        if (jobId == null) return false;
-        try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication == null || !authentication.isAuthenticated()
-                    || "anonymousUser".equals(authentication.getPrincipal())) {
-                return false;
-            }
-
-            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            Job job = jobRepository.findById(UUID.fromString(jobId.toString())).orElse(null);
-            if (job == null || job.getCompany() == null) {
-                return false;
-            }
-
-            boolean isCreator = job.getCreatedBy() != null
-                    && job.getCreatedBy().getId().equals(userDetails.user().getId());
-            return isCreator || hasRole(job.getCompany().getId(), "HR_MANAGER");
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    public boolean isJobCreatorOrHr(Object jobId) {
-        if (jobId == null) return false;
-        try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication == null || !authentication.isAuthenticated()
-                    || "anonymousUser".equals(authentication.getPrincipal())) {
-                return false;
-            }
-
-            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            Job job = jobRepository.findById(UUID.fromString(jobId.toString())).orElse(null);
-            if (job == null || job.getCompany() == null) {
-                return false;
-            }
-
-            boolean isCreator = job.getCreatedBy() != null
-                    && job.getCreatedBy().getId().equals(userDetails.user().getId());
-            return isCreator || hasRole(job.getCompany().getId(), "HR");
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    public boolean isJobMember(Object jobId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
-            return false;
-        }
-        try {
-            Job job = jobRepository.findById(UUID.fromString(jobId.toString())).orElse(null);
-            if (job == null || job.getCompany() == null) {
-                return false;
-            }
-            return isMember(job.getCompany().getId());
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    /**
-     * Checks if the currently authenticated user has the required roles for the company that owns the application.
-     */
-    public boolean hasApplicationRole(Object applicationId, String... roles) {
-        if (applicationId == null) return false;
-        try {
-            Application app = applicationRepository.findById(UUID.fromString(applicationId.toString())).orElse(null);
-            if (app == null || app.getJob() == null) {
-                return false;
-            }
-            return hasJobRole(app.getJob().getId(), roles);
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    public boolean isApplicationOwnerOrManagerOrHr(Object applicationId) {
-        return hasApplicationRole(applicationId, "OWNER", "HR_MANAGER", "HR");
     }
 }

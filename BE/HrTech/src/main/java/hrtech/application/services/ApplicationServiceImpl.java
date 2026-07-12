@@ -20,7 +20,7 @@ import hrtech.application.dtos.response.ApplicationSummaryResponse;
 import hrtech.application.entities.Application;
 import hrtech.application.entities.ApplicationScore;
 import hrtech.application.entities.enums.ApplicationStatus;
-import hrtech.company.abstractions.repositories.CompanyMemberRepository;
+import hrtech.company.abstractions.services.ICompanyService;
 import hrtech.cv.abstractions.services.ICvService;
 import hrtech.identity.abstractions.services.IUserService;
 import hrtech.job.abstractions.services.IJobService;
@@ -59,9 +59,9 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final ApplicationRepository applicationRepository;
     private final ApplicationScoreRepository applicationScoreRepository;
     private final SkillMatchRepository skillMatchRepository;
-    private final CompanyMemberRepository companyMemberRepository;
     private final IJobService jobService;
     private final ICvService cvService;
+    private final ICompanyService companyService;
     private final IUserService userService;
     private final ApplicationMapper applicationMapper;
     private final IRecommendationService recommendationService;
@@ -153,7 +153,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         boolean isApplicant = application.getUser().getId().equals(userId);
         boolean isCompanyMember = application.getJob() != null
                 && application.getJob().getCompany() != null
-                && companyMemberRepository.findByCompanyIdAndUserIdAndDeletedFalse(
+                && companyService.getMemberByCompanyIdAndUserId(
                         application.getJob().getCompany().getId(), userId).isPresent();
 
         if (!isApplicant && !isCompanyMember) {

@@ -15,6 +15,7 @@ public record JobResponse(
         UUID createdById,
         String createdByName,
         String title,
+        String position,
         String description,
         String location,
         BigDecimal salaryMin,
