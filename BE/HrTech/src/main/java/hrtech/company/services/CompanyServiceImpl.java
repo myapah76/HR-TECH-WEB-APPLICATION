@@ -365,7 +365,7 @@ public class CompanyServiceImpl implements ICompanyService {
         Role recruiterRole = roleService.getRoleEntityByName("RECRUITER");
 
         // Generate a random password (e.g. 8 chars alphanumeric)
-        String randomPassword = java.util.UUID.randomUUID().toString().substring(0, 8);
+        String randomPassword = UUID.randomUUID().toString().substring(0, 8);
 
         User newUser = new User();
         newUser.setEmail(email);
@@ -475,7 +475,7 @@ public class CompanyServiceImpl implements ICompanyService {
         targetUser.setIsBlocked(false);
 
         if (resetPassword) {
-            String randomPassword = java.util.UUID.randomUUID().toString().substring(0, 8);
+            String randomPassword = UUID.randomUUID().toString().substring(0, 8);
             targetUser.setPassword(passwordEncoder.encode(randomPassword));
             targetUser.setRequirePasswordChange(true);
 

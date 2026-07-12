@@ -5,6 +5,7 @@ import lombok.*;
 import hrtech.shared.common.BaseEntity;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Entity
 @Table(name = "ai_match_histories")
@@ -16,13 +17,13 @@ import java.math.BigDecimal;
 public class AiMatchHistory extends BaseEntity {
 
     @Column(name = "user_id", nullable = false)
-    private java.util.UUID userId;
+    private UUID userId;
 
     @Column(name = "cv_id", nullable = false)
-    private java.util.UUID cvId;
+    private UUID cvId;
 
     @Column(name = "job_id", nullable = false)
-    private java.util.UUID jobId;
+    private UUID jobId;
 
     @Column(name = "overall_score", precision = 5, scale = 2)
     private BigDecimal overallScore;

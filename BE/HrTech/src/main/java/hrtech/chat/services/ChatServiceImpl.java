@@ -35,6 +35,7 @@ import hrtech.subscription.abstractions.services.ICreditService;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -194,7 +195,7 @@ public class ChatServiceImpl implements IChatService {
         }
 
         UUID finalSessionId = session.getId();
-        java.util.concurrent.CompletableFuture.runAsync(() -> {
+        CompletableFuture.runAsync(() -> {
             try {
                 InputStream is = aiServiceClient.chatWithRagStream(request.getContent(), documentIds, 20);
                 StringBuilder fullResponseBuilder = new StringBuilder();

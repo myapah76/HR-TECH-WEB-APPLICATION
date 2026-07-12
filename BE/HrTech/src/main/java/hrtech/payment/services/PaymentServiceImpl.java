@@ -28,6 +28,7 @@ import vn.payos.model.v2.paymentRequests.PaymentLinkStatus;
 import vn.payos.model.webhooks.Webhook;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -189,7 +190,7 @@ public class PaymentServiceImpl implements IPaymentService {
     @Override
     @Transactional
     public void reconcilePendingPayments() {
-        Instant oneDayAgo = Instant.now().minus(24, java.time.temporal.ChronoUnit.HOURS);
+        Instant oneDayAgo = Instant.now().minus(24, ChronoUnit.HOURS);
         List<Payment> pendingPayments = paymentRepository.findAllByStatusAndCreatedAtAfter(
                 PaymentStatus.PENDING,
                 oneDayAgo);

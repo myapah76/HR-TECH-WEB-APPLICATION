@@ -13,10 +13,13 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
+import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import hrtech.shared.error.ErrorCode;
 import hrtech.shared.response.ApiResponse;
 
 import org.springframework.security.access.AccessDeniedException;
+
+import java.time.Instant;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -131,6 +134,15 @@ public class GlobalExceptionHandler {
                 request.getRequestURI(), ex.getMessage());
     }
 
+    @ExceptionHandler(AsyncRequestTimeoutException.class)
+    public ResponseEntity<Void> handleAsyncRequestTimeoutException(
+            AsyncRequestTimeoutException ex,
+            HttpServletRequest request
+    ) {
+        log.debug("Async request timeout for request {}", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleAll(
             Exception ex,
@@ -166,7 +178,7 @@ public class GlobalExceptionHandler {
                 .message(message)
                 .errorCode(code.name())
                 .path(path)
-                .timestamp(java.time.Instant.now())
+                .timestamp(Instant.now())
                 .data(data)
                 .build();
         return new ResponseEntity<>(error, status);

@@ -1,5 +1,6 @@
 package hrtech.notification.abstractions.services;
 
+import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
 public interface IEmailSender {
@@ -14,13 +15,13 @@ public interface IEmailSender {
             String jobTitle,
             String companyName,
             String newStatus,
-            java.time.Instant interviewDateTime,
+            Instant interviewDateTime,
             String interviewLocation,
             String interviewMeetingLink,
             String note,
             String actionLink,
             String actionLabel,
-            java.time.Instant acceptedStartDateTime,
+            Instant acceptedStartDateTime,
             String acceptedWorkAddress,
             String acceptedNote);
 
