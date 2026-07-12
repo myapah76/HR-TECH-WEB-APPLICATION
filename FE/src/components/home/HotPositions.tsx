@@ -2,9 +2,9 @@ import { useRouter } from 'next/navigation'
 import { getRoleIconConfig } from '@/src/utils/roleUtils'
 import { useGetHotPositions } from '@/src/hooks/job'
 
-export default function HotRoles() {
+export default function HotPositions() {
   const router = useRouter()
-  const { data, isLoading } = useGetHotPositions()
+  const { data, isLoading } = useGetHotPositions(6)
 
   const roles = data || []
 

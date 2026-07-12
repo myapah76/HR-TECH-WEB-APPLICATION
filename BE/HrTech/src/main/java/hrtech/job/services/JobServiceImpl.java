@@ -228,36 +228,36 @@ public class JobServiceImpl implements IJobService {
         QJob qJob = QJob.job;
         BooleanBuilder builder = new BooleanBuilder();
 
-        //1. Chỉ tìm kiếm các Job chưa xóa và status là APPROVED
+        // 1. Chỉ tìm kiếm các Job chưa xóa và status là APPROVED
         builder.and(qJob.deleted.isFalse());
         builder.and(qJob.status.eq(JobStatus.APPROVED));
 
-        //2. Lọc theo Keyword
+        // 2. Lọc theo Keyword
         if (criteria.keyword() != null && !criteria.keyword().trim().isEmpty()) {
             builder.and(buildKeywordPredicate(criteria.keyword().trim(), qJob));
         }
-        //3. Lọc theo location
-        if(criteria.location()!= null && !criteria.location().isEmpty()){
+        // 3. Lọc theo location
+        if (criteria.location() != null && !criteria.location().isEmpty()) {
             builder.and(qJob.location.containsIgnoreCase(criteria.location().trim()));
         }
-        //4. Lọc theo JobType
-        if(criteria.jobType() != null){
+        // 4. Lọc theo JobType
+        if (criteria.jobType() != null) {
             builder.and(qJob.jobType.eq(criteria.jobType()));
         }
-        //5. Lọc theo ExperienceLevel
-        if(criteria.experienceLevel() != null){
+        // 5. Lọc theo ExperienceLevel
+        if (criteria.experienceLevel() != null) {
             builder.and(qJob.experienceLevel.eq(criteria.experienceLevel()));
         }
-        //6. Lọc theo Salary Range
-        if(criteria.salaryMin() != null){
+        // 6. Lọc theo Salary Range
+        if (criteria.salaryMin() != null) {
             builder.and(qJob.salaryMax.goe(criteria.salaryMin()));
         }
-        if(criteria.salaryMax() != null){
+        if (criteria.salaryMax() != null) {
             builder.and(qJob.salaryMin.loe(criteria.salaryMax()));
         }
-        //7. Lọc theo Skills được chọn
-        if(criteria.skills() != null && !criteria.skills().isEmpty()){
-            for(String skillName : criteria.skills()){
+        // 7. Lọc theo Skills được chọn
+        if (criteria.skills() != null && !criteria.skills().isEmpty()) {
+            for (String skillName : criteria.skills()) {
                 skillService.getSkillByName(skillName)
                         .map(skillNode -> skillNode.getId())
                         .ifPresent(skillId -> builder.and(qJob.jobSkills.any().skillNeo4jId.eq(skillId)));
@@ -433,8 +433,7 @@ public class JobServiceImpl implements IJobService {
     public List<TrendingSkillResponse> getTrendingSkills(int limit) {
         var rawTrending = jobSkillRepository.findTrendingSkills(
                 JobStatus.APPROVED,
-                PageRequest.of(0, limit)
-        );
+                PageRequest.of(0, limit));
         if (rawTrending.isEmpty()) {
             return Collections.emptyList();
         }
@@ -466,10 +465,12 @@ public class JobServiceImpl implements IJobService {
         // Tìm IDs các skill liên quan
         Set<String> skillIds = new HashSet<>();
         List<String> idsByRole = skillService.getSkillIdsByRole(normalizedRole);
-        if (idsByRole != null) skillIds.addAll(idsByRole);
+        if (idsByRole != null)
+            skillIds.addAll(idsByRole);
 
         List<String> idsByName = skillService.getSkillIdsByNameContaining(trimmedLower);
-        if (idsByName != null) skillIds.addAll(idsByName);
+        if (idsByName != null)
+            skillIds.addAll(idsByName);
         // Gộp điều kiện
         keywordBuilder.or(qJob.title.toLowerCase().contains(trimmedLower))
                 .or(qJob.description.toLowerCase().contains(trimmedLower))
@@ -487,8 +488,7 @@ public class JobServiceImpl implements IJobService {
     public List<HotPositionResponse> getHotPositions(int limit) {
         List<PositionJobCountProjection> results = jobRepository.findHotPositionsByStatus(
                 JobStatus.APPROVED,
-                org.springframework.data.domain.PageRequest.of(0, limit)
-        );
+                PageRequest.of(0, limit));
         return results.stream()
                 .filter(p -> p.getName() != null)
                 .map(p -> new HotPositionResponse(p.getName(), p.getJobCount()))
