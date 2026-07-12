@@ -12,7 +12,6 @@ public record CompanyUpdateRequest(
         String size,
         String address,
         Double relatedWeight,
-        Double childToParentWeight,
-        Double parentToChildWeight
+        Double parentOfWeight
 ) {}
 

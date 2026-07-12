@@ -1,5 +1,5 @@
 import { JobResponse } from './job'
-import { JobMatchingStatus } from '../enums/recommendation.enum'
+import { JobMatchingStatus, CandidateMatchGrade } from '../enums/recommendation.enum'
 
 export interface SkillMatchDetail {
   skillName: string
@@ -47,6 +47,20 @@ export interface JobMatchingTaskResponse {
   message: string
   progressPercentage: number
   recommendedJobs: JobRecommendationResponse[] | null
+}
+
+export interface CandidateRecommendationResponse {
+  userId: string
+  candidateName: string
+  avatarUrl?: string
+  email?: string
+  bestCvId: string
+  bestCvTitle: string
+  bestCvFileUrl?: string
+  matchScore: number            // 0.0 – 1.0
+  matchGrade: CandidateMatchGrade
+  matchedSkills: string[]
+  missingSkills: string[]
 }
 
 // --- Component Props ---

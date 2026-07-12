@@ -1,6 +1,7 @@
 package hrtech.skill.abstractions.services;
 
 import hrtech.skill.dtos.response.AiMatchHistoryResponse;
+import hrtech.skill.dtos.response.CandidateRecommendationResponse;
 import hrtech.skill.dtos.response.JobRecommendationResponse;
 import hrtech.skill.dtos.response.RecommendationResultResponse;
 import hrtech.skill.dtos.response.SkillMatchScoreResponse;
@@ -29,4 +30,10 @@ public interface IRecommendationService {
      * Perform premium AI matching (Candidate pre-apply) using LLM and saving history.
      */
     AiMatchHistoryResponse performPremiumAiMatching(UUID cvId, UUID jobId);
+
+    /**
+     * Recommend candidates (by best CV per user) for a specific job posting.
+     * For HR side – Company subscription gated.
+     */
+    List<CandidateRecommendationResponse> recommendCandidatesForJob(UUID jobId);
 }

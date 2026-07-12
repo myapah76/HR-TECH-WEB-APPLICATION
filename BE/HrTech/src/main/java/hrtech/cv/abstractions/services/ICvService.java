@@ -23,4 +23,5 @@ public interface ICvService {
     List<Cv> findStuckCvs(List<ExtractionStatus> statuses, Instant threshold);
     Cv saveCvEntity(Cv cv);
     void saveCvSkill(CvSkill cvSkill);
+    List<Cv> findAllWithCompletedSkills();
 }

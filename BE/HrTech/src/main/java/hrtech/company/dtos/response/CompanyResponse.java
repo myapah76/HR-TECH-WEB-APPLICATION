@@ -18,7 +18,6 @@ public record CompanyResponse(
         Instant createdAt,
         Instant updatedAt,
         Double relatedWeight,
-        Double childToParentWeight,
-        Double parentToChildWeight
+        Double parentOfWeight
 ) {}
 

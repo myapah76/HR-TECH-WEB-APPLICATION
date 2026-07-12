@@ -5,11 +5,13 @@ import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import hrtech.skill.dtos.response.PendingRelationshipResponse;
+import hrtech.skill.dtos.response.RelationshipResponse;
+import hrtech.skill.dtos.response.SkillRelationResponse;
 import hrtech.skill.entities.SkillNode;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import hrtech.skill.dtos.response.RelationshipResponse;
 
 @Repository
 public interface SkillNodeRepository extends Neo4jRepository<SkillNode, String> {
@@ -31,8 +33,19 @@ public interface SkillNodeRepository extends Neo4jRepository<SkillNode, String> 
     List<SkillNode> searchByKeywordAndRole(@Param("keyword") String keyword,
                                            @Param("canonicalRole") String canonicalRole);
 
-    @Query("MATCH (s:Skill) WHERE s.id IN $ids RETURN s")
-    List<SkillNode> findAllByIds(@Param("ids") List<String> ids);
+    @Query("""
+                MATCH (s:Skill)-[r:RELATED_TO]-(related:Skill)
+                WHERE s.id IN $skillIds AND (r.status IS NULL OR r.status = 'APPROVED')
+                RETURN s.id AS sourceId, related.id AS targetId
+            """)
+    List<SkillRelationResponse> findRelatedPairs(@Param("skillIds") Collection<String> skillIds);
+
+    @Query("""
+                MATCH (s:Skill)-[:PARENT_OF*1..2]-(connected:Skill)
+                WHERE s.id IN $skillIds
+                RETURN s.id AS sourceId, connected.id AS targetId
+            """)
+    List<SkillRelationResponse> findParentOfPairs(@Param("skillIds") Collection<String> skillIds);
 
     @Query("""
                 MATCH (s:Skill {id: $skillId})-[r:RELATED_TO]-(related:Skill)

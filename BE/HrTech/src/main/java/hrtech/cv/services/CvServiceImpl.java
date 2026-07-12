@@ -208,4 +208,10 @@ public class CvServiceImpl implements ICvService {
     public void saveCvSkill(CvSkill cvSkill) {
         cvSkillRepository.save(cvSkill);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Cv> findAllWithCompletedSkills() {
+        return cvRepository.findAllWithCompletedSkills();
+    }
 }

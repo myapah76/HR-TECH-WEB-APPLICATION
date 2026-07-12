@@ -30,7 +30,11 @@ export default function RecommendJobsPage() {
 
   // Process states
   const [isStarting, setIsStarting] = useState(false)
-  const [taskId, setTaskId] = useState<string | null>(null)
+  const [taskId, setTaskId] = useState<string | null>(() => {
+    const cached = queryClient.getQueriesData({ queryKey: ['jobMatchingStatus'] })
+    const valid = cached.find(([, data]) => data !== undefined)
+    return valid ? (valid[0][1] as string) : null
+  })
 
   const { data: taskStatus } = useGetJobMatchingStatus(taskId, !!taskId)
 

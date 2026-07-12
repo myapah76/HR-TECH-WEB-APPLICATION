@@ -4,6 +4,7 @@ import {
   JobRecommendationResponse,
   AiMatchHistoryResponse,
   JobMatchingTaskResponse,
+  CandidateRecommendationResponse,
 } from '../types/recommendation'
 import { ApiResponse } from '../types/api'
 
@@ -46,6 +47,15 @@ export const startJobMatching = async (cvId: string): Promise<{ taskId: string }
 export const getJobMatchingStatus = async (taskId: string): Promise<JobMatchingTaskResponse> => {
   const response = await api.get<ApiResponse<JobMatchingTaskResponse>>(
     `/recommendations/job-matching-status/${taskId}`
+  )
+  return response.data.data
+}
+
+export const recommendCandidatesForJob = async (
+  jobId: string
+): Promise<CandidateRecommendationResponse[]> => {
+  const response = await api.get<ApiResponse<CandidateRecommendationResponse[]>>(
+    `/recommendations/hr/candidates?jobId=${jobId}`
   )
   return response.data.data
 }

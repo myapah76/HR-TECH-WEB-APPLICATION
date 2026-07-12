@@ -26,8 +26,7 @@ public interface CompanyMapper {
     @Mapping(target = "members", ignore = true)
     @Mapping(target = "size", ignore = true)
     @Mapping(target = "relatedWeight", ignore = true)
-    @Mapping(target = "childToParentWeight", ignore = true)
-    @Mapping(target = "parentToChildWeight", ignore = true)
+    @Mapping(target = "parentOfWeight", ignore = true)
     Company fromRegisterRequest(CompanyRegisterRequest request);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
@@ -42,8 +41,7 @@ public interface CompanyMapper {
     @Mapping(target = "members", ignore = true)
     @Mapping(target = "size", ignore = true)
     @Mapping(target = "relatedWeight", ignore = true)
-    @Mapping(target = "childToParentWeight", ignore = true)
-    @Mapping(target = "parentToChildWeight", ignore = true)
+    @Mapping(target = "parentOfWeight", ignore = true)
     void updateCompanyFromDto(CompanyUpdateRequest request, @MappingTarget Company company);
 
     @Mapping(target = "id", source = "id")

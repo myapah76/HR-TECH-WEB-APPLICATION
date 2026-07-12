@@ -25,4 +25,7 @@ public interface CvRepository extends JpaRepository<Cv, UUID> {
     List<Cv> findStuckCvs(
             @Param("statuses") List<ExtractionStatus> statuses,
             @Param("threshold") Instant threshold);
+
+    @Query("SELECT DISTINCT c FROM Cv c LEFT JOIN FETCH c.cvSkills WHERE c.extractionStatus = ExtractionStatus.COMPLETED")
+    List<Cv> findAllWithCompletedSkills();
 }

@@ -58,7 +58,7 @@ public abstract class JobMapper {
 
         if (!missingIds.isEmpty()) {
             try {
-                List<SkillNode> nodes = skillNodeRepository.findAllByIds(new ArrayList<>(missingIds));
+                Iterable<SkillNode> nodes = skillNodeRepository.findAllById(missingIds);
                 for (SkillNode node : nodes) {
                     if (node.getId() != null && node.getName() != null) {
                         skillNameCache.put(node.getId(), node.getName());

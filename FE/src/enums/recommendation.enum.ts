@@ -4,5 +4,12 @@ export enum JobMatchingStatus {
   MAPPING = 'MAPPING',
   SCORING = 'SCORING',
   DONE = 'DONE',
-  FAILED = 'FAILED'
+  FAILED = 'FAILED',
+}
+
+export enum CandidateMatchGrade {
+  EXCELLENT = 'EXCELLENT',
+  GOOD = 'GOOD',
+  FAIR = 'FAIR',
+  POOR = 'POOR',
 }

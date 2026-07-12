@@ -6,5 +6,7 @@ export const useRecommendJobsForCv = (cvId: string, limit = 10, enabled = true) 
     queryKey: ['recommendJobs', cvId, limit],
     queryFn: () => recommendJobsForCv(cvId, limit),
     enabled: enabled && !!cvId,
+    staleTime: 15 * 60 * 1000, // cache 15 minutes to prevent refetching on navigation
+    retry: false,
   })
 }

@@ -5,6 +5,7 @@ import { useGetCompanyApplicationCount } from '@/src/hooks/application'
 import { useGetCompanyMembers, useGetMyCompany } from '@/src/hooks/company'
 import { useAuthStore } from '@/src/stores/auth.store'
 import {
+  Brain,
   Building2,
   CreditCard,
   LayoutDashboard,
@@ -36,8 +37,8 @@ const recruiterNavItems = [
   },
   {
     icon: Search,
-    label: 'Tìm ứng viên',
-    path: '/recruiter/search',
+    label: 'AI Tìm Ứng Viên',
+    path: '/recruiter/find-candidates',
   },
   {
     icon: Users,
