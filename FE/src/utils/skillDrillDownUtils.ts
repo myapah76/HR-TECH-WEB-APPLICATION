@@ -113,29 +113,40 @@ export function useDrillDownGraph(
     // 1. All Role Nodes are visible at Level 0
     availableRoles.forEach((r) => visibleRoleNames.add(r.trim().toLowerCase()))
 
-    // 2. Identify visible skill IDs
+    // 2. Identify visible skill IDs by role context
     availableRoles.forEach((r) => {
       const canonicalRole = r.trim().toLowerCase()
       const roleNodeId = `role:${canonicalRole}`
       if (expandedNodeIds.has(roleNodeId)) {
         const topSkills = getTopLevelSkillsForRole(canonicalRole)
-        topSkills.forEach((s) => visibleSkillIds.add(s.id))
+        const visibleInThisRole = new Set<string>()
+        topSkills.forEach((s) => visibleInThisRole.add(s.id))
+
+        // Expand downstream skills within this role context
+        let changed = true
+        while (changed) {
+          changed = false
+          edgesList.forEach((e) => {
+            if (visibleInThisRole.has(e.sourceId) && expandedNodeIds.has(e.sourceId)) {
+              if (!visibleInThisRole.has(e.targetId)) {
+                // Check if target skill belongs to this role context
+                const targetSkill = skills.find((s) => s.id === e.targetId)
+                const hasCurrentRole = targetSkill?.roles?.some(
+                  (tr) => tr.trim().toLowerCase() === canonicalRole
+                )
+                if (hasCurrentRole) {
+                  visibleInThisRole.add(e.targetId)
+                  changed = true
+                }
+              }
+            }
+          })
+        }
+
+        // Merge into global visible set
+        visibleInThisRole.forEach((id) => visibleSkillIds.add(id))
       }
     })
-
-    // Expand downstream skills from expanded skill nodes
-    let changed = true
-    while (changed) {
-      changed = false
-      edgesList.forEach((e) => {
-        if (visibleSkillIds.has(e.sourceId) && expandedNodeIds.has(e.sourceId)) {
-          if (!visibleSkillIds.has(e.targetId)) {
-            visibleSkillIds.add(e.targetId)
-            changed = true
-          }
-        }
-      })
-    }
 
     // Always include selected node
     if (selectedNodeId) {
