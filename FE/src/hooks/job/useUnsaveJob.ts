@@ -7,6 +7,8 @@ export const useUnsaveJob = () => {
     mutationFn: unsaveJob,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savedJobs'] })
+      queryClient.invalidateQueries({ queryKey: ['candidate-recent-activities'] })
+      queryClient.invalidateQueries({ queryKey: ['candidate-summary'] })
     },
   })
 }

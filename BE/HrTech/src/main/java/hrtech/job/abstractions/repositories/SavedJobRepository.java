@@ -8,6 +8,7 @@ import hrtech.identity.entities.User;
 import hrtech.job.entities.Job;
 import hrtech.job.entities.SavedJob;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,4 +17,6 @@ public interface SavedJobRepository extends JpaRepository<SavedJob, UUID> {
     boolean existsByUserAndJob(User user, Job job);
     Optional<SavedJob> findByUserAndJob(User user, Job job);
     Page<SavedJob> findByUser(User user, Pageable pageable);
+    long countByUserId(UUID userId);
+    List<SavedJob> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 }

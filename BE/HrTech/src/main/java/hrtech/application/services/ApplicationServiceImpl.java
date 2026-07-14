@@ -525,4 +525,30 @@ public class ApplicationServiceImpl implements ApplicationService {
     public long countApplicationsByStatus(ApplicationStatus status) {
         return applicationRepository.countByStatus(status);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countApplicationsByUserId(UUID userId) {
+        return applicationRepository.countByUserId(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countApplicationsByUserIdAndStatus(UUID userId, ApplicationStatus status) {
+        return applicationRepository.countByUserIdAndStatus(userId, status);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Application> getRecentApplications(UUID userId, int limit) {
+        return applicationRepository.findByUserIdOrderByAppliedAtDesc(userId,
+                org.springframework.data.domain.PageRequest.of(0, limit));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Application> getUpcomingInterviews(UUID userId) {
+        return applicationRepository.findByUserIdAndStatusAndInterviewDateTimeGreaterThanEqualOrderByInterviewDateTimeAsc(
+                userId, ApplicationStatus.INTERVIEW, Instant.now());
+    }
 }

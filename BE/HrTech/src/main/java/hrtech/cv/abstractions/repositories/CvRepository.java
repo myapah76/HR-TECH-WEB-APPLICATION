@@ -28,4 +28,6 @@ public interface CvRepository extends JpaRepository<Cv, UUID> {
 
     @Query("SELECT DISTINCT c FROM Cv c LEFT JOIN FETCH c.cvSkills WHERE c.extractionStatus = ExtractionStatus.COMPLETED")
     List<Cv> findAllWithCompletedSkills();
+
+    long countByUserId(UUID userId);
 }

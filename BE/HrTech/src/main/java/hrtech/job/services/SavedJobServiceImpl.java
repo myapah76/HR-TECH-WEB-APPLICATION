@@ -2,6 +2,7 @@ package hrtech.job.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,7 @@ import hrtech.job.mapper.JobMapper;
 import hrtech.shared.error.ErrorCode;
 import hrtech.shared.exceptions.AppException;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -62,5 +64,17 @@ public class SavedJobServiceImpl implements ISavedJobService {
         User currentUser = authUtils.getCurrentUser();
         Page<SavedJob> savedJobsPage = savedJobRepository.findByUser(currentUser, pageable);
         return savedJobsPage.map(savedJob -> jobMapper.toResponse(savedJob.getJob()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countSavedJobsByUserId(UUID userId) {
+        return savedJobRepository.countByUserId(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SavedJob> getRecentSavedJobs(UUID userId, int limit) {
+        return savedJobRepository.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(0, limit));
     }
 }

@@ -24,4 +24,5 @@ public interface ICvService {
     Cv saveCvEntity(Cv cv);
     void saveCvSkill(CvSkill cvSkill);
     List<Cv> findAllWithCompletedSkills();
+    long countCvsByUserId(UUID userId);
 }

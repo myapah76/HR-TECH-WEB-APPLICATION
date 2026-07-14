@@ -9,22 +9,47 @@ import hrtech.application.dtos.request.UpdateApplicationStatusRequest;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import java.util.List;
 import java.util.UUID;
+
+import hrtech.application.entities.Application;
 import hrtech.application.entities.enums.ApplicationStatus;
 
 public interface ApplicationService {
     ApplicationSummaryResponse submitApplication(UUID userId, SubmitApplicationRequest request);
+
     Page<ApplicationSummaryResponse> getMyApplications(UUID userId, Pageable pageable);
+
     ApplicationDetailResponse getApplicationDetail(UUID userId, UUID applicationId);
+
     void withdrawApplication(UUID userId, UUID applicationId);
+
     ApplicationSummaryResponse updateStatus(UUID applicationId, UpdateApplicationStatusRequest request);
+
     ApplicationSummaryResponse scheduleInterview(UUID applicationId, ScheduleInterviewRequest request);
+
     ApplicationSummaryResponse acceptInterviewSchedule(UUID userId, UUID applicationId);
-    ApplicationSummaryResponse changeInterviewSchedule(UUID userId, UUID applicationId, ChangeInterviewScheduleRequest request);
+
+    ApplicationSummaryResponse changeInterviewSchedule(UUID userId, UUID applicationId,
+            ChangeInterviewScheduleRequest request);
+
     ApplicationSummaryResponse acceptCandidateReschedule(UUID applicationId);
+
     ApplicationSummaryResponse rejectCandidateReschedule(UUID applicationId);
+
     Page<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId, Pageable pageable);
+
     ApplicationDetailResponse scoreApplication(UUID userId, UUID applicationId);
+
     boolean hasApplied(UUID userId, UUID jobId);
+
     long countApplicationsByStatus(ApplicationStatus status);
+
+    long countApplicationsByUserId(UUID userId);
+
+    long countApplicationsByUserIdAndStatus(UUID userId, ApplicationStatus status);
+
+    List<Application> getRecentApplications(UUID userId, int limit);
+
+    List<Application> getUpcomingInterviews(UUID userId);
 }

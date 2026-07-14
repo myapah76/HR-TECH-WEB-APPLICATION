@@ -7,6 +7,8 @@ export const useSubmitApplication = () => {
     mutationFn: submitApplication,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appliedJobs'] })
+      queryClient.invalidateQueries({ queryKey: ['candidate-recent-activities'] })
+      queryClient.invalidateQueries({ queryKey: ['candidate-summary'] })
     },
   })
 }

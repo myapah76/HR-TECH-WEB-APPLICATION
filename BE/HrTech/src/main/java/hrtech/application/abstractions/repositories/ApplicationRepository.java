@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import hrtech.application.entities.Application;
 import hrtech.application.entities.enums.ApplicationStatus;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -29,4 +30,14 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
     boolean existsByUserIdAndJobIdAndStatusNotIn(UUID userId, UUID jobId, Collection<ApplicationStatus> statuses);
 
     long countByStatus(ApplicationStatus status);
+
+    long countByUserId(UUID userId);
+
+    long countByUserIdAndStatus(UUID userId, ApplicationStatus status);
+
+    List<Application> findByUserIdOrderByAppliedAtDesc(UUID userId, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"job", "job.company", "cv", "user"})
+    List<Application> findByUserIdAndStatusAndInterviewDateTimeGreaterThanEqualOrderByInterviewDateTimeAsc(UUID userId, ApplicationStatus status, Instant now);
 }
+

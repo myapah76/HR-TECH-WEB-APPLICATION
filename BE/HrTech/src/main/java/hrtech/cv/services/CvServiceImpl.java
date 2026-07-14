@@ -214,4 +214,10 @@ public class CvServiceImpl implements ICvService {
     public List<Cv> findAllWithCompletedSkills() {
         return cvRepository.findAllWithCompletedSkills();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countCvsByUserId(UUID userId) {
+        return cvRepository.countByUserId(userId);
+    }
 }
