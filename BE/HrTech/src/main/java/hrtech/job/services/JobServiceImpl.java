@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,11 +18,14 @@ import hrtech.company.entities.Company;
 import hrtech.company.entities.CompanyMember;
 import hrtech.job.abstractions.repositories.JobRepository;
 import hrtech.job.abstractions.repositories.JobSkillRepository;
+import hrtech.application.abstractions.services.ApplicationService;
+import hrtech.application.entities.enums.ApplicationStatus;
 import hrtech.job.abstractions.services.IJobService;
 import hrtech.job.dtos.request.JobRequest;
 import hrtech.job.dtos.request.JobSearchCriteria;
 import hrtech.job.dtos.response.JobResponse;
 import hrtech.job.dtos.response.HotPositionResponse;
+import hrtech.job.dtos.response.LandingStatsResponse;
 import hrtech.job.projections.PositionJobCountProjection;
 import hrtech.job.entities.Job;
 import hrtech.job.entities.JobSkill;
@@ -51,6 +56,9 @@ public class JobServiceImpl implements IJobService {
 
     private final ICreditService creditService;
     private final ISkillService skillService;
+    @Autowired
+    @Lazy
+    private ApplicationService applicationService;
 
     private final JobRepository jobRepository;
     private final JobSkillRepository jobSkillRepository;
@@ -493,5 +501,15 @@ public class JobServiceImpl implements IJobService {
                 .filter(p -> p.getName() != null)
                 .map(p -> new HotPositionResponse(p.getName(), p.getJobCount()))
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public LandingStatsResponse getLandingStats() {
+        long totalJobs = jobRepository.countByStatus(JobStatus.APPROVED);
+        long totalCompanies = companyService.countApprovedCompanies();
+        long totalApplications = applicationService.countApplicationsByStatus(ApplicationStatus.INTERVIEW);
+
+        return new LandingStatsResponse(totalJobs, totalCompanies, totalApplications);
     }
 }

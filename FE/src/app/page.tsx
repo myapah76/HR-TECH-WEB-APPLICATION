@@ -10,16 +10,13 @@ import TrendingSkills from '@/src/components/home/TrendingSkills'
 import HotPositions from '@/src/components/home/HotPositions'
 
 import { Job } from '@/src/types'
-import { useGetLandingStats } from '@/src/hooks/job'
 
 export default function HomePage() {
   const router = useRouter()
 
-  const { data: stats, isLoading: statsLoading } = useGetLandingStats()
-
   return (
     <div className="space-y-1">
-      <HeroSection trendingCount={stats?.totalJobs || 2546} />
+      <HeroSection />
       <PromoBanners />
 
       <JobsSection
@@ -32,12 +29,7 @@ export default function HomePage() {
       <TrendingSkills />
 
       <HotPositions />
-      <MarketStats
-        totalJobs={stats?.totalJobs || 0}
-        totalCompanies={stats?.totalCompanies || 0}
-        totalApplications={stats?.totalApplications || 0}
-        onUploadCvClick={() => router.push('/candidate/ai-advisor')}
-      />
+      <MarketStats />
     </div>
   )
 }

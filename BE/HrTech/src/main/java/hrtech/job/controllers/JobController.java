@@ -16,6 +16,7 @@ import hrtech.job.dtos.response.JobResponse;
 import hrtech.job.dtos.response.TrendingSkillResponse;
 import hrtech.shared.response.ApiResponse;
 import hrtech.job.dtos.response.HotPositionResponse;
+import hrtech.job.dtos.response.LandingStatsResponse;
 import java.util.List;
 
 import java.net.URI;
@@ -27,6 +28,11 @@ import java.util.UUID;
 public class JobController {
 
     private final IJobService jobService;
+
+    @GetMapping("/landing-stats")
+    public ResponseEntity<ApiResponse<LandingStatsResponse>> getLandingStats() {
+        return ResponseEntity.ok(ApiResponse.success(jobService.getLandingStats()));
+    }
 
     @GetMapping("/hot-positions")
     public ResponseEntity<ApiResponse<List<HotPositionResponse>>> getHotPositions(

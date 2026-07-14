@@ -72,4 +72,6 @@ public interface JobRepository extends JpaRepository<Job, UUID>, QuerydslPredica
   List<PositionJobCountProjection> findHotPositionsByStatus(
       @Param("status") JobStatus status,
       Pageable pageable);
+
+  long countByStatus(JobStatus status);
 }

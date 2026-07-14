@@ -10,6 +10,7 @@ import hrtech.application.dtos.request.UpdateApplicationStatusRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.UUID;
+import hrtech.application.entities.enums.ApplicationStatus;
 
 public interface ApplicationService {
     ApplicationSummaryResponse submitApplication(UUID userId, SubmitApplicationRequest request);
@@ -25,4 +26,5 @@ public interface ApplicationService {
     Page<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId, Pageable pageable);
     ApplicationDetailResponse scoreApplication(UUID userId, UUID applicationId);
     boolean hasApplied(UUID userId, UUID jobId);
+    long countApplicationsByStatus(ApplicationStatus status);
 }

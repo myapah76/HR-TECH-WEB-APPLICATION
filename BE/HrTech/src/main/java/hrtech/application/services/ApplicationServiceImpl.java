@@ -56,17 +56,19 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ApplicationServiceImpl implements ApplicationService {
 
-    private final ApplicationRepository applicationRepository;
-    private final ApplicationScoreRepository applicationScoreRepository;
-    private final SkillMatchRepository skillMatchRepository;
     private final IJobService jobService;
     private final ICvService cvService;
     private final ICompanyService companyService;
     private final IUserService userService;
-    private final ApplicationMapper applicationMapper;
     private final IRecommendationService recommendationService;
     private final ICreditService creditService;
     private final INotificationService notificationService;
+
+    private final ApplicationRepository applicationRepository;
+    private final ApplicationScoreRepository applicationScoreRepository;
+    private final SkillMatchRepository skillMatchRepository;
+
+    private final ApplicationMapper applicationMapper;
 
     @Value("${app.frontend-base-url:http://localhost:3000}")
     private String frontendBaseUrl;
@@ -516,5 +518,11 @@ public class ApplicationServiceImpl implements ApplicationService {
                 userId,
                 jobId,
                 List.of(ApplicationStatus.REJECTED, ApplicationStatus.WITHDRAWN));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countApplicationsByStatus(ApplicationStatus status) {
+        return applicationRepository.countByStatus(status);
     }
 }

@@ -2,6 +2,7 @@ package hrtech.job.abstractions.services;
 
 import hrtech.job.dtos.response.HotPositionResponse;
 import hrtech.job.dtos.response.TrendingSkillResponse;
+import hrtech.job.dtos.response.LandingStatsResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import hrtech.job.dtos.request.JobRequest;
@@ -63,4 +64,6 @@ public interface IJobService {
     List<TrendingSkillResponse> getTrendingSkills(int limit);
 
     List<HotPositionResponse> getHotPositions(int limit);
+
+    LandingStatsResponse getLandingStats();
 }

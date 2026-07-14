@@ -4,11 +4,7 @@ import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-interface HeroSectionProps {
-  trendingCount: number
-}
-
-export default function HeroSection({ trendingCount }: HeroSectionProps) {
+export default function HeroSection() {
   const router = useRouter()
   const [currentIndex, setCurrentIndex] = useState(0)
 
@@ -125,11 +121,7 @@ export default function HeroSection({ trendingCount }: HeroSectionProps) {
         >
           <Sparkles className="h-4 w-4 text-amber-400 animate-pulse" />
           <span className="tracking-wide text-slate-100">
-            <>
-              Đón lấy thành công với{' '}
-              <span className="text-blue-400 font-extrabold">{trendingCount.toLocaleString()}</span>{' '}
-              cơ hội nghề nghiệp
-            </>
+            <>Đón lấy thành công với hằng nghìn cơ hội nghề nghiệp</>
           </span>
         </div>
 

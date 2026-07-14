@@ -96,7 +96,4 @@ export interface LandingStatsResponse {
   totalJobs: number
   totalCompanies: number
   totalApplications: number
-  trendingSkills: { name: string; jobCount: number }[]
-  topCompanies: { id: string; name: string; logoUrl: string; activeJobsCount: number }[]
-  hotPositions: HotPosition[]
 }
