@@ -84,4 +84,8 @@ public class ApplicationQueryService {
         return applicationRepository.findByUserIdAndStatusAndInterviewDateTimeGreaterThanEqualOrderByInterviewDateTimeAsc(
                 userId, ApplicationStatus.INTERVIEW, Instant.now());
     }
+
+    public List<Application> getAllApplicationsByUserId(UUID userId) {
+        return applicationRepository.findByUserId(userId);
+    }
 }

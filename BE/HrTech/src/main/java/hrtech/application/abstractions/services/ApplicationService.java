@@ -52,4 +52,6 @@ public interface ApplicationService {
     List<Application> getRecentApplications(UUID userId, int limit);
 
     List<Application> getUpcomingInterviews(UUID userId);
+
+    List<Application> getAllApplicationsByUserId(UUID userId);
 }

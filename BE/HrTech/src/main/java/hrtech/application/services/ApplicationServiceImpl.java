@@ -128,4 +128,10 @@ public class ApplicationServiceImpl implements ApplicationService {
     public List<Application> getUpcomingInterviews(UUID userId) {
         return queryService.getUpcomingInterviews(userId);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Application> getAllApplicationsByUserId(UUID userId) {
+        return queryService.getAllApplicationsByUserId(userId);
+    }
 }

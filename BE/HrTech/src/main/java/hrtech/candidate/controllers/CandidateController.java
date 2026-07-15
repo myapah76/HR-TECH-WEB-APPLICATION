@@ -11,6 +11,7 @@ import hrtech.candidate.abstractions.services.CandidateService;
 import hrtech.candidate.dtos.CandidateDashboardSummaryResponse;
 import hrtech.candidate.dtos.RecentActivityResponse;
 import hrtech.candidate.dtos.UpcomingInterviewResponse;
+import hrtech.candidate.dtos.JobSearchAnalyticsResponse;
 import hrtech.identity.utils.AuthUtils;
 import hrtech.shared.response.ApiResponse;
 
@@ -45,5 +46,12 @@ public class CandidateController {
     public ResponseEntity<ApiResponse<List<UpcomingInterviewResponse>>> getUpcomingInterviews() {
         UUID currentUserId = authUtils.getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.success(candidateService.getUpcomingInterviews(currentUserId)));
+    }
+
+    @GetMapping("/job-search-analytics")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<ApiResponse<JobSearchAnalyticsResponse>> getJobSearchAnalytics() {
+        UUID currentUserId = authUtils.getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse.success(candidateService.getJobSearchAnalytics(currentUserId)));
     }
 }

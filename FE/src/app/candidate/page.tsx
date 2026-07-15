@@ -8,21 +8,6 @@ import JobSearchAnalytics from '@/src/components/candidate/dashboard/JobSearchAn
 import RecentActivity from '@/src/components/candidate/dashboard/RecentActivity'
 import ProfileCompleteness from '@/src/components/candidate/dashboard/ProfileCompleteness'
 
-const funnelData = [
-  { stage: 'Đã nộp CV', count: 12, percent: 100, color: 'bg-blue-600' },
-  { stage: 'CV được chấp nhận', count: 6, percent: 50, color: 'bg-emerald-600' },
-  { stage: 'Đang phỏng vấn', count: 2, percent: 16, color: 'bg-violet-650' },
-  { stage: 'Nhận Offer thành công', count: 1, percent: 8, color: 'bg-amber-500' },
-]
-
-const chartData = [
-  { month: 'Tháng 3', count: 4 },
-  { month: 'Tháng 4', count: 8 },
-  { month: 'Tháng 5', count: 5 },
-  { month: 'Tháng 6', count: 12 },
-  { month: 'Tháng 7', count: 9 },
-]
-
 export default function CandidateDashboardPage() {
   const { data: summary, isLoading: isSummaryLoading } = useGetCandidateSummary()
 
@@ -71,7 +56,7 @@ export default function CandidateDashboardPage() {
         <ProfileCompleteness />
       </div>
 
-      <JobSearchAnalytics funnelData={funnelData} chartData={chartData} />
+      <JobSearchAnalytics />
     </div>
   )
 }

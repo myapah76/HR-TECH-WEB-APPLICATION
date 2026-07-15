@@ -19,3 +19,22 @@ export interface UpcomingInterviewItem {
   location?: string
   applicationId?: string
 }
+
+export interface FunnelItem {
+  stage: string
+  count: number
+  percent: number
+}
+
+export interface ChartItem {
+  label: string
+  count: number
+}
+
+export interface JobSearchAnalyticsResponse {
+  funnelData: FunnelItem[]
+  weeklyData: ChartItem[]
+  monthlyData: ChartItem[]
+  yearlyData: ChartItem[]
+}
+
