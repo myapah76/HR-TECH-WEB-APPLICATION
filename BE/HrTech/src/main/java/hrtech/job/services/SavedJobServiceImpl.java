@@ -28,7 +28,9 @@ public class SavedJobServiceImpl implements ISavedJobService {
 
     private final SavedJobRepository savedJobRepository;
     private final JobRepository jobRepository;
+
     private final AuthUtils authUtils;
+
     private final JobMapper jobMapper;
 
     @Override
