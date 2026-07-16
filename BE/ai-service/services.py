@@ -20,6 +20,7 @@ from prompts import (
     EVALUATE_AUDIO_ANSWER_PROMPT,
     INTERVIEW_EVALUATION_PROMPT,
     AI_MATCHING_ADVICE_PROMPT,
+    JOB_REVIEW_PROMPT,
 )
 
 # Load from root .env file
@@ -246,3 +247,38 @@ def validate_it_skills(skills: list[str]) -> list[str]:
 # Aliases for backwards compatibility with main.py imports
 extract_skills_from_cv = extract_skills
 extract_job_skills = extract_skills_from_jd
+
+def review_job_posting(
+    title: str,
+    description: str,
+    requirements: str,
+    location: str,
+    salary_min=None,
+    salary_max=None,
+    job_type: str = "",
+    experience_level: str = "",
+    position: str = "",
+) -> dict:
+
+    prompt_text = JOB_REVIEW_PROMPT.format(
+        title=title or "",
+        position=position or "",
+        job_type=job_type or "Không xác định",
+        experience_level=experience_level or "Không xác định",
+        location=location or "Không xác định",
+        salary_min=salary_min if salary_min is not None else "Thỏa thuận",
+        salary_max=salary_max if salary_max is not None else "Thỏa thuận",
+        description=description or "",
+        requirements=requirements or "",
+    )
+
+    response = invoke_llm_with_retry([HumanMessage(content=prompt_text)])
+    result = parse_json_llm_response(response, default_fallback={
+        "approved": False,
+        "rejection_reasons": ["AI không thể phân tích tin đăng. Vui lòng thử lại."],
+        "suggestions": [],
+        "overall_message": "Lỗi phân tích nội dung.",
+        "check_details": {}
+    })
+    return result
+

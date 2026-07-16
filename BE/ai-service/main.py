@@ -8,12 +8,13 @@ from models import (
     SkillRelationship, SkillRelationDetail,
     GenerateQuestionsRequest, EvaluateSessionRequest,
     EvaluateSessionResponse, AiMatchingAdviceRequest, AiMatchingAdviceResponse,
-    ValidateSkillsRequest, ValidateSkillsResponse
+    ValidateSkillsRequest, ValidateSkillsResponse,
+    ReviewJobPostingRequest, ReviewJobPostingResponse
 )
 from services import (
     extract_skills, extract_job_skills, download_and_extract_pdf_text,
     generate_interview_questions, evaluate_interview_session, evaluate_audio_answer,
-    validate_it_skills
+    validate_it_skills, review_job_posting
 )
 from sqlalchemy import text
 from rag.database import Base, engine
@@ -177,6 +178,33 @@ def api_validate_skills(req: ValidateSkillsRequest):
     try:
         valid_skills = validate_it_skills(req.skills)
         return ValidateSkillsResponse(valid_skills=valid_skills)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/ai/review-job-posting", response_model=ReviewJobPostingResponse)
+def api_review_job_posting(req: ReviewJobPostingRequest):
+    try:
+        result = review_job_posting(
+            title=req.title,
+            description=req.description,
+            requirements=req.requirements or "",
+            location=req.location or "",
+            salary_min=req.salary_min,
+            salary_max=req.salary_max,
+            job_type=req.job_type or "",
+            experience_level=req.experience_level or "",
+            position=req.position or "",
+        )
+        return ReviewJobPostingResponse(
+            approved=result.get("approved", False),
+            rejection_reasons=result.get("rejection_reasons", []),
+            suggestions=result.get("suggestions", []),
+            overall_message=result.get("overall_message", ""),
+            check_details=result.get("check_details", {})
+        )
     except Exception as e:
         import traceback
         traceback.print_exc()
