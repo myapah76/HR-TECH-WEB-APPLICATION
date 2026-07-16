@@ -260,7 +260,12 @@ const StandardFeaturesSection: React.FC<StandardFeaturesSectionProps> = ({ stand
               <div className="w-5 h-5 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
                 <Check className="w-3 h-3" strokeWidth={3} />
               </div>
-              <span className="text-sm font-semibold text-slate-650">{feature.featureName}</span>
+              <span className="text-sm font-semibold text-slate-650">
+                {feature.featureName}
+                {feature.aiCreditCost > 0 && (
+                  <span className="text-[11px] text-rose-500 font-bold ml-1">({feature.aiCreditCost} credits/lượt)</span>
+                )}
+              </span>
             </div>
           ))}
         </div>
@@ -279,9 +284,26 @@ export const CurrentPlanCard: React.FC<CurrentPlanCardProps> = ({ subscription, 
     return <FreePlanBanner />
   }
 
-  const wallets = subscription.featuresUsage?.filter(feature => 
-    ['AI_CREDIT', 'JOB_POSTING'].includes(feature.featureCode)
-  ) || [];
+  const wallets = [];
+  if (subscription.aiCreditBalance !== undefined && subscription.aiCreditBalance >= 0) {
+    wallets.push({
+      featureCode: 'AI_CREDIT',
+      featureName: 'Năng lượng AI',
+      aiCreditCost: 0,
+      used: 0,
+      rateLimits: []
+    });
+  }
+  // Only display job posting if it is greater than 0
+  if (subscription.jobPostBalance !== undefined && subscription.jobPostBalance > 0) {
+    wallets.push({
+      featureCode: 'JOB_POSTING',
+      featureName: 'Số tin tuyển dụng',
+      aiCreditCost: 0,
+      used: 0,
+      rateLimits: []
+    });
+  }
 
   const rateLimitFeatures = subscription.featuresUsage?.filter(feature => 
     feature.rateLimits && feature.rateLimits.length > 0

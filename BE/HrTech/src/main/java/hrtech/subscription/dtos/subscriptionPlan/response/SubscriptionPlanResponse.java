@@ -13,5 +13,7 @@ public record SubscriptionPlanResponse(
                 Integer durationDays,
                 SubscriptionType subscriptionType,
                 Boolean isActive,
+                Integer aiCreditBalance,
+                Integer jobPostBalance,
                 List<PlanFeatureResponse> features) {
 }

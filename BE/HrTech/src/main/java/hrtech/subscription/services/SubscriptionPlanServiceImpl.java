@@ -22,10 +22,7 @@ import hrtech.subscription.entities.Feature;
 import hrtech.subscription.entities.enums.SubscriptionType;
 import hrtech.subscription.mapper.SubscriptionPlanMapper;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -104,18 +101,93 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
             CandidateSubscriptionPlan plan = candidateSubscriptionPlanRepository.findById(id)
                     .orElseThrow(() -> new AppException(ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND, "Subscription plan not found"));
             subscriptionPlanMapper.updateCandidateEntity(request, plan);
-            candidatePlanFeatureRepository.deleteByPlanId(id);
-            saveCandidatePlanFeatures(plan, request.features());
+            updateCandidatePlanFeatures(plan, request.features());
+            plan = candidateSubscriptionPlanRepository.save(plan);
             return subscriptionPlanMapper.toCandidateResponse(plan);
         } else {
             CompanySubscriptionPlan plan = companySubscriptionPlanRepository.findById(id)
                     .orElseThrow(() -> new AppException(ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND, "Subscription plan not found"));
             subscriptionPlanMapper.updateCompanyEntity(request, plan);
-            companyPlanFeatureRepository.deleteByPlanId(id);
-            saveCompanyPlanFeatures(plan, request.features());
+            updateCompanyPlanFeatures(plan, request.features());
+            plan = companySubscriptionPlanRepository.save(plan);
             return subscriptionPlanMapper.toCompanyResponse(plan);
         }
     }
+
+    private void updateCandidatePlanFeatures(CandidateSubscriptionPlan plan, List<PlanFeatureRequest> featureRequests) {
+        if (featureRequests == null) return;
+
+        List<CandidatePlanFeature> currentFeatures = plan.getPlanFeatures();
+        if (currentFeatures == null) {
+            currentFeatures = new ArrayList<>();
+            plan.setPlanFeatures(currentFeatures);
+        }
+
+        Map<UUID, Integer> requestedMap = new HashMap<>();
+        for (PlanFeatureRequest req : featureRequests) {
+            requestedMap.put(req.id(), req.aiCreditCost());
+        }
+
+        currentFeatures.removeIf(pf -> !requestedMap.containsKey(pf.getFeature().getId()));
+
+        for (PlanFeatureRequest req : featureRequests) {
+            boolean exists = false;
+            for (CandidatePlanFeature pf : currentFeatures) {
+                if (pf.getFeature().getId().equals(req.id())) {
+                    pf.setAiCreditCost(req.aiCreditCost());
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                Feature feature = featureRepository.findById(req.id())
+                        .orElseThrow(() -> new AppException(ErrorCode.FEATURE_NOT_FOUND, "Feature not found"));
+                currentFeatures.add(CandidatePlanFeature.builder()
+                        .plan(plan)
+                        .feature(feature)
+                        .aiCreditCost(req.aiCreditCost())
+                        .build());
+            }
+        }
+    }
+
+    private void updateCompanyPlanFeatures(CompanySubscriptionPlan plan, List<PlanFeatureRequest> featureRequests) {
+        if (featureRequests == null) return;
+
+        List<CompanyPlanFeature> currentFeatures = plan.getPlanFeatures();
+        if (currentFeatures == null) {
+            currentFeatures = new ArrayList<>();
+            plan.setPlanFeatures(currentFeatures);
+        }
+
+        Map<UUID, Integer> requestedMap = new HashMap<>();
+        for (PlanFeatureRequest req : featureRequests) {
+            requestedMap.put(req.id(), req.aiCreditCost());
+        }
+
+        currentFeatures.removeIf(pf -> !requestedMap.containsKey(pf.getFeature().getId()));
+
+        for (PlanFeatureRequest req : featureRequests) {
+            boolean exists = false;
+            for (CompanyPlanFeature pf : currentFeatures) {
+                if (pf.getFeature().getId().equals(req.id())) {
+                    pf.setAiCreditCost(req.aiCreditCost());
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                Feature feature = featureRepository.findById(req.id())
+                        .orElseThrow(() -> new AppException(ErrorCode.FEATURE_NOT_FOUND, "Feature not found"));
+                currentFeatures.add(CompanyPlanFeature.builder()
+                        .plan(plan)
+                        .feature(feature)
+                        .aiCreditCost(req.aiCreditCost())
+                        .build());
+            }
+        }
+    }
+
 
     @Override
     public void delete(UUID id) {
@@ -144,7 +216,7 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
             list.add(CandidatePlanFeature.builder()
                     .plan(plan)
                     .feature(feature)
-                    .totalQuota(featureRequest.quota())
+                    .aiCreditCost(featureRequest.aiCreditCost())
                     .build());
         }
         candidatePlanFeatureRepository.saveAll(list);
@@ -160,7 +232,7 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
             list.add(CompanyPlanFeature.builder()
                     .plan(plan)
                     .feature(feature)
-                    .totalQuota(featureRequest.quota())
+                    .aiCreditCost(featureRequest.aiCreditCost())
                     .build());
         }
         companyPlanFeatureRepository.saveAll(list);

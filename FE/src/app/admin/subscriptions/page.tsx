@@ -46,6 +46,8 @@ export default function AdminSubscriptionsPage() {
   const [durationDays, setDurationDays] = useState(30)
   const [subType, setSubType] = useState<SubscriptionType>(SubscriptionType.COMPANY)
   const [isActive, setIsActive] = useState(true)
+  const [aiCreditBalance, setAiCreditBalance] = useState(0)
+  const [jobPostBalance, setJobPostBalance] = useState(0)
   const [selectedFeatures, setSelectedFeatures] = useState<Record<string, number>>({})
 
   // Handle open modal for creating
@@ -56,6 +58,8 @@ export default function AdminSubscriptionsPage() {
     setDurationDays(30)
     setSubType(activeTab)
     setIsActive(true)
+    setAiCreditBalance(0)
+    setJobPostBalance(0)
     setSelectedFeatures({})
     setEditingPlanId(null)
     setIsModalOpen(true)
@@ -69,6 +73,8 @@ export default function AdminSubscriptionsPage() {
     setDurationDays(plan.durationDays)
     setSubType(plan.subscriptionType)
     setIsActive(plan.isActive)
+    setAiCreditBalance(plan.aiCreditBalance || 0)
+    setJobPostBalance(plan.jobPostBalance || 0)
     
     // Map existing features
     const feats: Record<string, number> = {}
@@ -76,7 +82,7 @@ export default function AdminSubscriptionsPage() {
       // Find the feature by code in systemFeatures to get its ID
       const sysFeat = systemFeatures?.find((sf) => sf.code === f.code)
       if (sysFeat) {
-        feats[sysFeat.id] = f.quota
+        feats[sysFeat.id] = f.aiCreditCost || 0
       }
     })
     setSelectedFeatures(feats)
@@ -111,9 +117,9 @@ export default function AdminSubscriptionsPage() {
       return
     }
 
-    const planFeaturesPayload = Object.entries(selectedFeatures).map(([id, quota]) => ({
+    const planFeaturesPayload = Object.entries(selectedFeatures).map(([id, aiCreditCost]) => ({
       id,
-      quota,
+      aiCreditCost,
     }))
 
     const payload = {
@@ -123,6 +129,8 @@ export default function AdminSubscriptionsPage() {
       durationDays,
       subscriptionType: subType,
       isActive,
+      aiCreditBalance,
+      ...(subType === SubscriptionType.COMPANY ? { jobPostBalance } : {}),
       features: planFeaturesPayload,
     }
 
@@ -250,6 +258,20 @@ export default function AdminSubscriptionsPage() {
                     {plan.description || 'Không có mô tả.'}
                   </p>
 
+                  {/* Balances Section */}
+                  <div className="flex gap-4 text-[10px] font-black text-slate-500 bg-slate-50 p-3 rounded-2xl border border-slate-100/80 mb-3">
+                    <div className="flex flex-col">
+                      <span className="text-slate-400 uppercase tracking-wider text-[8px]">AI Credit</span>
+                      <span className="text-slate-800 text-xs font-black mt-0.5">{plan.aiCreditBalance || 0}</span>
+                    </div>
+                    {plan.subscriptionType === SubscriptionType.COMPANY && (
+                      <div className="flex flex-col border-l border-slate-200 pl-4">
+                        <span className="text-slate-400 uppercase tracking-wider text-[8px]">Job Post</span>
+                        <span className="text-slate-800 text-xs font-black mt-0.5">{plan.jobPostBalance || 0}</span>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="space-y-2.5 pt-2 border-t border-slate-50">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
                       Quyền lợi gói:
@@ -259,11 +281,11 @@ export default function AdminSubscriptionsPage() {
                         <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                         <div>
                           <span>{f.name}</span>
-                          {f.quota > 0 && (
-                            <span className="text-blue-600 ml-1">({f.quota} lượt)</span>
+                          {f.aiCreditCost > 0 && (
+                            <span className="text-rose-600 ml-1">({f.aiCreditCost} credits/lượt)</span>
                           )}
-                          {f.quota === 0 && (
-                            <span className="text-slate-400 ml-1">(Không giới hạn)</span>
+                          {f.aiCreditCost === 0 && (
+                            <span className="text-slate-400 ml-1">(Miễn phí AI)</span>
                           )}
                         </div>
                       </div>
@@ -379,6 +401,34 @@ export default function AdminSubscriptionsPage() {
                   </select>
                 </div>
 
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">AI Credit cấp</label>
+                  <input
+                    type="number"
+                    value={aiCreditBalance}
+                    onChange={(e) => setAiCreditBalance(Number(e.target.value))}
+                    placeholder="0"
+                    className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500 transition-all"
+                    min={0}
+                    required
+                  />
+                </div>
+
+                {subType === SubscriptionType.COMPANY && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Job Post cấp</label>
+                    <input
+                      type="number"
+                      value={jobPostBalance}
+                      onChange={(e) => setJobPostBalance(Number(e.target.value))}
+                      placeholder="0"
+                      className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500 transition-all"
+                      min={0}
+                      required
+                    />
+                  </div>
+                )}
+
                 <div className="flex items-center gap-3 pt-6 pl-2">
                   <input
                     type="checkbox"
@@ -434,7 +484,7 @@ export default function AdminSubscriptionsPage() {
                           {isSelected && (
                             <div className="flex items-center gap-2">
                               <span className="text-[10px] font-black text-slate-450 uppercase whitespace-nowrap">
-                                Giới hạn (Quota):
+                                Chi phí AI Credit:
                               </span>
                               <input
                                 type="number"
@@ -442,7 +492,7 @@ export default function AdminSubscriptionsPage() {
                                 onChange={(e) => handleFeatureQuotaChange(feat.id, Number(e.target.value))}
                                 className="w-24 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-right focus:outline-none focus:border-blue-500"
                                 min={0}
-                                placeholder="0 = vô hạn"
+                                placeholder="0"
                               />
                             </div>
                           )}

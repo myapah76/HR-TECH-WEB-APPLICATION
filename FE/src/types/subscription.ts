@@ -9,6 +9,8 @@ export interface SubscriptionPlanResponse {
   durationDays: number
   subscriptionType: SubscriptionType
   isActive: boolean
+  aiCreditBalance: number
+  jobPostBalance?: number
   features: PlanFeature[]
 }
 
@@ -16,7 +18,7 @@ export interface PlanFeature {
   code: string
   name: string
   description: string
-  quota: number
+  aiCreditCost: number
 }
 
 export interface SubFeatureRateUsageResponse {
@@ -29,7 +31,7 @@ export interface SubFeatureRateUsageResponse {
 export interface SubFeatureUsageResponse {
   featureCode: string
   featureName: string
-  quota: number
+  aiCreditCost: number
   used: number
   rateLimits: SubFeatureRateUsageResponse[]
 }
@@ -82,7 +84,7 @@ export interface CreatePaymentResponse {
 
 export interface PlanFeatureRequest {
   id: string // Feature ID
-  quota: number
+  aiCreditCost: number
 }
 
 export interface SubscriptionPlanRequest {
@@ -92,6 +94,8 @@ export interface SubscriptionPlanRequest {
   durationDays: number
   subscriptionType: SubscriptionType
   isActive: boolean
+  aiCreditBalance: number
+  jobPostBalance?: number
   features: PlanFeatureRequest[]
 }
 

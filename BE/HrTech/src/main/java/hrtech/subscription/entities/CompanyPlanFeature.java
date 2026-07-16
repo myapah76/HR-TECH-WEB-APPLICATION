@@ -29,8 +29,9 @@ public class CompanyPlanFeature extends BaseEntity {
     @JoinColumn(name = "feature_id", nullable = false)
     private Feature feature;
 
-    @Column(name = "total_quota", nullable = false)
-    private Integer totalQuota;
+    @Column(name = "ai_credit_cost", nullable = false)
+    @Builder.Default
+    private Integer aiCreditCost = 0;
 
     @OneToMany(mappedBy = "planFeature", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default

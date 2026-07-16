@@ -16,7 +16,14 @@ import { CandidateRecommendationResponse } from '@/src/types/recommendation'
 
 export default function FindCandidatesPage() {
   const queryClient = useQueryClient()
-  const { hasPaidPlan, isLoading: isSubLoading } = useSubscriptionAccess()
+  const { subscription, isLoading: isSubLoading } = useSubscriptionAccess()
+
+  const hasRecommendCandidateFeature = useMemo(() => {
+    if (isSubLoading) return true
+    if (!subscription || subscription.status !== 'ACTIVE') return false
+    return subscription.featuresUsage?.some(f => f.featureCode === 'RECOMMEND_CANDIDATE') ?? false
+  }, [subscription, isSubLoading])
+
   const { data: myCompany } = useGetMyCompany()
   const companyId = myCompany?.id
 
@@ -149,10 +156,10 @@ export default function FindCandidatesPage() {
       </div>
 
       {/* Feature gate */}
-      {!isSubLoading && !hasPaidPlan ? (
+      {!isSubLoading && !hasRecommendCandidateFeature ? (
         <FeatureGate
           featureName="AI Tìm Ứng Viên"
-          featureDescription="Tính năng phân tích kỹ năng và gợi ý ứng viên phù hợp sử dụng Graph AI. Nâng cấp gói công ty để tiếp cận những ứng viên tốt nhất."
+          featureDescription="Tính năng phân tích kỹ năng và gợi ý ứng viên phù hợp sử dụng Graph AI. Nâng cấp gói doanh nghiệp của bạn để mở khóa tính năng này."
           showPreview={false}
         >
           {featureBody}

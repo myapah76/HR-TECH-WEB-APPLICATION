@@ -52,14 +52,14 @@ public class ApplicationScoringService {
         boolean isProcessed = false;
 
         if (creditService.hasCandidateFeatureAccess(userId, "APP_SCORING")) {
-            creditService.deductCandidateQuota(userId, "AI_CREDIT", 10);
+            creditService.deductCandidateQuota(userId, "APP_SCORING", 1);
             isProcessed = true;
         }
 
         if (!isProcessed) {
             try {
                 if (creditService.hasCompanyFeatureAccess(userId, "APP_SCORING")) {
-                    creditService.deductCompanyFeatureQuota(userId, "AI_CREDIT", 10);
+                    creditService.deductCompanyFeatureQuota(userId, "APP_SCORING", 1);
                     isProcessed = true;
                 }
             } catch (Exception e) {

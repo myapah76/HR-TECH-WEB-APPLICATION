@@ -35,6 +35,14 @@ public class CompanySubscriptionPlan extends SoftDeleteEntity {
     @Column(name = "is_active")
     private Boolean isActive;
 
+    @Column(name = "ai_credit_balance", nullable = false)
+    @Builder.Default
+    private Integer aiCreditBalance = 0;
+
+    @Column(name = "job_post_balance", nullable = false)
+    @Builder.Default
+    private Integer jobPostBalance = 0;
+
     @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CompanyPlanFeature> planFeatures;
 }
