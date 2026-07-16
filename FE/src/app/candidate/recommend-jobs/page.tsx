@@ -7,6 +7,8 @@ import { useStartJobMatching, useGetJobMatchingStatus } from '@/src/hooks/recomm
 import { JobMatchingStatus } from '@/src/enums/recommendation.enum'
 import { useSubscriptionAccess } from '@/src/hooks/subscription'
 import { FeatureGate } from '@/src/components/common/FeatureGate'
+import { toast } from 'sonner'
+import { isCvAlreadyExistsError } from '@/src/utils'
 
 // Import newly refactored components
 import { JobMatchConfigCard } from '@/src/components/candidate/recommendation/JobMatchConfigCard'
@@ -76,6 +78,17 @@ export default function RecommendJobsPage() {
             if (fileInputRef.current) fileInputRef.current.value = ''
           },
           onError: (error) => {
+            if (isCvAlreadyExistsError(error)) {
+              const duplicateCvId = (error as any).response?.data?.data?.duplicateCvId
+              if (duplicateCvId) {
+                toast.success('Hồ sơ này đã được tải lên trước đó. Đang sử dụng hồ sơ hiện có để phân tích việc làm.')
+                triggerJobMatching(duplicateCvId)
+                setSelectedFile(null)
+                setCvTitle('')
+                if (fileInputRef.current) fileInputRef.current.value = ''
+                return
+              }
+            }
             console.error('Failed to upload new CV', error)
             setIsStarting(false)
           },

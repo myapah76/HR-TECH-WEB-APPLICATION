@@ -80,9 +80,9 @@ public class RecommendationServiceImpl implements IRecommendationService {
         // Check Feature Access & Deduct Token
         if (!creditService.hasCandidateFeatureAccess(userId, "RECOMMEND_JOB")) {
             throw new AppException(ErrorCode.FORBIDDEN,
-                    "Gói của bạn không có tính năng Gợi ý Job (RECOMMEND_JOB). Vui lòng nâng cấp gói.");
+                    "Gói của bạn không có tính năng Gợi ý Job (RECOMMEND_JOB) hoặc không đủ AI Credit. Vui lòng nâng cấp gói.");
         }
-        creditService.deductCandidateQuota(userId, "AI_CREDIT", 50);
+        creditService.deductCandidateQuota(userId, "RECOMMEND_JOB", 1);
 
         // 1. Build CV skill map & expand through graph (3 Neo4j queries)
         Map<String, CvSkill> cvSkillMap = buildSkillMap(cv.getCvSkills());
@@ -204,8 +204,12 @@ public class RecommendationServiceImpl implements IRecommendationService {
                 actionPlan = Arrays.asList(history.getActionPlan().split("\n\\|\\|\\|\n"));
             }
         } else {
-            // Check & Deduct AI_CREDIT (20 tokens)
-            creditService.deductCandidateQuota(userId, "AI_CREDIT", 20);
+            // Check Feature Access & Deduct Token (AI_MATCHING)
+            if (!creditService.hasCandidateFeatureAccess(userId, "AI_MATCHING")) {
+                throw new AppException(ErrorCode.FORBIDDEN,
+                        "Gói của bạn không có tính năng Chấm điểm CV (AI_MATCHING) hoặc không đủ AI Credit. Vui lòng nâng cấp gói.");
+            }
+            creditService.deductCandidateQuota(userId, "AI_MATCHING", 1);
 
             // Call AI Service
             AiMatchingAdviceResponseDto advice = aiServiceClient.getMatchingAdvice(cv.getParsedContent(),
@@ -257,10 +261,10 @@ public class RecommendationServiceImpl implements IRecommendationService {
         // Feature gate check (expects companyId)
         if (!creditService.hasCompanyFeatureAccess(companyId, "RECOMMEND_CANDIDATE")) {
             throw new AppException(ErrorCode.FORBIDDEN,
-                    "Gói của công ty không có tính năng Gợi ý Ứng Viên (RECOMMEND_CANDIDATE). Vui lòng nâng cấp gói.");
+                    "Gói của công ty không có tính năng Gợi ý Ứng Viên (RECOMMEND_CANDIDATE) hoặc không đủ AI Credit. Vui lòng nâng cấp gói.");
         }
         // Deduct AI credit (expects hrUserId to find the company member)
-        creditService.deductCompanyFeatureQuota(hrUserId, "AI_CREDIT", 50);
+        creditService.deductCompanyFeatureQuota(hrUserId, "RECOMMEND_CANDIDATE", 1);
 
         List<JobSkill> jobSkills = job.getJobSkills();
         if (jobSkills == null || jobSkills.isEmpty()) {

@@ -239,9 +239,7 @@ export default function PricingPage() {
       // Premium Plan
       if (isCurrent) {
         subInfoText = `Hết hạn ngày ${formattedEndDate}`
-        const isWalletEmpty =
-          (currentSubscription?.aiCreditBalance || 0) <= 0 &&
-          (currentSubscription?.jobPostBalance || 0) <= 0
+        const isWalletEmpty = (currentSubscription?.aiCreditBalance || 0) <= 0
         if (remainingDays > 0 && !isWalletEmpty) {
           buttonText = 'Đang sử dụng'
           isButtonDisabled = true
@@ -264,6 +262,32 @@ export default function PricingPage() {
       else period = `/${pkg.durationDays} ngày`
     }
 
+    const featuresList: any[] = []
+    if (pkg.aiCreditBalance !== undefined && pkg.aiCreditBalance > 0) {
+      featuresList.push({
+        code: 'AI_CREDIT',
+        name: `Năng lượng AI: ${new Intl.NumberFormat('vi-VN').format(pkg.aiCreditBalance)} credits`,
+        description: 'Năng lượng dùng cho các tính năng AI',
+        quota: 0,
+      })
+    }
+    if (pkg.jobPostBalance !== undefined && pkg.jobPostBalance > 0) {
+      featuresList.push({
+        code: 'JOB_POSTING',
+        name: `Đăng Job: ${pkg.jobPostBalance} lượt`,
+        description: 'Số lượt đăng tin tuyển dụng',
+        quota: 0,
+      })
+    }
+    pkg.features?.forEach((f) => {
+      featuresList.push({
+        code: f.code,
+        name: f.name + (f.aiCreditCost > 0 ? ` (${f.aiCreditCost} credits/lượt)` : ' (Miễn phí AI)'),
+        description: f.description,
+        quota: 0,
+      })
+    })
+
     return {
       id: pkg.id,
       name: pkg.name,
@@ -276,7 +300,7 @@ export default function PricingPage() {
             ),
       period,
       description: pkg.description,
-      features: pkg.features || [],
+      features: featuresList,
       isPopular,
       isCurrent,
       buttonText,

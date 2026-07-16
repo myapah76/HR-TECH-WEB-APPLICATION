@@ -11,5 +11,7 @@ public record SubscriptionPlanRequest(
         Integer durationDays,
         SubscriptionType subscriptionType,
         Boolean isActive,
+        Integer aiCreditBalance,
+        Integer jobPostBalance,
         List<PlanFeatureRequest> features
 ) {}

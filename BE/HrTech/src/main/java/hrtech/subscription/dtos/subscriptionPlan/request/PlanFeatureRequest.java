@@ -4,6 +4,6 @@ import java.util.UUID;
 
 public record PlanFeatureRequest(
         UUID id,
-        Integer quota
+        Integer aiCreditCost
 ) {
 }
