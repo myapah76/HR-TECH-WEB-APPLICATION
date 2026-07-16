@@ -16,6 +16,8 @@ import hrtech.job.abstractions.services.IJobService;
 import hrtech.job.abstractions.services.ISavedJobService;
 import hrtech.job.dtos.request.JobRequest;
 import hrtech.job.dtos.response.JobResponse;
+import hrtech.job.entities.enums.ExperienceLevel;
+import hrtech.job.entities.enums.JobType;
 import hrtech.subscription.abstractions.services.ISubscriptionService;
 import hrtech.subscription.entities.enums.SubscriptionType;
 
@@ -189,8 +191,8 @@ public class MasterDataSeeder implements CommandLineRunner {
                 "Ho Chi Minh City",
                 BigDecimal.valueOf(salaryMin),
                 BigDecimal.valueOf(salaryMax),
-                "FULL_TIME",
-                "MIDDLE",
+                JobType.FULL_TIME,
+                ExperienceLevel.MIDDLE,
                 Instant.now().plus(30, ChronoUnit.DAYS),
                 "Must have experience with: " + skills,
                 new ArrayList<>());

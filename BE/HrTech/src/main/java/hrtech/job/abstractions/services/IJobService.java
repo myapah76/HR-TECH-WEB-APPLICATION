@@ -3,12 +3,15 @@ package hrtech.job.abstractions.services;
 import hrtech.job.dtos.response.HotPositionResponse;
 import hrtech.job.dtos.response.TrendingSkillResponse;
 import hrtech.job.dtos.response.LandingStatsResponse;
+import hrtech.job.entities.enums.JobStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import hrtech.job.dtos.request.JobRequest;
 import hrtech.job.dtos.request.JobSearchCriteria;
 import hrtech.job.dtos.response.JobResponse;
 import hrtech.job.entities.Job;
+import hrtech.job.entities.enums.ExperienceLevel;
+import hrtech.job.entities.enums.JobType;
 import hrtech.job.entities.JobSkill;
 import hrtech.shared.enums.ExtractionStatus;
 import java.time.Instant;
@@ -20,7 +23,7 @@ public interface IJobService {
 
     JobResponse createJob(JobRequest request);
 
-    JobResponse updateOwnJob(UUID jobId, JobRequest request);
+    JobResponse updateJob(UUID jobId, JobRequest request);
 
     JobResponse submitJob(UUID jobId);
 
@@ -30,7 +33,11 @@ public interface IJobService {
 
     JobResponse closeJob(UUID jobId);
 
-    void adminDeleteJob(UUID jobId);
+    JobResponse appealJob(UUID jobId);
+
+    JobResponse approveAppeal(UUID jobId);
+
+    JobResponse rejectAppeal(UUID jobId);
 
     JobResponse getJobDetails(UUID jobId);
 
@@ -38,18 +45,12 @@ public interface IJobService {
 
     Page<JobResponse> listJobs(Pageable pageable);
 
-    Page<JobResponse> getJobsForAdmin(String keyword, String status, Pageable pageable);
+    Page<JobResponse> getJobReport(String keyword, Pageable pageable);
 
-    List<JobResponse> getCompanyJobs(UUID companyId);
+    Page<JobResponse> getPublicCompanyJobs(UUID companyId, Pageable pageable);
 
-    List<JobResponse> getManageJobs(UUID companyId);
-
-    List<JobResponse> getPendingJobs(UUID companyId);
-
-    List<JobResponse> getMyJobs(UUID companyId);
-
-    Page<JobResponse> getCompanyJobsWithFilters(UUID companyId, String status, String jobType, String jobLevel,
-            Pageable pageable);
+    Page<JobResponse> getManageCompanyJobs(
+            UUID companyId, JobStatus status, JobType jobType, ExperienceLevel jobLevel, Pageable pageable);
 
     Job getJobEntityById(UUID jobId);
 

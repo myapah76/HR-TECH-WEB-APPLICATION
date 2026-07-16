@@ -4,6 +4,8 @@ import hrtech.identity.entities.User;
 import hrtech.company.entities.Company;
 import hrtech.shared.common.SoftDeleteEntity;
 import hrtech.shared.enums.ExtractionStatus;
+
+import java.util.ArrayList;
 import java.util.List;
 import hrtech.application.entities.Application;
 
@@ -55,15 +57,14 @@ public class Job extends SoftDeleteEntity {
     private BigDecimal salaryMax;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "job_type")
     private JobType jobType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "experience_level")
     private ExperienceLevel experienceLevel;
 
     @Enumerated(EnumType.STRING)
-    private JobStatus status;
+    @Builder.Default
+    private JobStatus status = JobStatus.DRAFT;
 
     private Instant deadline;
 
@@ -71,12 +72,11 @@ public class Job extends SoftDeleteEntity {
     private String requirements;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "extraction_status")
     private ExtractionStatus extractionStatus;
 
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Application> applications;
 
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<JobSkill> jobSkills;
+    private List<JobSkill> jobSkills = new ArrayList<>();
 }

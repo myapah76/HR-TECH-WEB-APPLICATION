@@ -416,13 +416,6 @@ public class CompanyServiceImpl implements ICompanyService {
         return companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(ErrorCode.COMPANY_NOT_FOUND, "Company not found: " + companyId));
     }
-
-    /**
-     * Convenience lookup used by external modules (subscription, job, auth,
-     * application).
-     * Full member CRUD lives in
-     * {@link hrtech.company.services.CompanyMemberServiceImpl}.
-     */
     @Override
     @Transactional(readOnly = true)
     public hrtech.company.entities.CompanyMember getMemberEntityByUserId(UUID userId) {

@@ -81,15 +81,15 @@ export const getManageJobs = async (
   if (params?.experienceLevel) {
     const { page = 0, size = 10, experienceLevel, ...serverParams } = params
     const firstPage = await api.get<ApiResponse<PageResponse<Job>>>(
-      `/companies/${companyId}/jobs`,
+      `/recruiter/companies/${companyId}/jobs`,
       { params: { ...serverParams, page: 0, size: 100 } }
     )
     const allJobs = [...firstPage.data.data.content]
 
-    const totalPagesVal = firstPage.data.data.page?.totalPages ?? firstPage.data.data.totalPages ?? 0
+    const totalPagesVal = firstPage.data.data.page?.totalPages ?? 0
     for (let nextPage = 1; nextPage < totalPagesVal; nextPage += 1) {
       const response = await api.get<ApiResponse<PageResponse<Job>>>(
-        `/companies/${companyId}/jobs`,
+        `/recruiter/companies/${companyId}/jobs`,
         { params: { ...serverParams, page: nextPage, size: 100 } }
       )
       allJobs.push(...response.data.data.content)
@@ -105,28 +105,30 @@ export const getManageJobs = async (
         totalPages: Math.ceil(filteredJobs.length / size),
         size,
         number: page,
-      }
+      },
     }
   }
 
-  const response = await api.get<ApiResponse<PageResponse<Job>>>(`/companies/${companyId}/jobs`, {
+  const response = await api.get<ApiResponse<PageResponse<Job>>>(`/recruiter/companies/${companyId}/jobs`, {
     params,
   })
   return response.data.data
 }
 
 export const createJob = async (data: CreateJobRequest): Promise<Job> => {
-  const response = await api.post<ApiResponse<Job>>('/jobs', data)
+  const companyId = data.companyId
+  const response = await api.post<ApiResponse<Job>>(`/recruiter/companies/${companyId}/jobs`, data)
   return response.data.data
 }
 
 export const updateJob = async (id: string, data: CreateJobRequest): Promise<Job> => {
-  const response = await api.put<ApiResponse<Job>>(`/jobs/${id}`, data)
+  const companyId = data.companyId
+  const response = await api.put<ApiResponse<Job>>(`/recruiter/companies/${companyId}/jobs/${id}`, data)
   return response.data.data
 }
 
-export const updateJobStatus = async (jobId: string, action: JobStatusAction): Promise<Job> => {
-  const response = await api.put<ApiResponse<Job>>(`/jobs/${jobId}/${action}`)
+export const updateJobStatus = async (jobId: string, action: JobStatusAction, companyId: string): Promise<Job> => {
+  const response = await api.put<ApiResponse<Job>>(`/recruiter/companies/${companyId}/jobs/${jobId}/${action}`)
   return response.data.data
 }
 
@@ -146,5 +148,10 @@ export const getHotPositions = async (limit = 6): Promise<HotPosition[]> => {
   const response = await api.get<ApiResponse<HotPosition[]>>('/jobs/hot-positions', {
     params: { limit },
   })
+  return response.data.data
+}
+
+export const appealJob = async (id: string, companyId: string): Promise<Job> => {
+  const response = await api.put<ApiResponse<Job>>(`/recruiter/companies/${companyId}/jobs/${id}/appeal`)
   return response.data.data
 }

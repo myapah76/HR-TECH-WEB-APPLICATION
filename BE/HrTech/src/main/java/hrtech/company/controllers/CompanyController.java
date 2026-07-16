@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
+import hrtech.identity.utils.AuthUtils;
 import org.springframework.web.bind.annotation.*;
 import hrtech.company.abstractions.services.ICompanyService;
 import hrtech.company.abstractions.services.ICompanyMemberService;
@@ -25,7 +25,7 @@ import hrtech.company.dtos.response.RecruiterDashboardSummaryResponse;
 import hrtech.company.dtos.response.RecruiterUpcomingInterviewResponse;
 import hrtech.company.dtos.response.TopCompanyResponse;
 import hrtech.identity.dtos.auth.response.EmailActionResponse;
-import hrtech.identity.dtos.user.CustomUserDetails;
+
 import hrtech.shared.response.ApiResponse;
 
 import java.util.List;
@@ -39,6 +39,7 @@ public class CompanyController {
     private final ICompanyService companyService;
     private final ICompanyMemberService companyMemberService;
     private final ICompanyDashboardService companyDashboardService;
+    private final AuthUtils authUtils;
 
     // ─── Registration ────────────────────────────────────────────────────────────
 
@@ -141,13 +142,9 @@ public class CompanyController {
     public ResponseEntity<ApiResponse<Void>> transferOwnership(
             @PathVariable("id") UUID companyId,
             @RequestParam("targetMemberId") UUID targetMemberId) {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (principal instanceof CustomUserDetails userDetails) {
-            UUID currentUserId = userDetails.user().getId();
-            companyMemberService.transferOwnership(companyId, currentUserId, targetMemberId);
-            return ResponseEntity.ok(ApiResponse.success(null));
-        }
-        return ResponseEntity.status(401).build();
+        UUID currentUserId = authUtils.getCurrentUserId();
+        companyMemberService.transferOwnership(companyId, currentUserId, targetMemberId);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     // ─── Dashboard ───────────────────────────────────────────────────────────────

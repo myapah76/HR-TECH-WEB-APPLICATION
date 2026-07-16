@@ -11,8 +11,6 @@ import {
   XCircle,
   Eye,
   Search,
-  Trash2,
-  AlertTriangle,
   X,
   MapPin,
   DollarSign,
@@ -22,12 +20,10 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import {
-  useGetAdminJobs,
-  useApproveJobAdmin,
-  useRejectJobAdmin,
-  useDeleteJobForAdmin,
-  useCloseJobAdmin,
-} from '@/src/hooks/job/useAdminJobs'
+  useGetJobReport,
+  useApproveAppealAdmin,
+  useRejectAppealAdmin,
+} from '@/src/hooks/job'
 import {
   JobStatus,
   JOB_STATUS_LABELS,
@@ -56,7 +52,7 @@ const getStatusBadgeVariant = (status: JobStatus) => {
 
 // Determine which status transitions are available for admin
 // NOTE: 'submit' (DRAFT→PENDING) is the HR's action, not admin's
-type TransitionAction = 'approve' | 'reject' | 'close'
+type TransitionAction = 'approve' | 'reject'
 interface StatusTransition {
   action: TransitionAction
   label: string
@@ -68,11 +64,11 @@ interface StatusTransition {
 
 const getAvailableTransitions = (status: JobStatus): StatusTransition[] => {
   switch (status) {
-    case JobStatus.PENDING_APPROVAL:
+    case JobStatus.APPEALED:
       return [
         {
           action: 'approve',
-          label: 'Phê duyệt',
+          label: 'Duyệt khiếu nại',
           icon: <CheckCircle className="h-3.5 w-3.5" />,
           colorClass: 'text-emerald-500',
           hoverClass: 'hover:text-emerald-700',
@@ -80,27 +76,13 @@ const getAvailableTransitions = (status: JobStatus): StatusTransition[] => {
         },
         {
           action: 'reject',
-          label: 'Từ chối',
+          label: 'Bác bỏ khiếu nại',
           icon: <XCircle className="h-3.5 w-3.5" />,
           colorClass: 'text-rose-500',
           hoverClass: 'hover:text-rose-700',
           bgClass: 'hover:bg-rose-50',
         },
       ]
-    case JobStatus.APPROVED:
-    case JobStatus.OPEN:
-      return [
-        {
-          action: 'close',
-          label: 'Đóng tin',
-          icon: <Lock className="h-3.5 w-3.5" />,
-          colorClass: 'text-slate-500',
-          hoverClass: 'hover:text-slate-700',
-          bgClass: 'hover:bg-slate-100',
-        },
-      ]
-    case JobStatus.REJECTED:
-    case JobStatus.CLOSED:
     default:
       return []
   }
@@ -124,34 +106,24 @@ const TRANSITION_CONFIG: Record<
   }
 > = {
   approve: {
-    title: 'Phê duyệt tin tuyển dụng',
+    title: 'Phê duyệt khiếu nại',
     description:
-      'Tin tuyển dụng sau khi duyệt sẽ hiển thị công khai tới tất cả các ứng viên trên hệ thống.',
-    confirmLabel: 'Xác nhận Duyệt',
+      'Chấp nhận khiếu nại tuyển dụng. Tin tuyển dụng sẽ được chuyển trạng thái sang đã duyệt và hiển thị công khai trên hệ thống.',
+    confirmLabel: 'Duyệt khiếu nại',
     confirmClass: 'bg-emerald-600 hover:bg-emerald-700',
     iconBg: 'bg-emerald-50',
     iconColor: 'text-emerald-600',
     icon: <CheckCircle className="h-5 w-5" />,
   },
   reject: {
-    title: 'Từ chối tin tuyển dụng',
+    title: 'Bác bỏ khiếu nại',
     description:
-      'Tin tuyển dụng sẽ bị từ chối và doanh nghiệp sẽ nhận được thông báo về việc tin đăng bị từ chối.',
-    confirmLabel: 'Xác nhận Từ chối',
+      'Bác bỏ yêu cầu khiếu nại. Tin tuyển dụng sẽ được đưa về trạng thái từ chối để HR cập nhật lại nội dung phù hợp.',
+    confirmLabel: 'Bác bỏ khiếu nại',
     confirmClass: 'bg-rose-600 hover:bg-rose-700',
     iconBg: 'bg-rose-50',
     iconColor: 'text-rose-600',
     icon: <XCircle className="h-5 w-5" />,
-  },
-  close: {
-    title: 'Đóng tin tuyển dụng',
-    description:
-      'Tin tuyển dụng sẽ bị đóng và không còn hiển thị cho ứng viên tìm kiếm. Hành động này không thể hoàn tác.',
-    confirmLabel: 'Xác nhận Đóng tin',
-    confirmClass: 'bg-slate-700 hover:bg-slate-900',
-    iconBg: 'bg-slate-100',
-    iconColor: 'text-slate-600',
-    icon: <Lock className="h-5 w-5" />,
   },
 }
 
@@ -162,38 +134,35 @@ function JobsManagementContent() {
 
   // Get filter state from URL params
   const urlKeyword = searchParams.get('keyword') || ''
-  const urlStatus = searchParams.get('status') || 'ALL'
   const urlPage = parseInt(searchParams.get('page') || '1', 10)
   const urlSize = parseInt(searchParams.get('size') || '10', 10)
 
   const [keywordInput, setKeywordInput] = useState(urlKeyword)
 
   useEffect(() => {
-    setKeywordInput(urlKeyword)
+    setTimeout(() => {
+      setKeywordInput(urlKeyword)
+    }, 0)
   }, [urlKeyword])
 
   const queryParams = useMemo(() => {
-    const params: Record<string, any> = {
+    const params: Record<string, string | number> = {
       page: urlPage - 1,
       size: urlSize,
     }
     if (urlKeyword.trim()) params.keyword = urlKeyword.trim()
-    if (urlStatus !== 'ALL') params.status = urlStatus
     return params
-  }, [urlKeyword, urlStatus, urlPage, urlSize])
+  }, [urlKeyword, urlPage, urlSize])
 
-  const { data: jobsPage, isLoading, isError, refetch } = useGetAdminJobs(queryParams)
+  const { data: jobsPage, isLoading, isError, refetch } = useGetJobReport(queryParams)
 
   // Mutations
-  const approveMutation = useApproveJobAdmin()
-  const rejectMutation = useRejectJobAdmin()
-  const closeMutation = useCloseJobAdmin()
-  const deleteMutation = useDeleteJobForAdmin()
+  const approveMutation = useApproveAppealAdmin()
+  const rejectMutation = useRejectAppealAdmin()
 
   // UI state
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null)
-  const [confirmDeleteJob, setConfirmDeleteJob] = useState<Job | null>(null)
 
   const updateUrlParams = (newParams: {
     keyword?: string
@@ -225,28 +194,18 @@ function JobsManagementContent() {
         await approveMutation.mutateAsync(job.id)
       } else if (action === 'reject') {
         await rejectMutation.mutateAsync(job.id)
-      } else if (action === 'close') {
-        await closeMutation.mutateAsync(job.id)
       }
       const cfg = TRANSITION_CONFIG[action]
       toast.success(`${cfg.confirmLabel} thành công: ${job.title}`)
       setConfirmState(null)
       setSelectedJob(null)
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi chuyển trạng thái')
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } }
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi chuyển trạng thái')
     }
   }
 
-  const handleDelete = async () => {
-    if (!confirmDeleteJob) return
-    try {
-      await deleteMutation.mutateAsync(confirmDeleteJob.id)
-      toast.success(`Đã xóa tin tuyển dụng: ${confirmDeleteJob.title}`)
-      setConfirmDeleteJob(null)
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi xóa')
-    }
-  }
+
 
   const openTransitionDialog = (job: Job, action: TransitionAction) => {
     setConfirmState({ job, action })
@@ -259,7 +218,7 @@ function JobsManagementContent() {
   const safeCurrentPage = Math.min(urlPage, totalPages)
 
   const isAnyPending =
-    approveMutation.isPending || rejectMutation.isPending || closeMutation.isPending
+    approveMutation.isPending || rejectMutation.isPending
 
   return (
     <div className="space-y-6">
@@ -268,16 +227,16 @@ function JobsManagementContent() {
         <div>
           <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
             <Briefcase className="h-6 w-6 text-violet-600" />
-            Quản lý tin tuyển dụng
+            Quản lý khiếu nại tin tuyển dụng
           </h1>
           <p className="text-xs font-semibold text-slate-500">
-            Duyệt, từ chối và quản trị tất cả các bài đăng tuyển trên hệ thống
+            Xem xét và giải quyết các khiếu nại tin đăng tuyển dụng bị AI đánh dấu vi phạm
           </p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="grid gap-3 rounded-2xl border border-slate-200/60 bg-white p-4 shadow-xs md:grid-cols-[1fr_200px]">
+      <div className="grid gap-3 rounded-2xl border border-slate-200/60 bg-white p-4 shadow-xs md:grid-cols-[1fr]">
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -289,7 +248,7 @@ function JobsManagementContent() {
           <input
             value={keywordInput}
             onChange={(e) => setKeywordInput(e.target.value)}
-            placeholder="Tìm theo tiêu đề tin hoặc tên công ty... (Nhấn Enter)"
+            placeholder="Tìm theo tiêu đề khiếu nại hoặc tên công ty... (Nhấn Enter)"
             className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-12 text-xs font-bold text-slate-700 outline-hidden transition focus:border-violet-500 focus:ring-2 focus:ring-violet-50"
           />
           {keywordInput && (
@@ -305,19 +264,6 @@ function JobsManagementContent() {
             </button>
           )}
         </form>
-
-        <select
-          value={urlStatus}
-          onChange={(e) => updateUrlParams({ status: e.target.value })}
-          className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 outline-hidden transition focus:border-violet-500 focus:ring-2 focus:ring-violet-50 cursor-pointer"
-        >
-          <option value="ALL">Tất cả trạng thái</option>
-          {Object.values(JobStatus).map((status) => (
-            <option key={status} value={status}>
-              {JOB_STATUS_LABELS[status]}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Table */}
@@ -474,16 +420,6 @@ function JobsManagementContent() {
                               Đã đóng
                             </span>
                           )}
-
-                          {/* Delete */}
-                          <button
-                            type="button"
-                            onClick={() => setConfirmDeleteJob(job)}
-                            title="Xóa bài đăng"
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -722,7 +658,7 @@ function JobsManagementContent() {
         (() => {
           const cfg = TRANSITION_CONFIG[confirmState.action]
           const isPending =
-            approveMutation.isPending || rejectMutation.isPending || closeMutation.isPending
+            approveMutation.isPending || rejectMutation.isPending
           return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
               <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
@@ -766,47 +702,7 @@ function JobsManagementContent() {
           )
         })()}
 
-      {/* ── Delete Confirmation Modal ── */}
-      {confirmDeleteJob && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
-          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
-            <div className="mb-4 flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
-                <AlertTriangle className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-extrabold text-slate-800">Xác nhận xóa bài tuyển dụng</p>
-                <p className="text-xs font-semibold text-slate-500 line-clamp-1">
-                  {confirmDeleteJob.title}
-                </p>
-              </div>
-            </div>
 
-            <p className="mb-5 text-xs font-semibold leading-5 text-slate-600">
-              Hành động này sẽ xóa bài tuyển dụng khỏi hệ thống. Người tuyển dụng và ứng viên sẽ
-              không thể xem lại bài đăng này nữa. Bạn có chắc chắn muốn thực hiện?
-            </p>
-
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmDeleteJob(null)}
-                className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-extrabold text-slate-600 transition hover:bg-slate-50"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={deleteMutation.isPending}
-                className="rounded-lg bg-red-600 px-4 py-2 text-xs font-extrabold text-white transition hover:bg-red-700 disabled:opacity-60"
-              >
-                {deleteMutation.isPending ? 'Đang xóa...' : 'Xác nhận xóa'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -14,18 +14,6 @@ import hrtech.shared.response.ApiResponse;
 
 import java.util.UUID;
 
-/**
- * Admin-only job management endpoints.
- * All endpoints are protected by hasRole('ADMIN_SYSTEM') at class level.
- *
- * State transitions available to admin:
- *  - PENDING_APPROVAL → APPROVED  (approve)
- *  - PENDING_APPROVAL → REJECTED  (reject, requires reason)
- *  - APPROVED         → CLOSED    (close)
- *
- * NOTE: submit (DRAFT → PENDING_APPROVAL) is intentionally excluded —
- * that action belongs to the HR/recruiter, not the admin.
- */
 @RestController
 @RequestMapping("/api/admin/jobs")
 @RequiredArgsConstructor
@@ -35,35 +23,20 @@ public class AdminJobController {
     private final IJobService jobService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<JobResponse>>> getJobsForAdmin(
+    public ResponseEntity<ApiResponse<Page<JobResponse>>> getJobReport(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String status,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(jobService.getJobsForAdmin(keyword, status, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(jobService.getJobReport(keyword, pageable)));
     }
 
-    /** PENDING_APPROVAL → APPROVED */
-    @PutMapping("/{id}/approve")
-    public ResponseEntity<ApiResponse<JobResponse>> adminApproveJob(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(jobService.approveJob(id)));
+    @PutMapping("/{id}/approve-appeal")
+    public ResponseEntity<ApiResponse<JobResponse>> approveAppeal(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(jobService.approveAppeal(id)));
     }
 
-    /** PENDING_APPROVAL → REJECTED */
-    @PutMapping("/{id}/reject")
-    public ResponseEntity<ApiResponse<JobResponse>> adminRejectJob(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(jobService.rejectJob(id)));
-    }
-
-    /** APPROVED → CLOSED */
-    @PutMapping("/{id}/close")
-    public ResponseEntity<ApiResponse<JobResponse>> adminCloseJob(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(jobService.closeJob(id)));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> adminDeleteJob(@PathVariable UUID id) {
-        jobService.adminDeleteJob(id);
-        return ResponseEntity.ok(ApiResponse.success(null));
+    @PutMapping("/{id}/reject-appeal")
+    public ResponseEntity<ApiResponse<JobResponse>> rejectAppeal(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(jobService.rejectAppeal(id)));
     }
 }

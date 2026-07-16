@@ -33,7 +33,7 @@ export default function ManageJobTable({
 
   const submitJob = (job: Job) => {
     statusMutation.mutate(
-      { jobId: job.id, action: 'submit' },
+      { jobId: job.id, action: 'submit', companyId: job.companyId },
       { onSuccess: () => toast.success('Đã nộp tin tuyển dụng để chờ phê duyệt!') }
     )
   }
@@ -42,7 +42,7 @@ export default function ManageJobTable({
     if (!jobToClose) return
 
     statusMutation.mutate(
-      { jobId: jobToClose.id, action: 'close' },
+      { jobId: jobToClose.id, action: 'close', companyId: jobToClose.companyId },
       {
         onSuccess: () => {
           toast.success('Đã đóng tin tuyển dụng!')
@@ -136,7 +136,7 @@ export default function ManageJobTable({
                                   type="button"
                                   onClick={() =>
                                       statusMutation.mutate(
-                                          { jobId: job.id, action: 'approve' },
+                                          { jobId: job.id, action: 'approve', companyId: job.companyId },
                                           { onSuccess: () => toast.success('Đã duyệt tin tuyển dụng!') }
                                       )
                                   }
@@ -150,7 +150,7 @@ export default function ManageJobTable({
                                   type="button"
                                   onClick={() =>
                                       statusMutation.mutate(
-                                          { jobId: job.id, action: 'reject' },
+                                          { jobId: job.id, action: 'reject', companyId: job.companyId },
                                           { onSuccess: () => toast.success('Đã từ chối tin tuyển dụng!') }
                                       )
                                   }

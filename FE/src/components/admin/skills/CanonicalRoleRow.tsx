@@ -1,6 +1,6 @@
 import React from 'react'
-import { Plus, Trash2, Check, X, ChevronDown, ChevronUp, PlusCircle, Edit2 } from 'lucide-react'
-import { RoleAlias } from '@/src/services/skill.service'
+import { Trash2, Check, X, ChevronDown, ChevronUp, PlusCircle, Edit2 } from 'lucide-react'
+import { RoleAlias } from '@/src/types/skill'
 
 interface CanonicalGroup {
   canonicalRole: string
@@ -61,7 +61,10 @@ const CanonicalRoleRow = ({
           )}
 
           {isEditing ? (
-            <div className="flex items-center gap-2 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="flex items-center gap-2 max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
               <input
                 type="text"
                 value={editCanonicalText}

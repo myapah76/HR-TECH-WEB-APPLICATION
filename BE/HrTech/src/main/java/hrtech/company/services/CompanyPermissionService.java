@@ -31,11 +31,11 @@ public class CompanyPermissionService {
                     if (member.getMembershipStatus() != MembershipStatus.ACTIVE) {
                         return false;
                     }
-                    if (requiresApprovedCompany(permission)) {
-                        if (member.getCompany().getStatus() != CompanyStatus.APPROVED) {
+                    if (requiresApprovedCompany(permission)
+                            && member.getCompany().getStatus() != CompanyStatus.APPROVED) {
                             return false;
                         }
-                    }
+
                     return rolePermissionResolver.hasPermission(member.getCompanyRole(), permission);
                 })
                 .orElse(false);

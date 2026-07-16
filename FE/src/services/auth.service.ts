@@ -14,6 +14,7 @@ import {
   GoogleLoginRequest,
   GoogleLoginResponse,
   SetupPasswordRequest,
+  ForceChangePasswordRequest,
 } from '@/src/types/auth'
 import { ApiResponse } from '@/src/types/api'
 import { checkCookiesEnabled } from '../utils'
@@ -101,12 +102,6 @@ export const logout = async (data?: { refreshToken: string }): Promise<string> =
   }
   const response = await api.post<ApiResponse<string>>('/auth/logout', data, { headers })
   return response.data.data
-}
-
-export interface ForceChangePasswordRequest {
-  currentPassword?: string
-  newPassword?: string
-  confirmPassword?: string
 }
 
 export const forceChangePassword = async (data: ForceChangePasswordRequest): Promise<void> => {

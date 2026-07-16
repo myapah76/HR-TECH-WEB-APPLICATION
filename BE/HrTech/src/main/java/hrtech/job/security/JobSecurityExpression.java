@@ -1,13 +1,12 @@
 package hrtech.job.security;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import hrtech.company.security.CompanySecurityExpression;
 import hrtech.job.abstractions.repositories.JobRepository;
 import hrtech.job.entities.Job;
-import hrtech.identity.dtos.user.CustomUserDetails;
+import hrtech.identity.entities.User;
+import hrtech.identity.utils.AuthUtils;
 import java.util.UUID;
 
 @Component("jobSecurity")
@@ -16,92 +15,63 @@ public class JobSecurityExpression {
 
     private final JobRepository jobRepository;
     private final CompanySecurityExpression companySecurity;
+    private final AuthUtils authUtils;
 
-    public boolean hasJobRole(Object jobId, String... roles) {
+    public boolean hasJobRole(UUID jobId, String... roles) {
         if (jobId == null) return false;
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
-                CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-                if (userDetails.user().getRole() != null && "ADMIN_SYSTEM".equals(userDetails.user().getRole().getName())) {
-                    return true;
-                }
+            User currentUser = authUtils.getCurrentUser();
+            if (currentUser.getRole() != null && "ADMIN_SYSTEM".equals(currentUser.getRole().getName())) {
+                return true;
             }
-            Job job = jobRepository.findById(UUID.fromString(jobId.toString())).orElse(null);
+            Job job = jobRepository.findById(jobId).orElse(null);
             if (job == null || job.getCompany() == null) {
                 return false;
             }
-            return companySecurity.hasRole(job.getCompany().getId(), roles);
+            return companySecurity.hasAnyRole(job.getCompany().getId(), roles);
         } catch (Exception e) {
             return false;
         }
     }
 
-    public boolean isJobOwnerOrManager(Object jobId) {
-        return hasJobRole(jobId, "OWNER", "HR_MANAGER");
-    }
-
-    public boolean isJobManager(Object jobId) {
-        return hasJobRole(jobId, "HR_MANAGER");
-    }
-
-    public boolean isJobCreatorOrManager(Object jobId) {
+    public boolean isJobCreatorOrManager(UUID jobId) {
         if (jobId == null) return false;
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication == null || !authentication.isAuthenticated()
-                    || "anonymousUser".equals(authentication.getPrincipal())) {
-                return false;
-            }
-
-            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            Job job = jobRepository.findById(UUID.fromString(jobId.toString())).orElse(null);
+            User currentUser = authUtils.getCurrentUser();
+            Job job = jobRepository.findById(jobId).orElse(null);
             if (job == null || job.getCompany() == null) {
                 return false;
             }
 
             boolean isCreator = job.getCreatedBy() != null
-                    && job.getCreatedBy().getId().equals(userDetails.user().getId());
-            return isCreator || companySecurity.hasRole(job.getCompany().getId(), "HR_MANAGER");
+                    && job.getCreatedBy().getId().equals(currentUser.getId());
+            return isCreator || companySecurity.isOwnerOrManager(job.getCompany().getId());
         } catch (Exception e) {
             return false;
         }
     }
 
-    public boolean isJobCreatorOrHr(Object jobId) {
+    public boolean isManager(UUID jobId) {
         if (jobId == null) return false;
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication == null || !authentication.isAuthenticated()
-                    || "anonymousUser".equals(authentication.getPrincipal())) {
-                return false;
-            }
-
-            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            Job job = jobRepository.findById(UUID.fromString(jobId.toString())).orElse(null);
+            Job job = jobRepository.findById(jobId).orElse(null);
             if (job == null || job.getCompany() == null) {
                 return false;
             }
-
-            boolean isCreator = job.getCreatedBy() != null
-                    && job.getCreatedBy().getId().equals(userDetails.user().getId());
-            return isCreator || companySecurity.hasRole(job.getCompany().getId(), "HR");
+            return companySecurity.isOwnerOrManager(job.getCompany().getId());
         } catch (Exception e) {
             return false;
         }
     }
 
-    public boolean isJobMember(Object jobId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
-            return false;
-        }
+    public boolean canPerformAction(UUID jobId, String action) {
+        if (jobId == null || action == null) return false;
         try {
-            Job job = jobRepository.findById(UUID.fromString(jobId.toString())).orElse(null);
-            if (job == null || job.getCompany() == null) {
-                return false;
-            }
-            return companySecurity.isMember(job.getCompany().getId());
+            return switch (action.toLowerCase()) {
+                case "submit", "close" -> isJobCreatorOrManager(jobId);
+                case "approve", "reject", "appeal" -> isManager(jobId);
+                default -> false;
+            };
         } catch (Exception e) {
             return false;
         }

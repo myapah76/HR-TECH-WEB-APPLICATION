@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import hrtech.identity.entities.User;
 import hrtech.identity.utils.AuthUtils;
-import hrtech.job.abstractions.repositories.JobRepository;
 import hrtech.job.abstractions.repositories.SavedJobRepository;
 import hrtech.job.abstractions.services.ISavedJobService;
+import hrtech.job.services.JobQueryService;
 import hrtech.job.dtos.response.JobResponse;
 import hrtech.job.entities.Job;
 import hrtech.job.entities.SavedJob;
@@ -27,7 +27,7 @@ import java.util.UUID;
 public class SavedJobServiceImpl implements ISavedJobService {
 
     private final SavedJobRepository savedJobRepository;
-    private final JobRepository jobRepository;
+    private final JobQueryService queryService;
 
     private final AuthUtils authUtils;
 
@@ -37,8 +37,7 @@ public class SavedJobServiceImpl implements ISavedJobService {
     @Transactional
     public void saveJob(UUID jobId) {
         User currentUser = authUtils.getCurrentUser();
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE, "Job not found"));
+        Job job = queryService.getJobEntityById(jobId);
 
         if (!savedJobRepository.existsByUserAndJob(currentUser, job)) {
             SavedJob savedJob = SavedJob.builder()
@@ -53,8 +52,7 @@ public class SavedJobServiceImpl implements ISavedJobService {
     @Transactional
     public void unsaveJob(UUID jobId) {
         User currentUser = authUtils.getCurrentUser();
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND_CODE, "Job not found"));
+        Job job = queryService.getJobEntityById(jobId);
 
         Optional<SavedJob> savedJob = savedJobRepository.findByUserAndJob(currentUser, job);
         savedJob.ifPresent(savedJobRepository::delete);

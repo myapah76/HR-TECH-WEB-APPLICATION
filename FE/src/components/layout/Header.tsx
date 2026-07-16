@@ -95,7 +95,7 @@ export default function Header() {
           {/* User & Settings Panel */}
           <div className="hidden md:flex items-center gap-3.5 lg:gap-4.5" id="header-actions">
             <ThemeToggle />
-            {/* Notifications */}
+
             {user && (
               <div className="relative animate-fade-in">
                 <NotificationDropdown />

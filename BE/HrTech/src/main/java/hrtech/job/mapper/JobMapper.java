@@ -31,6 +31,8 @@ public abstract class JobMapper {
 
     private final Map<String, String> skillNameCache = new ConcurrentHashMap<>();
 
+    public abstract Job toEntity(JobRequest request);
+
     @Mapping(target = "companyId", source = "company.id")
     @Mapping(target = "companyName", source = "company.name")
     @Mapping(target = "companyLogoUrl", source = "company.logoUrl")
@@ -45,6 +47,8 @@ public abstract class JobMapper {
     @Mapping(target = "skillName", expression = "java(resolveSkillName(jobSkill.getSkillNeo4jId()))")
     @Mapping(target = "requiredLevel", expression = "java(jobSkill.getRequiredLevel() != null ? jobSkill.getRequiredLevel().name() : null)")
     public abstract JobSkillResponse toSkillResponse(JobSkill jobSkill);
+
+    public abstract void updateJobFromRequest(JobRequest request, @MappingTarget Job job);
 
     public void preloadSkillNames(List<Job> jobs) {
         if (jobs == null || jobs.isEmpty())
@@ -77,34 +81,6 @@ public abstract class JobMapper {
         return skillNameCache.computeIfAbsent(skillNeo4jId, id -> skillService.findSkillById(id)
                 .map(node -> node.getName())
                 .orElse(id));
-    }
-
-    public void applyJobFields(Job job, JobRequest request) {
-        job.setTitle(request.title());
-        job.setPosition(request.position());
-        job.setDescription(request.description());
-        job.setRequirements(request.requirements());
-        job.setLocation(request.location());
-        job.setSalaryMin(request.salaryMin());
-        job.setSalaryMax(request.salaryMax());
-        job.setDeadline(request.deadline());
-
-        if (request.jobType() != null) {
-            try {
-                job.setJobType(JobType.valueOf(request.jobType()));
-            } catch (IllegalArgumentException e) {
-                throw new AppException(ErrorCode.BAD_REQUEST,
-                        "Invalid job type: " + request.jobType());
-            }
-        }
-        if (request.experienceLevel() != null) {
-            try {
-                job.setExperienceLevel(ExperienceLevel.valueOf(request.experienceLevel()));
-            } catch (IllegalArgumentException e) {
-                throw new AppException(ErrorCode.BAD_REQUEST,
-                        "Invalid experience level: " + request.experienceLevel());
-            }
-        }
     }
 
     public List<JobSkill> buildJobSkills(Job job, List<JobSkillRequest> skillRequests) {

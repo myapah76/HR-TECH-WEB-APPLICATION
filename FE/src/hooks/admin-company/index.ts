@@ -1,2 +1,5 @@
 export * from './useGetAdminCompanies'
-export * from './useAdminCompanyActions'
+export * from './useApproveCompany'
+export * from './useRejectCompany'
+export * from './useDeleteCompanyForAdmin'
+export * from './useRestoreCompany'

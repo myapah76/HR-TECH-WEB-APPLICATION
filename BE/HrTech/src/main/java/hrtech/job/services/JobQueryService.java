@@ -3,8 +3,9 @@ package hrtech.job.services;
 import com.querydsl.core.BooleanBuilder;
 import hrtech.company.abstractions.services.ICompanyService;
 import hrtech.company.entities.CompanyMember;
-import hrtech.identity.dtos.user.CustomUserDetails;
+import hrtech.company.entities.enums.CompanyRole;
 import hrtech.identity.entities.User;
+import hrtech.identity.utils.AuthUtils;
 import hrtech.job.abstractions.repositories.JobRepository;
 import hrtech.job.dtos.request.JobSearchCriteria;
 import hrtech.job.dtos.response.JobResponse;
@@ -14,7 +15,6 @@ import hrtech.job.entities.enums.ExperienceLevel;
 import hrtech.job.entities.enums.JobStatus;
 import hrtech.job.entities.enums.JobType;
 import hrtech.job.mapper.JobMapper;
-import hrtech.job.validators.JobValidator;
 import hrtech.shared.enums.ExtractionStatus;
 import hrtech.shared.error.ErrorCode;
 import hrtech.shared.exceptions.AppException;
@@ -23,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,16 +37,15 @@ import java.util.*;
 public class JobQueryService {
 
     private final ICompanyService companyService;
-    private final JobValidator jobValidator;
     private final ISkillService skillService;
+    private final AuthUtils authUtils;
 
     private final JobRepository jobRepository;
 
     private final JobMapper jobMapper;
 
     public JobResponse getJobDetails(UUID jobId) {
-        Job job = jobValidator.getActiveJob(jobId);
-        return jobMapper.toResponse(job);
+        return jobMapper.toResponse(getJobEntityById(jobId));
     }
 
     public Page<JobResponse> searchJobs(JobSearchCriteria criteria, Pageable pageable) {
@@ -98,107 +97,53 @@ public class JobQueryService {
         return page.map(jobMapper::toResponse);
     }
 
-    public Page<JobResponse> getJobsForAdmin(String keyword, String status, Pageable pageable) {
+    public Page<JobResponse> getJobReport(String keyword, Pageable pageable) {
         String keywordParam = (keyword != null && !keyword.trim().isEmpty()) ? "%" + keyword.trim().toLowerCase() + "%"
                 : null;
 
-        JobStatus jobStatusEnum = null;
-        if (status != null && !status.trim().isEmpty()) {
-            try {
-                jobStatusEnum = JobStatus.valueOf(status.toUpperCase());
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
-
-        Page<Job> page = jobRepository.findAllJobsForAdmin(keywordParam, jobStatusEnum, pageable);
+        Page<Job> page = jobRepository.findAllJobsForAdmin(keywordParam, JobStatus.APPEALED, pageable);
         jobMapper.preloadSkillNames(page.getContent());
         return page.map(jobMapper::toResponse);
     }
 
-    public List<JobResponse> getCompanyJobs(UUID companyId) {
-        User currentUser = jobValidator.getCurrentUser();
-        jobValidator.validateCompanyApproved(companyId);
-        jobValidator.validateCanViewCompanyJobs(currentUser, companyId);
+    public Page<JobResponse> getPublicCompanyJobs(UUID companyId, Pageable pageable) {
 
-        return jobRepository.findByCompanyIdAndDeletedFalse(companyId).stream()
-                .map(jobMapper::toResponse)
-                .toList();
+        Page<Job> page = jobRepository.findCompanyJobsWithFilters(
+                companyId,
+                JobStatus.APPROVED,
+                null,
+                null,
+                null,
+                pageable
+        );
+        jobMapper.preloadSkillNames(page.getContent());
+        return page.map(jobMapper::toResponse);
     }
 
-    public List<JobResponse> getManageJobs(UUID companyId) {
-        User currentUser = jobValidator.getCurrentUser();
+    public Page<JobResponse> getManageCompanyJobs(
+            UUID companyId, JobStatus status, JobType jobType, ExperienceLevel jobLevel, Pageable pageable) {
+
+        User currentUser = authUtils.getCurrentUser();
+        UUID createdById = null;
+
+        // Check if the member has HR role to filter by creator
         CompanyMember member = companyService.getMemberByCompanyIdAndUserId(companyId, currentUser.getId())
                 .orElseThrow(() -> new AppException(
                         ErrorCode.JOB_PERMISSION_DENIED,
                         "You do not belong to this company."));
 
-        return switch (member.getCompanyRole()) {
-            case HR -> getMyJobs(companyId);
-            case OWNER, HR_MANAGER -> getCompanyJobs(companyId);
-        };
-    }
-
-    public List<JobResponse> getPendingJobs(UUID companyId) {
-        User currentUser = jobValidator.getCurrentUser();
-        jobValidator.validateCompanyApproved(companyId);
-        jobValidator.validateCanApproveJob(currentUser, companyId);
-
-        return jobRepository.findByCompanyIdAndStatusAndDeletedFalse(companyId, JobStatus.PENDING_APPROVAL)
-                .stream()
-                .map(jobMapper::toResponse)
-                .toList();
-    }
-
-    public List<JobResponse> getMyJobs(UUID companyId) {
-        User currentUser = jobValidator.getCurrentUser();
-        jobValidator.validateCompanyApproved(companyId);
-        jobValidator.validateCanPostJob(currentUser, companyId);
-
-        return jobRepository.findByCompanyIdAndCreatedByIdAndDeletedFalse(companyId, currentUser.getId())
-                .stream()
-                .map(jobMapper::toResponse)
-                .toList();
-    }
-
-    public Page<JobResponse> getCompanyJobsWithFilters(UUID companyId, String status, String jobType, String jobLevel,
-            Pageable pageable) {
-        jobValidator.validateCompanyApproved(companyId);
-
-        Object principal = SecurityContextHolder.getContext().getAuthentication() != null
-                ? SecurityContextHolder.getContext().getAuthentication().getPrincipal()
-                : null;
-        User currentUser = (principal instanceof CustomUserDetails(User user)) ? user : null;
-
-        String targetStatus = status;
-        if (!jobValidator.hasViewCompanyJobsPermission(currentUser, companyId)) {
-            targetStatus = "APPROVED";
+        if (member.getCompanyRole() == CompanyRole.HR) {
+            createdById = currentUser.getId();
         }
 
-        JobStatus jobStatusEnum = null;
-        if (targetStatus != null) {
-            try {
-                jobStatusEnum = JobStatus.valueOf(targetStatus.toUpperCase());
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
-
-        JobType jobTypeEnum = null;
-        if (jobType != null) {
-            try {
-                jobTypeEnum = JobType.valueOf(jobType.toUpperCase());
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
-
-        ExperienceLevel jobLevelEnum = null;
-        if (jobLevel != null) {
-            try {
-                jobLevelEnum = ExperienceLevel.valueOf(jobLevel.toUpperCase());
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
-        Page<Job> page = jobRepository.findCompanyJobsWithFilters(companyId, jobStatusEnum, jobTypeEnum, jobLevelEnum,
-                pageable);
+        Page<Job> page = jobRepository.findCompanyJobsWithFilters(
+                companyId,
+                status,
+                jobType,
+                jobLevel,
+                createdById,
+                pageable
+        );
         jobMapper.preloadSkillNames(page.getContent());
         return page.map(jobMapper::toResponse);
     }

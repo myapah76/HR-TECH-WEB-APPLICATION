@@ -42,6 +42,7 @@ public interface JobRepository extends JpaRepository<Job, UUID>, QuerydslPredica
             AND (:status IS NULL OR j.status = :status)
             AND (:jobType IS NULL OR j.jobType = :jobType)
             AND (:jobLevel IS NULL OR j.experienceLevel = :jobLevel)
+            AND (:createdById IS NULL OR j.createdBy.id = :createdById)
           ORDER BY j.createdAt DESC
       """)
   Page<Job> findCompanyJobsWithFilters(
@@ -49,6 +50,7 @@ public interface JobRepository extends JpaRepository<Job, UUID>, QuerydslPredica
       @Param("status") JobStatus status,
       @Param("jobType") JobType jobType,
       @Param("jobLevel") ExperienceLevel jobLevel,
+      @Param("createdById") UUID createdById,
       Pageable pageable);
 
   @EntityGraph(attributePaths = { "company", "createdBy", "jobSkills" })

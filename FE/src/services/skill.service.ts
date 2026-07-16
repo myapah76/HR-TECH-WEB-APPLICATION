@@ -1,6 +1,6 @@
 import { api } from '@/src/lib/axios'
 import { ApiResponse } from '@/src/types/api'
-import { Skill, SkillGraph, PendingRelationship } from '@/src/types/skill'
+import { Skill, SkillGraph, PendingRelationship, RoleAlias } from '@/src/types/skill'
 
 // --- Search and Fetch ---
 export const searchSkills = async (keyword: string): Promise<Skill[]> => {
@@ -92,11 +92,6 @@ export const rejectRelationship = async (sourceId: string, targetId: string, typ
 }
 
 // --- Role Aliases ---
-export interface RoleAlias {
-  id: string
-  alias: string
-  canonicalRole: string
-}
 
 export const getRoleAliases = async (): Promise<RoleAlias[]> => {
   const response = await api.get<ApiResponse<RoleAlias[]>>(`/role-aliases`)

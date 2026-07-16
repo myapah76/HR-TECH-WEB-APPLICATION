@@ -39,8 +39,8 @@ export default function CompaniesPage() {
   const size = 10
 
   const { data: companiesPage, isLoading } = useGetAdminCompanies(searchKeyword, page, size)
-  const totalPages = companiesPage?.page?.totalPages ?? companiesPage?.totalPages ?? 0
-  const totalElements = companiesPage?.page?.totalElements ?? companiesPage?.totalElements ?? 0
+  const totalPages = companiesPage?.page?.totalPages ?? 0
+  const totalElements = companiesPage?.page?.totalElements ?? 0
 
   const approveMutation = useApproveCompany()
   const rejectMutation = useRejectCompany()

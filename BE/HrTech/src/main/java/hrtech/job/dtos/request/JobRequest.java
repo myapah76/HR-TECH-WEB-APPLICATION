@@ -1,5 +1,7 @@
 package hrtech.job.dtos.request;
 
+import hrtech.job.entities.enums.ExperienceLevel;
+import hrtech.job.entities.enums.JobType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -24,9 +26,9 @@ public record JobRequest(
         BigDecimal salaryMin,
         BigDecimal salaryMax,
 
-        String jobType,
+        JobType jobType,
 
-        String experienceLevel,
+        ExperienceLevel experienceLevel,
 
         Instant deadline,
 

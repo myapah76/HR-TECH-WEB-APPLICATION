@@ -3,6 +3,7 @@ package hrtech.identity.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hrtech.identity.dtos.auth.request.*;
+import hrtech.identity.utils.AuthUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpEntity;
@@ -10,7 +11,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -67,6 +67,7 @@ public class AuthServiceImpl implements IAuthService {
     private final OtpAttemptTracker otpAttemptTracker;
     private final ISubscriptionService subscriptionService;
     private final @Lazy ICompanyService companyService;
+    private final AuthUtils authUtils;
 
     @Override
     @Transactional
@@ -171,9 +172,8 @@ public class AuthServiceImpl implements IAuthService {
             throw new AppException(ErrorCode.INVALID_INPUT, "Confirm password does not match new password");
         }
 
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication()
-                .getPrincipal();
-        User user = userService.getUserEntityById(userDetails.user().getId());
+        UUID currentUserId = authUtils.getCurrentUserId();
+        User user = userService.getUserEntityById(currentUserId);
 
         if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
             throw new AppException(ErrorCode.WRONG_PASSWORD, "Current password is incorrect");

@@ -1,12 +1,6 @@
 import { api } from '@/src/lib/axios'
 import { ApiResponse } from '@/src/types/api'
-
-export interface CloudinarySignatureResponse {
-  signature: string
-  timestamp: number
-  apiKey: string
-  cloudName: string
-}
+import { CloudinarySignatureResponse } from '@/src/types'
 
 export const getCloudinarySignature = async (
   folder: string

@@ -88,3 +88,9 @@ export interface SetupPasswordRequest {
   setupToken: string
   newPassword: string
 }
+
+export interface ForceChangePasswordRequest {
+  currentPassword?: string
+  newPassword?: string
+  confirmPassword?: string
+}

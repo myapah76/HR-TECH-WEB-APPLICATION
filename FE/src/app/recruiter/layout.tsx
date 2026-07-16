@@ -8,13 +8,11 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import {
   Building2,
-  CalendarClock,
   CreditCard,
   LayoutDashboard,
   List,
   PlusCircle,
   Search,
-  Settings,
   UserCheck,
   Users,
 } from 'lucide-react'
@@ -31,7 +29,6 @@ const recruiterNavItems = [
   { icon: List, label: 'Quản lý tin đăng', path: '/recruiter/manage-jobs' },
   { icon: Search, label: 'AI Tìm Ứng Viên', path: '/recruiter/find-candidates' },
   { icon: Users, label: 'Đơn ứng tuyển', path: '/recruiter/applications' },
-  { icon: CalendarClock, label: 'Quản Lý Lịch Phỏng Vấn', path: '/recruiter/interview-schedules' },
 
   // ── Công ty ───────────────────────────────────────────────────────────────
   { label: 'Công ty', isHeader: true },
@@ -54,7 +51,9 @@ export default function RecruiterLayout({ children }: { children: React.ReactNod
     }
   }, [user, isInitialized, router])
 
-  const { data: myCompany } = useGetMyCompany(isInitialized && !!user && user.roleResponse?.name === RoleUser.RECRUITER)
+  const { data: myCompany } = useGetMyCompany(
+    isInitialized && !!user && user.roleResponse?.name === RoleUser.RECRUITER
+  )
 
   const { data: companyMembers = [] } = useGetCompanyMembers(
     myCompany?.id,
@@ -83,7 +82,12 @@ export default function RecruiterLayout({ children }: { children: React.ReactNod
     return items
   }, [isOwner])
 
-  if (!isInitialized || !user || user.requirePasswordChange || user.roleResponse?.name !== RoleUser.RECRUITER) {
+  if (
+    !isInitialized ||
+    !user ||
+    user.requirePasswordChange ||
+    user.roleResponse?.name !== RoleUser.RECRUITER
+  ) {
     return null
   }
 

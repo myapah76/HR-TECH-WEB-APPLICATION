@@ -79,8 +79,9 @@ export default function JobDetailPage() {
   const statusMutation = useUpdateJobStatusMutation()
 
   const reviewJob = (action: 'approve' | 'reject') => {
+    if (!job?.companyId) return
     statusMutation.mutate(
-      { jobId, action },
+      { jobId, action, companyId: job.companyId },
       {
         onSuccess: () => {
           toast.success(

@@ -32,3 +32,9 @@ export interface TrendingSkill {
   jobCount: number
 }
 
+export interface RoleAlias {
+  id: string
+  alias: string
+  canonicalRole: string
+}
+

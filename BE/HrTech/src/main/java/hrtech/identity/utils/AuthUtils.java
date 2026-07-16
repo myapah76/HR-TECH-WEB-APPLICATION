@@ -31,6 +31,14 @@ public class AuthUtils {
         throw new RuntimeException("Tài khoản chưa được xác thực!");
     }
 
+    public User getCurrentUserOrNull() {
+        try {
+            return getCurrentUser();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public UUID getCurrentUserId() {
         return getCurrentUser().getId();
     }

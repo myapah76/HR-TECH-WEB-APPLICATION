@@ -9,7 +9,7 @@ import { useGetUsers, useUpdateUserBlockedStatus } from '@/src/hooks/user'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { AdminUsersParams, User } from '@/src/types/user'
 import { getErrorMessage } from '@/src/utils'
-import { AlertTriangle, Lock, Search, Shield, Unlock, Users, X } from 'lucide-react'
+import { AlertTriangle, Lock, Search, Shield, Unlock, X } from 'lucide-react'
 
 type BlockedFilter = 'ALL' | 'ACTIVE' | 'BLOCKED'
 

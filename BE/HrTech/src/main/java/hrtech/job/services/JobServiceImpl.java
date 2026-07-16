@@ -8,6 +8,9 @@ import hrtech.job.dtos.response.HotPositionResponse;
 import hrtech.job.dtos.response.TrendingSkillResponse;
 import hrtech.job.dtos.response.LandingStatsResponse;
 import hrtech.job.entities.Job;
+import hrtech.job.entities.enums.ExperienceLevel;
+import hrtech.job.entities.enums.JobStatus;
+import hrtech.job.entities.enums.JobType;
 import hrtech.job.entities.JobSkill;
 import hrtech.shared.enums.ExtractionStatus;
 import lombok.RequiredArgsConstructor;
@@ -37,8 +40,8 @@ public class JobServiceImpl implements IJobService {
     }
 
     @Override
-    public JobResponse updateOwnJob(UUID jobId, JobRequest request) {
-        return commandService.updateOwnJob(jobId, request);
+    public JobResponse updateJob(UUID jobId, JobRequest request) {
+        return commandService.updateJob(jobId, request);
     }
 
     @Override
@@ -61,9 +64,21 @@ public class JobServiceImpl implements IJobService {
         return commandService.closeJob(jobId);
     }
 
+
+
     @Override
-    public void adminDeleteJob(UUID jobId) {
-        commandService.adminDeleteJob(jobId);
+    public JobResponse appealJob(UUID jobId) {
+        return commandService.appealJob(jobId);
+    }
+
+    @Override
+    public JobResponse approveAppeal(UUID jobId) {
+        return commandService.approveAppeal(jobId);
+    }
+
+    @Override
+    public JobResponse rejectAppeal(UUID jobId) {
+        return commandService.rejectAppeal(jobId);
     }
 
     @Override
@@ -86,39 +101,22 @@ public class JobServiceImpl implements IJobService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<JobResponse> getJobsForAdmin(String keyword, String status, Pageable pageable) {
-        return queryService.getJobsForAdmin(keyword, status, pageable);
+    public Page<JobResponse> getJobReport(String keyword, Pageable pageable) {
+        return queryService.getJobReport(keyword, pageable);
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<JobResponse> getPublicCompanyJobs(UUID companyId, Pageable pageable) {
+        return queryService.getPublicCompanyJobs(companyId, pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<JobResponse> getCompanyJobs(UUID companyId) {
-        return queryService.getCompanyJobs(companyId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<JobResponse> getManageJobs(UUID companyId) {
-        return queryService.getManageJobs(companyId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<JobResponse> getPendingJobs(UUID companyId) {
-        return queryService.getPendingJobs(companyId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<JobResponse> getMyJobs(UUID companyId) {
-        return queryService.getMyJobs(companyId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<JobResponse> getCompanyJobsWithFilters(UUID companyId, String status, String jobType, String jobLevel,
-            Pageable pageable) {
-        return queryService.getCompanyJobsWithFilters(companyId, status, jobType, jobLevel, pageable);
+    public Page<JobResponse> getManageCompanyJobs(
+            UUID companyId, JobStatus status, JobType jobType, ExperienceLevel jobLevel, Pageable pageable) {
+        return queryService.getManageCompanyJobs(companyId, status, jobType, jobLevel, pageable);
     }
 
     @Override

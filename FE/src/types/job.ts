@@ -97,3 +97,16 @@ export interface LandingStatsResponse {
   totalCompanies: number
   totalApplications: number
 }
+
+export interface AdminJobsParams {
+  keyword?: string
+  status?: string
+  page?: number
+  size?: number
+}
+
+export interface UpdateJobStatusVariables {
+  jobId: string
+  action: JobStatusAction
+  companyId: string
+}

@@ -8,8 +8,8 @@ import {
   deleteRoleAlias,
   renameCanonicalRole,
   deleteCanonicalRole,
-  RoleAlias,
 } from '@/src/services/skill.service'
+import { RoleAlias } from '@/src/types/skill'
 import CanonicalRoleRow from './CanonicalRoleRow'
 import CanonicalRoleConfirmModal from './CanonicalRoleConfirmModal'
 import Pagination from '@/src/components/common/Pagination'
