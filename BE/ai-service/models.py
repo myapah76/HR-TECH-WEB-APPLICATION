@@ -100,3 +100,22 @@ class ValidateSkillsRequest(BaseModel):
 
 class ValidateSkillsResponse(BaseModel):
     valid_skills: List[str]
+
+# --- AI Job Posting Review ---
+class ReviewJobPostingRequest(BaseModel):
+    title: str
+    description: str
+    requirements: Optional[str] = ""
+    location: Optional[str] = ""
+    salary_min: Optional[float] = None
+    salary_max: Optional[float] = None
+    job_type: Optional[str] = ""
+    experience_level: Optional[str] = ""
+    position: Optional[str] = ""
+
+class ReviewJobPostingResponse(BaseModel):
+    approved: bool
+    rejection_reasons: List[str]
+    suggestions: List[str]
+    overall_message: str
+    check_details: dict

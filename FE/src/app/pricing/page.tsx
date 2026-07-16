@@ -145,8 +145,8 @@ export default function PricingPage() {
     }
   }
 
-  const hrPackages = plans.filter((p) => p.subscriptionType === SubscriptionType.COMPANY)
-  const candidatePackages = plans.filter((p) => p.subscriptionType === SubscriptionType.CANDIDATE)
+  const hrPackages = plans.filter((p) => p.subscriptionType === SubscriptionType.COMPANY && p.isActive === true)
+  const candidatePackages = plans.filter((p) => p.subscriptionType === SubscriptionType.CANDIDATE && p.isActive === true)
 
   const rawPackages = activeTab === 'candidate' ? candidatePackages : hrPackages
 
@@ -233,7 +233,7 @@ export default function PricingPage() {
         quota: 0,
       })
     }
-    pkg.features?.forEach((f) => {
+    pkg.features?.filter((f) => !['AI_CREDIT', 'JOB_POSTING'].includes(f.code)).forEach((f) => {
       featuresList.push({
         code: f.code,
         name: f.name + (f.aiCreditCost > 0 ? ` (${f.aiCreditCost} credits/lượt)` : ' (Miễn phí AI)'),
