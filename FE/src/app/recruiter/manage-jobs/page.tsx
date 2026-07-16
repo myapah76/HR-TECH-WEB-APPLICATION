@@ -77,8 +77,8 @@ export default function ManageJobPage() {
   const isError = isCompanyError || isJobsError
 
   const jobs = pageData?.content ?? []
-  const totalPages = pageData?.totalPages ?? 0
-  const totalElements = pageData?.totalElements ?? 0
+  const totalPages = pageData?.page?.totalPages ?? 0
+  const totalElements = pageData?.page?.totalElements ?? 0
 
   const handleFilterChange = (
     newStatus: string,

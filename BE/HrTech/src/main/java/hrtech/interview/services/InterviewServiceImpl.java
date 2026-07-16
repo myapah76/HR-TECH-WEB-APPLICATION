@@ -84,7 +84,8 @@ public class InterviewServiceImpl implements IInterviewService {
         List<String> rawQuestions = interviewAiServiceClient.generateInterviewQuestions(
                 cv.getParsedContent(),
                 jdText,
-                request.targetRole());
+                request.targetRole(),
+                request.numQuestions());
         // Kiểm tra nếu AI không sinh được câu hỏi nào
         if (rawQuestions.isEmpty()) {
             throw new AppException(ErrorCode.GENERATE_QUESTION_FAILED);

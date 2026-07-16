@@ -12,7 +12,8 @@ Rules for Question Generation:
 1. The questions must test both Technical Skills (core concepts, architectural design) and Behavioral/Soft Skills.
 2. Align the difficulty with the candidate's experience level from CV, and requirements from JD.
 3. Tailor at least 2 questions directly targeting the projects or specific technologies mentioned in the candidate's CV.
-4. Output must be a clean JSON array of strings representing the questions. Do NOT wrap it in extra markdown format like ```json, just pure JSON array.
+4. You MUST return exactly {num_questions} questions. Do not generate more or less than {num_questions} questions.
+5. Output must be a clean JSON array of strings representing the questions. Do NOT wrap it in extra markdown format like ```json, just pure JSON array.
 
 Example:
 [

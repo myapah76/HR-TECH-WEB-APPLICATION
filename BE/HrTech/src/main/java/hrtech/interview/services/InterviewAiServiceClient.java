@@ -21,17 +21,19 @@ public class InterviewAiServiceClient {
     @Value("${ai.service.url}")
     private String aiServiceUrl;
 
-    // Gọi Python AI service để sinh câu hỏi phỏng vấn dựa trên CV, JD và vai trò
-    // mục tiêu
-    public List<String> generateInterviewQuestions(String cvText, String jdText, String targetRole) {
+    // Gọi Python AI service để sinh câu hỏi phỏng vấn dựa trên CV, JD, vai trò
+    // mục tiêu và số lượng câu hỏi
+    public List<String> generateInterviewQuestions(String cvText, String jdText, String targetRole,
+            Integer numQuestions) {
         try {
             // Gọi endpoint của Python AI service để sinh câu hỏi
             String url = aiServiceUrl + "/api/ai/generate-questions";
-            // Tạo request body với dữ liệu CV, JD và vai trò mục tiêu
+            // Tạo request body với dữ liệu CV, JD, vai trò mục tiêu và số lượng câu hỏi
             var requestBody = GenerateQuestionsRequest.builder()
                     .cv_text(cvText != null ? cvText : "")
                     .jd_text(jdText != null ? jdText : "")
                     .target_role(targetRole)
+                    .num_questions(numQuestions != null ? numQuestions : 5)
                     .build();
             // Thiết lập headers cho request
             HttpHeaders headers = new HttpHeaders();

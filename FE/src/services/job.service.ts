@@ -86,7 +86,8 @@ export const getManageJobs = async (
     )
     const allJobs = [...firstPage.data.data.content]
 
-    for (let nextPage = 1; nextPage < firstPage.data.data.totalPages; nextPage += 1) {
+    const totalPagesVal = firstPage.data.data.page?.totalPages ?? firstPage.data.data.totalPages ?? 0
+    for (let nextPage = 1; nextPage < totalPagesVal; nextPage += 1) {
       const response = await api.get<ApiResponse<PageResponse<Job>>>(
         `/companies/${companyId}/jobs`,
         { params: { ...serverParams, page: nextPage, size: 100 } }
@@ -98,14 +99,13 @@ export const getManageJobs = async (
     const start = page * size
 
     return {
-      ...firstPage.data.data,
       content: filteredJobs.slice(start, start + size),
-      totalElements: filteredJobs.length,
-      totalPages: Math.ceil(filteredJobs.length / size),
-      size,
-      number: page,
-      first: page === 0,
-      last: page >= Math.max(Math.ceil(filteredJobs.length / size) - 1, 0),
+      page: {
+        totalElements: filteredJobs.length,
+        totalPages: Math.ceil(filteredJobs.length / size),
+        size,
+        number: page,
+      }
     }
   }
 

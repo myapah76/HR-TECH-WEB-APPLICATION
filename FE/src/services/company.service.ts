@@ -1,7 +1,17 @@
 import { api } from '@/src/lib/axios'
 import { ApiResponse, PageResponse } from '@/src/types/api'
-
-import { CompanyMemberResponse, CompanyResponse, GetCompaniesParams, TopCompany } from '@/src/types/company'
+import {
+  AddMemberRequest,
+  CompanyMemberResponse,
+  CompanyResponse,
+  CompanyUpdateRequest,
+  GetCompaniesParams,
+  RecruiterActiveJob,
+  RecruiterAnalyticsResponse,
+  RecruiterDashboardSummary,
+  RecruiterUpcomingInterview,
+  TopCompany,
+} from '@/src/types/company'
 
 export const getMyCompany = async (): Promise<CompanyResponse> => {
   const response = await api.get<ApiResponse<CompanyResponse>>('/companies/my-company')
@@ -31,28 +41,12 @@ export const getCompanyMembers = async (companyId: string): Promise<CompanyMembe
   return response.data.data
 }
 
-export interface CompanyUpdateRequest {
-  name: string
-  description?: string
-  logoUrl?: string
-  website?: string
-  industry?: string
-  size?: string
-  address?: string
-}
-
 export const updateCompany = async (
   id: string,
   request: CompanyUpdateRequest
 ): Promise<CompanyResponse> => {
   const response = await api.put<ApiResponse<CompanyResponse>>(`/companies/${id}`, request)
   return response.data.data
-}
-
-export interface AddMemberRequest {
-  email: string
-  fullName: string
-  role: string
 }
 
 export const addCompanyMember = async (
@@ -94,4 +88,26 @@ export const updateMemberRole = async (
     `/companies/${companyId}/members/${memberId}/role`,
     { role }
   )
+}
+
+// ─── Dashboard API calls ─────────────────────────────────────────────────────
+
+export const getRecruiterDashboardSummary = async (): Promise<RecruiterDashboardSummary> => {
+  const response = await api.get<ApiResponse<RecruiterDashboardSummary>>('/companies/dashboard/summary')
+  return response.data.data
+}
+
+export const getRecruiterUpcomingInterviews = async (): Promise<RecruiterUpcomingInterview[]> => {
+  const response = await api.get<ApiResponse<RecruiterUpcomingInterview[]>>('/companies/dashboard/upcoming-interviews')
+  return response.data.data
+}
+
+export const getRecruiterActiveJobs = async (): Promise<RecruiterActiveJob[]> => {
+  const response = await api.get<ApiResponse<RecruiterActiveJob[]>>('/companies/dashboard/active-jobs')
+  return response.data.data
+}
+
+export const getRecruiterAnalytics = async (): Promise<RecruiterAnalyticsResponse> => {
+  const response = await api.get<ApiResponse<RecruiterAnalyticsResponse>>('/companies/dashboard/analytics')
+  return response.data.data
 }

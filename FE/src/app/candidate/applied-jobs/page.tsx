@@ -86,8 +86,8 @@ export default function AppliedJobsPage() {
 
   const { data: applicationsPage, isLoading: loadingApps } = useGetMyApplications(currentPage - 1, itemsPerPage)
   const applications = applicationsPage?.content || []
-  const totalPages = applicationsPage?.totalPages || 1
-  const totalElements = applicationsPage?.totalElements || 0
+  const totalPages = applicationsPage?.page?.totalPages ?? 1
+  const totalElements = applicationsPage?.page?.totalElements ?? 0
 
   const { data: jobsData, isLoading: loadingJobs } = useGetJobs(0, 100)
   const acceptScheduleMutation = useAcceptInterviewSchedule()

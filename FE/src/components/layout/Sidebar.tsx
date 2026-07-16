@@ -7,10 +7,11 @@ import { useState } from 'react'
 import { useAuthStore } from '@/src/stores/auth.store'
 
 export interface SidebarItem {
-  icon: LucideIcon
+  icon?: LucideIcon
   label: string
-  path: string
+  path?: string
   badge?: number
+  isHeader?: boolean
 }
 
 interface SidebarProps {
@@ -104,13 +105,27 @@ export default function Sidebar({ items, title, accentColor = 'blue' }: SidebarP
 
       {/* Nav Items */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {items.map((item) => {
-          const isActive = pathname === item.path
+        {items.map((item, index) => {
+          if (item.isHeader) {
+            if (collapsed) {
+              return <div key={index} className="h-px bg-slate-100 my-4 mx-2" />
+            }
+            return (
+              <div
+                key={index}
+                className="px-3 pt-5 pb-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest select-none"
+              >
+                {item.label}
+              </div>
+            )
+          }
+
+          const isActive = item.path ? pathname === item.path : false
           const Icon = item.icon
           return (
             <Link
-              key={item.path}
-              href={item.path}
+              key={item.path || index}
+              href={item.path || '#'}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 group relative ${
                 isActive
                   ? `${colors.activeBg} ${colors.activeText} shadow-xs border ${colors.border}`
@@ -118,9 +133,11 @@ export default function Sidebar({ items, title, accentColor = 'blue' }: SidebarP
               }`}
               title={collapsed ? item.label : undefined}
             >
-              <Icon
-                className={`h-5 w-5 shrink-0 ${isActive ? colors.text : 'text-slate-400 group-hover:text-slate-600'} transition-colors`}
-              />
+              {Icon && (
+                <Icon
+                  className={`h-5 w-5 shrink-0 ${isActive ? colors.text : 'text-slate-400 group-hover:text-slate-600'} transition-colors`}
+                />
+              )}
               {!collapsed && (
                 <>
                   <span className="truncate">{item.label}</span>
