@@ -59,14 +59,15 @@ export default function UsersPage() {
   const { data: usersPage, isLoading, isError, refetch } = useGetUsers(queryParams)
   const updateBlockedStatus = useUpdateUserBlockedStatus()
   const users = usersPage?.content ?? []
-  const totalElements = usersPage?.totalElements ?? 0
-  const totalPages = Math.max(1, usersPage?.totalPages ?? 1)
+  const totalElements = usersPage?.page?.totalElements ?? 0
+  const totalPages = Math.max(1, usersPage?.page?.totalPages ?? 1)
   const safeCurrentPage = Math.min(currentPage, totalPages)
 
   useEffect(() => {
-    if (usersPage && usersPage.totalPages > 0 && currentPage > usersPage.totalPages) {
+    const finalTotalPages = usersPage?.page?.totalPages ?? 0
+    if (usersPage && finalTotalPages > 0 && currentPage > finalTotalPages) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCurrentPage(usersPage.totalPages)
+      setCurrentPage(finalTotalPages)
     }
   }, [currentPage, usersPage])
 

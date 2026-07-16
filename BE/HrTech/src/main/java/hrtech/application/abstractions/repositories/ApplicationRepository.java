@@ -25,6 +25,9 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
     List<Application> findByJobId(UUID jobId);
 
     @EntityGraph(attributePaths = {"job", "job.company", "cv", "user"})
+    List<Application> findByJobIdIn(Collection<UUID> jobIds);
+
+    @EntityGraph(attributePaths = {"job", "job.company", "cv", "user"})
     Page<Application> findByJobId(UUID jobId, Pageable pageable);
 
     boolean existsByUserIdAndJobIdAndStatusNotIn(UUID userId, UUID jobId, Collection<ApplicationStatus> statuses);

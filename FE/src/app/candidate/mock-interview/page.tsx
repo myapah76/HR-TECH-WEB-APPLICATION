@@ -8,10 +8,7 @@ import { Input } from '@/src/components/ui/input'
 import { Label } from '@/src/components/ui/label'
 import { useGetAllCvs } from '@/src/hooks/cv'
 import { useGetSavedJobs } from '@/src/hooks/job'
-import {
-  useGetInterviewSessionHistory,
-  useStartInterviewSession,
-} from '@/src/hooks/interview'
+import { useGetInterviewSessionHistory, useStartInterviewSession } from '@/src/hooks/interview'
 import {
   MessageSquare,
   Play,
@@ -21,7 +18,6 @@ import {
   Loader2,
   ChevronRight,
   Sparkles,
-  Bot,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -78,7 +74,6 @@ export default function MockInterviewSetupPage() {
   }
   return (
     <div className="space-y-8 animate-fade-in p-2">
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* SETUP FORM */}
         <Card className="lg:col-span-1 p-6 bg-white border-slate-200 shadow-sm rounded-2xl h-fit">

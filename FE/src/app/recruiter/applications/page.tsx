@@ -120,8 +120,8 @@ export default function HRApplicationsPage() {
   })
 
   const isServerPaginated = Boolean(selectedJobId) && !filterStatus && !searchQuery
-  const totalItems = isServerPaginated ? (singleJobPage?.totalElements || filtered.length) : filtered.length
-  const totalPages = isServerPaginated ? (singleJobPage?.totalPages || 1) : (Math.ceil(totalItems / itemsPerPage) || 1)
+  const totalItems = isServerPaginated ? (singleJobPage?.page?.totalElements ?? filtered.length) : filtered.length
+  const totalPages = isServerPaginated ? (singleJobPage?.page?.totalPages ?? 1) : (Math.ceil(totalItems / itemsPerPage) || 1)
 
   const displayApps = isServerPaginated
     ? filtered

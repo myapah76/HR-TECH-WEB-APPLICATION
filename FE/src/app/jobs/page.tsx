@@ -155,7 +155,7 @@ export default function JobListPage() {
     sort: sortOrder,
   })
 
-  const totalPages = data?.totalPages ?? 0
+  const totalPages = data?.page?.totalPages ?? 0
 
   // Server-side filtered jobs directly from data
   const jobs = useMemo(() => {
@@ -163,8 +163,8 @@ export default function JobListPage() {
   }, [data?.content])
 
   const totalResults = useMemo(() => {
-    return data?.totalElements ?? 0
-  }, [data?.totalElements])
+    return data?.page?.totalElements ?? 0
+  }, [data?.page?.totalElements])
 
   const handleClearAll = () => {
     setSelectedType(null)
@@ -294,7 +294,7 @@ export default function JobListPage() {
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={data?.totalElements ?? 0}
+              totalItems={totalResults}
               itemsPerPage={pageSize}
               onPageChange={handlePageChange}
               onItemsPerPageChange={handlePageSizeChange}

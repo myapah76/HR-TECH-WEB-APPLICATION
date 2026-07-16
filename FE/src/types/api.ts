@@ -4,12 +4,14 @@ export interface ApiResponse<T> {
   data: T
 }
 
-export interface PageResponse<T> {
-  content: T[]
-  totalPages: number
-  totalElements: number
+export interface PageMetadata {
   size: number
   number: number
-  first: boolean
-  last: boolean
+  totalElements: number
+  totalPages: number
+}
+
+export interface PageResponse<T> {
+  content: T[]
+  page: PageMetadata
 }

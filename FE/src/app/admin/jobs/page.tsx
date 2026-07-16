@@ -254,8 +254,8 @@ function JobsManagementContent() {
   }
 
   const jobsList = jobsPage?.content || []
-  const totalElements = jobsPage?.totalElements || 0
-  const totalPages = Math.max(1, jobsPage?.totalPages || 1)
+  const totalElements = jobsPage?.page?.totalElements ?? 0
+  const totalPages = Math.max(1, jobsPage?.page?.totalPages ?? 1)
   const safeCurrentPage = Math.min(urlPage, totalPages)
 
   const isAnyPending =

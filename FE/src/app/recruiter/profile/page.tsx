@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useGetMyCompany, useUpdateCompany, useGetCompanyMembers } from '@/src/hooks/company'
@@ -199,9 +200,12 @@ export default function RecruiterCompanyProfilePage() {
               {/* Logo container shifted up */}
               <div className="shrink-0 -mt-20 relative z-10 bg-white p-1.5 rounded-2xl border border-slate-200/80 shadow-md">
                 {logoPreview ? (
-                  <img
+                  <Image
                     src={logoPreview}
                     alt={name}
+                    width={112}
+                    height={112}
+                    unoptimized
                     className="h-28 w-28 rounded-xl object-contain bg-white"
                     onError={(e) => {
                       ;(e.target as HTMLElement).style.display = 'none'
@@ -342,9 +346,12 @@ export default function RecruiterCompanyProfilePage() {
               <div className="flex flex-col sm:flex-row items-center gap-5 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
                 <div className="relative shrink-0">
                   {logoPreview ? (
-                    <img
+                    <Image
                       src={logoPreview}
                       alt={name}
+                      width={112}
+                      height={112}
+                      unoptimized
                       className="h-28 w-28 rounded-2xl object-contain border border-slate-200 bg-white p-1"
                     />
                   ) : (

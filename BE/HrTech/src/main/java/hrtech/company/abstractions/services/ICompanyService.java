@@ -2,25 +2,23 @@ package hrtech.company.abstractions.services;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import hrtech.company.dtos.request.AddMemberRequest;
 import hrtech.company.dtos.request.CompanyRegisterRequest;
 import hrtech.company.dtos.request.CompanyUpdateRequest;
-import hrtech.company.dtos.request.UpdateMemberRoleRequest;
-import hrtech.company.dtos.response.CompanyMemberResponse;
 import hrtech.company.dtos.response.CompanyResponse;
+import hrtech.company.dtos.response.TopCompanyResponse;
+import hrtech.company.entities.Company;
+import hrtech.company.entities.CompanyMember;
 import hrtech.identity.dtos.auth.response.ConfirmOtpResult;
 import hrtech.identity.dtos.auth.response.EmailActionResponse;
 
-import hrtech.company.dtos.response.TopCompanyResponse;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
-import hrtech.company.entities.CompanyMember;
 
 public interface ICompanyService {
 
     // Landing / Top Employers
     List<TopCompanyResponse> getTopCompanies(int limit);
-
 
     // Registration
     EmailActionResponse registerCompany(CompanyRegisterRequest request);
@@ -40,21 +38,6 @@ public interface ICompanyService {
 
     void deleteCompany(UUID companyId);
 
-    // Member Management
-    CompanyMember getMemberEntityByUserId(UUID userId);
-
-    CompanyMemberResponse addMember(UUID companyId, AddMemberRequest request);
-
-    List<CompanyMemberResponse> getMembers(UUID companyId);
-
-    void removeMember(UUID companyId, UUID memberId);
-
-    void reactivateMember(UUID companyId, UUID memberId, boolean resetPassword);
-
-    void updateMemberRole(UUID companyId, UUID memberId, UpdateMemberRoleRequest request);
-
-    void transferOwnership(UUID companyId, UUID currentOwnerId, UUID targetMemberId);
-
     // Admin Approval
     CompanyResponse approveCompany(UUID companyId);
 
@@ -62,12 +45,14 @@ public interface ICompanyService {
 
     CompanyResponse restoreCompany(UUID companyId);
 
-    hrtech.company.entities.Company getCompanyEntityById(UUID companyId);
+    // Internal
+    Company getCompanyEntityById(UUID companyId);
 
-    java.util.Optional<CompanyMember> getMemberByCompanyIdAndUserId(UUID companyId, UUID userId);
+    CompanyMember getMemberEntityByUserId(UUID userId);
+
+    Optional<CompanyMember> getMemberByCompanyIdAndUserId(UUID companyId, UUID userId);
 
     void updateCompanyBalances(UUID companyId, int aiCreditDelta, int jobPostDelta);
 
     long countApprovedCompanies();
 }
-

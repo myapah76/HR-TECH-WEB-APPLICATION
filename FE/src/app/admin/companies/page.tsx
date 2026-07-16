@@ -39,6 +39,8 @@ export default function CompaniesPage() {
   const size = 10
 
   const { data: companiesPage, isLoading } = useGetAdminCompanies(searchKeyword, page, size)
+  const totalPages = companiesPage?.page?.totalPages ?? companiesPage?.totalPages ?? 0
+  const totalElements = companiesPage?.page?.totalElements ?? companiesPage?.totalElements ?? 0
 
   const approveMutation = useApproveCompany()
   const rejectMutation = useRejectCompany()
@@ -234,12 +236,12 @@ export default function CompaniesPage() {
             </table>
 
             {/* Pagination */}
-            {companiesPage && companiesPage.totalPages > 1 && (
+            {companiesPage && totalPages > 1 && (
               <div className="flex items-center justify-between border-t border-slate-100 p-4 bg-white rounded-b-2xl">
                 <p className="text-xs font-bold text-slate-500">
                   Hiển thị {page * size + 1} -{' '}
-                  {Math.min((page + 1) * size, companiesPage.totalElements)} trong số{' '}
-                  {companiesPage.totalElements} công ty
+                  {Math.min((page + 1) * size, totalElements)} trong số{' '}
+                  {totalElements} công ty
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -250,8 +252,8 @@ export default function CompaniesPage() {
                     <ChevronLeft className="h-4 w-4 text-slate-600" />
                   </button>
                   <button
-                    onClick={() => setPage((p) => Math.min(companiesPage.totalPages - 1, p + 1))}
-                    disabled={page === companiesPage.totalPages - 1}
+                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                    disabled={page === totalPages - 1}
                     className="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white cursor-pointer transition-colors"
                   >
                     <ChevronRight className="h-4 w-4 text-slate-600" />

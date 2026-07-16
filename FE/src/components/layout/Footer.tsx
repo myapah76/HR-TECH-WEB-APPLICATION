@@ -1,7 +1,14 @@
+'use client'
 import Link from "next/link"
 import { Code, Briefcase, Mail, MapPin, Phone, Share2 } from "lucide-react"
+import { usePathname } from "next/navigation"
 
 export default function Footer() {
+  const pathname = usePathname()
+  const hideFooter = pathname.startsWith('/candidate') || pathname.startsWith('/recruiter') || pathname.startsWith('/admin')
+
+  if (hideFooter) return null
+
   return (
     <footer
       className="bg-slate-950 text-slate-400 border-t border-slate-900 py-16 transition-colors"

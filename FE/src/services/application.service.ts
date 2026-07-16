@@ -33,7 +33,8 @@ export const getCompanyApplications = async (companyId: string): Promise<Applica
   const firstPage = await getManageJobs(companyId, { page: 0, size: 100 })
   const jobs = [...firstPage.content]
 
-  for (let page = 1; page < firstPage.totalPages; page += 1) {
+  const totalPagesVal = firstPage.page?.totalPages ?? 0
+  for (let page = 1; page < totalPagesVal; page += 1) {
     const nextPage = await getManageJobs(companyId, { page, size: 100 })
     jobs.push(...nextPage.content)
   }

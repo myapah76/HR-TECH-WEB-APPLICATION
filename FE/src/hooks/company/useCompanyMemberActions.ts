@@ -4,8 +4,8 @@ import {
   removeCompanyMember,
   reactivateCompanyMember,
   updateMemberRole,
-  AddMemberRequest,
 } from '@/src/services/company.service'
+import type { AddMemberRequest } from '@/src/types/company'
 
 export const useAddCompanyMember = () => {
   const queryClient = useQueryClient()

@@ -9,5 +9,6 @@ public record StartSessionRequest(
         UUID cvId,
         UUID jobId,
         @NotNull(message = "Vị trí tuyển dụng không được để trống")
-        String targetRole
+        String targetRole,
+        Integer numQuestions
 ) {}
