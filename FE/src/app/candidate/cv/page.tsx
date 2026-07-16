@@ -16,6 +16,7 @@ import { AiMatchHistoryResponse } from '@/src/types/recommendation'
 import { toast } from 'sonner'
 import { FeatureGate } from '@/src/components/common/FeatureGate'
 import { ScanSearch } from 'lucide-react'
+import { isCvAlreadyExistsError } from '@/src/utils'
 
 // Import components
 import { CvUploadCard } from '@/src/components/candidate/cv/CvUploadCard'
@@ -110,6 +111,15 @@ export default function CandidateCvPage() {
             'Tải CV lên thành công! Hệ thống đang phân tích kỹ năng, vui lòng đợi trong giây lát.',
             { duration: 5000 }
           )
+        },
+        onError: (error) => {
+          if (isCvAlreadyExistsError(error)) {
+            toast.warning('Hồ sơ này đã được tải lên trước đó.')
+            setSelectedFile(null)
+            setCvTitle('')
+            if (fileInputRef.current) fileInputRef.current.value = ''
+            return
+          }
         },
       }
     )

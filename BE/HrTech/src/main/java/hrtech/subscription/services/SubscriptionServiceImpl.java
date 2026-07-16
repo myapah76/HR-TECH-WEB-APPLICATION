@@ -75,7 +75,7 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
                                 return new SubFeatureRateUsageResponse(rl.getResetType(), rl.getCapQuota(), used,
                                         Instant.now());
                             }).collect(Collectors.toList());
-                            return new SubFeatureUsageResponse(pf.getFeature().getCode(), pf.getFeature().getName(), 0,
+                            return new SubFeatureUsageResponse(pf.getFeature().getCode(), pf.getFeature().getName(), pf.getAiCreditCost(),
                                     0, rateUsages);
                         }).collect(Collectors.toList());
                 return new MySubscriptionResponse(
@@ -104,7 +104,7 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
                                             Instant.now());
                                 }).collect(Collectors.toList());
                                 return new SubFeatureUsageResponse(pf.getFeature().getCode(), pf.getFeature().getName(),
-                                        0, 0, rateUsages);
+                                        pf.getAiCreditCost(), 0, rateUsages);
                             }).collect(Collectors.toList());
                     return new MySubscriptionResponse(
                             sub.getId(), sub.getPlan().getId(), sub.getPlan().getName(), sub.getPlan().getPrice(),
@@ -162,17 +162,9 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
         candidateSubscriptionRepository.save(sub);
 
         // Add Tokens to Wallet
-        if (freePlan.getPlanFeatures() != null) {
-            boolean walletChanged = false;
-            for (CandidatePlanFeature pf : freePlan.getPlanFeatures()) {
-                if ("AI_CREDIT".equals(pf.getFeature().getCode())) {
-                    user.setAiCreditBalance(user.getAiCreditBalance() + pf.getTotalQuota());
-                    walletChanged = true;
-                }
-            }
-            if (walletChanged) {
-                userService.saveUserEntity(user);
-            }
+        if (freePlan.getAiCreditBalance() != null && freePlan.getAiCreditBalance() > 0) {
+            user.setAiCreditBalance(user.getAiCreditBalance() + freePlan.getAiCreditBalance());
+            userService.saveUserEntity(user);
         }
     }
 
@@ -212,19 +204,10 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
         companySubscriptionRepository.save(sub);
 
         // Add Tokens to Wallet
-        if (freePlan.getPlanFeatures() != null) {
-            int aiCreditDelta = 0;
-            int jobPostDelta = 0;
-            for (CompanyPlanFeature pf : freePlan.getPlanFeatures()) {
-                if ("AI_CREDIT".equals(pf.getFeature().getCode())) {
-                    aiCreditDelta += pf.getTotalQuota();
-                } else if ("JOB_POSTING".equals(pf.getFeature().getCode())) {
-                    jobPostDelta += pf.getTotalQuota();
-                }
-            }
-            if (aiCreditDelta != 0 || jobPostDelta != 0) {
-                companyService.updateCompanyBalances(company.getId(), aiCreditDelta, jobPostDelta);
-            }
+        int aiCreditDelta = freePlan.getAiCreditBalance() != null ? freePlan.getAiCreditBalance() : 0;
+        int jobPostDelta = freePlan.getJobPostBalance() != null ? freePlan.getJobPostBalance() : 0;
+        if (aiCreditDelta != 0 || jobPostDelta != 0) {
+            companyService.updateCompanyBalances(company.getId(), aiCreditDelta, jobPostDelta);
         }
     }
 
@@ -262,8 +245,7 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
             if (!activeSubs.isEmpty()) {
                 CompanySubscription activeSub = activeSubs.get(0);
                 if (plan.getPrice() <= activeSub.getPlan().getPrice()) {
-                    if (activeSub.getEndDate().isAfter(now)
-                            && (company.getAiCreditBalance() > 0 || company.getJobPostBalance() > 0)) {
+                    if (activeSub.getEndDate().isAfter(now) && company.getAiCreditBalance() > 0) {
                         throw new AppException(ErrorCode.FORBIDDEN_ACTION,
                                 "Bạn chỉ có thể mua/gia hạn khi gói hiện tại hết hạn hoặc hết Token");
                     }
@@ -309,17 +291,9 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
             CandidateSubscription savedSub = candidateSubscriptionRepository.save(sub);
 
             // Nạp Token vào ví của User
-            if (plan.getPlanFeatures() != null) {
-                boolean walletChanged = false;
-                for (CandidatePlanFeature pf : plan.getPlanFeatures()) {
-                    if ("AI_CREDIT".equals(pf.getFeature().getCode())) {
-                        user.setAiCreditBalance(user.getAiCreditBalance() + pf.getTotalQuota());
-                        walletChanged = true;
-                    }
-                }
-                if (walletChanged) {
-                    userService.saveUserEntity(user);
-                }
+            if (plan.getAiCreditBalance() != null && plan.getAiCreditBalance() > 0) {
+                user.setAiCreditBalance(user.getAiCreditBalance() + plan.getAiCreditBalance());
+                userService.saveUserEntity(user);
             }
 
             // Gửi thông báo hệ thống
@@ -365,19 +339,10 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
             CompanySubscription savedSub = companySubscriptionRepository.save(sub);
 
             // Nạp Token vào ví của công ty
-            if (plan.getPlanFeatures() != null) {
-                int aiCreditDelta = 0;
-                int jobPostDelta = 0;
-                for (CompanyPlanFeature pf : plan.getPlanFeatures()) {
-                    if ("AI_CREDIT".equals(pf.getFeature().getCode())) {
-                        aiCreditDelta += pf.getTotalQuota();
-                    } else if ("JOB_POSTING".equals(pf.getFeature().getCode())) {
-                        jobPostDelta += pf.getTotalQuota();
-                    }
-                }
-                if (aiCreditDelta != 0 || jobPostDelta != 0) {
-                    companyService.updateCompanyBalances(company.getId(), aiCreditDelta, jobPostDelta);
-                }
+            int aiCreditDelta = plan.getAiCreditBalance() != null ? plan.getAiCreditBalance() : 0;
+            int jobPostDelta = plan.getJobPostBalance() != null ? plan.getJobPostBalance() : 0;
+            if (aiCreditDelta != 0 || jobPostDelta != 0) {
+                companyService.updateCompanyBalances(company.getId(), aiCreditDelta, jobPostDelta);
             }
 
             // Gửi thông báo hệ thống

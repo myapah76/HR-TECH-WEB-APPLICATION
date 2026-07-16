@@ -35,7 +35,7 @@ public interface SubscriptionPlanMapper {
                 .code(feature.getCode())
                 .name(feature.getName())
                 .description(feature.getDescription())
-                .quota(planFeature.getTotalQuota())
+                .aiCreditCost(planFeature.getAiCreditCost())
                 .build();
     }
 
@@ -58,7 +58,7 @@ public interface SubscriptionPlanMapper {
                 .code(feature.getCode())
                 .name(feature.getName())
                 .description(feature.getDescription())
-                .quota(planFeature.getTotalQuota())
+                .aiCreditCost(planFeature.getAiCreditCost())
                 .build();
     }
 }

@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Sparkles } from 'lucide-react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { RoleUser } from '@/src/enums/role.enum'
 import { SubscriptionType } from '@/src/enums/subscriptionPlan.enum'
@@ -15,28 +15,29 @@ import {
 import { refreshToken } from '@/src/services/auth.service'
 import { getErrorMessage } from '@/src/utils'
 import dayjs from 'dayjs'
-import { useMyPaymentHistoryQuery, useVerifyPaymentMutation } from '@/src/hooks/payment'
+import { useMyPaymentHistoryQuery } from '@/src/hooks/payment'
 import { PricingHeader } from '@/src/components/pricing/PricingHeader'
 import { PricingTabs } from '@/src/components/pricing/PricingTabs'
 import { PricingCard, PricingPackage } from '@/src/components/pricing/PricingCard'
 import { PricingStats } from '@/src/components/pricing/PricingStats'
-import { PricingFaq } from '@/src/components/pricing/PricingFaq'
 import { CheckoutModal } from '@/src/components/pricing/CheckoutModal'
 import Loading from '../loading'
 
 export default function PricingPage() {
   const { user, setAuth } = useAuthStore()
-  const searchParams = useSearchParams()
   const router = useRouter()
 
   const [activeTab, setActiveTab] = useState<'company' | 'candidate'>(
     user?.roleResponse?.name === RoleUser.RECRUITER ? 'company' : 'candidate'
   )
-  const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   const { data: res, isLoading } = useAllActiveSubscriptionPlansQuery()
   const paymentMutation = useCreatePaymentMutation()
-  const { data: currentSubRes, isLoading: isSubLoading } = useMyCurrentSubscriptionQuery(!!user)
+  const {
+    data: currentSubRes,
+    isLoading: isSubLoading,
+    refetch: refetchSubscription,
+  } = useMyCurrentSubscriptionQuery(!!user)
   const currentSubscription = currentSubRes
 
   const { data: paymentHistoryRes, refetch: refetchHistory } = useMyPaymentHistoryQuery(
@@ -44,8 +45,7 @@ export default function PricingPage() {
     10,
     !!user
   )
-  const verifyMutation = useVerifyPaymentMutation()
-  const payments = paymentHistoryRes?.content || []
+  const payments = useMemo(() => paymentHistoryRes?.content || [], [paymentHistoryRes?.content])
   const pendingPayment = payments.find((p) => p.status === 'PENDING')
   const hasPendingPayment = !!pendingPayment
 
@@ -91,6 +91,8 @@ export default function PricingPage() {
           setIsModalOpen(false)
           setActivePaymentOrderCode(null)
           toast.success('Thanh toán thành công! Đang kích hoạt gói dịch vụ...')
+          refetchHistory()
+          refetchSubscription()
           try {
             const res = await refreshToken()
             setAuth({
@@ -104,63 +106,15 @@ export default function PricingPage() {
         }
         handleSuccess()
       } else if (activePayment.status === 'CANCELLED') {
-        setIsModalOpen(false)
-        setActivePaymentOrderCode(null)
+        setTimeout(() => {
+          setIsModalOpen(false)
+          setActivePaymentOrderCode(null)
+        }, 0)
         toast.error('Thanh toán đã bị hủy hoặc thất bại.')
         refetchHistory()
       }
     }
-  }, [payments, activePaymentOrderCode, isModalOpen, setAuth, refetchHistory])
-
-  useEffect(() => {
-    const handlePaymentResult = async () => {
-      const status = searchParams.get('status')
-      const cancel = searchParams.get('cancel')
-      const code = searchParams.get('code')
-
-      if (status === 'PAID' || (code === '00' && cancel === 'false')) {
-        toast.success('Thanh toán thành công! Đang kích hoạt gói dịch vụ...')
-
-        // Cập nhật lại lịch sử thanh toán trên UI
-        refetchHistory()
-
-        // Remove query parameters from URL to avoid repeating the toast on refresh
-        const newUrl = window.location.pathname
-        window.history.replaceState({}, '', newUrl)
-
-        try {
-          // Refresh session to get updated user role / subscription status
-          const res = await refreshToken()
-          setAuth({
-            user: res.userResponse!,
-            accessToken: res.accessToken!,
-          })
-          toast.success('Gói dịch vụ đã được kích hoạt thành công!')
-        } catch (err) {
-          toast.error(getErrorMessage(err))
-        }
-      } else if (status === 'CANCELLED' || cancel === 'true') {
-        toast.error('Thanh toán đã bị hủy hoặc thất bại.')
-
-        // Đối soát trực tiếp để backend giải phóng trạng thái pending cũ của user
-        const orderCode = searchParams.get('orderCode')
-        if (orderCode) {
-          verifyMutation.mutate(Number(orderCode), {
-            onSettled: () => {
-              refetchHistory()
-            },
-          })
-        } else {
-          refetchHistory()
-        }
-
-        const newUrl = window.location.pathname
-        window.history.replaceState({}, '', newUrl)
-      }
-    }
-
-    handlePaymentResult()
-  }, [searchParams, setAuth, refetchHistory, verifyMutation])
+  }, [payments, activePaymentOrderCode, isModalOpen, setAuth, refetchHistory, refetchSubscription])
 
   const handleSubscribe = (packageId: string) => {
     if (!user) {
@@ -239,9 +193,7 @@ export default function PricingPage() {
       // Premium Plan
       if (isCurrent) {
         subInfoText = `Hết hạn ngày ${formattedEndDate}`
-        const isWalletEmpty =
-          (currentSubscription?.aiCreditBalance || 0) <= 0 &&
-          (currentSubscription?.jobPostBalance || 0) <= 0
+        const isWalletEmpty = (currentSubscription?.aiCreditBalance || 0) <= 0
         if (remainingDays > 0 && !isWalletEmpty) {
           buttonText = 'Đang sử dụng'
           isButtonDisabled = true
@@ -264,6 +216,32 @@ export default function PricingPage() {
       else period = `/${pkg.durationDays} ngày`
     }
 
+    const featuresList: any[] = []
+    if (pkg.aiCreditBalance !== undefined && pkg.aiCreditBalance > 0) {
+      featuresList.push({
+        code: 'AI_CREDIT',
+        name: `Năng lượng AI: ${new Intl.NumberFormat('vi-VN').format(pkg.aiCreditBalance)} credits`,
+        description: 'Năng lượng dùng cho các tính năng AI',
+        quota: 0,
+      })
+    }
+    if (pkg.jobPostBalance !== undefined && pkg.jobPostBalance > 0) {
+      featuresList.push({
+        code: 'JOB_POSTING',
+        name: `Đăng Job: ${pkg.jobPostBalance} lượt`,
+        description: 'Số lượt đăng tin tuyển dụng',
+        quota: 0,
+      })
+    }
+    pkg.features?.forEach((f) => {
+      featuresList.push({
+        code: f.code,
+        name: f.name + (f.aiCreditCost > 0 ? ` (${f.aiCreditCost} credits/lượt)` : ' (Miễn phí AI)'),
+        description: f.description,
+        quota: 0,
+      })
+    })
+
     return {
       id: pkg.id,
       name: pkg.name,
@@ -276,7 +254,7 @@ export default function PricingPage() {
             ),
       period,
       description: pkg.description,
-      features: pkg.features || [],
+      features: featuresList,
       isPopular,
       isCurrent,
       buttonText,
@@ -295,25 +273,6 @@ export default function PricingPage() {
       : packages.length === 2
         ? 'max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 justify-center relative z-10'
         : 'max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch relative z-10'
-
-  const faqs = [
-    {
-      q: 'Tôi có thể thay đổi hoặc hủy gói dịch vụ đã mua không?',
-      a: 'Hoàn toàn được. Bạn có thể thay đổi gói dịch vụ hoặc hủy gia hạn bất kỳ lúc nào trong phần cài đặt tài khoản của mình. Mọi quyền lợi của gói cũ sẽ được bảo lưu cho đến hết chu kỳ thanh toán.',
-    },
-    {
-      q: 'Hệ thống hỗ trợ những phương thức thanh toán nào?',
-      a: 'Chúng tôi hỗ trợ chuyển khoản ngân hàng qua mã QR (PayOS), thẻ ATM nội địa, thẻ quốc tế Visa/Mastercard. Quá trình thanh toán diễn ra hoàn toàn tự động và bảo mật.',
-    },
-    {
-      q: 'Tôi có thể yêu cầu xuất hóa đơn đỏ (VAT) không?',
-      a: 'Có, dành cho các doanh nghiệp đăng ký gói HR. Vui lòng liên hệ với bộ phận hỗ trợ khách hàng trong vòng 7 ngày kể từ khi thanh toán thành công để cung cấp thông tin xuất hóa đơn.',
-    },
-    {
-      q: 'Tính năng tự động quét và gợi ý CV hoạt động như thế nào?',
-      a: 'Hệ thống sử dụng AI để phân tích sự tương thích giữa yêu cầu công việc của nhà tuyển dụng và CV của ứng viên, từ đó tự động đưa ra điểm số đánh giá và gợi ý ghép cặp phù hợp nhất.',
-    },
-  ]
 
   if (isLoading) {
     return <Loading />
@@ -385,8 +344,6 @@ export default function PricingPage() {
         )}
 
         <PricingStats />
-
-        <PricingFaq faqs={faqs} openFaq={openFaq} onToggleFaq={setOpenFaq} />
 
         {selectedPackage && (
           <CheckoutModal

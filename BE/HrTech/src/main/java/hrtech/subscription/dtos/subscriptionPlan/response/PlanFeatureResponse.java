@@ -7,6 +7,6 @@ public record PlanFeatureResponse(
         String code,
         String name,
         String description,
-        Integer quota
+        Integer aiCreditCost
 ) {
 }

@@ -10,5 +10,7 @@ public interface ICreditService {
 
     boolean hasCandidateFeatureAccess(UUID userId, String featureCode);
 
-    boolean hasCompanyFeatureAccess(UUID userId, String featureCode);
+    boolean hasCompanyFeatureAccess(UUID companyId, String featureCode);
+
+    boolean hasCompanyFeatureAccessByUserId(UUID userId, String featureCode);
 }

@@ -84,6 +84,15 @@ public class CreditServiceImpl implements ICreditService {
             throw new AppException(ErrorCode.FORBIDDEN, "Feature not included in your active plan.");
         }
 
+        // Deduct AI Credit if this feature has an AI credit cost
+        if (targetPf.getAiCreditCost() != null && targetPf.getAiCreditCost() > 0) {
+            if (user.getAiCreditBalance() < targetPf.getAiCreditCost()) {
+                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA, "You do not have enough AI Credits. Required: " + targetPf.getAiCreditCost());
+            }
+            user.setAiCreditBalance(user.getAiCreditBalance() - targetPf.getAiCreditCost());
+            userService.saveUserEntity(user);
+        }
+
         final CandidatePlanFeature finalTargetPf = targetPf;
         for (CandidatePlanFeatureRateLimit rl : finalTargetPf.getRateLimits()) {
             Optional<CandidateFeatureRateUsage> rateUsageOpt = CandidateFeatureRateUsageRepository
@@ -138,6 +147,13 @@ public class CreditServiceImpl implements ICreditService {
         }
         
         if (targetPf == null) return false;
+
+        // If feature has an AI credit cost, check if user has enough credits
+        if (targetPf.getAiCreditCost() != null && targetPf.getAiCreditCost() > 0) {
+            if (user.getAiCreditBalance() < targetPf.getAiCreditCost()) {
+                return false;
+            }
+        }
         
         for (CandidatePlanFeatureRateLimit rl : targetPf.getRateLimits()) {
             Optional<CandidateFeatureRateUsage> rateUsageOpt = CandidateFeatureRateUsageRepository
@@ -200,6 +216,14 @@ public class CreditServiceImpl implements ICreditService {
             throw new AppException(ErrorCode.FORBIDDEN, "Feature not included in plan.");
         }
 
+        // Deduct AI Credit if this feature has an AI credit cost
+        if (targetPf.getAiCreditCost() != null && targetPf.getAiCreditCost() > 0) {
+            if (company.getAiCreditBalance() < targetPf.getAiCreditCost()) {
+                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA, "Not enough AI Credits. Required: " + targetPf.getAiCreditCost());
+            }
+            companyService.updateCompanyBalances(company.getId(), -targetPf.getAiCreditCost(), 0);
+        }
+
         final CompanyPlanFeature finalTargetPf = targetPf;
         for (CompanyPlanFeatureRateLimit rl : finalTargetPf.getRateLimits()) {
             Optional<CompanyFeatureRateUsage> rateUsageOpt = companyFeatureRateUsageRepository
@@ -256,6 +280,13 @@ public class CreditServiceImpl implements ICreditService {
         }
         
         if (targetPf == null) return false;
+
+        // If feature has an AI credit cost, check if company has enough credits
+        if (targetPf.getAiCreditCost() != null && targetPf.getAiCreditCost() > 0) {
+            if (company.getAiCreditBalance() < targetPf.getAiCreditCost()) {
+                return false;
+            }
+        }
         
         for (CompanyPlanFeatureRateLimit rl : targetPf.getRateLimits()) {
             Optional<CompanyFeatureRateUsage> rateUsageOpt = companyFeatureRateUsageRepository
@@ -272,6 +303,18 @@ public class CreditServiceImpl implements ICreditService {
         }
         
         return true;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasCompanyFeatureAccessByUserId(UUID userId, String featureCode) {
+        try {
+            CompanyMember member = companyService.getMemberEntityByUserId(userId);
+            if (member == null || member.getCompany() == null) return false;
+            return hasCompanyFeatureAccess(member.getCompany().getId(), featureCode);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private boolean isResetNeeded(Instant lastResetDate, ResetType resetType, Instant subStartDate) {

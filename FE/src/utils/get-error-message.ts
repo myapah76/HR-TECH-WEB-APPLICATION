@@ -15,3 +15,12 @@ export const getErrorMessage = (error: unknown): string => {
 
   return 'Đã xảy ra lỗi'
 }
+
+export const isCvAlreadyExistsError = (error: unknown): boolean => {
+  return (
+    axios.isAxiosError(error) &&
+    error.response?.status === 409 &&
+    error.response?.data?.errorCode === 'CV_ALREADY_EXISTS'
+  )
+}
+

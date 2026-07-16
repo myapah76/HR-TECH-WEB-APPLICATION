@@ -107,11 +107,19 @@ public class ChatServiceImpl implements IChatService {
         ChatSession session = getSessionAndVerifyOwnership(sessionId);
         User currentUser = authUtils.getCurrentUser();
 
-        // 0. Deduct 5 AI Credits based on role
+        // 0. Deduct AI Credits based on role
         if (currentUser.getRole().getName().equalsIgnoreCase("CANDIDATE")) {
-            creditService.deductCandidateQuota(currentUser.getId(), "AI_CREDIT", 5);
+            if (!creditService.hasCandidateFeatureAccess(currentUser.getId(), "AI_CHATBOT")) {
+                throw new AppException(ErrorCode.FORBIDDEN,
+                        "Gói của bạn không có tính năng Chatbot (AI_CHATBOT) hoặc không đủ AI Credit. Vui lòng nâng cấp gói.");
+            }
+            creditService.deductCandidateQuota(currentUser.getId(), "AI_CHATBOT", 1);
         } else {
-            creditService.deductCompanyFeatureQuota(currentUser.getId(), "AI_CREDIT", 5);
+            if (!creditService.hasCompanyFeatureAccessByUserId(currentUser.getId(), "AI_CHATBOT")) {
+                throw new AppException(ErrorCode.FORBIDDEN,
+                        "Gói của công ty không có tính năng Chatbot (AI_CHATBOT) hoặc không đủ AI Credit. Vui lòng nâng cấp gói.");
+            }
+            creditService.deductCompanyFeatureQuota(currentUser.getId(), "AI_CHATBOT", 1);
         }
 
         // 1. Lưu tin nhắn của User
@@ -168,11 +176,19 @@ public class ChatServiceImpl implements IChatService {
         ChatSession session = getSessionAndVerifyOwnership(sessionId);
         User currentUser = authUtils.getCurrentUser();
 
-        // 0. Deduct 5 AI Credits based on role
+        // 0. Deduct AI Credits based on role
         if (currentUser.getRole().getName().equalsIgnoreCase("CANDIDATE")) {
-            creditService.deductCandidateQuota(currentUser.getId(), "AI_CREDIT", 5);
+            if (!creditService.hasCandidateFeatureAccess(currentUser.getId(), "AI_CHATBOT")) {
+                throw new AppException(ErrorCode.FORBIDDEN,
+                        "Gói của bạn không có tính năng Chatbot (AI_CHATBOT) hoặc không đủ AI Credit. Vui lòng nâng cấp gói.");
+            }
+            creditService.deductCandidateQuota(currentUser.getId(), "AI_CHATBOT", 1);
         } else {
-            creditService.deductCompanyFeatureQuota(currentUser.getId(), "AI_CREDIT", 5);
+            if (!creditService.hasCompanyFeatureAccessByUserId(currentUser.getId(), "AI_CHATBOT")) {
+                throw new AppException(ErrorCode.FORBIDDEN,
+                        "Gói của công ty không có tính năng Chatbot (AI_CHATBOT) hoặc không đủ AI Credit. Vui lòng nâng cấp gói.");
+            }
+            creditService.deductCompanyFeatureQuota(currentUser.getId(), "AI_CHATBOT", 1);
         }
 
         // 1. Lưu tin nhắn của User

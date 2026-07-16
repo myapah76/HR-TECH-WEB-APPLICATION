@@ -3,6 +3,9 @@
 import Sidebar from '@/src/components/layout/Sidebar'
 import { useGetCompanyMembers, useGetMyCompany } from '@/src/hooks/company'
 import { useAuthStore } from '@/src/stores/auth.store'
+import { RoleUser } from '@/src/enums/role.enum'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import {
   Building2,
   CalendarClock,
@@ -37,8 +40,21 @@ const recruiterNavItems = [
 ]
 
 export default function RecruiterLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
   const { user, isInitialized } = useAuthStore()
-  const { data: myCompany } = useGetMyCompany(isInitialized && !!user)
+
+  useEffect(() => {
+    if (!isInitialized) return
+    if (!user) {
+      router.replace('/login')
+      return
+    }
+    if (user.roleResponse?.name !== RoleUser.RECRUITER) {
+      router.replace('/dashboard')
+    }
+  }, [user, isInitialized, router])
+
+  const { data: myCompany } = useGetMyCompany(isInitialized && !!user && user.roleResponse?.name === RoleUser.RECRUITER)
 
   const { data: companyMembers = [] } = useGetCompanyMembers(
     myCompany?.id,
@@ -66,6 +82,10 @@ export default function RecruiterLayout({ children }: { children: React.ReactNod
 
     return items
   }, [isOwner])
+
+  if (!isInitialized || !user || user.requirePasswordChange || user.roleResponse?.name !== RoleUser.RECRUITER) {
+    return null
+  }
 
   return (
     <div className="bg-slate-50/50 flex flex-col min-h-[calc(100vh-64px)]" id="recruiter-root">

@@ -25,6 +25,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => {
       if (typeof document !== 'undefined') {
         document.cookie = 'hasSession=true; path=/; max-age=604800; SameSite=Lax'
+        document.cookie = `userRole=${data.user.roleResponse.name}; path=/; max-age=604800; SameSite=Lax`
       }
       return {
         user: data.user,
@@ -42,6 +43,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     if (typeof document !== 'undefined') {
       document.cookie = 'hasSession=; path=/; max-age=0; SameSite=Lax'
+      document.cookie = 'userRole=; path=/; max-age=0; SameSite=Lax'
     }
     return set({
       user: null,
