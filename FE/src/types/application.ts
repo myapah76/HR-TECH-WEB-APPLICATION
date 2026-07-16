@@ -4,6 +4,7 @@ export interface ApplicationSummaryResponse {
   id: string;
   jobId: string;
   jobTitle: string;
+  candidateName?: string;
   cvId: string;
   cvTitle: string;
   status: ApplicationStatus;
@@ -16,6 +17,7 @@ export interface ApplicationDetailResponse {
   id: string;
   jobId: string;
   jobTitle: string;
+  candidateName?: string;
   companyName?: string;
   companyAddress?: string;
   cvId: string;

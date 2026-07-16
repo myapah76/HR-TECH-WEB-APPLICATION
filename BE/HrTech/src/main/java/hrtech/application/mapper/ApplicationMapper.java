@@ -14,6 +14,7 @@ public interface ApplicationMapper {
 
     @Mapping(target = "jobId", source = "job.id")
     @Mapping(target = "jobTitle", source = "job.title")
+    @Mapping(target = "candidateName", expression = "java(buildCandidateName(entity))")
     @Mapping(target = "cvId", source = "cv.id")
     @Mapping(target = "cvTitle", source = "cv.title")
     @Mapping(target = "appliedAt", source = "appliedAt")
@@ -23,6 +24,7 @@ public interface ApplicationMapper {
 
     @Mapping(target = "jobId", source = "job.id")
     @Mapping(target = "jobTitle", source = "job.title")
+    @Mapping(target = "candidateName", expression = "java(buildCandidateName(entity))")
     @Mapping(target = "cvId", source = "cv.id")
     @Mapping(target = "cvTitle", source = "cv.title")
     @Mapping(target = "appliedAt", source = "appliedAt")
@@ -46,5 +48,23 @@ public interface ApplicationMapper {
         if (value == null)
             return null;
         return value.name();
+    }
+
+    default String buildCandidateName(Application entity) {
+        if (entity == null || entity.getUser() == null) {
+            return null;
+        }
+
+        String firstName = entity.getUser().getFirstName() == null ? "" : entity.getUser().getFirstName().trim();
+        String lastName = entity.getUser().getLastName() == null ? "" : entity.getUser().getLastName().trim();
+        String fullName = (firstName + " " + lastName).trim();
+
+        if (!fullName.isBlank()) {
+            return fullName;
+        }
+        if (entity.getUser().getUsername() != null && !entity.getUser().getUsername().isBlank()) {
+            return entity.getUser().getUsername();
+        }
+        return entity.getUser().getEmail();
     }
 }

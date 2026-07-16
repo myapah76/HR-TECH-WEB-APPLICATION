@@ -5,6 +5,7 @@ import { useGetCompanyMembers, useGetMyCompany } from '@/src/hooks/company'
 import { useAuthStore } from '@/src/stores/auth.store'
 import {
   Building2,
+  CalendarClock,
   CreditCard,
   LayoutDashboard,
   List,
@@ -27,6 +28,7 @@ const recruiterNavItems = [
   { icon: List, label: 'Quản lý tin đăng', path: '/recruiter/manage-jobs' },
   { icon: Search, label: 'AI Tìm Ứng Viên', path: '/recruiter/find-candidates' },
   { icon: Users, label: 'Đơn ứng tuyển', path: '/recruiter/applications' },
+  { icon: CalendarClock, label: 'Quản Lý Lịch Phỏng Vấn', path: '/recruiter/interview-schedules' },
 
   // ── Công ty ───────────────────────────────────────────────────────────────
   { label: 'Công ty', isHeader: true },
