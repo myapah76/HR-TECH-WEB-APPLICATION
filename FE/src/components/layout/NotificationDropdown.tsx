@@ -3,7 +3,11 @@
 import { useState } from 'react'
 import { Bell } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
-import { useGetNotifications, useGetUnreadCount, useMarkNotificationRead } from '@/src/hooks/notification'
+import {
+  useGetNotifications,
+  useGetUnreadCount,
+  useMarkNotificationRead,
+} from '@/src/hooks/notification'
 import { getNotificationRedirectUrl } from '@/src/utils/notification'
 import { useRouter } from 'next/navigation'
 
@@ -50,8 +54,12 @@ export default function NotificationDropdown() {
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
           <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-800 shadow-xl z-50 py-2">
             <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700/60 flex justify-between items-center">
-              <span className="font-extrabold text-sm text-slate-800 dark:text-slate-100">Thông báo</span>
-              <span className="text-[10px] text-slate-400 font-bold">{unreadCount} tin chưa đọc</span>
+              <span className="font-extrabold text-sm text-slate-800 dark:text-slate-100">
+                Thông báo
+              </span>
+              <span className="text-[10px] text-slate-400 font-bold">
+                {unreadCount} tin chưa đọc
+              </span>
             </div>
 
             <div className="divide-y divide-slate-50 dark:divide-slate-700/60">
@@ -69,10 +77,14 @@ export default function NotificationDropdown() {
                     }`}
                   >
                     <div className="flex justify-between items-start gap-2">
-                      <span className={`text-xs ${!n.isRead ? 'font-black text-slate-900 dark:text-slate-100' : 'font-medium text-slate-700 dark:text-slate-300'}`}>
+                      <span
+                        className={`text-xs ${!n.isRead ? 'font-black text-slate-900 dark:text-slate-100' : 'font-medium text-slate-700 dark:text-slate-300'}`}
+                      >
                         {n.title}
                       </span>
-                      {!n.isRead && <span className="h-1.5 w-1.5 rounded-full bg-indigo-600 shrink-0 mt-1.5" />}
+                      {!n.isRead && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-indigo-600 shrink-0 mt-1.5" />
+                      )}
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
                       {n.content}

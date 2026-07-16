@@ -1,17 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import {
-  Settings,
-  Globe,
-  Database,
-  Mail,
-  KeyRound,
-  Cloud,
-  CreditCard,
-  Save,
-  Loader2,
-} from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Globe, Database, Mail, KeyRound, Cloud, CreditCard, Save, Loader2 } from 'lucide-react'
 import { useGetSystemConfig, useUpdateSystemConfig } from '@/src/hooks/system'
 import { toast } from 'sonner'
 import Loading from '@/src/app/loading'
@@ -29,6 +19,7 @@ type TabType = 'general' | 'smtp' | 'jwt' | 'cloudinary' | 'payos' | 'database'
 export default function SystemSettingsPage() {
   const { data: config, isLoading } = useGetSystemConfig()
   const updateMutation = useUpdateSystemConfig()
+  console.log('config', config?.websiteName)
 
   const [activeTab, setActiveTab] = useState<TabType>('general')
 
@@ -58,6 +49,32 @@ export default function SystemSettingsPage() {
   const [payosClientId, setPayosClientId] = useState(config?.payosClientId || '')
   const [payosApiKey, setPayosApiKey] = useState(config?.payosApiKey || '')
   const [payosChecksumKey, setPayosChecksumKey] = useState(config?.payosChecksumKey || '')
+
+  // Sync state values when asynchronously loaded config becomes available
+  useEffect(() => {
+    if (config) {
+      // Defer state updates to avoid synchronous cascading renders inside useEffect
+      setTimeout(() => {
+        setWebsiteName(config.websiteName || '')
+        setMaxFileSize(config.maxFileSize ?? 10)
+        setSmtpHost(config.smtpHost || '')
+        setSmtpPort(config.smtpPort ?? 587)
+        setSmtpUsername(config.smtpUsername || '')
+        setSmtpPassword(config.smtpPassword || '')
+        setSmtpFromEmail(config.smtpFromEmail || '')
+        setJwtAccessExpiration(config.jwtAccessExpirationMinutes ?? 60)
+        setJwtRefreshExpiration(config.jwtRefreshTokenExpirationDays ?? 30)
+        setJwtIssuer(config.jwtIssuer || '')
+        setJwtAudience(config.jwtAudience || '')
+        setCloudinaryCloudName(config.cloudinaryCloudName || '')
+        setCloudinaryApiKey(config.cloudinaryApiKey || '')
+        setCloudinaryApiSecret(config.cloudinaryApiSecret || '')
+        setPayosClientId(config.payosClientId || '')
+        setPayosApiKey(config.payosApiKey || '')
+        setPayosChecksumKey(config.payosChecksumKey || '')
+      }, 0)
+    }
+  }, [config])
 
   const handleSave = () => {
     if (!websiteName.trim()) {

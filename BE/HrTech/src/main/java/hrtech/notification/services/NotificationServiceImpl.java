@@ -240,6 +240,7 @@ public class NotificationServiceImpl implements INotificationService {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOTIFICATION_NOT_FOUND));
         notification.setRead(true);
+        notificationRepository.save(notification);
     }
 
     @Override

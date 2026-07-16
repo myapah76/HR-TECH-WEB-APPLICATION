@@ -58,7 +58,9 @@ export default function CompanyCard({ company, index }: CompanyCardProps) {
               onError={() => setImgError(true)}
             />
           ) : (
-            <div className={`h-14 w-14 rounded-2xl text-white font-extrabold text-lg flex items-center justify-center ${logoBg}`}>
+            <div
+              className={`h-14 w-14 rounded-2xl text-white font-extrabold text-lg flex items-center justify-center ${logoBg}`}
+            >
               {initials}
             </div>
           )}
@@ -72,7 +74,8 @@ export default function CompanyCard({ company, index }: CompanyCardProps) {
           </div>
         </div>
         <p className="text-xs text-slate-500 font-medium leading-relaxed line-clamp-2 mb-4">
-          {company.description || `Chào mừng bạn đến với ${company.name}. Khám phá các cơ hội nghề nghiệp hấp dẫn ngay hôm nay.`}
+          {company.description ||
+            `Chào mừng bạn đến với ${company.name}. Khám phá các cơ hội nghề nghiệp hấp dẫn ngay hôm nay.`}
         </p>
         <div className="flex flex-wrap gap-2 mb-4">
           <span className="flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md">
@@ -82,10 +85,6 @@ export default function CompanyCard({ company, index }: CompanyCardProps) {
           <span className="flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md">
             <Users className="h-3 w-3" />
             Doanh nghiệp
-          </span>
-          <span className="flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
-            <Star className="h-3 w-3" />
-            4.8/5
           </span>
         </div>
         <div className="flex items-center justify-between pt-3 border-t border-slate-100">

@@ -52,8 +52,6 @@ export default function JobFilter({
   const jobTypes = [
     { id: JobType.FULL_TIME, label: JOB_TYPE_LABELS[JobType.FULL_TIME] },
     { id: JobType.PART_TIME, label: JOB_TYPE_LABELS[JobType.PART_TIME] },
-    { id: JobType.CONTRACT, label: JOB_TYPE_LABELS[JobType.CONTRACT] },
-    { id: JobType.INTERNSHIP, label: JOB_TYPE_LABELS[JobType.INTERNSHIP] },
   ]
 
   const experienceLevels = [

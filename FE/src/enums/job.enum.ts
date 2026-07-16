@@ -10,8 +10,6 @@ export enum JobStatus {
 export enum JobType {
   FULL_TIME = 'FULL_TIME',
   PART_TIME = 'PART_TIME',
-  CONTRACT = 'CONTRACT',
-  INTERNSHIP = 'INTERNSHIP',
 }
 
 export enum ExperienceLevel {
@@ -43,8 +41,6 @@ export const JOB_STATUS_STYLES: Record<JobStatus, string> = {
 export const JOB_TYPE_LABELS: Record<JobType, string> = {
   [JobType.FULL_TIME]: 'Toàn thời gian',
   [JobType.PART_TIME]: 'Bán thời gian',
-  [JobType.CONTRACT]: 'Hợp đồng',
-  [JobType.INTERNSHIP]: 'Thực tập',
 }
 
 export const EXPERIENCE_LEVEL_LABELS: Record<ExperienceLevel, string> = {
