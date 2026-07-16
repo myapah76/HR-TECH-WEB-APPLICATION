@@ -20,6 +20,7 @@ public class ApplicationSummaryResponse {
     private UUID id;
     private UUID jobId;
     private String jobTitle;
+    private String candidateName;
     private UUID cvId;
     private String cvTitle;
     private ApplicationStatus status;

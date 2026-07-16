@@ -2,6 +2,7 @@ import { api } from '@/src/lib/axios'
 import {
     ApplicationDetailResponse,
     ApplicationSummaryResponse,
+    ApplicationStatus,
     ChangeInterviewScheduleRequest,
     ScheduleInterviewRequest,
     SubmitApplicationRequest,
@@ -43,6 +44,33 @@ export const getCompanyApplications = async (companyId: string): Promise<Applica
     jobs.map((job) => getApplicationsByJob(job.id, 0, 100).then((res) => res.content))
   )
   return applicationsByJob.flat()
+}
+
+const INTERVIEW_SCHEDULE_STATUSES = new Set<ApplicationStatus>([
+  ApplicationStatus.PENDING_INTERVIEW_SCHEDULE,
+  ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE,
+  ApplicationStatus.INTERVIEW,
+  ApplicationStatus.INTERVIEW_COMPLETED,
+  ApplicationStatus.NO_SHOW,
+])
+
+export const getRecruiterInterviewSchedules = async (
+  companyId: string
+): Promise<ApplicationDetailResponse[]> => {
+  const applications = await getCompanyApplications(companyId)
+  const interviewApplications = applications.filter((application) =>
+    INTERVIEW_SCHEDULE_STATUSES.has(application.status)
+  )
+
+  const details = await Promise.all(
+    interviewApplications.map((application) => getApplicationDetail(application.id))
+  )
+
+  return details.sort((a, b) => {
+    const timeA = new Date(a.interviewDateTime || a.candidatePreferredInterviewDateTime || a.appliedAt).getTime()
+    const timeB = new Date(b.interviewDateTime || b.candidatePreferredInterviewDateTime || b.appliedAt).getTime()
+    return timeA - timeB
+  })
 }
 
 export const getCompanyApplicationCount = async (companyId: string): Promise<number> => {

@@ -9,6 +9,7 @@ export const useUpdateApplicationStatus = () => {
       updateApplicationStatus(id, request),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['applications'] })
+      queryClient.invalidateQueries({ queryKey: ['interview-schedules'] })
       queryClient.invalidateQueries({ queryKey: ['application', variables.id] })
     },
   })

@@ -8,6 +8,7 @@ export const useRejectCandidateReschedule = () => {
     mutationFn: rejectCandidateReschedule,
     onSuccess: (_data, applicationId) => {
       queryClient.invalidateQueries({ queryKey: ['applications'] })
+      queryClient.invalidateQueries({ queryKey: ['interview-schedules'] })
       queryClient.invalidateQueries({ queryKey: ['application', applicationId] })
     },
   })
