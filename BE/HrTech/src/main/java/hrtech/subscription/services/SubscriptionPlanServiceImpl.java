@@ -79,9 +79,15 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
 
         throw new AppException(ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND, "Subscription plan not found");
     }
+    private void validateFreePlanIsActive(SubscriptionPlanRequest request) {
+        if (request.price() != null && request.price() == 0 && request.isActive() != null && !request.isActive()) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Gói cước Miễn phí phải luôn ở trạng thái hoạt động");
+        }
+    }
 
     @Override
     public SubscriptionPlanResponse create(SubscriptionPlanRequest request) {
+        validateFreePlanIsActive(request);
         if (request.subscriptionType() == SubscriptionType.CANDIDATE) {
             CandidateSubscriptionPlan plan = subscriptionPlanMapper.toCandidateEntity(request);
             plan = candidateSubscriptionPlanRepository.save(plan);
@@ -97,6 +103,7 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
 
     @Override
     public SubscriptionPlanResponse update(UUID id, SubscriptionPlanRequest request) {
+        validateFreePlanIsActive(request);
         if (request.subscriptionType() == SubscriptionType.CANDIDATE) {
             CandidateSubscriptionPlan plan = candidateSubscriptionPlanRepository.findById(id)
                     .orElseThrow(() -> new AppException(ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND, "Subscription plan not found"));
