@@ -1,6 +1,7 @@
 package hrtech.application.controllers;
 
 import hrtech.application.dtos.response.*;
+import hrtech.shared.dtos.RecentActivityResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

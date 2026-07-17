@@ -1,6 +1,7 @@
 package hrtech.application.abstractions.services;
 
 import hrtech.application.dtos.response.*;
+import hrtech.shared.dtos.RecentActivityResponse;
 import hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
 import hrtech.application.dtos.request.ScheduleInterviewRequest;
 import hrtech.application.dtos.request.SubmitApplicationRequest;

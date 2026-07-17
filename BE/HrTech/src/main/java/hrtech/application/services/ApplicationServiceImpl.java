@@ -11,7 +11,7 @@ import hrtech.application.dtos.request.UpdateApplicationStatusRequest;
 import hrtech.application.dtos.response.ApplicationDetailResponse;
 import hrtech.application.dtos.response.ApplicationSummaryResponse;
 import hrtech.application.dtos.response.ApplicationDashboardSummaryResponse;
-import hrtech.application.dtos.response.RecentActivityResponse;
+import hrtech.shared.dtos.RecentActivityResponse;
 import hrtech.application.dtos.response.UpcomingInterviewResponse;
 import hrtech.application.dtos.response.JobSearchAnalyticsResponse;
 import hrtech.application.entities.Application;

@@ -1,4 +1,4 @@
-package hrtech.application.dtos.response;
+package hrtech.shared.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
