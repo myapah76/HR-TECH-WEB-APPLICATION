@@ -48,11 +48,11 @@ export default function PostJobPage() {
       salaryMax: undefined,
     },
   })
-    const toInstantDeadline = (deadline?: string) => {
-        if (!deadline) return deadline
-        if (deadline.includes('T')) return deadline
-        return `${deadline}T00:00:00Z`
-    }
+  const toInstantDeadline = (deadline?: string) => {
+    if (!deadline) return deadline
+    if (deadline.includes('T')) return deadline
+    return `${deadline}T00:00:00Z`
+  }
 
   const formatNumber = (val: string | number) => {
     if (val === undefined || val === null || val === '') return ''
@@ -69,15 +69,15 @@ export default function PostJobPage() {
     const companyId = myCompany.id
 
     const skills = [
-      ...requiredSkills.map((s) => ({ skillNeo4jId: s.id, requiredLevel: s.level })),
-      ...relatedSkills.map((s) => ({ skillNeo4jId: s.id })),
+      ...requiredSkills.map((s: RequiredSkill) => ({ skillNeo4jId: s.id, requiredLevel: s.level })),
+      ...relatedSkills.map((s: Skill) => ({ skillNeo4jId: s.id })),
     ]
 
     const payload = {
       ...data,
       companyId,
       skills,
-        deadline: toInstantDeadline(data.deadline),
+      deadline: toInstantDeadline(data.deadline),
     }
 
     createJobMutation.mutate(payload, {
@@ -130,15 +130,17 @@ export default function PostJobPage() {
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">
-                Vị trí tuyển dụng (VD: Java Developer, AI Engineer...) <span className="text-red-500">*</span>
+                Lĩnh vực vị trí (Position) <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                placeholder="VD: Java Developer"
+                placeholder="VD: Frontend Developer, DevOps Engineer, Business Analyst..."
                 {...register('position')}
               />
-              {errors.position && <p className="text-red-500 text-xs mt-1">{errors.position.message}</p>}
+              {errors.position && (
+                <p className="text-red-500 text-xs mt-1">{errors.position.message}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

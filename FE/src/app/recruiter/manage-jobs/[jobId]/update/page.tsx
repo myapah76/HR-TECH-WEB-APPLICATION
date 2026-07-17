@@ -68,7 +68,11 @@ function UpdateJobForm({ job }: { job: Job }) {
     resolver: zodResolver(jobSchema),
     defaultValues: {
       title: job.title,
+<<<<<<< HEAD
       position: job.position || '',
+=======
+      position: job.position,
+>>>>>>> 75491596db0220c4cad1e671a66a4563e6af0fae
       jobType: job.jobType,
       experienceLevel: job.experienceLevel,
       location: job.location,
@@ -91,11 +95,11 @@ function UpdateJobForm({ job }: { job: Job }) {
       ...data,
       companyId: job.companyId,
       skills: [
-        ...requiredSkills.map((skill) => ({
+        ...requiredSkills.map((skill: RequiredSkill) => ({
           skillNeo4jId: skill.id,
           requiredLevel: skill.level,
         })),
-        ...relatedSkills.map((skill) => ({ skillNeo4jId: skill.id })),
+        ...relatedSkills.map((skill: Skill) => ({ skillNeo4jId: skill.id })),
       ],
     }
 
@@ -144,15 +148,17 @@ function UpdateJobForm({ job }: { job: Job }) {
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">
-                Vị trí tuyển dụng (VD: Java Developer, AI Engineer...) <span className="text-red-500">*</span>
+                Lĩnh vực vị trí (Position) <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                placeholder="VD: Java Developer"
+                placeholder="VD: Frontend Developer, DevOps Engineer, Business Analyst..."
                 {...register('position')}
               />
-              {errors.position && <p className="text-red-500 text-xs mt-1">{errors.position.message}</p>}
+              {errors.position && (
+                <p className="text-red-500 text-xs mt-1">{errors.position.message}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
