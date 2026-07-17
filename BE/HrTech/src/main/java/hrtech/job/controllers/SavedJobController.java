@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/saved-jobs")
 @RequiredArgsConstructor
@@ -20,14 +22,14 @@ public class SavedJobController {
 
     @PostMapping("/{jobId}")
     @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<ApiResponse<Void>> saveJob(@PathVariable java.util.UUID jobId) {
+    public ResponseEntity<ApiResponse<Void>> saveJob(@PathVariable UUID jobId) {
         savedJobService.saveJob(jobId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @DeleteMapping("/{jobId}")
     @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<ApiResponse<Void>> unsaveJob(@PathVariable java.util.UUID jobId) {
+    public ResponseEntity<ApiResponse<Void>> unsaveJob(@PathVariable UUID jobId) {
         savedJobService.unsaveJob(jobId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

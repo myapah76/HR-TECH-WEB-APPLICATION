@@ -1,4 +1,4 @@
-package hrtech.skill.services;
+package hrtech.shared.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hrtech.skill.dtos.response.*;
@@ -11,6 +11,8 @@ import org.springframework.web.client.RestTemplate;
 
 import hrtech.chat.dtos.response.RagChatResponseDto;
 import hrtech.skill.dtos.request.ValidateSkillsRequest;
+import hrtech.job.dtos.request.ReviewJobPostingRequest;
+import hrtech.job.dtos.response.ReviewJobPostingResponse;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -303,5 +305,26 @@ public class AiServiceClient {
             log.error("AI service skill validation error: {}", e.getMessage(), e);
             return ValidateSkillsResponse.builder().validSkills(new ArrayList<>()).build();
         }
+    }
+
+    /**
+     * Calls Python AI service to evaluate a job posting.
+     */
+    public ReviewJobPostingResponse reviewJobPosting(ReviewJobPostingRequest requestBody) {
+        try {
+            String url = aiServiceUrl + "/api/ai/review-job-posting";
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<ReviewJobPostingRequest> entity = new HttpEntity<>(requestBody, headers);
+            log.info("Sending job posting review request to AI Service");
+            ResponseEntity<ReviewJobPostingResponse> response = restTemplate.postForEntity(url, entity, ReviewJobPostingResponse.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody();
+            }
+            log.error("Failed to review job posting from AI service, status: {}", response.getStatusCode());
+        } catch (Exception e) {
+            log.error("AI service review job posting error: {}", e.getMessage(), e);
+        }
+        return null;
     }
 }

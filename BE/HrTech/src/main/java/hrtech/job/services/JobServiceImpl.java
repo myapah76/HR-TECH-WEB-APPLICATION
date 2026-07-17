@@ -35,6 +35,9 @@ import hrtech.shared.events.JobExtractionRequestedEvent;
 import hrtech.shared.exceptions.AppException;
 import hrtech.skill.abstractions.services.ISkillService;
 import hrtech.skill.dtos.response.SkillResponse;
+import hrtech.shared.services.AiServiceClient;
+import hrtech.job.dtos.request.ReviewJobPostingRequest;
+import hrtech.job.dtos.response.ReviewJobPostingResponse;
 import hrtech.subscription.abstractions.services.ICreditService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,6 +70,7 @@ public class JobServiceImpl implements IJobService {
     private final JobMapper jobMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final AuthUtils authUtils;
+    private final AiServiceClient aiServiceClient;
 
     @Autowired
     @Lazy
@@ -86,28 +90,73 @@ public class JobServiceImpl implements IJobService {
         jobAuditLogRepository.save(auditLog);
     }
 
-    private void runMockAiCheck(Job job) {
-        String title = job.getTitle() != null ? job.getTitle() : "";
-        String desc = job.getDescription() != null ? job.getDescription() : "";
-        String req = job.getRequirements() != null ? job.getRequirements() : "";
-        String contentToScan = (title + " " + desc + " " + req).toLowerCase();
-
+    private void runAiCheck(Job job) {
         JobStatus previousStatus = job.getStatus();
 
-        if (contentToScan.contains("lừa đảo") || contentToScan.contains("đa cấp") || contentToScan.contains("cờ bạc")) {
+        ReviewJobPostingRequest reviewRequest = ReviewJobPostingRequest.builder()
+                .title(job.getTitle())
+                .description(job.getDescription())
+                .requirements(job.getRequirements())
+                .location(job.getLocation())
+                .salary_min(job.getSalaryMin() != null ? job.getSalaryMin().doubleValue() : null)
+                .salary_max(job.getSalaryMax() != null ? job.getSalaryMax().doubleValue() : null)
+                .job_type(job.getJobType() != null ? job.getJobType().name() : "")
+                .experience_level(job.getExperienceLevel() != null ? job.getExperienceLevel().name() : "")
+                .position(job.getPosition())
+                .build();
+
+        ReviewJobPostingResponse reviewResponse = null;
+        int maxAttempts = 3; // Retry up to 3 times total
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            reviewResponse = aiServiceClient.reviewJobPosting(reviewRequest);
+            if (reviewResponse != null) {
+                break;
+            }
+            if (attempt < maxAttempts) {
+                log.warn("AI Service call failed (attempt {}/{}). Retrying in 10 seconds...", attempt, maxAttempts);
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+
+        if (reviewResponse == null) {
+            log.error("AI Service is completely offline or timed out after {} attempts.", maxAttempts);
             job.setStatus(JobStatus.FAILED_AI);
             jobRepository.save(job);
-            logStatusChange(job, previousStatus, JobStatus.FAILED_AI, "AI_REJECT", null,
-                    "AI phát hiện vi phạm: Tin tuyển dụng chứa từ khóa bị cấm (lừa đảo/đa cấp/cờ bạc).");
-            log.warn("Mock AI check FAILED for job {}: contains illegal keywords", job.getId());
+            
+            String errorMessage = "Hệ thống kiểm duyệt AI tự động đang bận hoặc ngoại tuyến. Vui lòng tạo báo cáo/khiếu nại để gửi Admin xử lý và phê duyệt thủ công.";
+            logStatusChange(job, previousStatus, JobStatus.FAILED_AI, "AI_OFFLINE_FAIL", null, errorMessage);
+            return;
+        }
+
+        if (!reviewResponse.isApproved()) {
+            job.setStatus(JobStatus.FAILED_AI);
+            jobRepository.save(job);
+
+            String reason = reviewResponse.getOverall_message();
+            if (reviewResponse.getRejection_reasons() != null && !reviewResponse.getRejection_reasons().isEmpty()) {
+                reason += " Lý do: " + String.join(", ", reviewResponse.getRejection_reasons());
+            }
+
+            logStatusChange(job, previousStatus, JobStatus.FAILED_AI, "AI_REJECT", null, reason);
+            log.warn("AI check FAILED for job {}: {}", job.getId(), reason);
         } else {
             creditService.deductCompanyFeatureQuota(job.getCreatedBy().getId(), "JOB_POSTING", 1);
             job.setStatus(JobStatus.APPROVED);
             Job savedJob = jobRepository.save(job);
-            logStatusChange(savedJob, previousStatus, JobStatus.APPROVED, "AI_PASS", null,
-                    "AI kiểm duyệt thành công. Không phát hiện vi phạm.");
+
+            String notes = "AI kiểm duyệt thành công. Không phát hiện vi phạm.";
+            if (reviewResponse.getOverall_message() != null) {
+                notes = reviewResponse.getOverall_message();
+            }
+
+            logStatusChange(savedJob, previousStatus, JobStatus.APPROVED, "AI_PASS", null, notes);
             eventPublisher.publishEvent(new JobExtractionRequestedEvent(savedJob.getId()));
-            log.info("Mock AI check PASSED for job {}", job.getId());
+            log.info("AI check PASSED for job {}", job.getId());
         }
     }
 
@@ -201,7 +250,7 @@ public class JobServiceImpl implements IJobService {
         User currentUser = authUtils.getCurrentUser();
         logStatusChange(savedJob, previousStatus, JobStatus.PENDING_AI, "MANAGER_APPROVE", currentUser,
                 "HR Manager phê duyệt tin tuyển dụng. Chuyển tiếp quét AI tự động.");
-        runMockAiCheck(savedJob);
+        runAiCheck(savedJob);
         return jobMapper.toResponse(savedJob);
     }
 

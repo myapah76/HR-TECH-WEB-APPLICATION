@@ -28,7 +28,7 @@ import hrtech.job.abstractions.services.IJobService;
 import hrtech.job.entities.Job;
 import hrtech.shared.error.ErrorCode;
 import hrtech.shared.exceptions.AppException;
-import hrtech.skill.services.AiServiceClient;
+import hrtech.shared.services.AiServiceClient;
 
 import hrtech.subscription.abstractions.services.ICreditService;
 
