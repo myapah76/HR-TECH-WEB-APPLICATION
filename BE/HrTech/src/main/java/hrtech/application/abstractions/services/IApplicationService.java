@@ -1,17 +1,19 @@
 package hrtech.application.abstractions.services;
 
-import hrtech.application.dtos.response.ApplicationDetailResponse;
-import hrtech.application.dtos.response.ApplicationSummaryResponse;
+import hrtech.application.dtos.response.*;
+import hrtech.shared.dtos.RecentActivityResponse;
 import hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
 import hrtech.application.dtos.request.ScheduleInterviewRequest;
 import hrtech.application.dtos.request.SubmitApplicationRequest;
 import hrtech.application.dtos.request.UpdateApplicationStatusRequest;
-
+import hrtech.company.dtos.response.RecruiterActiveJobResponse;
+import hrtech.company.dtos.response.RecruiterAnalyticsResponse;
+import hrtech.company.dtos.response.RecruiterDashboardSummaryResponse;
+import hrtech.company.dtos.response.RecruiterUpcomingInterviewResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.UUID;
-
 import hrtech.application.entities.Application;
 import hrtech.application.entities.enums.ApplicationStatus;
 
@@ -54,4 +56,20 @@ public interface IApplicationService {
     List<Application> getUpcomingInterviews(UUID userId);
 
     List<Application> getAllApplicationsByUserId(UUID userId);
+
+    ApplicationDashboardSummaryResponse getApplicationDashboardSummary(UUID userId);
+
+    List<RecentActivityResponse> getRecentApplicationsForDashboard(UUID userId, int limit);
+
+    List<UpcomingInterviewResponse> getUpcomingInterviewsForDashboard(UUID userId);
+
+    JobSearchAnalyticsResponse getJobSearchAnalytics(UUID userId);
+
+    RecruiterDashboardSummaryResponse getRecruiterDashboardSummary();
+
+    List<RecruiterUpcomingInterviewResponse> getRecruiterUpcomingInterviews();
+
+    RecruiterAnalyticsResponse getRecruiterAnalytics();
+
+    List<RecruiterActiveJobResponse> getRecruiterActiveJobs();
 }

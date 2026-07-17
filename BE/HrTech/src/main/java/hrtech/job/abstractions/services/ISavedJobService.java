@@ -1,5 +1,6 @@
 package hrtech.job.abstractions.services;
 
+import hrtech.shared.dtos.RecentActivityResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import hrtech.job.dtos.response.JobResponse;
@@ -14,4 +15,6 @@ public interface ISavedJobService {
     Page<JobResponse> getSavedJobs(Pageable pageable);
     long countSavedJobsByUserId(UUID userId);
     List<SavedJob> getRecentSavedJobs(UUID userId, int limit);
+    long countMySavedJobs();
+    List<RecentActivityResponse> getMyRecentActivities(int limit);
 }

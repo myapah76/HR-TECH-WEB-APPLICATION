@@ -10,7 +10,7 @@ import { useEffect } from 'react'
 const adminNavItems = [
   { icon: LayoutDashboard, label: 'Bảng điều khiển', path: '/admin' },
   { icon: Users, label: 'Quản lý người dùng', path: '/admin/users' },
-  { icon: Briefcase, label: 'Quản lý tin tuyển', path: '/admin/jobs' },
+  { icon: Briefcase, label: 'Quản lý khiếu nại', path: '/admin/jobs' },
   { icon: Building2, label: 'Quản lý công ty', path: '/admin/companies' },
   { icon: GitBranch, label: 'Quản lý kỹ năng', path: '/admin/skills' },
   { icon: CreditCard, label: 'Quản lý gói dịch vụ', path: '/admin/subscriptions' },

@@ -28,7 +28,7 @@ import hrtech.job.abstractions.services.IJobService;
 import hrtech.job.entities.Job;
 import hrtech.shared.error.ErrorCode;
 import hrtech.shared.exceptions.AppException;
-import hrtech.skill.services.AiServiceClient;
+import hrtech.skill.services.SkillAiServiceClient;
 
 import hrtech.subscription.abstractions.services.ICreditService;
 
@@ -47,7 +47,7 @@ public class ChatServiceImpl implements IChatService {
     private final IJobService jobService;
     private final ICvService cvService;
     private final AuthUtils authUtils;
-    private final AiServiceClient aiServiceClient;
+    private final SkillAiServiceClient aiServiceClient;
     private final ObjectMapper objectMapper;
     private final ICreditService creditService;
     private final ChatMapper chatMapper;

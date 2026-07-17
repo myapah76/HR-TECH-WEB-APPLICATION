@@ -69,4 +69,6 @@ public interface IJobService {
     List<HotPositionResponse> getHotPositions(int limit);
 
     LandingStatsResponse getLandingStats();
+
+    List<Job> getJobsByCompanyId(UUID companyId);
 }

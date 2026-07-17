@@ -3,24 +3,24 @@ import { CandidateSummaryResponse, RecentActivityItem, UpcomingInterviewItem, Jo
 import { ApiResponse } from '@/types/api'
 
 export const getCandidateDashboardSummary = async (): Promise<CandidateSummaryResponse> => {
-  const res = await api.get<ApiResponse<CandidateSummaryResponse>>('/candidates/dashboard-summary')
+  const res = await api.get<ApiResponse<CandidateSummaryResponse>>('/applications/dashboard/summary')
   return res.data.data
 }
 
 export const getRecentActivities = async (limit = 5): Promise<RecentActivityItem[]> => {
-  const res = await api.get<ApiResponse<RecentActivityItem[]>>('/candidates/recent-activities', {
+  const res = await api.get<ApiResponse<RecentActivityItem[]>>('/applications/dashboard/recent-activities', {
     params: { limit },
   })
   return res.data.data
 }
 
 export const getUpcomingInterviews = async (): Promise<UpcomingInterviewItem[]> => {
-  const res = await api.get<ApiResponse<UpcomingInterviewItem[]>>('/candidates/upcoming-interviews')
+  const res = await api.get<ApiResponse<UpcomingInterviewItem[]>>('/applications/dashboard/upcoming-interviews')
   return res.data.data
 }
 
 export const getJobSearchAnalytics = async (): Promise<JobSearchAnalyticsResponse> => {
-  const res = await api.get<ApiResponse<JobSearchAnalyticsResponse>>('/candidates/job-search-analytics')
+  const res = await api.get<ApiResponse<JobSearchAnalyticsResponse>>('/applications/dashboard/job-search-analytics')
   return res.data.data
 }
 

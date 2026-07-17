@@ -36,7 +36,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
     private final IJobService jobService;
     private final SkillNodeRepository skillNodeRepository;
     private final ISkillExtractionService skillExtractionService;
-    private final AiServiceClient aiServiceClient;
+    private final SkillAiServiceClient aiServiceClient;
     private final IAiMatchHistoryService aiMatchHistoryService;
     private final ICreditService creditService;
     private final AuthUtils authUtils;

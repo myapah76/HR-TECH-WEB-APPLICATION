@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import hrtech.application.entities.Application;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -78,5 +79,6 @@ public class Job extends SoftDeleteEntity {
     private List<Application> applications;
 
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 20)
     private List<JobSkill> jobSkills = new ArrayList<>();
 }

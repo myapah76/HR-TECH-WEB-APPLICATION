@@ -72,25 +72,36 @@ function UpdateJobForm({ job }: { job: Job }) {
       jobType: job.jobType,
       experienceLevel: job.experienceLevel,
       location: job.location,
-      description: job.description,
-      requirements: job.requirements,
+      description: job.description || '',
+      requirements: job.requirements || '',
       deadline: formatDateForInput(job.deadline),
       salaryMin: job.salaryMin ?? undefined,
       salaryMax: job.salaryMax ?? undefined,
-    },
+    } as any,
   })
 
+  const formatNumber = (val: string | number) => {
+    if (val === undefined || val === null || val === '') return ''
+    const clean = String(val).replace(/\D/g, '')
+    return clean.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  }
+
   const onSubmit = (data: JobFormData) => {
+    if (requiredSkills.length === 0) {
+      toast.error('Vui lòng chọn ít nhất một kỹ năng bắt buộc!')
+      return
+    }
+
     const updatePayload = {
       ...data,
       companyId: job.companyId,
       deadline: dateInputToInstant(data.deadline),
       skills: [
-        ...requiredSkills.map((skill) => ({
+        ...requiredSkills.map((skill: RequiredSkill) => ({
           skillNeo4jId: skill.id,
           requiredLevel: skill.level,
         })),
-        ...relatedSkills.map((skill) => ({ skillNeo4jId: skill.id })),
+        ...relatedSkills.map((skill: Skill) => ({ skillNeo4jId: skill.id })),
       ],
     }
 
@@ -146,12 +157,12 @@ function UpdateJobForm({ job }: { job: Job }) {
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">
-                Vị trí công việc (Position) <span className="text-red-500">*</span>
+                Lĩnh vực vị trí (Position) <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                placeholder="VD: Software Engineer, Project Manager,..."
+                placeholder="VD: Frontend Developer, DevOps Engineer, Business Analyst..."
                 {...register('position')}
               />
               {errors.position && (
@@ -234,20 +245,16 @@ function UpdateJobForm({ job }: { job: Job }) {
               <Controller
                 control={control}
                 name="salaryMin"
-                render={({ field }) => (
+                render={({ field: { onChange, value } }) => (
                   <input
-                    ref={field.ref}
-                    name={field.name}
                     type="text"
-                    inputMode="numeric"
                     className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                     placeholder="VD: 10.000.000"
-                    value={formatVND(field.value)}
+                    value={formatNumber(value ?? '')}
                     onChange={(e) => {
-                      const rawValue = parseVND(e.target.value)
-                      field.onChange(rawValue ? Number(rawValue) : undefined)
+                      const raw = e.target.value.replace(/\D/g, '')
+                      onChange(raw ? Number(raw) : undefined)
                     }}
-                    onBlur={field.onBlur}
                   />
                 )}
               />

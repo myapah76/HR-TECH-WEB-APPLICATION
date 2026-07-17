@@ -35,7 +35,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
     private final IJobService jobService;
     private final SkillNodeRepository skillNodeRepository;
     private final RoleAliasRepository roleAliasRepository;
-    private final AiServiceClient aiServiceClient;
+    private final SkillAiServiceClient aiServiceClient;
     private final SkillMapper skillMapper;
     private final Map<String, SkillNode> skillCache = new ConcurrentHashMap<>();
 

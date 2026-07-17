@@ -22,7 +22,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AiServiceClient {
+public class SkillAiServiceClient {
 
     private final RestTemplate restTemplate;
 

@@ -1,6 +1,7 @@
 package hrtech.payment.abstractions.services;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import hrtech.payment.dtos.request.CreatePaymentRequest;
 import hrtech.payment.dtos.response.CreatePaymentResponse;
 import hrtech.payment.dtos.response.PaymentResponse;
@@ -15,5 +16,5 @@ public interface IPaymentService {
 
     void reconcilePendingPayments();
 
-    Page<PaymentResponse> getMyPaymentHistory(org.springframework.data.domain.Pageable pageable);
+    Page<PaymentResponse> getMyPaymentHistory(Pageable pageable);
 }

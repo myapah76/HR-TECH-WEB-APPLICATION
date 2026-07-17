@@ -26,6 +26,11 @@ public class CvController {
 
     private final ICvService ICvService;
 
+    @GetMapping("/dashboard/count")
+    public ResponseEntity<ApiResponse<Long>> getCvCountForDashboard() {
+        return ResponseEntity.ok(ApiResponse.success(ICvService.countMyCvs()));
+    }
+
     @GetMapping
     public ResponseEntity<ApiResponse<List<CvSummaryResponse>>> getAllCvs() {
         return ResponseEntity.ok(ApiResponse.success(ICvService.getCvsByCurrentUser(), "CVs retrieved successfully"));

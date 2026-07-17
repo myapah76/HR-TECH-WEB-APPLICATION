@@ -34,7 +34,7 @@ export default function PostJobPage() {
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm({
+  } = useForm<JobFormData>({
     resolver: zodResolver(jobSchema),
     defaultValues: {
       title: '',
@@ -49,17 +49,23 @@ export default function PostJobPage() {
       salaryMax: undefined,
     },
   })
+
   const onSubmit = (data: JobFormData) => {
     if (!myCompany?.id) {
       toast.error('Không tìm thấy thông tin công ty của bạn!')
       return
     }
 
+    if (requiredSkills.length === 0) {
+      toast.error('Vui lòng chọn ít nhất một kỹ năng bắt buộc!')
+      return
+    }
+
     const companyId = myCompany.id
 
     const skills = [
-      ...requiredSkills.map((s) => ({ skillNeo4jId: s.id, requiredLevel: s.level })),
-      ...relatedSkills.map((s) => ({ skillNeo4jId: s.id })),
+      ...requiredSkills.map((s: RequiredSkill) => ({ skillNeo4jId: s.id, requiredLevel: s.level })),
+      ...relatedSkills.map((s: Skill) => ({ skillNeo4jId: s.id })),
     ]
 
     const payload = {
@@ -119,12 +125,12 @@ export default function PostJobPage() {
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">
-                Vị trí công việc (Position) <span className="text-red-500">*</span>
+                Lĩnh vực vị trí (Position) <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                placeholder="VD: Software Engineer, Project Manager,..."
+                placeholder="VD: Frontend Developer, DevOps Engineer, Business Analyst..."
                 {...register('position')}
               />
               {errors.position && (

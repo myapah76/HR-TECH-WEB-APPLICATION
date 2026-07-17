@@ -28,13 +28,13 @@ public interface JobRepository extends JpaRepository<Job, UUID>, QuerydslPredica
 
   List<Job> findByCompanyIdAndCreatedByIdAndDeletedFalse(UUID companyId, UUID createdById);
 
-  @EntityGraph(attributePaths = { "company", "createdBy", "jobSkills" })
+  @EntityGraph(attributePaths = { "company", "createdBy" })
   Page<Job> findByStatus(JobStatus status, Pageable pageable);
 
   @Query("SELECT j FROM Job j WHERE j.deleted = false AND j.extractionStatus IN :statuses AND j.updatedAt < :threshold")
   List<Job> findStuckJobs(@Param("statuses") List<ExtractionStatus> statuses, @Param("threshold") Instant threshold);
 
-  @EntityGraph(attributePaths = { "company", "createdBy", "jobSkills" })
+  @EntityGraph(attributePaths = { "company", "createdBy" })
   @Query("""
           SELECT j FROM Job j
           WHERE j.deleted = false
@@ -53,7 +53,7 @@ public interface JobRepository extends JpaRepository<Job, UUID>, QuerydslPredica
       @Param("createdById") UUID createdById,
       Pageable pageable);
 
-  @EntityGraph(attributePaths = { "company", "createdBy", "jobSkills" })
+  @EntityGraph(attributePaths = { "company", "createdBy" })
   @Query("""
           SELECT j FROM Job j
           LEFT JOIN j.company c
