@@ -419,7 +419,7 @@ public class CompanyServiceImpl implements ICompanyService {
     }
     @Override
     @Transactional(readOnly = true)
-    public hrtech.company.entities.CompanyMember getMemberEntityByUserId(UUID userId) {
+    public CompanyMember getMemberEntityByUserId(UUID userId) {
         return companyMemberRepository.findByUserIdAndDeletedFalse(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User is not a company member"));
     }
@@ -427,7 +427,7 @@ public class CompanyServiceImpl implements ICompanyService {
     /** Convenience lookup used by external modules (job, application). */
     @Override
     @Transactional(readOnly = true)
-    public java.util.Optional<hrtech.company.entities.CompanyMember> getMemberByCompanyIdAndUserId(UUID companyId,
+    public Optional<CompanyMember> getMemberByCompanyIdAndUserId(UUID companyId,
             UUID userId) {
         return companyMemberRepository.findByCompanyIdAndUserIdAndDeletedFalse(companyId, userId);
     }

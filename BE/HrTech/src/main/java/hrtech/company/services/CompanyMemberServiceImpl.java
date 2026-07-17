@@ -1,5 +1,6 @@
 package hrtech.company.services;
 
+import hrtech.company.entities.enums.CompanyStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -301,7 +302,8 @@ public class CompanyMemberServiceImpl implements ICompanyMemberService {
 
     @Override
     @Transactional
-    public void transferOwnership(UUID companyId, UUID currentOwnerId, UUID targetMemberId) {
+    public void transferOwnership(UUID companyId, UUID targetMemberId) {
+        UUID currentOwnerId = authUtils.getCurrentUserId();
         validateOwner(companyId, currentOwnerId);
 
         CompanyMember oldOwnerMember = companyMemberRepository
@@ -340,7 +342,7 @@ public class CompanyMemberServiceImpl implements ICompanyMemberService {
                         return false;
                     }
                     if (requiresApprovedCompany(permission)
-                            && member.getCompany().getStatus() != hrtech.company.entities.enums.CompanyStatus.APPROVED) {
+                            && member.getCompany().getStatus() != CompanyStatus.APPROVED) {
                         return false;
                     }
 

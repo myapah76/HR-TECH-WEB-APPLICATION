@@ -27,7 +27,7 @@ public interface ICompanyMemberService {
 
     void updateMemberRole(UUID companyId, UUID memberId, UpdateMemberRoleRequest request);
 
-    void transferOwnership(UUID companyId, UUID currentOwnerId, UUID targetMemberId);
+    void transferOwnership(UUID companyId, UUID targetMemberId);
 
     boolean hasPermission(UUID userId, UUID companyId, CompanyPermission permission);
 }

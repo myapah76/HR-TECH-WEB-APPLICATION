@@ -1,5 +1,6 @@
 package hrtech.job.controllers;
 
+import hrtech.job.entities.SavedJob;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -56,7 +57,7 @@ public class SavedJobController {
     public ResponseEntity<ApiResponse<List<RecentActivityResponse>>> getRecentActivitiesForDashboard(
             @RequestParam(defaultValue = "5") int limit) {
         UUID currentUserId = authUtils.getCurrentUserId();
-        List<hrtech.job.entities.SavedJob> recentSavedJobs = savedJobService.getRecentSavedJobs(currentUserId, limit);
+        List<SavedJob> recentSavedJobs = savedJobService.getRecentSavedJobs(currentUserId, limit);
 
         List<RecentActivityResponse> activities = recentSavedJobs.stream().map(savedJob -> {
             String jobTitle = savedJob.getJob() != null ? savedJob.getJob().getTitle() : "Việc làm";

@@ -8,15 +8,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
-import hrtech.identity.utils.AuthUtils;
 import org.springframework.web.bind.annotation.*;
 import hrtech.company.abstractions.services.ICompanyService;
-import hrtech.company.abstractions.services.ICompanyMemberService;
-import hrtech.company.dtos.request.AddMemberRequest;
 import hrtech.company.dtos.request.CompanyRegisterRequest;
 import hrtech.company.dtos.request.CompanyUpdateRequest;
-import hrtech.company.dtos.request.UpdateMemberRoleRequest;
-import hrtech.company.dtos.response.CompanyMemberResponse;
 import hrtech.company.dtos.response.CompanyResponse;
 import hrtech.company.dtos.response.TopCompanyResponse;
 import hrtech.identity.dtos.auth.response.EmailActionResponse;
@@ -32,8 +27,6 @@ import java.util.UUID;
 public class CompanyController {
 
     private final ICompanyService companyService;
-    private final ICompanyMemberService companyMemberService;
-    private final AuthUtils authUtils;
 
     // ─── Registration ────────────────────────────────────────────────────────────
 
@@ -83,61 +76,6 @@ public class CompanyController {
     @PreAuthorize("@companySecurity.isOwner(#id) or hasRole('ADMIN_SYSTEM')")
     public ResponseEntity<ApiResponse<Void>> deleteCompany(@PathVariable UUID id) {
         companyService.deleteCompany(id);
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    // ─── Member Management ───────────────────────────────────────────────────────
-
-    @PostMapping("/{id}/members")
-    @PreAuthorize("@companySecurity.isOwnerOrManager(#id)")
-    public ResponseEntity<ApiResponse<CompanyMemberResponse>> addMember(
-            @PathVariable UUID id,
-            @Valid @RequestBody AddMemberRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(companyMemberService.addMember(id, request)));
-    }
-
-    @GetMapping("/{id}/members")
-    @PreAuthorize("@companySecurity.isRecruiter(#id)")
-    public ResponseEntity<ApiResponse<List<CompanyMemberResponse>>> getMembers(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(companyMemberService.getMembers(id)));
-    }
-
-    @DeleteMapping("/{id}/members/{memberId}")
-    @PreAuthorize("@companySecurity.isOwnerOrManager(#id)")
-    public ResponseEntity<ApiResponse<Void>> removeMember(
-            @PathVariable UUID id,
-            @PathVariable UUID memberId) {
-        companyMemberService.removeMember(id, memberId);
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    @PatchMapping("/{id}/members/{memberId}/role")
-    @PreAuthorize("@companySecurity.isOwner(#id)")
-    public ResponseEntity<ApiResponse<Void>> updateMemberRole(
-            @PathVariable UUID id,
-            @PathVariable UUID memberId,
-            @Valid @RequestBody UpdateMemberRoleRequest request) {
-        companyMemberService.updateMemberRole(id, memberId, request);
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    @PostMapping("/{id}/members/{memberId}/reactivate")
-    @PreAuthorize("@companySecurity.isOwner(#id)")
-    public ResponseEntity<ApiResponse<Void>> reactivateMember(
-            @PathVariable UUID id,
-            @PathVariable UUID memberId,
-            @RequestParam(defaultValue = "false") boolean resetPassword) {
-        companyMemberService.reactivateMember(id, memberId, resetPassword);
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    @PostMapping("/{id}/transfer-ownership")
-    @PreAuthorize("@companySecurity.isOwner(#id)")
-    public ResponseEntity<ApiResponse<Void>> transferOwnership(
-            @PathVariable("id") UUID companyId,
-            @RequestParam("targetMemberId") UUID targetMemberId) {
-        UUID currentUserId = authUtils.getCurrentUserId();
-        companyMemberService.transferOwnership(companyId, currentUserId, targetMemberId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

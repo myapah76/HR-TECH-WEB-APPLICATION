@@ -1,5 +1,6 @@
 package hrtech.application.controllers;
 
+import hrtech.application.dtos.response.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,8 +14,6 @@ import hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
 import hrtech.application.dtos.request.ScheduleInterviewRequest;
 import hrtech.application.dtos.request.SubmitApplicationRequest;
 import hrtech.application.dtos.request.UpdateApplicationStatusRequest;
-import hrtech.application.dtos.response.ApplicationDetailResponse;
-import hrtech.application.dtos.response.ApplicationSummaryResponse;
 import hrtech.application.entities.enums.ApplicationStatus;
 import hrtech.identity.utils.AuthUtils;
 import hrtech.shared.response.ApiResponse;
@@ -158,14 +157,14 @@ public class ApplicationController {
 
     @GetMapping("/dashboard/summary")
     @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<ApiResponse<hrtech.application.dtos.response.ApplicationDashboardSummaryResponse>> getDashboardSummary() {
+    public ResponseEntity<ApiResponse<ApplicationDashboardSummaryResponse>> getDashboardSummary() {
         UUID currentUserId = authUtils.getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.success(applicationService.getApplicationDashboardSummary(currentUserId)));
     }
 
     @GetMapping("/dashboard/recent-activities")
     @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<ApiResponse<List<hrtech.application.dtos.response.RecentActivityResponse>>> getRecentActivities(
+    public ResponseEntity<ApiResponse<List<RecentActivityResponse>>> getRecentActivities(
             @RequestParam(defaultValue = "5") int limit) {
         UUID currentUserId = authUtils.getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.success(applicationService.getRecentApplicationsForDashboard(currentUserId, limit)));
@@ -173,14 +172,14 @@ public class ApplicationController {
 
     @GetMapping("/dashboard/upcoming-interviews")
     @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<ApiResponse<List<hrtech.application.dtos.response.UpcomingInterviewResponse>>> getUpcomingInterviews() {
+    public ResponseEntity<ApiResponse<List<UpcomingInterviewResponse>>> getUpcomingInterviews() {
         UUID currentUserId = authUtils.getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.success(applicationService.getUpcomingInterviewsForDashboard(currentUserId)));
     }
 
     @GetMapping("/dashboard/job-search-analytics")
     @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<ApiResponse<hrtech.application.dtos.response.JobSearchAnalyticsResponse>> getJobSearchAnalytics() {
+    public ResponseEntity<ApiResponse<JobSearchAnalyticsResponse>> getJobSearchAnalytics() {
         UUID currentUserId = authUtils.getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.success(applicationService.getJobSearchAnalytics(currentUserId)));
     }
