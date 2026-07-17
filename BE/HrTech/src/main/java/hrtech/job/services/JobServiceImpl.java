@@ -35,7 +35,6 @@ import hrtech.shared.events.JobExtractionRequestedEvent;
 import hrtech.shared.exceptions.AppException;
 import hrtech.skill.abstractions.services.ISkillService;
 import hrtech.skill.dtos.response.SkillResponse;
-import hrtech.shared.services.AiServiceClient;
 import hrtech.job.dtos.request.ReviewJobPostingRequest;
 import hrtech.job.dtos.response.ReviewJobPostingResponse;
 import hrtech.subscription.abstractions.services.ICreditService;
@@ -70,7 +69,7 @@ public class JobServiceImpl implements IJobService {
     private final JobMapper jobMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final AuthUtils authUtils;
-    private final AiServiceClient aiServiceClient;
+    private final JobAiServiceClient jobAiServiceClient;
 
     @Autowired
     @Lazy
@@ -108,7 +107,7 @@ public class JobServiceImpl implements IJobService {
         ReviewJobPostingResponse reviewResponse = null;
         int maxAttempts = 3; // Retry up to 3 times total
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-            reviewResponse = aiServiceClient.reviewJobPosting(reviewRequest);
+            reviewResponse = jobAiServiceClient.reviewJobPosting(reviewRequest);
             if (reviewResponse != null) {
                 break;
             }

@@ -14,8 +14,6 @@ import hrtech.cv.dtos.response.CvSummaryResponse;
 import hrtech.cv.abstractions.services.ICvService;
 import hrtech.shared.response.ApiResponse;
 
-import hrtech.identity.utils.AuthUtils;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -27,12 +25,10 @@ import java.util.UUID;
 public class CvController {
 
     private final ICvService ICvService;
-    private final AuthUtils authUtils;
 
     @GetMapping("/dashboard/count")
     public ResponseEntity<ApiResponse<Long>> getCvCountForDashboard() {
-        UUID currentUserId = authUtils.getCurrentUserId();
-        return ResponseEntity.ok(ApiResponse.success(ICvService.countCvsByUserId(currentUserId)));
+        return ResponseEntity.ok(ApiResponse.success(ICvService.countMyCvs()));
     }
 
     @GetMapping

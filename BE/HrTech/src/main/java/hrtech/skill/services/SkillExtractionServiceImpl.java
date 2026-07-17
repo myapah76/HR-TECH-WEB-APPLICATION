@@ -19,7 +19,6 @@ import hrtech.skill.abstractions.repositories.RoleAliasRepository;
 import hrtech.skill.abstractions.services.ISkillExtractionService;
 import hrtech.skill.entities.SkillNode;
 import hrtech.skill.mapper.SkillMapper;
-import hrtech.shared.services.AiServiceClient;
 
 import java.time.Instant;
 import java.util.*;
@@ -36,7 +35,7 @@ public class SkillExtractionServiceImpl implements ISkillExtractionService {
     private final IJobService jobService;
     private final SkillNodeRepository skillNodeRepository;
     private final RoleAliasRepository roleAliasRepository;
-    private final AiServiceClient aiServiceClient;
+    private final SkillAiServiceClient aiServiceClient;
     private final SkillMapper skillMapper;
     private final Map<String, SkillNode> skillCache = new ConcurrentHashMap<>();
 

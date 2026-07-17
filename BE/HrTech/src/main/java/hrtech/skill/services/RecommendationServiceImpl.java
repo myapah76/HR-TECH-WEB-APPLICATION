@@ -22,7 +22,6 @@ import hrtech.application.abstractions.services.IAiMatchHistoryService;
 import hrtech.application.entities.AiMatchHistory;
 import hrtech.identity.utils.AuthUtils;
 import hrtech.subscription.abstractions.services.ICreditService;
-import hrtech.shared.services.AiServiceClient;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.*;
@@ -37,7 +36,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
     private final IJobService jobService;
     private final SkillNodeRepository skillNodeRepository;
     private final ISkillExtractionService skillExtractionService;
-    private final AiServiceClient aiServiceClient;
+    private final SkillAiServiceClient aiServiceClient;
     private final IAiMatchHistoryService aiMatchHistoryService;
     private final ICreditService creditService;
     private final AuthUtils authUtils;

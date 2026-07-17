@@ -220,4 +220,11 @@ public class CvServiceImpl implements ICvService {
     public long countCvsByUserId(UUID userId) {
         return cvRepository.countByUserId(userId);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countMyCvs() {
+        UUID currentUserId = authUtils.getCurrentUserId();
+        return cvRepository.countByUserId(currentUserId);
+    }
 }
