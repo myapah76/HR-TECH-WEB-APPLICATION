@@ -8,7 +8,7 @@ export const getCompaniesForAdmin = async (
   size = 10
 ): Promise<PageResponse<CompanyResponse>> => {
   const response = await api.get<ApiResponse<PageResponse<CompanyResponse>>>(
-    '/admin/companies',
+    '/companies/admin',
     {
       params: { keyword, page, size },
     }
@@ -17,20 +17,20 @@ export const getCompaniesForAdmin = async (
 }
 
 export const approveCompany = async (id: string): Promise<CompanyResponse> => {
-  const response = await api.put<ApiResponse<CompanyResponse>>(`/admin/companies/${id}/approve`)
+  const response = await api.put<ApiResponse<CompanyResponse>>(`/companies/admin/${id}/approve`)
   return response.data.data
 }
 
 export const rejectCompany = async (id: string): Promise<CompanyResponse> => {
-  const response = await api.put<ApiResponse<CompanyResponse>>(`/admin/companies/${id}/reject`)
+  const response = await api.put<ApiResponse<CompanyResponse>>(`/companies/admin/${id}/reject`)
   return response.data.data
 }
 
 export const deleteCompanyForAdmin = async (id: string): Promise<void> => {
-  await api.delete<ApiResponse<void>>(`/admin/companies/${id}`)
+  await api.delete<ApiResponse<void>>(`/companies/admin/${id}`)
 }
 
 export const restoreCompany = async (id: string): Promise<CompanyResponse> => {
-  const response = await api.put<ApiResponse<CompanyResponse>>(`/admin/companies/${id}/restore`)
+  const response = await api.put<ApiResponse<CompanyResponse>>(`/companies/admin/${id}/restore`)
   return response.data.data
 }

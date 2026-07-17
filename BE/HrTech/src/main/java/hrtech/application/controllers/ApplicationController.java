@@ -18,6 +18,9 @@ import hrtech.application.dtos.response.ApplicationSummaryResponse;
 import hrtech.application.entities.enums.ApplicationStatus;
 import hrtech.identity.utils.AuthUtils;
 import hrtech.shared.response.ApiResponse;
+import hrtech.company.dtos.response.RecruiterDashboardSummaryResponse;
+import hrtech.company.dtos.response.RecruiterUpcomingInterviewResponse;
+import hrtech.company.dtos.response.RecruiterAnalyticsResponse;
 
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -180,5 +183,23 @@ public class ApplicationController {
     public ResponseEntity<ApiResponse<hrtech.application.dtos.response.JobSearchAnalyticsResponse>> getJobSearchAnalytics() {
         UUID currentUserId = authUtils.getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.success(applicationService.getJobSearchAnalytics(currentUserId)));
+    }
+
+    @GetMapping("/recruiter/dashboard/summary")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<ApiResponse<RecruiterDashboardSummaryResponse>> getRecruiterDashboardSummary() {
+        return ResponseEntity.ok(ApiResponse.success(applicationService.getRecruiterDashboardSummary()));
+    }
+
+    @GetMapping("/recruiter/dashboard/upcoming-interviews")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<ApiResponse<List<RecruiterUpcomingInterviewResponse>>> getRecruiterUpcomingInterviews() {
+        return ResponseEntity.ok(ApiResponse.success(applicationService.getRecruiterUpcomingInterviews()));
+    }
+
+    @GetMapping("/recruiter/dashboard/analytics")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<ApiResponse<RecruiterAnalyticsResponse>> getRecruiterAnalytics() {
+        return ResponseEntity.ok(ApiResponse.success(applicationService.getRecruiterAnalytics()));
     }
 }

@@ -184,4 +184,8 @@ public class JobQueryService {
         }
         return keywordBuilder;
     }
+
+    public List<Job> getJobsByCompanyId(UUID companyId) {
+        return jobRepository.findByCompanyIdAndDeletedFalse(companyId);
+    }
 }

@@ -5,6 +5,8 @@ import hrtech.company.dtos.request.UpdateMemberRoleRequest;
 import hrtech.company.dtos.response.CompanyMemberResponse;
 import hrtech.company.entities.CompanyMember;
 
+import hrtech.company.entities.enums.CompanyPermission;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,4 +28,6 @@ public interface ICompanyMemberService {
     void updateMemberRole(UUID companyId, UUID memberId, UpdateMemberRoleRequest request);
 
     void transferOwnership(UUID companyId, UUID currentOwnerId, UUID targetMemberId);
+
+    boolean hasPermission(UUID userId, UUID companyId, CompanyPermission permission);
 }

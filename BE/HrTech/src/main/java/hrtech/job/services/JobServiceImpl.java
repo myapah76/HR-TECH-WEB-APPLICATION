@@ -161,4 +161,10 @@ public class JobServiceImpl implements IJobService {
     public LandingStatsResponse getLandingStats() {
         return analyticsService.getLandingStats();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Job> getJobsByCompanyId(UUID companyId) {
+        return queryService.getJobsByCompanyId(companyId);
+    }
 }

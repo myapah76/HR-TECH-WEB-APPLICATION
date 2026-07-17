@@ -8,13 +8,16 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import hrtech.job.abstractions.services.IJobService;
+import hrtech.application.abstractions.services.IApplicationService;
 import hrtech.job.dtos.request.JobSearchCriteria;
 import hrtech.job.dtos.response.JobResponse;
 import hrtech.job.dtos.response.TrendingSkillResponse;
 import hrtech.shared.response.ApiResponse;
 import hrtech.job.dtos.response.HotPositionResponse;
 import hrtech.job.dtos.response.LandingStatsResponse;
+import hrtech.company.dtos.response.RecruiterActiveJobResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +28,7 @@ import java.util.UUID;
 public class PublicJobController {
 
     private final IJobService jobService;
+    private final IApplicationService applicationService;
 
     @GetMapping("/jobs/landing-stats")
     public ResponseEntity<ApiResponse<LandingStatsResponse>> getLandingStats() {
@@ -72,5 +76,11 @@ public class PublicJobController {
     ) {
         return ResponseEntity.ok(ApiResponse.success(
                 jobService.getPublicCompanyJobs(companyId, pageable)));
+    }
+
+    @GetMapping("/jobs/recruiter/dashboard/active-jobs")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<ApiResponse<List<RecruiterActiveJobResponse>>> getRecruiterActiveJobs() {
+        return ResponseEntity.ok(ApiResponse.success(applicationService.getRecruiterActiveJobs()));
     }
 }

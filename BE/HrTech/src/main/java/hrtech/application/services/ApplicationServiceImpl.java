@@ -21,6 +21,8 @@ import hrtech.application.entities.enums.ApplicationStatus;
 import hrtech.application.entities.enums.MatchStatus;
 import hrtech.application.entities.enums.MatchType;
 import hrtech.application.mapper.ApplicationMapper;
+import hrtech.company.entities.Company;
+import hrtech.company.entities.CompanyMember;
 import hrtech.cv.abstractions.services.ICvService;
 import hrtech.cv.entities.Cv;
 import hrtech.identity.abstractions.services.IUserService;
@@ -40,9 +42,12 @@ import hrtech.skill.abstractions.services.IRecommendationService;
 import hrtech.skill.dtos.response.SkillMatchDetail;
 import hrtech.skill.dtos.response.SkillMatchScoreResponse;
 import hrtech.company.abstractions.services.ICompanyService;
+import hrtech.identity.utils.AuthUtils;
+import hrtech.company.dtos.response.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import java.util.Comparator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -79,6 +84,7 @@ public class ApplicationServiceImpl implements IApplicationService {
     private final ApplicationScoreRepository applicationScoreRepository;
     private final SkillMatchRepository skillMatchRepository;
     private final ApplicationMapper applicationMapper;
+    private final AuthUtils authUtils;
 
     @Value("${app.frontend-base-url:http://localhost:3000}")
     private String frontendBaseUrl;
@@ -719,5 +725,150 @@ public class ApplicationServiceImpl implements IApplicationService {
             result.add(new JobSearchAnalyticsResponse.ChartItemDto(String.valueOf(targetYear), count));
         }
         return result;
+    }
+
+    // ─── RECRUITER DASHBOARD METHODS ───────────────────────────────────────────
+
+    private Company resolveRecruiterCompany() {
+        User currentUser = authUtils.getCurrentUser();
+        CompanyMember member = companyService.getMemberEntityByUserId(currentUser.getId());
+        Company company = member.getCompany();
+        if (company.isDeleted()) {
+            throw new AppException(ErrorCode.COMPANY_BANNED, "Company has been deactivated or banned.");
+        }
+        return company;
+    }
+
+    private List<Job> getCompanyJobs(UUID companyId) {
+        return jobService.getJobsByCompanyId(companyId);
+    }
+
+    private List<Application> getCompanyApplications(List<Job> jobs) {
+        List<UUID> jobIds = jobs.stream().map(Job::getId).toList();
+        return jobIds.isEmpty() ? new ArrayList<>() : applicationRepository.findByJobIdIn(jobIds);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RecruiterDashboardSummaryResponse getRecruiterDashboardSummary() {
+        Company company = resolveRecruiterCompany();
+        List<Job> jobs = getCompanyJobs(company.getId());
+        List<Application> apps = getCompanyApplications(jobs);
+
+        return RecruiterDashboardSummaryResponse.builder()
+                .activeJobsCount(jobs.stream().filter(j -> j.getStatus() == JobStatus.APPROVED).count())
+                .totalApps(apps.size())
+                .submittedAppsCount(apps.stream().filter(a -> a.getStatus() == ApplicationStatus.SUBMITTED).count())
+                .screeningAppsCount(apps.stream().filter(a -> a.getStatus() == ApplicationStatus.SCORED).count())
+                .interviewAppsCount(apps.stream()
+                        .filter(a -> a.getStatus() == ApplicationStatus.INTERVIEW
+                                || a.getStatus() == ApplicationStatus.PENDING_INTERVIEW_SCHEDULE)
+                        .count())
+                .offerAppsCount(apps.stream().filter(a -> a.getStatus() == ApplicationStatus.ACCEPTED).count())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RecruiterUpcomingInterviewResponse> getRecruiterUpcomingInterviews() {
+        Company company = resolveRecruiterCompany();
+        List<Job> jobs = getCompanyJobs(company.getId());
+        List<Application> apps = getCompanyApplications(jobs);
+
+        return apps.stream()
+                .filter(a -> a.getInterviewDateTime() != null)
+                .sorted(Comparator.comparing(Application::getInterviewDateTime))
+                .limit(4)
+                .map(a -> RecruiterUpcomingInterviewResponse.builder()
+                        .cvTitle(a.getCv() != null ? a.getCv().getTitle() : "CV")
+                        .jobTitle(a.getJob() != null ? a.getJob().getTitle() : "Vị trí tuyển dụng")
+                        .interviewDateTime(a.getInterviewDateTime())
+                        .status(a.getStatus().name())
+                        .build())
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RecruiterAnalyticsResponse getRecruiterAnalytics() {
+        Company company = resolveRecruiterCompany();
+        List<Job> jobs = getCompanyJobs(company.getId());
+        List<Application> apps = getCompanyApplications(jobs);
+
+        ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
+        ZonedDateTime now = ZonedDateTime.now(zoneId);
+
+        // ── 7 days ──────────────────────────────────────────────────────────────
+        DateTimeFormatter dayFmt = DateTimeFormatter.ofPattern("dd/MM");
+        List<RecruiterAnalyticsItem> sevenDays = new ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            ZonedDateTime day = now.minusDays(i);
+            LocalDate targetDate = day.toLocalDate();
+            long count = apps.stream()
+                    .filter(a -> a.getAppliedAt() != null)
+                    .filter(a -> ZonedDateTime.ofInstant(a.getAppliedAt(), zoneId).toLocalDate().equals(targetDate))
+                    .count();
+            sevenDays.add(new RecruiterAnalyticsItem(day.format(dayFmt), count));
+        }
+
+        // ── 6 months ────────────────────────────────────────────────────────────
+        DateTimeFormatter monthFmt = DateTimeFormatter.ofPattern("MM/yyyy");
+        List<RecruiterAnalyticsItem> sixMonths = new ArrayList<>();
+        for (int i = 5; i >= 0; i--) {
+            ZonedDateTime month = now.minusMonths(i);
+            int yr = month.getYear(), mo = month.getMonthValue();
+            long count = apps.stream()
+                    .filter(a -> a.getAppliedAt() != null)
+                    .filter(a -> {
+                        ZonedDateTime d = ZonedDateTime.ofInstant(a.getAppliedAt(), zoneId);
+                        return d.getYear() == yr && d.getMonthValue() == mo;
+                    })
+                    .count();
+            sixMonths.add(new RecruiterAnalyticsItem("T" + month.format(monthFmt), count));
+        }
+
+        // ── 3 years ─────────────────────────────────────────────────────────────
+        List<RecruiterAnalyticsItem> threeYears = new ArrayList<>();
+        for (int i = 2; i >= 0; i--) {
+            int year = now.getYear() - i;
+            long count = apps.stream()
+                    .filter(a -> a.getAppliedAt() != null)
+                    .filter(a -> ZonedDateTime.ofInstant(a.getAppliedAt(), zoneId).getYear() == year)
+                    .count();
+            threeYears.add(new RecruiterAnalyticsItem(String.valueOf(year), count));
+        }
+
+        return RecruiterAnalyticsResponse.builder()
+                .sevenDays(sevenDays)
+                .sixMonths(sixMonths)
+                .threeYears(threeYears)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RecruiterActiveJobResponse> getRecruiterActiveJobs() {
+        Company company = resolveRecruiterCompany();
+        List<Job> jobs = getCompanyJobs(company.getId());
+        List<Application> apps = getCompanyApplications(jobs);
+
+        return jobs.stream()
+                .filter(j -> j.getStatus() == JobStatus.APPROVED)
+                .sorted(Comparator.comparing(Job::getCreatedAt).reversed())
+                .limit(3)
+                .map(j -> {
+                    long appCount = apps.stream()
+                            .filter(a -> a.getJob() != null && a.getJob().getId().equals(j.getId()))
+                            .count();
+                    return RecruiterActiveJobResponse.builder()
+                            .id(j.getId())
+                            .title(j.getTitle())
+                            .location(j.getLocation())
+                            .salaryMin(j.getSalaryMin())
+                            .salaryMax(j.getSalaryMax())
+                            .applicantCount(appCount)
+                            .build();
+                })
+                .toList();
     }
 }

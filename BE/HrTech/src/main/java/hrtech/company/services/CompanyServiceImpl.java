@@ -2,6 +2,10 @@ package hrtech.company.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.client.ResourceAccessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,19 +62,16 @@ public class CompanyServiceImpl implements ICompanyService {
 
     private final IUserService userService;
     private final IRoleService roleService;
-    private final TaxVerificationService taxVerificationService;
     private final INotificationService notificationService;
-
     private final CompanyRepository companyRepository;
     private final CompanyMemberRepository companyMemberRepository;
-
     private final CompanyMapper companyMapper;
     private final ObjectMapper objectMapper;
-
     private final PasswordEncoder passwordEncoder;
     private final OtpAttemptTracker otpAttemptTracker;
     private final RedisTemplate<String, Object> redisTemplate;
     private final AuthUtils authUtils;
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @Autowired
     @Lazy
@@ -119,7 +120,7 @@ public class CompanyServiceImpl implements ICompanyService {
             }
         }
 
-        taxVerificationService.verifyTaxCode(taxCode);
+        verifyTaxCode(taxCode);
 
         String otp = String.valueOf((int) (Math.random() * 900000) + 100000);
         String key = OtpType.REGISTER_COMPANY + email;
@@ -445,5 +446,44 @@ public class CompanyServiceImpl implements ICompanyService {
     @Transactional(readOnly = true)
     public long countApprovedCompanies() {
         return companyRepository.countByStatus(CompanyStatus.APPROVED);
+    }
+
+    private String verifyTaxCode(String taxCode) {
+        String url = "https://api.vietqr.io/v2/business/" + taxCode;
+        try {
+            String response = restTemplate.getForObject(url, String.class);
+            if (response == null) {
+                throw new AppException(ErrorCode.TAX_VERIFICATION_FAILED, "No response from tax verification API.");
+            }
+
+            JsonNode root = objectMapper.readTree(response);
+            String code = root.path("code").asText();
+            if ("00".equals(code)) {
+                JsonNode data = root.path("data");
+                String name = data.path("name").asText();
+                if (name == null || name.isBlank()) {
+                     throw new AppException(ErrorCode.TAX_VERIFICATION_FAILED, "Invalid tax code.");
+                }
+                return name;
+            } else {
+                String desc = root.path("desc").asText("Invalid tax code.");
+                throw new AppException(ErrorCode.INVALID_TAX_CODE,
+                        "Tax verification failed: " + desc
+                );
+            }
+        } catch (AppException e) {
+            throw e;
+        } catch (RestClientResponseException e) {
+            log.warn("VietQR API returned error status {} ({}). Gracefully falling back to bypass tax code verification.", 
+                    e.getStatusCode(), e.getStatusText());
+            return "FALLBACK_COMPANY_NAME";
+        } catch (ResourceAccessException e) {
+            log.warn("VietQR API connection timed out or is unavailable. Gracefully falling back to bypass tax code verification.");
+            return "FALLBACK_COMPANY_NAME";
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.TAX_VERIFICATION_FAILED,
+                    "Error occurred during tax code verification: " + e.getMessage()
+            );
+        }
     }
 }

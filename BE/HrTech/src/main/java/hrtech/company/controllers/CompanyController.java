@@ -12,17 +12,12 @@ import hrtech.identity.utils.AuthUtils;
 import org.springframework.web.bind.annotation.*;
 import hrtech.company.abstractions.services.ICompanyService;
 import hrtech.company.abstractions.services.ICompanyMemberService;
-import hrtech.company.abstractions.services.ICompanyDashboardService;
 import hrtech.company.dtos.request.AddMemberRequest;
 import hrtech.company.dtos.request.CompanyRegisterRequest;
 import hrtech.company.dtos.request.CompanyUpdateRequest;
 import hrtech.company.dtos.request.UpdateMemberRoleRequest;
 import hrtech.company.dtos.response.CompanyMemberResponse;
 import hrtech.company.dtos.response.CompanyResponse;
-import hrtech.company.dtos.response.RecruiterActiveJobResponse;
-import hrtech.company.dtos.response.RecruiterAnalyticsResponse;
-import hrtech.company.dtos.response.RecruiterDashboardSummaryResponse;
-import hrtech.company.dtos.response.RecruiterUpcomingInterviewResponse;
 import hrtech.company.dtos.response.TopCompanyResponse;
 import hrtech.identity.dtos.auth.response.EmailActionResponse;
 
@@ -38,7 +33,6 @@ public class CompanyController {
 
     private final ICompanyService companyService;
     private final ICompanyMemberService companyMemberService;
-    private final ICompanyDashboardService companyDashboardService;
     private final AuthUtils authUtils;
 
     // ─── Registration ────────────────────────────────────────────────────────────
@@ -147,29 +141,39 @@ public class CompanyController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    // ─── Dashboard ───────────────────────────────────────────────────────────────
+    // ─── Admin Management ────────────────────────────────────────────────────────
 
-    @GetMapping("/dashboard/summary")
-    @PreAuthorize("hasRole('RECRUITER')")
-    public ResponseEntity<ApiResponse<RecruiterDashboardSummaryResponse>> getDashboardSummary() {
-        return ResponseEntity.ok(ApiResponse.success(companyDashboardService.getRecruiterDashboardSummary()));
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN_SYSTEM')")
+    public ResponseEntity<ApiResponse<Page<CompanyResponse>>> getCompaniesForAdmin(
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 10, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(companyService.getCompaniesForAdmin(keyword, pageable)));
     }
 
-    @GetMapping("/dashboard/upcoming-interviews")
-    @PreAuthorize("hasRole('RECRUITER')")
-    public ResponseEntity<ApiResponse<List<RecruiterUpcomingInterviewResponse>>> getDashboardUpcomingInterviews() {
-        return ResponseEntity.ok(ApiResponse.success(companyDashboardService.getRecruiterUpcomingInterviews()));
+    @PutMapping("/admin/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN_SYSTEM')")
+    public ResponseEntity<ApiResponse<CompanyResponse>> approveCompany(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(companyService.approveCompany(id)));
     }
 
-    @GetMapping("/dashboard/active-jobs")
-    @PreAuthorize("hasRole('RECRUITER')")
-    public ResponseEntity<ApiResponse<List<RecruiterActiveJobResponse>>> getDashboardActiveJobs() {
-        return ResponseEntity.ok(ApiResponse.success(companyDashboardService.getRecruiterActiveJobs()));
+    @PutMapping("/admin/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN_SYSTEM')")
+    public ResponseEntity<ApiResponse<CompanyResponse>> rejectCompany(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(companyService.rejectCompany(id)));
     }
 
-    @GetMapping("/dashboard/analytics")
-    @PreAuthorize("hasRole('RECRUITER')")
-    public ResponseEntity<ApiResponse<RecruiterAnalyticsResponse>> getDashboardAnalytics() {
-        return ResponseEntity.ok(ApiResponse.success(companyDashboardService.getRecruiterAnalytics()));
+    @PutMapping("/admin/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN_SYSTEM')")
+    public ResponseEntity<ApiResponse<CompanyResponse>> restoreCompany(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(companyService.restoreCompany(id)));
+    }
+
+    @DeleteMapping("/admin/{id}")
+    @PreAuthorize("hasRole('ADMIN_SYSTEM')")
+    public ResponseEntity<ApiResponse<Void>> deleteCompanyForAdmin(@PathVariable UUID id) {
+        companyService.deleteCompany(id);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }
