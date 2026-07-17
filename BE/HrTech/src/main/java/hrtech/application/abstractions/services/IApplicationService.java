@@ -15,7 +15,7 @@ import java.util.UUID;
 import hrtech.application.entities.Application;
 import hrtech.application.entities.enums.ApplicationStatus;
 
-public interface ApplicationService {
+public interface IApplicationService {
     ApplicationSummaryResponse submitApplication(UUID userId, SubmitApplicationRequest request);
 
     Page<ApplicationSummaryResponse> getMyApplications(UUID userId, Pageable pageable);

@@ -1,4 +1,4 @@
-package hrtech.candidate.dtos;
+package hrtech.application.dtos.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

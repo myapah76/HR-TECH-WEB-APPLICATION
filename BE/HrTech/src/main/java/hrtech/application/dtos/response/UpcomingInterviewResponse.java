@@ -1,4 +1,4 @@
-package hrtech.candidate.dtos;
+package hrtech.application.dtos.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +13,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UpcomingInterviewResponse {
-
     private String company;
     private String position;
     private Instant dateTime;

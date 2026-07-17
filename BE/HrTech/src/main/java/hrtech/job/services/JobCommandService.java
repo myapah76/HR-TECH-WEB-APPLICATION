@@ -314,7 +314,14 @@ public class JobCommandService {
         Job savedJob = jobRepository.save(job);
 
         // Log admin reject appeal
-        logStatusChange(savedJob, previousStatus, JobStatus.REJECTED_BY_ADMIN, "ADMIN_REJECT_APPEAL", currentUser, "Admin bác bỏ khiếu nại. Tin tuyển dụng được trả về để chỉnh sửa.");
+        logStatusChange(
+                savedJob,
+                previousStatus,
+                JobStatus.REJECTED_BY_ADMIN,
+                "ADMIN_REJECT_APPEAL",
+                currentUser,
+                "Admin bác bỏ khiếu nại. Tin tuyển dụng được trả về để chỉnh sửa."
+        );
 
         return jobMapper.toResponse(savedJob);
     }

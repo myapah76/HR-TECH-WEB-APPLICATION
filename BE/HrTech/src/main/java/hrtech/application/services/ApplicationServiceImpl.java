@@ -1,6 +1,6 @@
 package hrtech.application.services;
 
-import hrtech.application.abstractions.services.ApplicationService;
+import hrtech.application.abstractions.services.IApplicationService;
 import hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
 import hrtech.application.dtos.request.ScheduleInterviewRequest;
 import hrtech.application.dtos.request.SubmitApplicationRequest;
@@ -23,7 +23,7 @@ import java.util.UUID;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class ApplicationServiceImpl implements ApplicationService {
+public class ApplicationServiceImpl implements IApplicationService {
 
     private final ApplicationQueryService queryService;
     private final ApplicationCommandService commandService;

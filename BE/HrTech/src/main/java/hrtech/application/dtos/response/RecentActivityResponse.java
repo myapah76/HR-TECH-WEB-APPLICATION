@@ -1,4 +1,4 @@
-package hrtech.candidate.dtos;
+package hrtech.application.dtos.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,7 +12,6 @@ import java.time.Instant;
 @AllArgsConstructor
 @NoArgsConstructor
 public class RecentActivityResponse {
-
     private String action;
     private Instant date;
     private String status;

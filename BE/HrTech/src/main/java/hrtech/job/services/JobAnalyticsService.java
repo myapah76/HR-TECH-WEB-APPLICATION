@@ -1,6 +1,6 @@
 package hrtech.job.services;
 
-import hrtech.application.abstractions.services.ApplicationService;
+import hrtech.application.abstractions.services.IApplicationService;
 import hrtech.application.entities.enums.ApplicationStatus;
 import hrtech.company.abstractions.services.ICompanyService;
 import hrtech.job.abstractions.repositories.JobRepository;
@@ -35,7 +35,7 @@ public class JobAnalyticsService {
 
     @Autowired
     @Lazy
-    private ApplicationService applicationService;
+    private IApplicationService applicationService;
 
     private final JobRepository jobRepository;
     private final JobSkillRepository jobSkillRepository;

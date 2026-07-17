@@ -8,7 +8,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import hrtech.application.abstractions.services.ApplicationService;
+import hrtech.application.abstractions.services.IApplicationService;
 import hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
 import hrtech.application.dtos.request.ScheduleInterviewRequest;
 import hrtech.application.dtos.request.SubmitApplicationRequest;
@@ -28,7 +28,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ApplicationController {
 
-    private final ApplicationService applicationService;
+    private final IApplicationService applicationService;
     private final AuthUtils authUtils;
 
     @PostMapping
@@ -141,7 +141,8 @@ public class ApplicationController {
     public ResponseEntity<ApiResponse<ApplicationDetailResponse>> scoreApplication(
             @PathVariable UUID id) {
         UUID currentUserId = authUtils.getCurrentUserId();
-        return ResponseEntity.ok(ApiResponse.success(applicationService.scoreApplication(currentUserId, id), "Chấm điểm thành công"));
+        return ResponseEntity.ok(
+                ApiResponse.success(applicationService.scoreApplication(currentUserId, id), "Chấm điểm thành công"));
     }
 
     @GetMapping("/check")
