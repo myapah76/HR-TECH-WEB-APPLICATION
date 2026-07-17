@@ -21,6 +21,7 @@ export interface Job {
   createdByName: string;
 
   title: string;
+  position: string;
   description: string;
 
   location: string;
@@ -54,6 +55,7 @@ export interface JobSkillRequest {
 export interface CreateJobRequest {
   companyId: string;
   title: string;
+  position: string;
   description?: string;
   location?: string;
   salaryMin?: number;

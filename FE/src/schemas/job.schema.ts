@@ -3,6 +3,7 @@ import * as z from 'zod'
 export const jobSchema = z
   .object({
     title: z.string().min(5, 'Tiêu đề phải có ít nhất 5 ký tự'),
+    position: z.string().min(1, 'Vui lòng nhập lĩnh vực vị trí công việc'),
     jobType: z.string().min(1, 'Vui lòng chọn hình thức làm việc'),
     experienceLevel: z.string().min(1, 'Vui lòng chọn cấp bậc'),
     location: z.string().min(3, 'Vui lòng nhập địa điểm'),
