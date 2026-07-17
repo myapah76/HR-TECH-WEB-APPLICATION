@@ -68,11 +68,7 @@ function UpdateJobForm({ job }: { job: Job }) {
     resolver: zodResolver(jobSchema),
     defaultValues: {
       title: job.title,
-<<<<<<< HEAD
-      position: job.position || '',
-=======
       position: job.position,
->>>>>>> 75491596db0220c4cad1e671a66a4563e6af0fae
       jobType: job.jobType,
       experienceLevel: job.experienceLevel,
       location: job.location,
