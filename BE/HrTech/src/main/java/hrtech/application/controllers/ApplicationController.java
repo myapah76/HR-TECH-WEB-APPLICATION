@@ -21,6 +21,7 @@ import hrtech.shared.response.ApiResponse;
 
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -150,5 +151,34 @@ public class ApplicationController {
     public ResponseEntity<ApiResponse<Boolean>> checkHasApplied(@RequestParam UUID jobId) {
         UUID currentUserId = authUtils.getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.success(applicationService.hasApplied(currentUserId, jobId)));
+    }
+
+    @GetMapping("/dashboard/summary")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<ApiResponse<hrtech.application.dtos.response.ApplicationDashboardSummaryResponse>> getDashboardSummary() {
+        UUID currentUserId = authUtils.getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse.success(applicationService.getApplicationDashboardSummary(currentUserId)));
+    }
+
+    @GetMapping("/dashboard/recent-activities")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<ApiResponse<List<hrtech.application.dtos.response.RecentActivityResponse>>> getRecentActivities(
+            @RequestParam(defaultValue = "5") int limit) {
+        UUID currentUserId = authUtils.getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse.success(applicationService.getRecentApplicationsForDashboard(currentUserId, limit)));
+    }
+
+    @GetMapping("/dashboard/upcoming-interviews")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<ApiResponse<List<hrtech.application.dtos.response.UpcomingInterviewResponse>>> getUpcomingInterviews() {
+        UUID currentUserId = authUtils.getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse.success(applicationService.getUpcomingInterviewsForDashboard(currentUserId)));
+    }
+
+    @GetMapping("/dashboard/job-search-analytics")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<ApiResponse<hrtech.application.dtos.response.JobSearchAnalyticsResponse>> getJobSearchAnalytics() {
+        UUID currentUserId = authUtils.getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse.success(applicationService.getJobSearchAnalytics(currentUserId)));
     }
 }

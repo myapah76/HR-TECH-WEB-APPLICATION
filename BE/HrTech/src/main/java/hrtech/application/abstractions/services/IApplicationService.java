@@ -1,7 +1,6 @@
 package hrtech.application.abstractions.services;
 
-import hrtech.application.dtos.response.ApplicationDetailResponse;
-import hrtech.application.dtos.response.ApplicationSummaryResponse;
+import hrtech.application.dtos.response.*;
 import hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
 import hrtech.application.dtos.request.ScheduleInterviewRequest;
 import hrtech.application.dtos.request.SubmitApplicationRequest;
@@ -54,4 +53,12 @@ public interface IApplicationService {
     List<Application> getUpcomingInterviews(UUID userId);
 
     List<Application> getAllApplicationsByUserId(UUID userId);
+
+    ApplicationDashboardSummaryResponse getApplicationDashboardSummary(UUID userId);
+
+    List<RecentActivityResponse> getRecentApplicationsForDashboard(UUID userId, int limit);
+
+    List<UpcomingInterviewResponse> getUpcomingInterviewsForDashboard(UUID userId);
+
+    JobSearchAnalyticsResponse getJobSearchAnalytics(UUID userId);
 }
