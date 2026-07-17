@@ -78,9 +78,13 @@ public abstract class JobMapper {
     protected String resolveSkillName(String skillNeo4jId) {
         if (skillNeo4jId == null)
             return null;
-        return skillNameCache.computeIfAbsent(skillNeo4jId, id -> skillService.findSkillById(id)
-                .map(node -> node.getName())
-                .orElse(id));
+        try {
+            return skillNameCache.computeIfAbsent(skillNeo4jId, id -> skillService.findSkillById(id)
+                    .map(node -> node.getName())
+                    .orElse(id));
+        } catch (Exception e) {
+            return skillNeo4jId;
+        }
     }
 
     public List<JobSkill> buildJobSkills(Job job, List<JobSkillRequest> skillRequests) {

@@ -87,6 +87,11 @@ function UpdateJobForm({ job }: { job: Job }) {
   }
 
   const onSubmit = (data: JobFormData) => {
+    if (requiredSkills.length === 0) {
+      toast.error('Vui lòng chọn ít nhất một kỹ năng bắt buộc!')
+      return
+    }
+
     const updatePayload = {
       ...data,
       companyId: job.companyId,

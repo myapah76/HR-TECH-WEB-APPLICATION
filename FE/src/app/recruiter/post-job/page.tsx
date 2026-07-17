@@ -66,6 +66,11 @@ export default function PostJobPage() {
       return
     }
 
+    if (requiredSkills.length === 0) {
+      toast.error('Vui lòng chọn ít nhất một kỹ năng bắt buộc!')
+      return
+    }
+
     const companyId = myCompany.id
 
     const skills = [
