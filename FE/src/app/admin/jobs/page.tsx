@@ -606,8 +606,8 @@ function JobsManagementContent() {
               </div>
 
               {selectedJob.rejectionReason && (
-                <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-                  <p className="text-[11px] font-black uppercase tracking-wider text-rose-700">
+                <div className="mb-4 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/20 px-4 py-3 text-sm text-rose-800 dark:text-rose-200">
+                  <p className="text-[11px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-400">
                     Lý do từ chối
                   </p>
                   <p className="mt-2 whitespace-pre-wrap leading-6">

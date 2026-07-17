@@ -184,7 +184,7 @@ public class NotificationServiceImpl implements INotificationService {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public NotificationResponse createAndSendNotification(
+    public void createAndSendNotification(
             UUID targetUserId, String title, String content, NotificationType type, String referenceId
     ) {
         // Kiểm tra xem user có tồn tại không
@@ -223,7 +223,6 @@ public class NotificationServiceImpl implements INotificationService {
                 }
             }
         }
-        return notificationResponse;
     }
 
     @Override

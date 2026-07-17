@@ -24,10 +24,6 @@ public interface JobRepository extends JpaRepository<Job, UUID>, QuerydslPredica
 
   List<Job> findByStatusAndDeadlineLessThanEqualAndDeletedFalse(JobStatus status, Instant deadline);
 
-  List<Job> findByCompanyIdAndStatusAndDeletedFalse(UUID companyId, JobStatus status);
-
-  List<Job> findByCompanyIdAndCreatedByIdAndDeletedFalse(UUID companyId, UUID createdById);
-
   @EntityGraph(attributePaths = { "company", "createdBy" })
   Page<Job> findByStatus(JobStatus status, Pageable pageable);
 

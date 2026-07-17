@@ -14,7 +14,7 @@ public interface INotificationService {
     void ApplicationStatusNotificationHandler(ApplicationStatusNotificationRequest request);
 
     SseEmitter createConnection(UUID userId);
-    NotificationResponse createAndSendNotification(
+    void createAndSendNotification(
             UUID targetUserId, String title, String content, NotificationType type, String referenceId
     );
     List<NotificationResponse> getNotificationsForUser(UUID userId);

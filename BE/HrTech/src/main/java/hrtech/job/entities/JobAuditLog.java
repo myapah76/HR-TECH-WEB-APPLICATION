@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import hrtech.identity.entities.User;
+import hrtech.job.entities.enums.JobAuditAction;
 
 import java.util.UUID;
 
@@ -26,8 +27,9 @@ public class JobAuditLog extends BaseEntity {
     @Column(name = "to_status", nullable = false)
     private String toStatus;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "action", nullable = false)
-    private String action;
+    private JobAuditAction action;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "actor_id")

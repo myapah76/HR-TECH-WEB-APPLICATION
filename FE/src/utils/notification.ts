@@ -8,6 +8,8 @@ export const getNotificationRedirectUrl = (type: string, referenceId?: string): 
       return `/jobs/${referenceId}`
     case 'SUBSCRIPTION_UPGRADED':
       return `/recruiter/billing`
+    case 'JOB_STATUS_UPDATED':
+      return `/recruiter/manage-jobs/${referenceId}/update`
     default:
       return '/'
   }

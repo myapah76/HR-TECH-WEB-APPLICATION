@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, type MouseEvent } from 'react'
+import { useState, useEffect, type MouseEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import { CircleX, Copy, Eye, Loader2, MapPin, MoreHorizontal, Pencil, Send } from 'lucide-react'
+import { CircleX, Copy, Eye, MapPin, MoreHorizontal, Pencil, Send } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -13,14 +14,16 @@ import {
 } from '@/src/hooks/job'
 import { CompanyMemberResponse } from '@/src/types/company'
 import { CreateJobRequest, Job } from '@/src/types/job'
-import { formatDate, formatSalary } from '@/src/utils'
+import { formatDate } from '@/src/utils'
 import {
-  EXPERIENCE_LEVEL_LABELS,
   JobStatus,
   JOB_TYPE_LABELS,
   JOB_STATUS_LABELS,
   JOB_STATUS_STYLES,
 } from '@/src/enums/job.enum'
+import JobPreviewModal from './JobPreviewModal'
+import JobRejectModal from './JobRejectModal'
+import JobConfirmModal from './JobConfirmModal'
 
 interface ManageJobTableProps {
   jobs: Job[]
@@ -48,7 +51,22 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
   const [previewJob, setPreviewJob] = useState<Job | null>(null)
   const [openMenuJobId, setOpenMenuJobId] = useState<string | null>(null)
   const [openMenuDirection, setOpenMenuDirection] = useState<'up' | 'down'>('down')
+  const [menuTriggerRect, setMenuTriggerRect] = useState<DOMRect | null>(null)
   const [deadlineHasNotEnded, setDeadlineHasNotEnded] = useState(false)
+
+  useEffect(() => {
+    const handleClose = () => {
+      closeMenu()
+    }
+    if (openMenuJobId) {
+      window.addEventListener('scroll', handleClose, true)
+      window.addEventListener('resize', handleClose)
+    }
+    return () => {
+      window.removeEventListener('scroll', handleClose, true)
+      window.removeEventListener('resize', handleClose)
+    }
+  }, [openMenuJobId])
   const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(null)
   const createJobMutation = useCreateJobMutation()
   const deleteJobMutation = useDeleteJobMutation()
@@ -159,15 +177,19 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
   const closeConfirmAction = () => setConfirmAction(null)
 
   const toggleMenu = (jobId: string, event: MouseEvent<HTMLButtonElement>) => {
-    const triggerRect = event.currentTarget.getBoundingClientRect()
-    const menuHeight = 320
-    const openUp = window.innerHeight - triggerRect.bottom < menuHeight
+    const rect = event.currentTarget.getBoundingClientRect()
+    setMenuTriggerRect(rect)
+    const menuHeight = 280
+    const openUp = window.innerHeight - rect.bottom < menuHeight
 
     setOpenMenuDirection(openUp ? 'up' : 'down')
     setOpenMenuJobId((currentJobId) => (currentJobId === jobId ? null : jobId))
   }
 
-  const closeMenu = () => setOpenMenuJobId(null)
+  const closeMenu = () => {
+    setOpenMenuJobId(null)
+    setMenuTriggerRect(null)
+  }
 
   const openInternalPreview = (job: Job) => {
     setPreviewJob(job)
@@ -203,6 +225,7 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
                 const canEdit =
                   job.status === JobStatus.DRAFT ||
                   job.status === JobStatus.REJECTED ||
+                  job.status === JobStatus.FAILED_AI ||
                   job.status === JobStatus.REJECTED_BY_ADMIN
                 const canClose = job.status === JobStatus.APPROVED && (isJobCreator || isManager)
                 const canReview = job.status === JobStatus.PENDING_APPROVAL && isManager
@@ -253,242 +276,6 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
                           <MoreHorizontal className="h-4 w-4" />
                           Thao tác
                         </button>
-
-                        {openMenuJobId === job.id && (
-                          <>
-                            <button
-                              type="button"
-                              className="fixed inset-0 z-40 cursor-default"
-                              aria-label="Đóng menu thao tác"
-                              onClick={closeMenu}
-                            />
-                            <div
-                              className={`absolute right-0 z-50 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_-20px_rgba(15,23,42,0.35)] ${
-                                openMenuDirection === 'up'
-                                  ? 'bottom-[calc(100%+0.5rem)]'
-                                  : 'top-[calc(100%+0.5rem)]'
-                              }`}
-                            >
-                              <div className="border-b border-slate-100 px-4 py-3">
-                                <p className="truncate text-sm font-bold text-slate-900">
-                                  {job.title}
-                                </p>
-                                <p className="mt-0.5 text-xs font-medium text-slate-500">
-                                  {JOB_STATUS_LABELS[job.status] || job.status || 'Chưa xác định'}
-                                </p>
-                              </div>
-
-                              <div className="p-2">
-                                {canOpenPublic ? (
-                                  <Link
-                                    href={`/jobs/${job.id}`}
-                                    aria-label={`${viewTitle} ${job.title}`}
-                                    className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-blue-50 hover:text-blue-700"
-                                    title={viewTitle}
-                                    onClick={closeMenu}
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                    {viewTitle}
-                                  </Link>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => openInternalPreview(job)}
-                                    aria-label={`${viewTitle} ${job.title}`}
-                                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-blue-50 hover:text-blue-700"
-                                    title={viewTitle}
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                    {viewTitle}
-                                  </button>
-                                )}
-
-                                {canEdit && (
-                                  <Link
-                                    href={`/recruiter/manage-jobs/${job.id}/update`}
-                                    aria-label={`Chỉnh sửa ${job.title}`}
-                                    className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-amber-50 hover:text-amber-700"
-                                    title={
-                                      job.status === JobStatus.DRAFT
-                                        ? 'Chỉnh sửa tin'
-                                        : 'Chỉnh sửa và gửi lại'
-                                    }
-                                    onClick={closeMenu}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                    {job.status === JobStatus.DRAFT
-                                      ? 'Chỉnh sửa'
-                                      : 'Sửa và gửi lại'}
-                                  </Link>
-                                )}
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    closeMenu()
-                                    openConfirmAction({
-                                      type: 'duplicate',
-                                      title: 'Tạo bản sao tin tuyển dụng?',
-                                      description:
-                                        'Bản sao sẽ được tạo ở trạng thái nháp để bạn có thể chỉnh sửa lại trước khi gửi.',
-                                      confirmLabel: 'Tạo bản sao',
-                                      confirmTone: 'blue',
-                                      onConfirm: () => duplicateJob(job),
-                                    })
-                                  }}
-                                  disabled={createJobMutation.isPending}
-                                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-                                  title="Tạo bản sao nháp"
-                                >
-                                  <Copy className="h-4 w-4" />
-                                  Duplicate
-                                </button>
-
-                                {canSubmit && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      closeMenu()
-                                      submitJob(job)
-                                    }}
-                                    disabled={statusMutation.isPending}
-                                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                  >
-                                    <Send className="h-4 w-4" />
-                                    Nộp tin
-                                  </button>
-                                )}
-
-                                {canDirectApprove && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      closeMenu()
-                                      openConfirmAction({
-                                        type: 'approve',
-                                        title: 'Duyệt tin tuyển dụng này?',
-                                        description:
-                                          'Tin nháp do manager tạo sẽ được chuyển sang luồng duyệt và quét AI ngay sau khi xác nhận.',
-                                        confirmLabel: 'Duyệt tin',
-                                        confirmTone: 'emerald',
-                                        onConfirm: () =>
-                                          statusMutation.mutate(
-                                            {
-                                              jobId: job.id,
-                                              action: 'approve',
-                                              companyId: job.companyId,
-                                            },
-                                            {
-                                              onSuccess: () =>
-                                                toast.success('Đã duyệt tin tuyển dụng!'),
-                                            }
-                                          ),
-                                      })
-                                    }}
-                                    disabled={statusMutation.isPending}
-                                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                  >
-                                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                                    Duyệt tin
-                                  </button>
-                                )}
-
-                                {canReview && (
-                                  <div className="mt-1 border-t border-slate-100 pt-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        closeMenu()
-                                        openConfirmAction({
-                                          type: 'approve',
-                                          title: 'Duyệt tin tuyển dụng này?',
-                                          description:
-                                            'Hành động này sẽ chuyển tin sang luồng quét AI/hiển thị chính thức. Bạn có chắc chắn muốn tiếp tục không?',
-                                          confirmLabel: 'Duyệt tin',
-                                          confirmTone: 'emerald',
-                                          onConfirm: () =>
-                                            statusMutation.mutate(
-                                              {
-                                                jobId: job.id,
-                                                action: 'approve',
-                                                companyId: job.companyId,
-                                              },
-                                              {
-                                                onSuccess: () =>
-                                                  toast.success('Đã duyệt tin tuyển dụng!'),
-                                              }
-                                            ),
-                                        })
-                                      }}
-                                      disabled={statusMutation.isPending}
-                                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                                      Duyệt tin
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        closeMenu()
-                                        openRejectConfirmation(job)
-                                      }}
-                                      disabled={statusMutation.isPending}
-                                      className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                      <span className="h-2 w-2 rounded-full bg-rose-500" />
-                                      Từ chối
-                                    </button>
-                                  </div>
-                                )}
-
-                                {canClose && (
-                                  <button
-                                    type="button"
-                                    onClick={() => openCloseConfirmation(job)}
-                                    disabled={statusMutation.isPending}
-                                    className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                    title="Đóng tin tuyển dụng"
-                                  >
-                                    <CircleX className="h-4 w-4" />
-                                    Đóng tin
-                                  </button>
-                                )}
-
-                                {canDelete && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      closeMenu()
-                                      openConfirmAction({
-                                        type: 'delete',
-                                        title: 'Xóa tin tuyển dụng bản nháp?',
-                                        description:
-                                          'Tin nháp sẽ bị xóa mềm và không còn xuất hiện trong danh sách quản lý. Hành động này không thể hoàn tác trực tiếp.',
-                                        confirmLabel: 'Xóa tin',
-                                        confirmTone: 'rose',
-                                        onConfirm: () =>
-                                          deleteJobMutation.mutate(
-                                            { jobId: job.id, companyId: job.companyId },
-                                            {
-                                              onSuccess: () => {
-                                                toast.success('Đã xóa tin tuyển dụng bản nháp!')
-                                              },
-                                            }
-                                          ),
-                                      })
-                                    }}
-                                    disabled={deleteJobMutation.isPending}
-                                    className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                  >
-                                    <CircleX className="h-4 w-4" />
-                                    Xóa
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -499,327 +286,320 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
         </div>
       </div>
 
-      {previewJob && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
-          <div className="max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
-            <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
-                  Xem nội bộ
-                </p>
-                <h2 className="mt-1 text-2xl font-black text-slate-900">{previewJob.title}</h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  {previewJob.companyName || 'Chưa có tên công ty'} ·{' '}
-                  {JOB_STATUS_LABELS[previewJob.status] || previewJob.status}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={closePreview}
-                className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                aria-label="Đóng xem nội bộ"
-              >
-                <CircleX className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="max-h-[calc(90vh-88px)] overflow-y-auto p-6">
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                    Địa điểm
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-slate-900">
-                    {previewJob.location || 'Chưa cập nhật'}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                    Hình thức
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-slate-900">
-                    {JOB_TYPE_LABELS[previewJob.jobType] || previewJob.jobType || 'Chưa cập nhật'}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                    Kinh nghiệm
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-slate-900">
-                    {EXPERIENCE_LEVEL_LABELS[previewJob.experienceLevel] ||
-                      previewJob.experienceLevel}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                    Mức lương
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-slate-900">
-                    {formatSalary(previewJob.salaryMin, previewJob.salaryMax)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-                <div className="space-y-6">
-                  <section className="rounded-2xl border border-slate-200 p-5">
-                    <h3 className="text-sm font-black uppercase tracking-wide text-slate-700">
-                      Mô tả
-                    </h3>
-                    <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-600">
-                      {previewJob.description || 'Chưa có mô tả'}
-                    </p>
-                  </section>
-
-                  <section className="rounded-2xl border border-slate-200 p-5">
-                    <h3 className="text-sm font-black uppercase tracking-wide text-slate-700">
-                      Yêu cầu
-                    </h3>
-                    <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-600">
-                      {previewJob.requirements || 'Chưa có yêu cầu'}
-                    </p>
-                  </section>
-                </div>
-
-                <div className="space-y-6">
-                  <section className="rounded-2xl border border-slate-200 p-5">
-                    <h3 className="text-sm font-black uppercase tracking-wide text-slate-700">
-                      Kỹ năng
-                    </h3>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {previewJob.skills?.length ? (
-                        previewJob.skills.map((skill) => (
-                          <span
-                            key={skill.id}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700"
-                          >
-                            {skill.skillName}
-                            {skill.requiredLevel && (
-                              <span className="text-blue-500">· {skill.requiredLevel}</span>
-                            )}
-                          </span>
-                        ))
-                      ) : (
-                        <p className="text-sm text-slate-500">Chưa có kỹ năng</p>
-                      )}
-                    </div>
-                  </section>
-
-                  {previewJob.status === JobStatus.REJECTED && previewJob.rejectionReason && (
-                    <section className="rounded-2xl border border-rose-200 bg-rose-50/70 p-5">
-                      <h3 className="text-sm font-black uppercase tracking-wide text-rose-700">
-                        Lý do từ chối
-                      </h3>
-                      <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-rose-900">
-                        {previewJob.rejectionReason}
-                      </p>
-                    </section>
-                  )}
-
-                  <section className="rounded-2xl border border-slate-200 p-5">
-                    <h3 className="text-sm font-black uppercase tracking-wide text-slate-700">
-                      Thông tin khác
-                    </h3>
-                    <div className="mt-3 space-y-3 text-sm text-slate-600">
-                      <div className="flex items-start justify-between gap-4">
-                        <span className="font-semibold text-slate-500">Người tạo</span>
-                        <span className="text-right font-medium text-slate-900">
-                          {previewJob.createdByName || 'Chưa cập nhật'}
-                        </span>
-                      </div>
-                      <div className="flex items-start justify-between gap-4">
-                        <span className="font-semibold text-slate-500">Hạn nộp</span>
-                        <span className="text-right font-medium text-slate-900">
-                          {previewJob.deadline ? formatDate(previewJob.deadline) : 'Chưa cập nhật'}
-                        </span>
-                      </div>
-                      <div className="flex items-start justify-between gap-4">
-                        <span className="font-semibold text-slate-500">Ngày tạo</span>
-                        <span className="text-right font-medium text-slate-900">
-                          {previewJob.createdAt
-                            ? formatDate(previewJob.createdAt)
-                            : 'Chưa cập nhật'}
-                        </span>
-                      </div>
-                    </div>
-                  </section>
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={closePreview}
-                  className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-slate-800"
-                >
-                  Đóng
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {previewJob && <JobPreviewModal job={previewJob} onClose={closePreview} />}
 
       {jobToReject && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
-            <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600">
-                <CircleX className="h-6 w-6" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Từ chối tin tuyển dụng?</h2>
-                <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                  Tin “{jobToReject.title}” sẽ chuyển sang trạng thái REJECTED và HR sẽ nhìn thấy lý
-                  do này.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5">
-              <label
-                htmlFor="reject-reason"
-                className="mb-2 block text-sm font-semibold text-slate-700"
-              >
-                Lý do từ chối <span className="text-rose-500">*</span>
-              </label>
-              <textarea
-                id="reject-reason"
-                value={rejectReason}
-                onChange={(event) => {
-                  setRejectReason(event.target.value)
-                  if (rejectReasonError) setRejectReasonError('')
-                }}
-                rows={5}
-                placeholder="Ví dụ: Thiếu thông tin về phạm vi công việc, mô tả chưa rõ, hoặc chưa đúng chính sách công ty..."
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-rose-500 focus:ring-2 focus:ring-rose-500/15"
-              />
-              {rejectReasonError && (
-                <p className="mt-2 text-xs font-semibold text-rose-600">{rejectReasonError}</p>
-              )}
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={closeRejectConfirmation}
-                disabled={statusMutation.isPending}
-                className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-50"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={confirmRejectJob}
-                disabled={statusMutation.isPending}
-                className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {statusMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                Xác nhận từ chối
-              </button>
-            </div>
-          </div>
-        </div>
+        <JobRejectModal
+          job={jobToReject}
+          rejectReason={rejectReason}
+          setRejectReason={setRejectReason}
+          rejectReasonError={rejectReasonError}
+          setRejectReasonError={setRejectReasonError}
+          onClose={closeRejectConfirmation}
+          onConfirm={confirmRejectJob}
+          isPending={statusMutation.isPending}
+        />
       )}
 
       {jobToClose && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
-            <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600">
-                <CircleX className="h-6 w-6" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Đóng tin tuyển dụng?</h2>
-                <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                  Tin “{jobToClose.title}” sẽ chuyển sang trạng thái CLOSED và ngừng nhận hồ sơ.
-                </p>
-              </div>
-            </div>
-
-            {deadlineHasNotEnded && (
-              <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
-                Cảnh báo: hạn tuyển dụng chưa kết thúc. Hạn hiện tại là{' '}
-                {formatDate(jobToClose.deadline)}.
-              </div>
-            )}
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setJobToClose(null)}
-                disabled={statusMutation.isPending}
-                className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-50"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={closeJob}
-                disabled={statusMutation.isPending}
-                className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {statusMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                Xác nhận đóng
-              </button>
-            </div>
-          </div>
-        </div>
+        <JobConfirmModal
+          title="Đóng tin tuyển dụng?"
+          description={`Tin “${jobToClose.title}” sẽ chuyển sang trạng thái CLOSED và ngừng nhận hồ sơ.`}
+          confirmLabel="Xác nhận đóng"
+          confirmTone="rose"
+          warningText={
+            deadlineHasNotEnded && jobToClose.deadline
+              ? `Cảnh báo: hạn tuyển dụng chưa kết thúc. Hạn hiện tại là ${formatDate(jobToClose.deadline)}.`
+              : undefined
+          }
+          onClose={() => setJobToClose(null)}
+          onConfirm={closeJob}
+          isPending={statusMutation.isPending}
+        />
       )}
 
       {confirmAction && (
-        <div className="fixed inset-0 z-[61] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
-            <div className="flex items-start gap-4">
-              <div
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
-                  confirmAction.confirmTone === 'blue'
-                    ? 'bg-blue-100 text-blue-600'
-                    : confirmAction.confirmTone === 'emerald'
-                      ? 'bg-emerald-100 text-emerald-600'
-                      : 'bg-rose-100 text-rose-600'
-                }`}
-              >
-                <CircleX className="h-6 w-6" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">{confirmAction.title}</h2>
-                <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                  {confirmAction.description}
+        <JobConfirmModal
+          title={confirmAction.title}
+          description={confirmAction.description}
+          confirmLabel={confirmAction.confirmLabel}
+          confirmTone={confirmAction.confirmTone}
+          onClose={closeConfirmAction}
+          onConfirm={() => {
+            const handler = confirmAction.onConfirm
+            closeConfirmAction()
+            handler()
+          }}
+        />
+      )}
+
+      {(() => {
+        const activeJob = jobs.find((j) => j.id === openMenuJobId)
+        if (!activeJob || !menuTriggerRect || typeof document === 'undefined') return null
+
+        const isJobCreator = activeJob.createdById?.toLowerCase() === currentUserId?.toLowerCase()
+        const isManager = companyRole === 'HR_MANAGER'
+        const isHr = companyRole === 'HR'
+
+        const canSubmit = activeJob.status === JobStatus.DRAFT && (isJobCreator || isHr) && !isManager
+        const canDirectApprove = activeJob.status === JobStatus.DRAFT && isJobCreator && isManager
+        const canDelete = activeJob.status === JobStatus.DRAFT && (isJobCreator || isManager)
+        const canEdit =
+          activeJob.status === JobStatus.DRAFT ||
+          activeJob.status === JobStatus.REJECTED ||
+          activeJob.status === JobStatus.FAILED_AI ||
+          activeJob.status === JobStatus.REJECTED_BY_ADMIN
+        const canClose = activeJob.status === JobStatus.APPROVED && (isJobCreator || isManager)
+        const canReview = activeJob.status === JobStatus.PENDING_APPROVAL && isManager
+        const canOpenPublic =
+          activeJob.status === JobStatus.APPROVED || activeJob.status === JobStatus.OPEN
+        const viewTitle = canOpenPublic ? 'Xem tin công khai' : 'Xem nội bộ'
+
+        return createPortal(
+          <>
+            <button
+              type="button"
+              className="fixed inset-0 z-40 cursor-default bg-transparent w-full h-full border-0 outline-none"
+              aria-label="Đóng menu thao tác"
+              onClick={closeMenu}
+            />
+            <div
+              className="fixed z-50 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_-20px_rgba(15,23,42,0.35)] animate-in fade-in zoom-in-95 duration-100"
+              style={{
+                ...(openMenuDirection === 'down'
+                  ? { top: `${menuTriggerRect.bottom + 8}px` }
+                  : { bottom: `${window.innerHeight - menuTriggerRect.top + 8}px` }),
+                left: `${menuTriggerRect.right - 224}px`,
+              }}
+            >
+              <div className="border-b border-slate-100 px-4 py-3">
+                <p className="truncate text-sm font-bold text-slate-900">{activeJob.title}</p>
+                <p className="mt-0.5 text-xs font-medium text-slate-500">
+                  {JOB_STATUS_LABELS[activeJob.status] || activeJob.status || 'Chưa xác định'}
                 </p>
               </div>
-            </div>
 
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={closeConfirmAction}
-                className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const handler = confirmAction.onConfirm
-                  closeConfirmAction()
-                  handler()
-                }}
-                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-colors ${
-                  confirmAction.confirmTone === 'blue'
-                    ? 'bg-blue-600 hover:bg-blue-700'
-                    : confirmAction.confirmTone === 'emerald'
-                      ? 'bg-emerald-600 hover:bg-emerald-700'
-                      : 'bg-rose-600 hover:bg-rose-700'
-                }`}
-              >
-                {confirmAction.confirmLabel}
-              </button>
+              <div className="p-2">
+                {canOpenPublic ? (
+                  <Link
+                    href={`/jobs/${activeJob.id}`}
+                    aria-label={`${viewTitle} ${activeJob.title}`}
+                    className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-blue-50 hover:text-blue-700"
+                    title={viewTitle}
+                    onClick={closeMenu}
+                  >
+                    <Eye className="h-4 w-4" />
+                    {viewTitle}
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => openInternalPreview(activeJob)}
+                    aria-label={`${viewTitle} ${activeJob.title}`}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-blue-50 hover:text-blue-700"
+                    title={viewTitle}
+                  >
+                    <Eye className="h-4 w-4" />
+                    {viewTitle}
+                  </button>
+                )}
+
+                {canEdit && (
+                  <Link
+                    href={`/recruiter/manage-jobs/${activeJob.id}/update`}
+                    aria-label={`Chỉnh sửa ${activeJob.title}`}
+                    className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-amber-50 hover:text-amber-700"
+                    title={
+                      activeJob.status === JobStatus.DRAFT ? 'Chỉnh sửa tin' : 'Chỉnh sửa và gửi lại'
+                    }
+                    onClick={closeMenu}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    {activeJob.status === JobStatus.DRAFT ? 'Chỉnh sửa' : 'Sửa và gửi lại'}
+                  </Link>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeMenu()
+                    openConfirmAction({
+                      type: 'duplicate',
+                      title: 'Tạo bản sao tin tuyển dụng?',
+                      description:
+                        'Bản sao sẽ được tạo ở trạng thái nháp để bạn có thể chỉnh sửa lại trước khi gửi.',
+                      confirmLabel: 'Tạo bản sao',
+                      confirmTone: 'blue',
+                      onConfirm: () => duplicateJob(activeJob),
+                    })
+                  }}
+                  disabled={createJobMutation.isPending}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  title="Tạo bản sao nháp"
+                >
+                  <Copy className="h-4 w-4" />
+                  Duplicate
+                </button>
+
+                {canSubmit && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeMenu()
+                      openConfirmAction({
+                        type: 'submit',
+                        title: 'Nộp tin tuyển dụng này?',
+                        description:
+                          'Tin tuyển dụng sẽ được gửi lên cấp quản lý (HR Manager) để phê duyệt trước khi quét AI/hiển thị chính thức.',
+                        confirmLabel: 'Nộp tin',
+                        confirmTone: 'blue',
+                        onConfirm: () => submitJob(activeJob),
+                      })
+                    }}
+                    disabled={statusMutation.isPending}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Send className="h-4 w-4" />
+                    Nộp tin
+                  </button>
+                )}
+
+                {canDirectApprove && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeMenu()
+                      openConfirmAction({
+                        type: 'approve',
+                        title: 'Duyệt tin tuyển dụng này?',
+                        description:
+                          'Tin nháp do manager tạo sẽ được chuyển sang luồng duyệt và quét AI ngay sau khi xác nhận.',
+                        confirmLabel: 'Duyệt tin',
+                        confirmTone: 'emerald',
+                        onConfirm: () =>
+                          statusMutation.mutate(
+                            {
+                              jobId: activeJob.id,
+                              action: 'approve',
+                              companyId: activeJob.companyId,
+                            },
+                            {
+                              onSuccess: () =>
+                                toast.success(
+                                  'Đang thực hiện phê duyệt. Hệ thống AI đang quét tin tuyển dụng trong nền...'
+                                ),
+                            }
+                          ),
+                      })
+                    }}
+                    disabled={statusMutation.isPending}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                    Duyệt tin
+                  </button>
+                )}
+
+                {canReview && (
+                  <div className="mt-1 border-t border-slate-100 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeMenu()
+                        openConfirmAction({
+                          type: 'approve',
+                          title: 'Duyệt tin tuyển dụng này?',
+                          description:
+                            'Hành động này sẽ chuyển tin sang luồng quét AI/hiển thị chính thức. Bạn có chắc chắn muốn tiếp tục không?',
+                          confirmLabel: 'Duyệt tin',
+                          confirmTone: 'emerald',
+                          onConfirm: () =>
+                            statusMutation.mutate(
+                              {
+                                jobId: activeJob.id,
+                                action: 'approve',
+                                companyId: activeJob.companyId,
+                              },
+                              {
+                                onSuccess: () =>
+                                  toast.success(
+                                    'Đang thực hiện phê duyệt. Hệ thống AI đang quét tin tuyển dụng trong nền...'
+                                  ),
+                              }
+                            ),
+                        })
+                      }}
+                      disabled={statusMutation.isPending}
+                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      Duyệt tin
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeMenu()
+                        openRejectConfirmation(activeJob)
+                      }}
+                      disabled={statusMutation.isPending}
+                      className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <span className="h-2 w-2 rounded-full bg-rose-500" />
+                      Từ chối
+                    </button>
+                  </div>
+                )}
+
+                {canClose && (
+                  <button
+                    type="button"
+                    onClick={() => openCloseConfirmation(activeJob)}
+                    disabled={statusMutation.isPending}
+                    className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    title="Đóng tin tuyển dụng"
+                  >
+                    <CircleX className="h-4 w-4" />
+                    Đóng tin
+                  </button>
+                )}
+
+                {canDelete && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeMenu()
+                      openConfirmAction({
+                        type: 'delete',
+                        title: 'Xóa tin tuyển dụng bản nháp?',
+                        description:
+                          'Tin nháp sẽ bị xóa mềm và không còn xuất hiện trong danh sách quản lý. Hành động này không thể hoàn tác trực tiếp.',
+                        confirmLabel: 'Xóa tin',
+                        confirmTone: 'rose',
+                        onConfirm: () =>
+                          deleteJobMutation.mutate(
+                            { jobId: activeJob.id, companyId: activeJob.companyId },
+                            {
+                              onSuccess: () => {
+                                toast.success('Đã xóa tin tuyển dụng bản nháp!')
+                              },
+                            }
+                          ),
+                      })
+                    }}
+                    disabled={deleteJobMutation.isPending}
+                    className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <CircleX className="h-4 w-4" />
+                    Xóa
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </>,
+          document.body
+        )
+      })()}
     </>
   )
 }
