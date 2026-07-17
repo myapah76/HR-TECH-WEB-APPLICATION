@@ -109,9 +109,12 @@ export const getManageJobs = async (
     }
   }
 
-  const response = await api.get<ApiResponse<PageResponse<Job>>>(`/recruiter/companies/${companyId}/jobs`, {
-    params,
-  })
+  const response = await api.get<ApiResponse<PageResponse<Job>>>(
+    `/recruiter/companies/${companyId}/jobs`,
+    {
+      params,
+    }
+  )
   return response.data.data
 }
 
@@ -123,13 +126,31 @@ export const createJob = async (data: CreateJobRequest): Promise<Job> => {
 
 export const updateJob = async (id: string, data: CreateJobRequest): Promise<Job> => {
   const companyId = data.companyId
-  const response = await api.put<ApiResponse<Job>>(`/recruiter/companies/${companyId}/jobs/${id}`, data)
+  const response = await api.put<ApiResponse<Job>>(
+    `/recruiter/companies/${companyId}/jobs/${id}`,
+    data
+  )
   return response.data.data
 }
 
-export const updateJobStatus = async (jobId: string, action: JobStatusAction, companyId: string): Promise<Job> => {
-  const response = await api.put<ApiResponse<Job>>(`/recruiter/companies/${companyId}/jobs/${jobId}/${action}`)
+export const updateJobStatus = async (
+  jobId: string,
+  action: JobStatusAction,
+  companyId: string,
+  reason?: string
+): Promise<Job> => {
+  const response = await api.put<ApiResponse<Job>>(
+    `/recruiter/companies/${companyId}/jobs/${jobId}/${action}`,
+    undefined,
+    {
+      params: reason ? { reason } : undefined,
+    }
+  )
   return response.data.data
+}
+
+export const deleteJob = async (jobId: string, companyId: string): Promise<void> => {
+  await api.delete<ApiResponse<void>>(`/recruiter/companies/${companyId}/jobs/${jobId}`)
 }
 
 export const getLandingStats = async (): Promise<LandingStatsResponse> => {
@@ -152,6 +173,8 @@ export const getHotPositions = async (limit = 6): Promise<HotPosition[]> => {
 }
 
 export const appealJob = async (id: string, companyId: string): Promise<Job> => {
-  const response = await api.put<ApiResponse<Job>>(`/recruiter/companies/${companyId}/jobs/${id}/appeal`)
+  const response = await api.put<ApiResponse<Job>>(
+    `/recruiter/companies/${companyId}/jobs/${id}/appeal`
+  )
   return response.data.data
 }

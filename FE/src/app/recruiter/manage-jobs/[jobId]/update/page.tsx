@@ -2,26 +2,26 @@
 
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Briefcase, CheckCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import * as z from 'zod'
 
 import Loading from '@/src/app/loading'
-import RequiredSkillInput, {
-  RequiredSkill,
-} from '@/src/components/company/job/RequiredSkillInput'
+import RequiredSkillInput, { RequiredSkill } from '@/src/components/company/job/RequiredSkillInput'
 import SkillTagInput from '@/src/components/company/job/SkillTagInput'
 import { useGetJobById, useUpdateJobMutation } from '@/src/hooks/job'
 import { jobSchema, JobFormData } from '@/src/schemas/job.schema'
 import { Job } from '@/src/types/job'
 import { Skill } from '@/src/types/skill'
-import { formatDateForInput } from '@/src/utils'
+import { dateInputToInstant, formatDateForInput, formatVND, parseVND } from '@/src/utils'
 import {
   JobType,
   ExperienceLevel,
   JOB_TYPE_LABELS,
   EXPERIENCE_LEVEL_LABELS,
+  JobStatus,
 } from '@/src/enums/job.enum'
 
 export default function UpdateJobPage() {
@@ -62,11 +62,13 @@ function UpdateJobForm({ job }: { job: Job }) {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
-  } = useForm({
+  } = useForm<z.input<typeof jobSchema>, unknown, JobFormData>({
     resolver: zodResolver(jobSchema),
     defaultValues: {
       title: job.title,
+      position: job.position,
       jobType: job.jobType,
       experienceLevel: job.experienceLevel,
       location: job.location,
@@ -82,6 +84,7 @@ function UpdateJobForm({ job }: { job: Job }) {
     const updatePayload = {
       ...data,
       companyId: job.companyId,
+      deadline: dateInputToInstant(data.deadline),
       skills: [
         ...requiredSkills.map((skill) => ({
           skillNeo4jId: skill.id,
@@ -104,12 +107,19 @@ function UpdateJobForm({ job }: { job: Job }) {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
           <Briefcase className="w-6 h-6 text-emerald-600" />
-          Cập nhật tin tuyển dụng
+          Chỉnh sửa tin tuyển dụng
         </h1>
         <p className="text-slate-500 mt-1">
           Chỉnh sửa các thông tin dưới đây cho tin tuyển dụng của bạn.
         </p>
       </div>
+
+      {job.status === JobStatus.REJECTED && job.rejectionReason && (
+        <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-800">
+          <p className="font-bold uppercase tracking-wide text-rose-700">Lý do bị từ chối</p>
+          <p className="mt-2 whitespace-pre-wrap leading-6">{job.rejectionReason}</p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -132,6 +142,21 @@ function UpdateJobForm({ job }: { job: Job }) {
                 {...register('title')}
               />
               {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                Vị trí công việc (Position) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                placeholder="VD: Software Engineer, Project Manager,..."
+                {...register('position')}
+              />
+              {errors.position && (
+                <p className="text-red-500 text-xs mt-1">{errors.position.message}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -206,11 +231,25 @@ function UpdateJobForm({ job }: { job: Job }) {
               <label className="block text-sm font-semibold text-slate-700 mb-1">
                 Lương tối thiểu (VND)
               </label>
-              <input
-                type="number"
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                placeholder="VD: 10000000"
-                {...register('salaryMin')}
+              <Controller
+                control={control}
+                name="salaryMin"
+                render={({ field }) => (
+                  <input
+                    ref={field.ref}
+                    name={field.name}
+                    type="text"
+                    inputMode="numeric"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    placeholder="VD: 10.000.000"
+                    value={formatVND(field.value)}
+                    onChange={(e) => {
+                      const rawValue = parseVND(e.target.value)
+                      field.onChange(rawValue ? Number(rawValue) : undefined)
+                    }}
+                    onBlur={field.onBlur}
+                  />
+                )}
               />
               {errors.salaryMin && (
                 <p className="text-red-500 text-xs mt-1">{errors.salaryMin.message}</p>
@@ -221,11 +260,25 @@ function UpdateJobForm({ job }: { job: Job }) {
               <label className="block text-sm font-semibold text-slate-700 mb-1">
                 Lương tối đa (VND)
               </label>
-              <input
-                type="number"
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                placeholder="VD: 25000000"
-                {...register('salaryMax')}
+              <Controller
+                control={control}
+                name="salaryMax"
+                render={({ field }) => (
+                  <input
+                    ref={field.ref}
+                    name={field.name}
+                    type="text"
+                    inputMode="numeric"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    placeholder="VD: 25.000.000"
+                    value={formatVND(field.value)}
+                    onChange={(e) => {
+                      const rawValue = parseVND(e.target.value)
+                      field.onChange(rawValue ? Number(rawValue) : undefined)
+                    }}
+                    onBlur={field.onBlur}
+                  />
+                )}
               />
               {errors.salaryMax && (
                 <p className="text-red-500 text-xs mt-1">{errors.salaryMax.message}</p>

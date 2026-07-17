@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -13,6 +13,7 @@ import { Skill } from '@/src/types/skill'
 import { Loader2, Briefcase, CheckCircle } from 'lucide-react'
 import { jobSchema, JobFormData } from '@/src/schemas/job.schema'
 import Loading from '@/src/app/loading'
+import { dateInputToInstant, formatVND, parseVND } from '@/src/utils'
 import {
   JobType,
   ExperienceLevel,
@@ -31,11 +32,13 @@ export default function PostJobPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(jobSchema),
     defaultValues: {
       title: '',
+      position: '',
       jobType: '',
       experienceLevel: '',
       location: '',
@@ -46,12 +49,6 @@ export default function PostJobPage() {
       salaryMax: undefined,
     },
   })
-    const toInstantDeadline = (deadline?: string) => {
-        if (!deadline) return deadline
-        if (deadline.includes('T')) return deadline
-        return `${deadline}T00:00:00Z`
-    }
-
   const onSubmit = (data: JobFormData) => {
     if (!myCompany?.id) {
       toast.error('Không tìm thấy thông tin công ty của bạn!')
@@ -69,7 +66,7 @@ export default function PostJobPage() {
       ...data,
       companyId,
       skills,
-        deadline: toInstantDeadline(data.deadline),
+      deadline: dateInputToInstant(data.deadline),
     }
 
     createJobMutation.mutate(payload, {
@@ -118,6 +115,21 @@ export default function PostJobPage() {
                 {...register('title')}
               />
               {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                Vị trí công việc (Position) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                placeholder="VD: Software Engineer, Project Manager,..."
+                {...register('position')}
+              />
+              {errors.position && (
+                <p className="text-red-500 text-xs mt-1">{errors.position.message}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -193,11 +205,25 @@ export default function PostJobPage() {
               <label className="block text-sm font-semibold text-slate-700 mb-1">
                 Lương tối thiểu (VND)
               </label>
-              <input
-                type="number"
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                placeholder="VD: 10000000"
-                {...register('salaryMin')}
+              <Controller
+                control={control}
+                name="salaryMin"
+                render={({ field }) => (
+                  <input
+                    ref={field.ref}
+                    name={field.name}
+                    type="text"
+                    inputMode="numeric"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    placeholder="VD: 10.000.000"
+                    value={formatVND(field.value)}
+                    onChange={(e) => {
+                      const rawValue = parseVND(e.target.value)
+                      field.onChange(rawValue ? Number(rawValue) : undefined)
+                    }}
+                    onBlur={field.onBlur}
+                  />
+                )}
               />
               {errors.salaryMin && (
                 <p className="text-red-500 text-xs mt-1">{errors.salaryMin.message}</p>
@@ -208,11 +234,25 @@ export default function PostJobPage() {
               <label className="block text-sm font-semibold text-slate-700 mb-1">
                 Lương tối đa (VND)
               </label>
-              <input
-                type="number"
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                placeholder="VD: 25000000"
-                {...register('salaryMax')}
+              <Controller
+                control={control}
+                name="salaryMax"
+                render={({ field }) => (
+                  <input
+                    ref={field.ref}
+                    name={field.name}
+                    type="text"
+                    inputMode="numeric"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    placeholder="VD: 25.000.000"
+                    value={formatVND(field.value)}
+                    onChange={(e) => {
+                      const rawValue = parseVND(e.target.value)
+                      field.onChange(rawValue ? Number(rawValue) : undefined)
+                    }}
+                    onBlur={field.onBlur}
+                  />
+                )}
               />
               {errors.salaryMax && (
                 <p className="text-red-500 text-xs mt-1">{errors.salaryMax.message}</p>

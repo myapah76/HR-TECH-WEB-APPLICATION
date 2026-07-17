@@ -6,6 +6,7 @@ import hrtech.company.entities.CompanyMember;
 import hrtech.company.entities.enums.CompanyRole;
 import hrtech.identity.entities.User;
 import hrtech.identity.utils.AuthUtils;
+import hrtech.job.abstractions.repositories.JobAuditLogRepository;
 import hrtech.job.abstractions.repositories.JobRepository;
 import hrtech.job.dtos.request.JobSearchCriteria;
 import hrtech.job.dtos.response.JobResponse;
@@ -41,11 +42,12 @@ public class JobQueryService {
     private final AuthUtils authUtils;
 
     private final JobRepository jobRepository;
+    private final JobAuditLogRepository jobAuditLogRepository;
 
     private final JobMapper jobMapper;
 
     public JobResponse getJobDetails(UUID jobId) {
-        return jobMapper.toResponse(getJobEntityById(jobId));
+        return toResponseWithReason(getJobEntityById(jobId));
     }
 
     public Page<JobResponse> searchJobs(JobSearchCriteria criteria, Pageable pageable) {
@@ -88,13 +90,13 @@ public class JobQueryService {
 
         Page<Job> jobPage = jobRepository.findAll(builder, pageable);
         jobMapper.preloadSkillNames(jobPage.getContent());
-        return jobPage.map(jobMapper::toResponse);
+        return jobPage.map(this::toResponseWithReason);
     }
 
     public Page<JobResponse> listJobs(Pageable pageable) {
         Page<Job> page = jobRepository.findByStatus(JobStatus.APPROVED, pageable);
         jobMapper.preloadSkillNames(page.getContent());
-        return page.map(jobMapper::toResponse);
+        return page.map(this::toResponseWithReason);
     }
 
     public Page<JobResponse> getJobReport(String keyword, Pageable pageable) {
@@ -103,7 +105,7 @@ public class JobQueryService {
 
         Page<Job> page = jobRepository.findAllJobsForAdmin(keywordParam, JobStatus.APPEALED, pageable);
         jobMapper.preloadSkillNames(page.getContent());
-        return page.map(jobMapper::toResponse);
+        return page.map(this::toResponseWithReason);
     }
 
     public Page<JobResponse> getPublicCompanyJobs(UUID companyId, Pageable pageable) {
@@ -117,7 +119,7 @@ public class JobQueryService {
                 pageable
         );
         jobMapper.preloadSkillNames(page.getContent());
-        return page.map(jobMapper::toResponse);
+        return page.map(this::toResponseWithReason);
     }
 
     public Page<JobResponse> getManageCompanyJobs(
@@ -145,7 +147,7 @@ public class JobQueryService {
                 pageable
         );
         jobMapper.preloadSkillNames(page.getContent());
-        return page.map(jobMapper::toResponse);
+        return page.map(this::toResponseWithReason);
     }
 
     public Job getJobEntityById(UUID jobId) {
@@ -159,6 +161,52 @@ public class JobQueryService {
 
     public List<Job> getAllJobEntities() {
         return jobRepository.findAll();
+    }
+
+    private JobResponse toResponseWithReason(Job job) {
+        JobResponse response = jobMapper.toResponse(job);
+        return new JobResponse(
+                response.id(),
+                response.companyId(),
+                response.companyName(),
+                response.companyLogoUrl(),
+                response.createdById(),
+                response.createdByName(),
+                response.title(),
+                response.position(),
+                response.description(),
+                response.location(),
+                response.salaryMin(),
+                response.salaryMax(),
+                response.jobType(),
+                response.experienceLevel(),
+                response.status(),
+                response.deadline(),
+                response.requirements(),
+                response.extractionStatus(),
+                response.skills(),
+                resolveRejectionReason(job),
+                response.createdAt(),
+                response.updatedAt()
+        );
+    }
+
+    private String resolveRejectionReason(Job job) {
+        if (job.getStatus() == JobStatus.REJECTED) {
+            return jobAuditLogRepository
+                    .findFirstByJobIdAndActionOrderByCreatedAtDesc(job.getId(), "MANAGER_REJECT")
+                    .map(auditLog -> auditLog.getReasonOrNotes())
+                    .orElse(null);
+        }
+
+        if (job.getStatus() == JobStatus.REJECTED_BY_ADMIN) {
+            return jobAuditLogRepository
+                    .findFirstByJobIdAndActionOrderByCreatedAtDesc(job.getId(), "ADMIN_REJECT_APPEAL")
+                    .map(auditLog -> auditLog.getReasonOrNotes())
+                    .orElse(null);
+        }
+
+        return null;
     }
 
     private BooleanBuilder buildKeywordPredicate(String trimmedKeyword, QJob qJob) {

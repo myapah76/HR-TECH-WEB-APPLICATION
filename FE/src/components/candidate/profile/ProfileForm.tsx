@@ -147,7 +147,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                 </span>
                 <Input
                   {...registerProfile('dateOfBirth')}
-                  type="date"
+                    type="date"
                   className="pl-10 border-slate-200 focus-visible:ring-blue-500 h-11"
                 />
               </div>

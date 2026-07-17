@@ -42,6 +42,7 @@ public abstract class JobMapper {
     @Mapping(target = "experienceLevel", expression = "java(job.getExperienceLevel() != null ? job.getExperienceLevel().name() : null)")
     @Mapping(target = "status", expression = "java(job.getStatus() != null ? job.getStatus().name() : null)")
     @Mapping(target = "skills", source = "jobSkills")
+    @Mapping(target = "rejectionReason", ignore = true)
     public abstract JobResponse toResponse(Job job);
 
     @Mapping(target = "skillName", expression = "java(resolveSkillName(jobSkill.getSkillNeo4jId()))")

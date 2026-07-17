@@ -19,11 +19,7 @@ import {
   Lock,
   ChevronDown,
 } from 'lucide-react'
-import {
-  useGetJobReport,
-  useApproveAppealAdmin,
-  useRejectAppealAdmin,
-} from '@/src/hooks/job'
+import { useGetJobReport, useApproveAppealAdmin, useRejectAppealAdmin } from '@/src/hooks/job'
 import {
   JobStatus,
   JOB_STATUS_LABELS,
@@ -205,8 +201,6 @@ function JobsManagementContent() {
     }
   }
 
-
-
   const openTransitionDialog = (job: Job, action: TransitionAction) => {
     setConfirmState({ job, action })
     setSelectedJob(null)
@@ -217,8 +211,7 @@ function JobsManagementContent() {
   const totalPages = Math.max(1, jobsPage?.page?.totalPages ?? 1)
   const safeCurrentPage = Math.min(urlPage, totalPages)
 
-  const isAnyPending =
-    approveMutation.isPending || rejectMutation.isPending
+  const isAnyPending = approveMutation.isPending || rejectMutation.isPending
 
   return (
     <div className="space-y-6">
@@ -612,6 +605,17 @@ function JobsManagementContent() {
                 )}
               </div>
 
+              {selectedJob.rejectionReason && (
+                <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                  <p className="text-[11px] font-black uppercase tracking-wider text-rose-700">
+                    Lý do từ chối
+                  </p>
+                  <p className="mt-2 whitespace-pre-wrap leading-6">
+                    {selectedJob.rejectionReason}
+                  </p>
+                </div>
+              )}
+
               {/* Action buttons */}
               <div className="flex items-center justify-end gap-2">
                 <button
@@ -657,8 +661,7 @@ function JobsManagementContent() {
       {confirmState &&
         (() => {
           const cfg = TRANSITION_CONFIG[confirmState.action]
-          const isPending =
-            approveMutation.isPending || rejectMutation.isPending
+          const isPending = approveMutation.isPending || rejectMutation.isPending
           return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
               <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
@@ -701,8 +704,6 @@ function JobsManagementContent() {
             </div>
           )
         })()}
-
-
     </div>
   )
 }

@@ -103,7 +103,7 @@ public class CompanyController {
     }
 
     @GetMapping("/{id}/members")
-    @PreAuthorize("@companySecurity.isMember(#id)")
+    @PreAuthorize("@companySecurity.isRecruiter(#id)")
     public ResponseEntity<ApiResponse<List<CompanyMemberResponse>>> getMembers(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(companyMemberService.getMembers(id)));
     }

@@ -27,6 +27,7 @@ public record JobResponse(
         String requirements,
         ExtractionStatus extractionStatus,
         List<JobSkillResponse> skills,
+        String rejectionReason,
         Instant createdAt,
         Instant updatedAt
 ) {}

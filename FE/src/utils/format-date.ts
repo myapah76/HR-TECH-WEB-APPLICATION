@@ -10,6 +10,37 @@ export const formatDateForInput = (dateString: string | Date): string => {
   return date.toISOString().split('T')[0]
 }
 
+export const formatDateForDisplay = (dateString: string | Date): string => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return ''
+  return dayjs(date).format('DD/MM/YYYY')
+}
+
+export const dateInputToInstant = (dateString: string): string => {
+  if (!dateString) return ''
+
+  const [year, month, day] = dateString.split('-').map(Number)
+  if (!year || !month || !day) return ''
+
+  const localEndOfDay = new Date(year, month - 1, day, 23, 59, 59, 999)
+  if (isNaN(localEndOfDay.getTime())) return ''
+
+  return localEndOfDay.toISOString()
+}
+
+export const displayDateToInstant = (dateString: string): string => {
+  if (!dateString) return ''
+
+  const [day, month, year] = dateString.split('/').map(Number)
+  if (!day || !month || !year) return ''
+
+  const localDate = new Date(year, month - 1, day, 23, 59, 59, 999)
+  if (isNaN(localDate.getTime())) return ''
+
+  return localDate.toISOString()
+}
+
 export function formatDate(dateStr: string | number | Date | null | undefined): string {
   if (!dateStr) return ''
   return dayjs(dateStr).format('DD/MM/YYYY')

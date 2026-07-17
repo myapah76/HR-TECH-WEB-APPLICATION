@@ -55,13 +55,18 @@ public class JobServiceImpl implements IJobService {
     }
 
     @Override
-    public JobResponse rejectJob(UUID jobId) {
-        return commandService.rejectJob(jobId);
+    public JobResponse rejectJob(UUID jobId, String reason) {
+        return commandService.rejectJob(jobId, reason);
     }
 
     @Override
     public JobResponse closeJob(UUID jobId) {
         return commandService.closeJob(jobId);
+    }
+
+    @Override
+    public void deleteJob(UUID jobId) {
+        commandService.deleteJob(jobId);
     }
 
 

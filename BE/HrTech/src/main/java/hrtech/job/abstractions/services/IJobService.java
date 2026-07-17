@@ -29,9 +29,11 @@ public interface IJobService {
 
     JobResponse approveJob(UUID jobId);
 
-    JobResponse rejectJob(UUID jobId);
+    JobResponse rejectJob(UUID jobId, String reason);
 
     JobResponse closeJob(UUID jobId);
+
+    void deleteJob(UUID jobId);
 
     JobResponse appealJob(UUID jobId);
 

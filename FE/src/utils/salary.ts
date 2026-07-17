@@ -32,3 +32,14 @@ export function formatSalary(min: number | undefined | null, max: number | undef
   if (minVal) return `Từ $${minVal.toLocaleString()}`
   return `Đến $${maxVal.toLocaleString()}`
 }
+
+export function formatVND(value: unknown): string {
+  if (value === undefined || value === null || value === '') return ''
+  const cleanValue = String(value).replace(/\D/g, '')
+  if (!cleanValue) return ''
+  return Number(cleanValue).toLocaleString('vi-VN')
+}
+
+export function parseVND(value: string): string {
+  return value.replace(/\D/g, '')
+}

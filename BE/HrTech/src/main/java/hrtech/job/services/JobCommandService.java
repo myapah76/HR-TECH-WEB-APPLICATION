@@ -2,6 +2,7 @@ package hrtech.job.services;
 
 import hrtech.company.entities.Company;
 import hrtech.company.abstractions.services.ICompanyService;
+import hrtech.company.security.CompanySecurityExpression;
 import hrtech.identity.entities.User;
 import hrtech.identity.utils.AuthUtils;
 import hrtech.job.abstractions.repositories.JobRepository;
@@ -36,6 +37,7 @@ public class JobCommandService {
 
     private final ICreditService creditService;
     private final ICompanyService companyService;
+    private final CompanySecurityExpression companySecurity;
     private final JobQueryService jobQueryService;
 
     private final JobRepository jobRepository;
@@ -173,11 +175,35 @@ public class JobCommandService {
 
     public JobResponse approveJob(UUID jobId) {
         Job job = jobQueryService.getJobEntityById(jobId);
+        User currentUser = authUtils.getCurrentUser();
+
+        boolean isManagerCreatedDraft = job.getStatus() == JobStatus.DRAFT
+            && job.getCreatedBy().getId().equals(currentUser.getId())
+            && companySecurity.isOwnerOrManager(job.getCompany().getId());
+
+        if (isManagerCreatedDraft) {
+            JobStatus previousStatus = job.getStatus();
+
+            job.setStatus(JobStatus.PENDING_AI);
+            Job savedJob = jobRepository.save(job);
+
+            logStatusChange(
+                savedJob,
+                previousStatus,
+                JobStatus.PENDING_AI,
+                "MANAGER_DIRECT_APPROVE",
+                currentUser,
+                "HR Manager tự duyệt tin tuyển dụng do chính mình tạo. Chuyển tiếp quét AI tự động."
+            );
+
+            runMockAiCheck(savedJob);
+            return jobMapper.toResponse(savedJob);
+        }
 
         if (job.getStatus() != JobStatus.PENDING_APPROVAL) {
             throw new AppException(
                     ErrorCode.JOB_INVALID_STATUS,
-                    "Only PENDING_APPROVAL jobs can be approved. Current status: " + job.getStatus());
+                "Only PENDING_APPROVAL jobs can be approved. Current status: " + job.getStatus());
         }
 
         JobStatus previousStatus = job.getStatus();
@@ -185,8 +211,7 @@ public class JobCommandService {
         // Step 1: Transition to PENDING_AI
         job.setStatus(JobStatus.PENDING_AI);
         Job savedJob = jobRepository.save(job);
-        
-        User currentUser = authUtils.getCurrentUser();
+
         logStatusChange(savedJob, previousStatus, JobStatus.PENDING_AI, "MANAGER_APPROVE", currentUser, 
                 "HR Manager phê duyệt tin tuyển dụng. Chuyển tiếp quét AI tự động.");
 
@@ -196,13 +221,19 @@ public class JobCommandService {
         return jobMapper.toResponse(savedJob);
     }
 
-    public JobResponse rejectJob(UUID jobId) {
+    public JobResponse rejectJob(UUID jobId, String reason) {
         Job job = jobQueryService.getJobEntityById(jobId);
 
         if (job.getStatus() != JobStatus.PENDING_APPROVAL) {
             throw new AppException(
                     ErrorCode.JOB_INVALID_STATUS,
                     "Only PENDING_APPROVAL jobs can be rejected. Current status: " + job.getStatus());
+        }
+
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new AppException(
+                    ErrorCode.BAD_REQUEST,
+                    "Reject reason is required.");
         }
 
         JobStatus previousStatus = job.getStatus();
@@ -213,9 +244,9 @@ public class JobCommandService {
         
         // Log manager reject
         User currentUser = authUtils.getCurrentUser();
-        logStatusChange(savedJob, previousStatus, JobStatus.REJECTED, "MANAGER_REJECT", currentUser, "HR Manager từ chối tin tuyển dụng.");
+        logStatusChange(savedJob, previousStatus, JobStatus.REJECTED, "MANAGER_REJECT", currentUser, reason.trim());
 
-        return jobMapper.toResponse(savedJob);
+        return jobQueryService.getJobDetails(jobId);
     }
 
     public JobResponse closeJob(UUID jobId) {
@@ -236,6 +267,24 @@ public class JobCommandService {
         logStatusChange(savedJob, previousStatus, JobStatus.CLOSED, "CLOSE", currentUser, "Đóng tin tuyển dụng.");
 
         return jobMapper.toResponse(savedJob);
+    }
+
+    public void deleteJob(UUID jobId) {
+        Job job = jobQueryService.getJobEntityById(jobId);
+        UUID currentUserId = authUtils.getCurrentUserId();
+        // Chỉ xóa tin DRAFT
+        if (job.getStatus() != JobStatus.DRAFT) {
+            throw new AppException(
+                    ErrorCode.JOB_INVALID_STATUS,
+                    "Only DRAFT jobs can be deleted. Current status: " + job.getStatus());
+        }
+        // Chỉ xóa tin do chính người dùng tạo
+        if(!job.getCreatedBy().getId().equals(currentUserId)) {
+            throw new AppException(
+                    ErrorCode.JOB_PERMISSION_DENIED,
+                    "You can only delete jobs that you created.");
+        }
+        jobRepository.delete(job);
     }
 
     public JobResponse appealJob(UUID jobId) {

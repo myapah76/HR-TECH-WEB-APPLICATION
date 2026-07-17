@@ -1,10 +1,11 @@
 'use client'
 
-import { Briefcase, ChevronLeft, ChevronRight, Loader2, PlusCircle } from 'lucide-react'
+import { Briefcase, Loader2, PlusCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
 import ManageJobTable from '@/src/components/company/job/ManageJobTable'
+import Pagination from '@/src/components/common/Pagination'
 import {
   ExperienceLevel,
   JobStatus,
@@ -41,10 +42,9 @@ const EXPERIENCE_LEVEL_OPTIONS = [
   })),
 ]
 
-const PAGE_SIZE = 10
-
 export default function ManageJobPage() {
   const [page, setPage] = useState(0)
+  const [size, setSize] = useState(10)
   const [status, setStatus] = useState('')
   const [jobType, setJobType] = useState('')
   const [experienceLevel, setExperienceLevel] = useState('')
@@ -65,7 +65,7 @@ export default function ManageJobPage() {
     jobType: jobType || undefined,
     experienceLevel: experienceLevel || undefined,
     page,
-    size: PAGE_SIZE,
+    size,
   })
 
   const { data: companyMembers = [], isLoading: isMembersLoading } = useGetCompanyMembers(
@@ -178,34 +178,14 @@ export default function ManageJobPage() {
             companyRole={currentMember?.role}
           />
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-xs">
-              <p className="text-sm font-semibold text-slate-500">
-                Trang <span className="font-bold text-slate-800">{page + 1}</span> / {totalPages}
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  disabled={page === 0}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-sm font-bold text-slate-700 transition-colors hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Trước
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                  disabled={page >= totalPages - 1}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-sm font-bold text-slate-700 transition-colors hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Sau
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            currentPage={page + 1}
+            totalPages={totalPages}
+            totalItems={totalElements}
+            itemsPerPage={size}
+            onPageChange={(p) => setPage(p - 1)}
+            onItemsPerPageChange={(s) => { setSize(s); setPage(0) }}
+          />
         </>
       ) : (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">

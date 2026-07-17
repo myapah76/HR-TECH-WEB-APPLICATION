@@ -73,16 +73,27 @@ public class RecruiterJobController {
     public ResponseEntity<ApiResponse<JobResponse>> updateJobStatus(
             @PathVariable UUID companyId,
             @PathVariable UUID jobId,
-            @PathVariable String action
+            @PathVariable String action,
+            @RequestParam(required = false) String reason
     ) {
         JobResponse response = switch (action.toLowerCase()) {
             case "submit" -> jobService.submitJob(jobId);
             case "approve" -> jobService.approveJob(jobId);
-            case "reject" -> jobService.rejectJob(jobId);
+            case "reject" -> jobService.rejectJob(jobId, reason);
             case "close" -> jobService.closeJob(jobId);
             case "appeal" -> jobService.appealJob(jobId);
             default -> throw new IllegalArgumentException("Invalid action: " + action);
         };
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @DeleteMapping("/{jobId}")
+    @PreAuthorize("@jobSecurity.isJobCreatorOrManager(#jobId)")
+    public ResponseEntity<ApiResponse<Void>> deleteJob(
+            @PathVariable UUID companyId,
+            @PathVariable UUID jobId
+    ) {
+        jobService.deleteJob(jobId);
+        return ResponseEntity.ok(ApiResponse.success(null, "Job deleted successfully"));
     }
 }

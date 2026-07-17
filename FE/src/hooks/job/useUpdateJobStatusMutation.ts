@@ -7,8 +7,8 @@ export const useUpdateJobStatusMutation = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ jobId, action, companyId }: UpdateJobStatusVariables) =>
-      updateJobStatus(jobId, action, companyId),
+    mutationFn: ({ jobId, action, companyId, reason }: UpdateJobStatusVariables) =>
+      updateJobStatus(jobId, action, companyId, reason),
     onSuccess: (updatedJob) => {
       queryClient.setQueryData(['job', updatedJob.id], updatedJob)
       queryClient.invalidateQueries({ queryKey: ['jobs'] })
