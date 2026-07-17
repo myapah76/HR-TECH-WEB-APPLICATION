@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Briefcase, CheckCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -62,21 +62,29 @@ function UpdateJobForm({ job }: { job: Job }) {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
-  } = useForm({
+  } = useForm<JobFormData>({
     resolver: zodResolver(jobSchema),
     defaultValues: {
       title: job.title,
+      position: job.position || '',
       jobType: job.jobType,
       experienceLevel: job.experienceLevel,
       location: job.location,
-      description: job.description,
-      requirements: job.requirements,
+      description: job.description || '',
+      requirements: job.requirements || '',
       deadline: formatDateForInput(job.deadline),
       salaryMin: job.salaryMin ?? undefined,
       salaryMax: job.salaryMax ?? undefined,
-    },
+    } as any,
   })
+
+  const formatNumber = (val: string | number) => {
+    if (val === undefined || val === null || val === '') return ''
+    const clean = String(val).replace(/\D/g, '')
+    return clean.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  }
 
   const onSubmit = (data: JobFormData) => {
     const updatePayload = {
@@ -132,6 +140,19 @@ function UpdateJobForm({ job }: { job: Job }) {
                 {...register('title')}
               />
               {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                Vị trí tuyển dụng (VD: Java Developer, AI Engineer...) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                placeholder="VD: Java Developer"
+                {...register('position')}
+              />
+              {errors.position && <p className="text-red-500 text-xs mt-1">{errors.position.message}</p>}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -206,11 +227,21 @@ function UpdateJobForm({ job }: { job: Job }) {
               <label className="block text-sm font-semibold text-slate-700 mb-1">
                 Lương tối thiểu (VND)
               </label>
-              <input
-                type="number"
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                placeholder="VD: 10000000"
-                {...register('salaryMin')}
+              <Controller
+                control={control}
+                name="salaryMin"
+                render={({ field: { onChange, value } }) => (
+                  <input
+                    type="text"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    placeholder="VD: 10.000.000"
+                    value={formatNumber(value ?? '')}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/\D/g, '')
+                      onChange(raw ? Number(raw) : undefined)
+                    }}
+                  />
+                )}
               />
               {errors.salaryMin && (
                 <p className="text-red-500 text-xs mt-1">{errors.salaryMin.message}</p>
@@ -221,11 +252,21 @@ function UpdateJobForm({ job }: { job: Job }) {
               <label className="block text-sm font-semibold text-slate-700 mb-1">
                 Lương tối đa (VND)
               </label>
-              <input
-                type="number"
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                placeholder="VD: 25000000"
-                {...register('salaryMax')}
+              <Controller
+                control={control}
+                name="salaryMax"
+                render={({ field: { onChange, value } }) => (
+                  <input
+                    type="text"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    placeholder="VD: 25.000.000"
+                    value={formatNumber(value ?? '')}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/\D/g, '')
+                      onChange(raw ? Number(raw) : undefined)
+                    }}
+                  />
+                )}
               />
               {errors.salaryMax && (
                 <p className="text-red-500 text-xs mt-1">{errors.salaryMax.message}</p>
