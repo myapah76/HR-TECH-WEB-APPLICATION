@@ -19,6 +19,7 @@ import hrtech.skill.abstractions.repositories.RoleAliasRepository;
 import hrtech.skill.abstractions.services.ISkillExtractionService;
 import hrtech.skill.entities.SkillNode;
 import hrtech.skill.mapper.SkillMapper;
+import hrtech.shared.services.AiServiceClient;
 
 import java.time.Instant;
 import java.util.*;

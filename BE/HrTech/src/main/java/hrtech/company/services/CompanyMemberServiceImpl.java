@@ -1,5 +1,6 @@
 package hrtech.company.services;
 
+import hrtech.company.entities.enums.CompanyStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,6 +31,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Map;
+import java.util.Set;
+import java.util.EnumMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,10 +47,45 @@ public class CompanyMemberServiceImpl implements ICompanyMemberService {
     private final IUserService userService;
     private final IRoleService roleService;
     private final CompanyMapper companyMapper;
-    private final CompanyPermissionService companyPermissionService;
     private final PasswordEncoder passwordEncoder;
     private final IEmailSender emailSender;
     private final AuthUtils authUtils;
+
+    private static final Map<CompanyRole, Set<CompanyPermission>> ROLE_PERMISSIONS_MAPPING = new EnumMap<>(CompanyRole.class);
+
+    static {
+        ROLE_PERMISSIONS_MAPPING.put(CompanyRole.OWNER, Set.of(
+            CompanyPermission.MANAGE_MEMBERS,
+            CompanyPermission.VIEW_APPLICANTS,
+            CompanyPermission.UPDATE_COMPANY_PROFILE,
+            CompanyPermission.APPROVE_JOB
+        ));
+        
+        ROLE_PERMISSIONS_MAPPING.put(CompanyRole.HR_MANAGER, Set.of(
+            CompanyPermission.CREATE_JOB,
+            CompanyPermission.UPDATE_JOB,
+            CompanyPermission.DELETE_JOB,
+            CompanyPermission.VIEW_APPLICANTS,
+            CompanyPermission.UPDATE_APPLICATION_STATUS,
+            CompanyPermission.APPROVE_JOB
+        ));
+        
+        ROLE_PERMISSIONS_MAPPING.put(CompanyRole.HR, Set.of(
+            CompanyPermission.CREATE_JOB,
+            CompanyPermission.UPDATE_JOB,
+            CompanyPermission.VIEW_APPLICANTS
+        ));
+    }
+
+    private boolean requiresApprovedCompany(CompanyPermission permission) {
+        return permission == CompanyPermission.CREATE_JOB
+            || permission == CompanyPermission.UPDATE_JOB
+            || permission == CompanyPermission.DELETE_JOB
+            || permission == CompanyPermission.VIEW_APPLICANTS
+            || permission == CompanyPermission.UPDATE_APPLICATION_STATUS
+            || permission == CompanyPermission.APPROVE_JOB
+            || permission == CompanyPermission.UPDATE_COMPANY_PROFILE;
+    }
 
     private void validateOwner(UUID companyId, UUID userId) {
         CompanyMember member = companyMemberRepository.findByCompanyIdAndUserIdAndDeletedFalse(companyId, userId)
@@ -74,7 +113,7 @@ public class CompanyMemberServiceImpl implements ICompanyMemberService {
     public CompanyMemberResponse addMember(UUID companyId, AddMemberRequest request) {
         User currentUser = authUtils.getCurrentUser();
 
-        if (!companyPermissionService.hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
+        if (!hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
             throw new AppException(ErrorCode.FORBIDDEN, "Access Denied");
         }
 
@@ -155,7 +194,7 @@ public class CompanyMemberServiceImpl implements ICompanyMemberService {
     public void removeMember(UUID companyId, UUID memberId) {
         User currentUser = authUtils.getCurrentUser();
 
-        if (!companyPermissionService.hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
+        if (!hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
             throw new AppException(ErrorCode.FORBIDDEN, "Access Denied");
         }
 
@@ -188,7 +227,7 @@ public class CompanyMemberServiceImpl implements ICompanyMemberService {
     public void reactivateMember(UUID companyId, UUID memberId, boolean resetPassword) {
         User currentUser = authUtils.getCurrentUser();
 
-        if (!companyPermissionService.hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
+        if (!hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
             throw new AppException(ErrorCode.FORBIDDEN, "Access Denied");
         }
 
@@ -229,7 +268,7 @@ public class CompanyMemberServiceImpl implements ICompanyMemberService {
     public void updateMemberRole(UUID companyId, UUID memberId, UpdateMemberRoleRequest request) {
         User currentUser = authUtils.getCurrentUser();
 
-        if (!companyPermissionService.hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
+        if (!hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
             throw new AppException(ErrorCode.FORBIDDEN, "Access Denied");
         }
 
@@ -263,7 +302,8 @@ public class CompanyMemberServiceImpl implements ICompanyMemberService {
 
     @Override
     @Transactional
-    public void transferOwnership(UUID companyId, UUID currentOwnerId, UUID targetMemberId) {
+    public void transferOwnership(UUID companyId, UUID targetMemberId) {
+        UUID currentOwnerId = authUtils.getCurrentUserId();
         validateOwner(companyId, currentOwnerId);
 
         CompanyMember oldOwnerMember = companyMemberRepository
@@ -291,5 +331,24 @@ public class CompanyMemberServiceImpl implements ICompanyMemberService {
             throw new AppException(ErrorCode.INVALID_OWNER_COUNT,
                     "Ownership transfer resulted in an invalid number of owners.");
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasPermission(UUID userId, UUID companyId, CompanyPermission permission) {
+        return companyMemberRepository.findByCompanyIdAndUserIdAndDeletedFalse(companyId, userId)
+                .map(member -> {
+                    if (member.getMembershipStatus() != MembershipStatus.ACTIVE) {
+                        return false;
+                    }
+                    if (requiresApprovedCompany(permission)
+                            && member.getCompany().getStatus() != CompanyStatus.APPROVED) {
+                        return false;
+                    }
+
+                    Set<CompanyPermission> permissions = ROLE_PERMISSIONS_MAPPING.get(member.getCompanyRole());
+                    return permissions != null && permissions.contains(permission);
+                })
+                .orElse(false);
     }
 }

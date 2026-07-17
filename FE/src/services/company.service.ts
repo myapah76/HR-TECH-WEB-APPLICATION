@@ -93,21 +93,21 @@ export const updateMemberRole = async (
 // ─── Dashboard API calls ─────────────────────────────────────────────────────
 
 export const getRecruiterDashboardSummary = async (): Promise<RecruiterDashboardSummary> => {
-  const response = await api.get<ApiResponse<RecruiterDashboardSummary>>('/companies/dashboard/summary')
+  const response = await api.get<ApiResponse<RecruiterDashboardSummary>>('/applications/recruiter/dashboard/summary')
   return response.data.data
 }
 
 export const getRecruiterUpcomingInterviews = async (): Promise<RecruiterUpcomingInterview[]> => {
-  const response = await api.get<ApiResponse<RecruiterUpcomingInterview[]>>('/companies/dashboard/upcoming-interviews')
+  const response = await api.get<ApiResponse<RecruiterUpcomingInterview[]>>('/applications/recruiter/dashboard/upcoming-interviews')
   return response.data.data
 }
 
 export const getRecruiterActiveJobs = async (): Promise<RecruiterActiveJob[]> => {
-  const response = await api.get<ApiResponse<RecruiterActiveJob[]>>('/companies/dashboard/active-jobs')
+  const response = await api.get<ApiResponse<RecruiterActiveJob[]>>('/jobs/recruiter/dashboard/active-jobs')
   return response.data.data
 }
 
 export const getRecruiterAnalytics = async (): Promise<RecruiterAnalyticsResponse> => {
-  const response = await api.get<ApiResponse<RecruiterAnalyticsResponse>>('/companies/dashboard/analytics')
+  const response = await api.get<ApiResponse<RecruiterAnalyticsResponse>>('/applications/recruiter/dashboard/analytics')
   return response.data.data
 }
