@@ -72,4 +72,6 @@ public interface JobRepository extends JpaRepository<Job, UUID>, QuerydslPredica
       Pageable pageable);
 
   long countByStatus(JobStatus status);
+
+  long countByCreatedAtAfter(Instant date);
 }

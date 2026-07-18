@@ -30,4 +30,6 @@ public interface CvRepository extends JpaRepository<Cv, UUID> {
     List<Cv> findAllWithCompletedSkills();
 
     long countByUserId(UUID userId);
+
+    long countByCreatedAtAfter(Instant date);
 }
