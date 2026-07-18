@@ -37,6 +37,8 @@ export interface Job {
 
   requirements: string
 
+  benefits: string
+
   extractionStatus: string
 
   skills: JobSkill[]
@@ -70,6 +72,7 @@ export interface CreateJobRequest {
 }
 
 export interface ManageJobsParams {
+  keyword?: string
   status?: string
   jobType?: string
   experienceLevel?: string

@@ -162,6 +162,10 @@ export default function JobDetailPage() {
     ? job.description.split('\n').filter((line) => line.trim())
     : []
 
+  const benefitsList = job.benefits
+    ? job.benefits.split('\n').filter((line) => line.trim())
+    : mockBenefits
+
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans">
       {/* Back Button */}
@@ -391,7 +395,7 @@ export default function JobDetailPage() {
                 <span>Quyền lợi & Đãi ngộ</span>
               </h2>
               <ul className="space-y-3.5">
-                {mockBenefits.map((ben, index) => (
+                {benefitsList.map((ben, index) => (
                   <li
                     key={index}
                     className="flex items-start gap-3 text-sm font-semibold text-slate-655 leading-relaxed"

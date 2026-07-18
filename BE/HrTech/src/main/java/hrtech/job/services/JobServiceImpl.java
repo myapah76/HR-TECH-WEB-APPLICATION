@@ -3,6 +3,7 @@ package hrtech.job.services;
 import com.querydsl.core.BooleanBuilder;
 import hrtech.application.abstractions.services.IApplicationService;
 import hrtech.application.entities.enums.ApplicationStatus;
+import hrtech.company.abstractions.services.ICompanyMemberService;
 import hrtech.company.abstractions.services.ICompanyService;
 import hrtech.company.entities.Company;
 import hrtech.company.entities.CompanyMember;
@@ -41,6 +42,7 @@ import hrtech.skill.dtos.response.SkillResponse;
 import hrtech.job.dtos.request.ReviewJobPostingRequest;
 import hrtech.job.dtos.response.ReviewJobPostingResponse;
 import hrtech.subscription.abstractions.services.ICreditService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +54,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.concurrent.CompletableFuture;
@@ -79,6 +83,7 @@ public class JobServiceImpl implements IJobService {
     private final JobMapper jobMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final AuthUtils authUtils;
+    private final ObjectMapper objectMapper;
 
     @Autowired
     @Lazy
@@ -100,6 +105,19 @@ public class JobServiceImpl implements IJobService {
     }
 
     private void runAiCheck(UUID jobId, UUID triggerUserId) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    triggerAsyncAiCheck(jobId, triggerUserId);
+                }
+            });
+        } else {
+            triggerAsyncAiCheck(jobId, triggerUserId);
+        }
+    }
+
+    private void triggerAsyncAiCheck(UUID jobId, UUID triggerUserId) {
         CompletableFuture.runAsync(() -> {
             try {
                 new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
@@ -112,6 +130,7 @@ public class JobServiceImpl implements IJobService {
                             .title(job.getTitle())
                             .description(job.getDescription())
                             .requirements(job.getRequirements())
+                            .benefits(job.getBenefits())
                             .location(job.getLocation())
                             .salary_min(job.getSalaryMin() != null ? job.getSalaryMin().doubleValue() : null)
                             .salary_max(job.getSalaryMax() != null ? job.getSalaryMax().doubleValue() : null)
@@ -179,9 +198,19 @@ public class JobServiceImpl implements IJobService {
                         job.setStatus(JobStatus.FAILED_AI);
                         jobRepository.save(job);
 
-                        String reason = reviewResponse.getOverall_message();
-                        if (reviewResponse.getRejection_reasons() != null && !reviewResponse.getRejection_reasons().isEmpty()) {
-                            reason += " Lý do: " + String.join(", ", reviewResponse.getRejection_reasons());
+                        String reason;
+                        try {
+                            Map<String, Object> errorDetails = new LinkedHashMap<>();
+                            errorDetails.put("message", reviewResponse.getOverall_message());
+                            errorDetails.put("reasons", reviewResponse.getRejection_reasons() != null ? reviewResponse.getRejection_reasons() : Collections.emptyList());
+                            errorDetails.put("suggestions", reviewResponse.getSuggestions() != null ? reviewResponse.getSuggestions() : Collections.emptyList());
+                            reason = objectMapper.writeValueAsString(errorDetails);
+                        } catch (Exception e) {
+                            log.error("Failed to serialize AI check rejection reasons to JSON", e);
+                            reason = reviewResponse.getOverall_message();
+                            if (reviewResponse.getRejection_reasons() != null && !reviewResponse.getRejection_reasons().isEmpty()) {
+                                reason += " Lý do: " + String.join(", ", reviewResponse.getRejection_reasons());
+                            }
                         }
 
                         logStatusChange(job, previousStatus, JobStatus.FAILED_AI, JobAuditAction.AI_REJECT, null, reason);
@@ -286,7 +315,8 @@ public class JobServiceImpl implements IJobService {
     @Override
     public JobResponse createJob(JobRequest request) {
         User currentUser = authUtils.getCurrentUser();
-        Company company = companyService.getCompanyEntityById(request.companyId());
+        CompanyMember member = companyService.getMemberEntityByUserId(currentUser.getId());
+        Company company = member.getCompany();
 
         Job job = jobMapper.toEntity(request);
         job.setCompany(company);
@@ -623,7 +653,7 @@ public class JobServiceImpl implements IJobService {
     @Override
     @Transactional(readOnly = true)
     public Page<JobResponse> getManageCompanyJobs(
-            UUID companyId, JobStatus status, JobType jobType, ExperienceLevel jobLevel, Pageable pageable) {
+            UUID companyId, String keyword, JobStatus status, JobType jobType, ExperienceLevel jobLevel, Pageable pageable) {
         User currentUser = authUtils.getCurrentUser();
         CompanyMember member = companyService.getMemberByCompanyIdAndUserId(companyId, currentUser.getId())
                 .orElseThrow(
@@ -633,6 +663,13 @@ public class JobServiceImpl implements IJobService {
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(qJob.deleted.isFalse());
         builder.and(qJob.company.id.eq(companyId));
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String cleanKeyword = keyword.trim().toLowerCase();
+            builder.and(qJob.title.toLowerCase().contains(cleanKeyword)
+                    .or(qJob.position.toLowerCase().contains(cleanKeyword))
+                    .or(qJob.location.toLowerCase().contains(cleanKeyword)));
+        }
 
         if (status != null) {
             builder.and(qJob.status.eq(status));
@@ -747,6 +784,7 @@ public class JobServiceImpl implements IJobService {
                 response.status(),
                 response.deadline(),
                 response.requirements(),
+                response.benefits(),
                 response.extractionStatus(),
                 response.skills(),
                 resolveRejectionReason(job),

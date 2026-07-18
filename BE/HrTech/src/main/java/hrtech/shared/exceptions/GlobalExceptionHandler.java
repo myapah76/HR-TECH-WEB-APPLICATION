@@ -5,7 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.connector.ClientAbortException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.expression.spel.SpelEvaluationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.transaction.TransactionSystemException;
@@ -181,7 +183,9 @@ public class GlobalExceptionHandler {
                 .timestamp(Instant.now())
                 .data(data)
                 .build();
-        return new ResponseEntity<>(error, status);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return new ResponseEntity<>(error, headers, status);
     }
 }
 

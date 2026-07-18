@@ -13,6 +13,7 @@ public class ReviewJobPostingRequest {
     private String title;
     private String description;
     private String requirements;
+    private String benefits;
     private String location;
     private Double salary_min;
     private Double salary_max;

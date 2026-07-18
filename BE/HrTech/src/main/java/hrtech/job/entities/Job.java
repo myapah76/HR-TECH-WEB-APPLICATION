@@ -72,6 +72,9 @@ public class Job extends SoftDeleteEntity {
     @Column(columnDefinition = "TEXT")
     private String requirements;
 
+    @Column(columnDefinition = "TEXT")
+    private String benefits;
+
     @Enumerated(EnumType.STRING)
     private ExtractionStatus extractionStatus;
 

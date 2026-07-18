@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.UUID;
 
 public interface IJobService {
-
     JobResponse createJob(JobRequest request);
 
     JobResponse updateJob(UUID jobId, JobRequest request);
@@ -52,7 +51,7 @@ public interface IJobService {
     Page<JobResponse> getPublicCompanyJobs(UUID companyId, Pageable pageable);
 
     Page<JobResponse> getManageCompanyJobs(
-            UUID companyId, JobStatus status, JobType jobType, ExperienceLevel jobLevel, Pageable pageable);
+            UUID companyId, String keyword, JobStatus status, JobType jobType, ExperienceLevel jobLevel, Pageable pageable);
 
     Job getJobEntityById(UUID jobId);
 

@@ -42,10 +42,12 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CompanyMemberServiceImpl implements ICompanyMemberService {
 
-    private final CompanyMemberRepository companyMemberRepository;
-    private final CompanyRepository companyRepository;
     private final IUserService userService;
     private final IRoleService roleService;
+
+    private final CompanyMemberRepository companyMemberRepository;
+    private final CompanyRepository companyRepository;
+
     private final CompanyMapper companyMapper;
     private final PasswordEncoder passwordEncoder;
     private final IEmailSender emailSender;
@@ -93,19 +95,6 @@ public class CompanyMemberServiceImpl implements ICompanyMemberService {
         if (member.getMembershipStatus() != MembershipStatus.ACTIVE || member.getCompanyRole() != CompanyRole.OWNER) {
             throw new AppException(ErrorCode.FORBIDDEN, "Only company OWNER can perform this action.");
         }
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public CompanyMember getMemberEntityByUserId(UUID userId) {
-        return companyMemberRepository.findByUserIdAndDeletedFalse(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User is not a company member"));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<CompanyMember> getMemberByCompanyIdAndUserId(UUID companyId, UUID userId) {
-        return companyMemberRepository.findByCompanyIdAndUserIdAndDeletedFalse(companyId, userId);
     }
 
     @Override

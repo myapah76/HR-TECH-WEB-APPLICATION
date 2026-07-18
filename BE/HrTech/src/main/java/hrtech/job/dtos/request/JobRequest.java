@@ -4,17 +4,12 @@ import hrtech.job.entities.enums.ExperienceLevel;
 import hrtech.job.entities.enums.JobType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 public record JobRequest(
-        @NotNull(message = "Company ID is required")
-        UUID companyId,
-
         @NotBlank(message = "Job title is required")
         String title,
 
@@ -33,6 +28,7 @@ public record JobRequest(
         Instant deadline,
 
         String requirements,
+        String benefits,
 
         @Valid
         List<JobSkillRequest> skills

@@ -2,6 +2,7 @@
 
 import { CircleX } from 'lucide-react'
 import { Job } from '@/src/types/job'
+import RejectionReasonDisplay from './RejectionReasonDisplay'
 import { formatDate, formatSalary } from '@/src/utils'
 import {
   EXPERIENCE_LEVEL_LABELS,
@@ -98,6 +99,15 @@ export default function JobPreviewModal({ job, onClose }: JobPreviewModalProps) 
                   {job.requirements || 'Chưa có yêu cầu'}
                 </p>
               </section>
+
+              <section className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 bg-white dark:bg-slate-900">
+                <h3 className="text-sm font-black uppercase tracking-wide text-slate-700 dark:text-slate-300">
+                  Quyền lợi
+                </h3>
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-600 dark:text-slate-400">
+                  {job.benefits || 'Chưa có quyền lợi'}
+                </p>
+              </section>
             </div>
 
             <div className="space-y-6">
@@ -130,14 +140,7 @@ export default function JobPreviewModal({ job, onClose }: JobPreviewModalProps) 
                 job.status === JobStatus.FAILED_AI ||
                 job.status === JobStatus.REJECTED_BY_ADMIN) &&
                 job.rejectionReason && (
-                  <section className="rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/20 p-5">
-                    <h3 className="text-sm font-black uppercase tracking-wide text-rose-700 dark:text-rose-400">
-                      Lý do từ chối
-                    </h3>
-                    <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-rose-900 dark:text-rose-200">
-                      {job.rejectionReason}
-                    </p>
-                  </section>
+                  <RejectionReasonDisplay reason={job.rejectionReason} />
                 )}
 
               <section className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 bg-white dark:bg-slate-900">

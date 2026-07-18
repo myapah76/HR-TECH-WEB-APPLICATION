@@ -12,6 +12,7 @@ import { Job } from '@/src/types/job'
 import { Skill } from '@/src/types/skill'
 import RequiredSkillInput, { RequiredSkill } from './RequiredSkillInput'
 import SkillTagInput from './SkillTagInput'
+import RejectionReasonDisplay from './RejectionReasonDisplay'
 import { formatDateForInput, formatVND, parseVND } from '@/src/utils'
 import {
   JobType,
@@ -74,6 +75,7 @@ export default function JobForm({
       location: job?.location ?? '',
       description: job?.description ?? '',
       requirements: job?.requirements ?? '',
+      benefits: job?.benefits ?? '',
       deadline: job ? formatDateForInput(job.deadline) : '',
       salaryMin: job?.salaryMin ?? undefined,
       salaryMax: job?.salaryMax ?? undefined,
@@ -110,9 +112,8 @@ export default function JobForm({
         job.status === JobStatus.FAILED_AI ||
         job.status === JobStatus.REJECTED_BY_ADMIN) &&
         job.rejectionReason && (
-        <div className="mb-6 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/20 px-5 py-4 text-sm text-rose-800 dark:text-rose-200">
-          <p className="font-bold uppercase tracking-wide text-rose-700 dark:text-rose-400">Lý do bị từ chối</p>
-          <p className="mt-2 whitespace-pre-wrap leading-6">{job.rejectionReason}</p>
+        <div className="mb-6">
+          <RejectionReasonDisplay reason={job.rejectionReason} />
         </div>
       )}
 
@@ -328,6 +329,21 @@ export default function JobForm({
               />
               {errors.requirements && (
                 <p className="text-red-500 text-xs mt-1">{errors.requirements.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Quyền lợi được hưởng <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                rows={6}
+                className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-y text-slate-800 dark:text-slate-100"
+                placeholder="Chế độ bảo hiểm, lương thưởng, ngày phép, đào tạo, lộ trình thăng tiến..."
+                {...register('benefits')}
+              />
+              {errors.benefits && (
+                <p className="text-red-500 text-xs mt-1">{errors.benefits.message}</p>
               )}
             </div>
           </div>

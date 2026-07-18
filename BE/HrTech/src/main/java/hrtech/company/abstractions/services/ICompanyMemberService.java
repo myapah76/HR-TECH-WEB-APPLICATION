@@ -3,19 +3,13 @@ package hrtech.company.abstractions.services;
 import hrtech.company.dtos.request.AddMemberRequest;
 import hrtech.company.dtos.request.UpdateMemberRoleRequest;
 import hrtech.company.dtos.response.CompanyMemberResponse;
-import hrtech.company.entities.CompanyMember;
 
 import hrtech.company.entities.enums.CompanyPermission;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface ICompanyMemberService {
-
-    CompanyMember getMemberEntityByUserId(UUID userId);
-
-    Optional<CompanyMember> getMemberByCompanyIdAndUserId(UUID companyId, UUID userId);
 
     CompanyMemberResponse addMember(UUID companyId, AddMemberRequest request);
 

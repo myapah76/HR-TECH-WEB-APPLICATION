@@ -184,7 +184,6 @@ public class MasterDataSeeder implements CommandLineRunner {
 
     private JobRequest createJobRequest(String title, String position, String skills, UUID companyId, long salaryMin, long salaryMax) {
         return new JobRequest(
-                companyId,
                 title,
                 position,
                 "Looking for a highly skilled " + title,
@@ -195,6 +194,7 @@ public class MasterDataSeeder implements CommandLineRunner {
                 ExperienceLevel.MIDDLE,
                 Instant.now().plus(30, ChronoUnit.DAYS),
                 "Must have experience with: " + skills,
+                "Attractive benefits including social insurance, competitive salary, and team building.",
                 new ArrayList<>());
     }
 

@@ -93,12 +93,13 @@ public class JobController {
     @PreAuthorize("@companySecurity.isRecruiter(#companyId)")
     public ResponseEntity<ApiResponse<Page<JobResponse>>> getManageCompanyJobs(
             @PathVariable UUID companyId,
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) JobStatus status,
             @RequestParam(required = false) JobType jobType,
             @RequestParam(required = false) ExperienceLevel jobLevel,
-            @PageableDefault(size = 10) Pageable pageable) {
+            @PageableDefault(size = 10, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(
-                jobService.getManageCompanyJobs(companyId, status, jobType, jobLevel, pageable)));
+                jobService.getManageCompanyJobs(companyId, keyword, status, jobType, jobLevel, pageable)));
     }
 
     @PostMapping("/recruiter/companies/{companyId}/jobs")
@@ -106,9 +107,6 @@ public class JobController {
     public ResponseEntity<ApiResponse<JobResponse>> createJob(
             @PathVariable UUID companyId,
             @Valid @RequestBody JobRequest request) {
-        if (!companyId.equals(request.companyId())) {
-            throw new IllegalArgumentException("Company context mismatch");
-        }
         JobResponse response = jobService.createJob(request);
         return ResponseEntity
                 .created(URI.create("/api/jobs/" + response.id()))
@@ -121,9 +119,6 @@ public class JobController {
             @PathVariable UUID companyId,
             @PathVariable UUID jobId,
             @Valid @RequestBody JobRequest request) {
-        if (!companyId.equals(request.companyId())) {
-            throw new IllegalArgumentException("Company context mismatch");
-        }
         return ResponseEntity.ok(ApiResponse.success(jobService.updateJob(jobId, request)));
     }
 

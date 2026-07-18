@@ -12,6 +12,7 @@ export const jobSchema = z
     deadline: z.string().min(1, 'Vui lòng chọn hạn nộp hồ sơ'),
     description: z.string().min(20, 'Mô tả công việc phải có ít nhất 20 ký tự'),
     requirements: z.string().min(20, 'Yêu cầu công việc phải có ít nhất 20 ký tự'),
+    benefits: z.string().min(10, 'Quyền lợi phải có ít nhất 10 ký tự'),
   })
   .refine(
     (data) => {

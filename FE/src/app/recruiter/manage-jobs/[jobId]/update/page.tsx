@@ -1,6 +1,8 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import Loading from '@/src/app/loading'
 import { useGetJobById, useUpdateJobMutation } from '@/src/hooks/job'
 import { Job } from '@/src/types/job'
@@ -13,6 +15,14 @@ import { toast } from 'sonner'
 
 export default function UpdateJobPage() {
   const { jobId } = useParams<{ jobId: string }>()
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    if (jobId) {
+      queryClient.invalidateQueries({ queryKey: ['job', jobId] })
+    }
+  }, [jobId, queryClient])
+
   const { data: job, isLoading, isError } = useGetJobById(jobId)
 
   if (isLoading) return <Loading />
@@ -53,7 +63,7 @@ function UpdateJobForm({ job }: { job: Job }) {
     updateJobMutation.mutate(updatePayload, {
       onSuccess: () => {
         toast.success('Cập nhật tin tuyển dụng thành công!')
-        router.push('/recruiter/manage-jobs')
+        router.push(`/recruiter/manage-jobs?keyword=${encodeURIComponent(updatePayload.title)}`)
       },
     })
   }

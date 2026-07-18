@@ -76,6 +76,7 @@ public abstract class JobMapper {
         }
     }
 
+    @Named("resolveSkillName")
     protected String resolveSkillName(String skillNeo4jId) {
         if (skillNeo4jId == null)
             return null;

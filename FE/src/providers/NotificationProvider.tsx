@@ -44,6 +44,12 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         queryClient.invalidateQueries({ queryKey: ['myPaymentHistory'] })
         queryClient.invalidateQueries({ queryKey: ['myCurrentSubscription'] })
       }
+
+      if (payload.type === 'JOB_STATUS_UPDATED' && payload.referenceId) {
+        queryClient.invalidateQueries({ queryKey: ['job', payload.referenceId] })
+        queryClient.invalidateQueries({ queryKey: ['manageJobs'] })
+        queryClient.invalidateQueries({ queryKey: ['jobs'] })
+      }
     })
 
     eventSource.onerror = (err) => {
