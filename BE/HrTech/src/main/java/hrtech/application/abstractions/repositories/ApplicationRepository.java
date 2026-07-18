@@ -42,5 +42,7 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
 
     @EntityGraph(attributePaths = {"job", "job.company", "cv", "user"})
     List<Application> findByUserIdAndStatusAndInterviewDateTimeGreaterThanEqualOrderByInterviewDateTimeAsc(UUID userId, ApplicationStatus status, Instant now);
+
+    long countByCreatedAtAfter(Instant date);
 }
 

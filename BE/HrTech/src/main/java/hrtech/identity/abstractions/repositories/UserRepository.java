@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import hrtech.identity.entities.User;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,4 +49,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsById(UUID id);
 
     void deleteById(UUID id);
+
+    long countByCreatedAtAfter(Instant date);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role.name = :roleName")
+    long countByRoleName(@Param("roleName") String roleName);
 }

@@ -11,6 +11,8 @@ import hrtech.company.entities.Company;
 import hrtech.company.projections.TopCompanyProjection;
 import hrtech.company.entities.enums.CompanyStatus;
 import hrtech.job.entities.enums.JobStatus;
+
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,4 +51,6 @@ public interface CompanyRepository extends JpaRepository<Company, UUID> {
               Pageable pageable);
 
        long countByStatus(CompanyStatus status);
+
+       long countByCreatedAtAfter(Instant date);
 }
