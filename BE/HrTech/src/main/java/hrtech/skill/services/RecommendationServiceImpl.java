@@ -175,6 +175,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
     // ========== Premium AI Matching ==========
 
     @Override
+    @Transactional
     public AiMatchHistoryResponse performPremiumAiMatching(UUID cvId, UUID jobId) {
         UUID userId = authUtils.getCurrentUserId();
         // Check Feature Access
