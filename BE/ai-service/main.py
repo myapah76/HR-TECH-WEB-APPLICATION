@@ -191,6 +191,7 @@ def api_review_job_posting(req: ReviewJobPostingRequest):
             title=req.title,
             description=req.description,
             requirements=req.requirements or "",
+            benefits=req.benefits or "",
             location=req.location or "",
             salary_min=req.salary_min,
             salary_max=req.salary_max,

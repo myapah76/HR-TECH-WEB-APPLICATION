@@ -258,6 +258,7 @@ def review_job_posting(
     job_type: str = "",
     experience_level: str = "",
     position: str = "",
+    benefits: str = "",
 ) -> dict:
 
     prompt_text = JOB_REVIEW_PROMPT.format(
@@ -270,6 +271,7 @@ def review_job_posting(
         salary_max=salary_max if salary_max is not None else "Thỏa thuận",
         description=description or "",
         requirements=requirements or "",
+        benefits=benefits or "",
     )
 
     response = invoke_llm_with_retry([HumanMessage(content=prompt_text)])

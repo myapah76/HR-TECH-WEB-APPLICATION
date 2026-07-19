@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { XCircle, FileText, Tag, Plus, Check, Network, Trash2 } from 'lucide-react'
+import { XCircle, FileText, Tag, Plus, Check, Network, Trash2, Loader2 } from 'lucide-react'
 import { Skill, SkillEdge } from '@/src/types/skill'
 
 interface SkillDetailPanelProps {
@@ -53,14 +53,47 @@ const SkillDetailPanel = ({
     setEditRoles(editRoles.filter((r) => r !== role))
   }
 
+  const [isSaving, setIsSaving] = useState(false)
+  const [isAddingRel, setIsAddingRel] = useState(false)
+  const [deletingRelId, setDeletingRelId] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   const handleSave = async () => {
-    await onUpdate(editDesc, editRoles)
+    setIsSaving(true)
+    try {
+      await onUpdate(editDesc, editRoles)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleAddRelationship = async () => {
     if (relTargetId) {
-      await onAddRel(relTargetId, relType)
-      setRelTargetId('')
+      setIsAddingRel(true)
+      try {
+        await onAddRel(relTargetId, relType)
+        setRelTargetId('')
+      } finally {
+        setIsAddingRel(false)
+      }
+    }
+  }
+
+  const handleDeleteRel = async (targetId: string, type: 'PARENT_OF' | 'RELATED_TO') => {
+    setDeletingRelId(targetId)
+    try {
+      await onDeleteRel(targetId, type)
+    } finally {
+      setDeletingRelId(null)
+    }
+  }
+
+  const handleDeleteSkillClick = async () => {
+    setIsDeleting(true)
+    try {
+      await onDeleteSkill(selectedNode.id)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -162,10 +195,15 @@ const SkillDetailPanel = ({
       {/* Save Node Info Button */}
       <button
         onClick={handleSave}
-        className="w-full py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-black shadow-md hover:shadow-violet-200 active:scale-98 transition-all flex items-center justify-center gap-1.5"
+        disabled={isSaving}
+        className="w-full py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-black shadow-md hover:shadow-violet-200 active:scale-98 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <Check className="h-4.5 w-4.5" />
-        Lưu Thay Đổi
+        {isSaving ? (
+          <Loader2 className="h-4.5 w-4.5 animate-spin" />
+        ) : (
+          <Check className="h-4.5 w-4.5" />
+        )}
+        {isSaving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
       </button>
 
       <hr className="border-slate-100" />
@@ -192,10 +230,15 @@ const SkillDetailPanel = ({
                   </span>
                 </div>
                 <button
-                  onClick={() => onDeleteRel(edge.targetId, edge.type)}
-                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-all"
+                  onClick={() => handleDeleteRel(edge.targetId, edge.type)}
+                  disabled={deletingRelId === edge.targetId}
+                  className="p-1.5 text-slate-400 hover:text-red-650 hover:bg-white rounded-lg transition-all disabled:opacity-50"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  {deletingRelId === edge.targetId ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-red-600" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
                 </button>
               </div>
             )
@@ -239,10 +282,11 @@ const SkillDetailPanel = ({
 
           <button
             onClick={handleAddRelationship}
-            disabled={!relTargetId}
-            className="w-full mt-1 py-2 bg-slate-800 hover:bg-slate-900 disabled:bg-slate-200 disabled:cursor-not-allowed text-white rounded-xl text-xs font-black tracking-wider uppercase transition-all"
+            disabled={!relTargetId || isAddingRel}
+            className="w-full mt-1 py-2 bg-slate-800 hover:bg-slate-900 disabled:bg-slate-200 disabled:cursor-not-allowed text-white rounded-xl text-xs font-black tracking-wider uppercase transition-all flex items-center justify-center gap-1"
           >
-            Tạo liên kết
+            {isAddingRel && <Loader2 className="h-3 w-3 animate-spin" />}
+            {isAddingRel ? 'Đang tạo...' : 'Tạo liên kết'}
           </button>
         </div>
       </div>
@@ -251,11 +295,16 @@ const SkillDetailPanel = ({
 
       {/* Danger Zone */}
       <button
-        onClick={() => onDeleteSkill(selectedNode.id)}
-        className="w-full py-2.5 bg-red-50/80 hover:bg-red-100/80 text-red-600 hover:text-red-700 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-1.5"
+        onClick={handleDeleteSkillClick}
+        disabled={isDeleting}
+        className="w-full py-2.5 bg-red-50/80 hover:bg-red-100/80 text-red-600 hover:text-red-700 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <Trash2 className="h-4.5 w-4.5" />
-        Xóa Kỹ Năng Này
+        {isDeleting ? (
+          <Loader2 className="h-4.5 w-4.5 animate-spin" />
+        ) : (
+          <Trash2 className="h-4.5 w-4.5" />
+        )}
+        {isDeleting ? 'Đang xóa...' : 'Xóa Kỹ Năng Này'}
       </button>
     </div>
   )

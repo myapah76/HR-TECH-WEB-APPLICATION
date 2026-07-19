@@ -39,7 +39,7 @@ import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import { ApplyJobModal } from '@/src/components/jobs/ApplyJobModal'
 import Loading from '@/src/app/loading'
 import { formatDate, formatSalary } from '@/src/utils'
-import { JobStatus, JOB_STATUS_LABELS, JOB_STATUS_STYLES } from '@/src/enums/job.enum'
+import { JobStatus, JOB_STATUS_LABELS, JOB_STATUS_STYLES, JOB_TYPE_LABELS, EXPERIENCE_LEVEL_LABELS } from '@/src/enums/job.enum'
 
 export default function JobDetailPage() {
   const params = useParams()
@@ -198,13 +198,19 @@ export default function JobDetailPage() {
                     </span>
                     {job.jobType && (
                       <span className="text-xs font-black px-2.5 py-0.75 bg-blue-50 text-blue-700 rounded-lg border border-blue-100/50">
-                        {job.jobType}
+                        {JOB_TYPE_LABELS[job.jobType] || job.jobType}
                       </span>
                     )}
                     {job.experienceLevel && (
                       <span className="text-xs font-black px-2.5 py-0.75 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100/50 flex items-center gap-1">
                         <Sparkles className="w-3 h-3 text-emerald-550" />
-                        {job.experienceLevel}
+                        {EXPERIENCE_LEVEL_LABELS[job.experienceLevel] || job.experienceLevel}
+                      </span>
+                    )}
+                    {job.position && (
+                      <span className="text-xs font-black px-2.5 py-0.75 bg-violet-50 text-violet-700 rounded-lg border border-violet-100/50 flex items-center gap-1">
+                        <Briefcase className="w-3 h-3 text-violet-500" />
+                        {job.position}
                       </span>
                     )}
                     <span
@@ -229,6 +235,12 @@ export default function JobDetailPage() {
                       <MapPin className="h-4 w-4" />
                       <span>{job.location}</span>
                     </span>
+                    {job.position && (
+                      <span className="flex items-center gap-1.5 bg-violet-50/50 text-violet-700 px-3 py-1.5 rounded-xl border border-violet-100/40">
+                        <Briefcase className="h-4 w-4 text-violet-500" />
+                        <span>Vị trí: {job.position}</span>
+                      </span>
+                    )}
                     <span className="flex items-center gap-1.5 bg-slate-50 text-slate-600 px-3 py-1.5 rounded-xl border border-slate-200/50">
                       <Clock className="h-4 w-4" />
                       <span>

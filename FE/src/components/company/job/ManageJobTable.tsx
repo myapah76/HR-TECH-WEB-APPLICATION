@@ -31,7 +31,7 @@ interface ManageJobTableProps {
   companyRole?: CompanyMemberResponse['role']
 }
 
-type ConfirmActionType = 'approve' | 'duplicate' | 'delete' | 'close'
+type ConfirmActionType = 'approve' | 'duplicate' | 'delete' | 'close' | 'submit'
 
 type ConfirmActionState = {
   type: ConfirmActionType

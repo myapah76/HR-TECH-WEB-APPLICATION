@@ -43,6 +43,7 @@ export default function AdminSkillsDashboard() {
   const [pendingSkills, setPendingSkills] = useState<Skill[]>([])
   const [pendingRels, setPendingRels] = useState<PendingRelationship[]>([])
   const [availableRoles, setAvailableRoles] = useState<string[]>([])
+  const [isLoadingGraph, setIsLoadingGraph] = useState(false)
 
   const {
     nodes,
@@ -71,6 +72,7 @@ export default function AdminSkillsDashboard() {
   // ── Data Fetching ──────────────────────────────────────────────────────────
 
   const loadGraph = async () => {
+    setIsLoadingGraph(true)
     try {
       const graph = await getSkillGraph()
       setSkills(graph.nodes)
@@ -79,6 +81,8 @@ export default function AdminSkillsDashboard() {
       setAvailableRoles(roles)
     } catch (err) {
       toast.error('Lỗi tải sơ đồ kỹ năng: ' + getErrorMessage(err))
+    } finally {
+      setIsLoadingGraph(false)
     }
   }
 
@@ -329,6 +333,7 @@ export default function AdminSkillsDashboard() {
       {/* Tab: Graph View */}
       {activeTab === SkillTab.GRAPH && (
         <SkillGraphView
+          isLoading={isLoadingGraph}
           nodes={nodes}
           edges={edges}
           skills={skills}

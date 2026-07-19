@@ -40,6 +40,7 @@ interface SkillGraphViewProps {
   onExpandAll?: () => void
   onCollapseAll?: () => void
   onExpandPathToSkill?: (skillId: string) => void
+  isLoading?: boolean
 }
 
 const SkillGraphInner = ({
@@ -68,6 +69,7 @@ const SkillGraphInner = ({
   onExpandAll,
   onCollapseAll,
   onExpandPathToSkill,
+  isLoading = false,
 }: SkillGraphViewProps) => {
   const { setCenter } = useReactFlow()
   const [searchQuery, setSearchQuery] = useState('')
@@ -236,6 +238,21 @@ const SkillGraphInner = ({
 
           <SkillGraphLegend />
         </ReactFlow>
+
+        {/* Loading overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-50/70 backdrop-blur-xs rounded-2xl transition-all duration-300">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xl flex flex-col items-center space-y-4 max-w-xs text-center animate-scale-up">
+              <div className="w-12 h-12 rounded-full border-4 border-violet-100 border-t-violet-600 animate-spin" />
+              <div className="space-y-1">
+                <h3 className="text-sm font-black text-slate-800">Đang tải sơ đồ</h3>
+                <p className="text-xs text-slate-450 font-semibold leading-relaxed">
+                  Hệ thống đang dựng cấu trúc đồ thị kỹ năng từ Neo4j database...
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Right detail panel */}
