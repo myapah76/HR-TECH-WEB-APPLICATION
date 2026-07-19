@@ -31,11 +31,7 @@ interface ManageJobTableProps {
   companyRole?: CompanyMemberResponse['role']
 }
 
-<<<<<<< HEAD
-type ConfirmActionType = 'approve' | 'duplicate' | 'delete' | 'close' | 'submit'
-=======
 type ConfirmActionType = 'approve' | 'duplicate' | 'delete' | 'close' | 'appeal' | 'submit'
->>>>>>> 9ad503856fb69398489c3c11ce28bd537e07f207
 
 type ConfirmActionState = {
   type: ConfirmActionType
@@ -92,9 +88,9 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
     skills: job.skills.map((skill) =>
       skill.requiredLevel
         ? {
-            skillNeo4jId: skill.skillNeo4jId,
-            requiredLevel: skill.requiredLevel,
-          }
+          skillNeo4jId: skill.skillNeo4jId,
+          requiredLevel: skill.requiredLevel,
+        }
         : { skillNeo4jId: skill.skillNeo4jId }
     ),
   })
@@ -240,9 +236,8 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
                   </td>
                   <td className="px-4 py-5">
                     <span
-                      className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${
-                        JOB_STATUS_STYLES[job.status] || JOB_STATUS_STYLES[JobStatus.CLOSED]
-                      }`}
+                      className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${JOB_STATUS_STYLES[job.status] || JOB_STATUS_STYLES[JobStatus.CLOSED]
+                        }`}
                     >
                       {JOB_STATUS_LABELS[job.status] || job.status || 'Chưa xác định'}
                     </span>
@@ -290,11 +285,10 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
         <ConfirmModal
           isOpen={true}
           title="Đóng tin tuyển dụng?"
-          description={`Tin “${jobToClose.title}” sẽ chuyển sang trạng thái CLOSED và ngừng nhận hồ sơ.${
-            deadlineHasNotEnded && jobToClose.deadline
+          description={`Tin “${jobToClose.title}” sẽ chuyển sang trạng thái CLOSED và ngừng nhận hồ sơ.${deadlineHasNotEnded && jobToClose.deadline
               ? ` Cảnh báo: hạn tuyển dụng chưa kết thúc. Hạn hiện tại là ${formatDate(jobToClose.deadline)}.`
               : ''
-          }`}
+            }`}
           confirmText="Xác nhận đóng"
           variant="danger"
           onClose={() => setJobToClose(null)}
