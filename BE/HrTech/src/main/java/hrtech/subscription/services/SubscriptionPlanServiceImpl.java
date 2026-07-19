@@ -31,10 +31,10 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
 
     private final CandidateSubscriptionPlanRepository candidateSubscriptionPlanRepository;
     private final CompanySubscriptionPlanRepository companySubscriptionPlanRepository;
-    
+
     private final CandidatePlanFeatureRepository candidatePlanFeatureRepository;
     private final CompanyPlanFeatureRepository companyPlanFeatureRepository;
-    
+
     private final FeatureRepository featureRepository;
     private final SubscriptionPlanMapper subscriptionPlanMapper;
 
@@ -130,9 +130,9 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
             plan.setPlanFeatures(currentFeatures);
         }
 
-        Map<UUID, Integer> requestedMap = new HashMap<>();
+        Map<UUID, PlanFeatureRequest> requestedMap = new HashMap<>();
         for (PlanFeatureRequest req : featureRequests) {
-            requestedMap.put(req.id(), req.aiCreditCost());
+            requestedMap.put(req.id(), req);
         }
 
         currentFeatures.removeIf(pf -> !requestedMap.containsKey(pf.getFeature().getId()));
@@ -167,9 +167,9 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
             plan.setPlanFeatures(currentFeatures);
         }
 
-        Map<UUID, Integer> requestedMap = new HashMap<>();
+        Map<UUID, PlanFeatureRequest> requestedMap = new HashMap<>();
         for (PlanFeatureRequest req : featureRequests) {
-            requestedMap.put(req.id(), req.aiCreditCost());
+            requestedMap.put(req.id(), req);
         }
 
         currentFeatures.removeIf(pf -> !requestedMap.containsKey(pf.getFeature().getId()));
@@ -215,33 +215,29 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
 
     private void saveCandidatePlanFeatures(CandidateSubscriptionPlan plan, List<PlanFeatureRequest> featureRequests) {
         if (featureRequests == null) return;
-        List<CandidatePlanFeature> list = new ArrayList<>();
         for (PlanFeatureRequest featureRequest : featureRequests) {
             Feature feature = featureRepository.findById(featureRequest.id())
                     .orElseThrow(() -> new AppException(ErrorCode.FEATURE_NOT_FOUND, "Feature not found"));
 
-            list.add(CandidatePlanFeature.builder()
+            candidatePlanFeatureRepository.save(CandidatePlanFeature.builder()
                     .plan(plan)
                     .feature(feature)
                     .aiCreditCost(featureRequest.aiCreditCost())
                     .build());
         }
-        candidatePlanFeatureRepository.saveAll(list);
     }
 
     private void saveCompanyPlanFeatures(CompanySubscriptionPlan plan, List<PlanFeatureRequest> featureRequests) {
         if (featureRequests == null) return;
-        List<CompanyPlanFeature> list = new ArrayList<>();
         for (PlanFeatureRequest featureRequest : featureRequests) {
             Feature feature = featureRepository.findById(featureRequest.id())
                     .orElseThrow(() -> new AppException(ErrorCode.FEATURE_NOT_FOUND, "Feature not found"));
 
-            list.add(CompanyPlanFeature.builder()
+            companyPlanFeatureRepository.save(CompanyPlanFeature.builder()
                     .plan(plan)
                     .feature(feature)
                     .aiCreditCost(featureRequest.aiCreditCost())
                     .build());
         }
-        companyPlanFeatureRepository.saveAll(list);
     }
 }

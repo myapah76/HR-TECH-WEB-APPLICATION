@@ -21,6 +21,14 @@ public class ApplicationScore extends BaseEntity {
     @JoinColumn(name = "application_id", nullable = false)
     private Application application;
 
+    @Builder.Default
+    @Column(name = "candidate_paid", nullable = false, columnDefinition = "boolean default false")
+    private boolean candidatePaid = false;
+
+    @Builder.Default
+    @Column(name = "company_paid", nullable = false, columnDefinition = "boolean default false")
+    private boolean companyPaid = false;
+
     @Column(name = "overall_score", precision = 5, scale = 2)
     private BigDecimal overallScore;
 

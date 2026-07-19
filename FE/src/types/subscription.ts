@@ -11,6 +11,8 @@ export interface SubscriptionPlanResponse {
   isActive: boolean
   aiCreditBalance: number
   jobPostBalance?: number
+  dailyAiLimit: number
+  weeklyAiLimit: number
   features: PlanFeature[]
 }
 
@@ -21,19 +23,10 @@ export interface PlanFeature {
   aiCreditCost: number
 }
 
-export interface SubFeatureRateUsageResponse {
-  resetType: ResetType
-  capQuota: number
-  used: number
-  lastResetDate: string
-}
-
 export interface SubFeatureUsageResponse {
   featureCode: string
   featureName: string
   aiCreditCost: number
-  used: number
-  rateLimits: SubFeatureRateUsageResponse[]
 }
 
 export interface MySubscriptionResponse {
@@ -46,6 +39,12 @@ export interface MySubscriptionResponse {
   endDate: string
   aiCreditBalance: number
   jobPostBalance: number
+  dailyAiLimit: number
+  weeklyAiLimit: number
+  dailyAiUsage: number
+  weeklyAiUsage: number
+  lastDailyReset?: string
+  lastWeeklyReset?: string
   featuresUsage: SubFeatureUsageResponse[]
 }
 
@@ -69,8 +68,21 @@ export interface WalletSectionProps {
   subscription: MySubscriptionResponse
 }
 
+export interface RateLimitUsage {
+  resetType: ResetType
+  capQuota: number
+  used: number
+  lastResetDate: string
+}
+
+export interface RateLimitFeature {
+  featureCode: string
+  featureName: string
+  rateLimits: RateLimitUsage[]
+}
+
 export interface RateLimitSectionProps {
-  rateLimitFeatures: SubFeatureUsageResponse[]
+  rateLimitFeatures: RateLimitFeature[]
 }
 
 export interface StandardFeaturesSectionProps {
@@ -96,6 +108,8 @@ export interface SubscriptionPlanRequest {
   isActive: boolean
   aiCreditBalance: number
   jobPostBalance?: number
+  dailyAiLimit: number
+  weeklyAiLimit: number
   features: PlanFeatureRequest[]
 }
 

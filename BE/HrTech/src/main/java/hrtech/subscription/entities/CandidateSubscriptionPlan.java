@@ -39,6 +39,14 @@ public class CandidateSubscriptionPlan extends SoftDeleteEntity {
     @Builder.Default
     private Integer aiCreditBalance = 0;
 
+    @Column(name = "daily_ai_limit", nullable = false, columnDefinition = "integer default 0")
+    @Builder.Default
+    private Integer dailyAiLimit = 0;
+
+    @Column(name = "weekly_ai_limit", nullable = false, columnDefinition = "integer default 0")
+    @Builder.Default
+    private Integer weeklyAiLimit = 0;
+
     @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CandidatePlanFeature> planFeatures;
 }

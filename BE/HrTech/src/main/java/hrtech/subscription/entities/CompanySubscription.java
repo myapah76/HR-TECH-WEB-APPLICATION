@@ -44,4 +44,18 @@ public class CompanySubscription extends SoftDeleteEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plan_id", nullable = false)
     private CompanySubscriptionPlan plan;
+
+    @Column(name = "daily_ai_usage", nullable = false, columnDefinition = "integer default 0")
+    @Builder.Default
+    private Integer dailyAiUsage = 0;
+
+    @Column(name = "weekly_ai_usage", nullable = false, columnDefinition = "integer default 0")
+    @Builder.Default
+    private Integer weeklyAiUsage = 0;
+
+    @Column(name = "last_daily_reset")
+    private Instant lastDailyReset;
+
+    @Column(name = "last_weekly_reset")
+    private Instant lastWeeklyReset;
 }

@@ -27,6 +27,8 @@ export const PlanModal: React.FC<PlanModalProps> = ({
   const [isActive, setIsActive] = useState(true)
   const [aiCreditBalance, setAiCreditBalance] = useState(0)
   const [jobPostBalance, setJobPostBalance] = useState(0)
+  const [dailyAiLimit, setDailyAiLimit] = useState(0)
+  const [weeklyAiLimit, setWeeklyAiLimit] = useState(0)
   const [selectedFeatures, setSelectedFeatures] = useState<Record<string, number>>({})
 
   useEffect(() => {
@@ -39,6 +41,8 @@ export const PlanModal: React.FC<PlanModalProps> = ({
       setIsActive(editingPlan.isActive)
       setAiCreditBalance(editingPlan.aiCreditBalance || 0)
       setJobPostBalance(editingPlan.jobPostBalance || 0)
+      setDailyAiLimit(editingPlan.dailyAiLimit || 0)
+      setWeeklyAiLimit(editingPlan.weeklyAiLimit || 0)
 
       const feats: Record<string, number> = {}
       editingPlan.features?.forEach((f: any) => {
@@ -57,6 +61,8 @@ export const PlanModal: React.FC<PlanModalProps> = ({
       setIsActive(true)
       setAiCreditBalance(0)
       setJobPostBalance(0)
+      setDailyAiLimit(0)
+      setWeeklyAiLimit(0)
       setSelectedFeatures({})
     }
   }, [editingPlan, isOpen, systemFeatures])
@@ -97,6 +103,8 @@ export const PlanModal: React.FC<PlanModalProps> = ({
       subscriptionType: subType,
       isActive: price === 0 ? true : isActive,
       aiCreditBalance,
+      dailyAiLimit,
+      weeklyAiLimit,
       ...(subType === SubscriptionType.COMPANY ? { jobPostBalance } : {}),
       features: featuresPayload,
     }
@@ -203,6 +211,32 @@ export const PlanModal: React.FC<PlanModalProps> = ({
               />
             </div>
 
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Giới hạn AI Credit ngày</label>
+              <input
+                type="number"
+                value={dailyAiLimit}
+                onChange={(e) => setDailyAiLimit(Number(e.target.value))}
+                placeholder="Nhập 0 để không giới hạn"
+                className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-violet-500 transition-all"
+                min={0}
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Giới hạn AI Credit tuần</label>
+              <input
+                type="number"
+                value={weeklyAiLimit}
+                onChange={(e) => setWeeklyAiLimit(Number(e.target.value))}
+                placeholder="Nhập 0 để không giới hạn"
+                className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-violet-500 transition-all"
+                min={0}
+                required
+              />
+            </div>
+
             {subType === SubscriptionType.COMPANY && (
               <div className="space-y-1.5">
                 <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Job Post cấp</label>
@@ -236,11 +270,11 @@ export const PlanModal: React.FC<PlanModalProps> = ({
           {/* Dynamic Feature Checklist Section */}
           <div className="space-y-3 pt-4 border-t border-slate-100">
             <p className="text-xs font-black text-slate-500 uppercase tracking-wider">
-              Cấu hình tính năng và giới hạn (Quota)
+              Cấu hình tính năng & Chi phí AI Credit mỗi lượt
             </p>
 
             {systemFeatures && systemFeatures.length > 0 ? (
-              <div className="space-y-3 max-h-[220px] overflow-y-auto pr-2">
+              <div className="space-y-3 max-h-[320px] overflow-y-auto pr-2">
                 {systemFeatures
                   .filter((feat) => !['AI_CREDIT', 'JOB_POSTING'].includes(feat.code))
                   .map((feat) => {
@@ -250,8 +284,8 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                     return (
                       <div
                         key={feat.id}
-                        className={`p-3 rounded-2xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${
-                          isSelected ? 'bg-slate-50 border-slate-350' : 'bg-white border-slate-200'
+                        className={`rounded-2xl border transition-all p-3 flex flex-col md:flex-row md:items-center justify-between gap-3 ${
+                          isSelected ? 'bg-slate-50 border-violet-200' : 'bg-white border-slate-200'
                         }`}
                       >
                         <div className="flex items-start gap-3">
@@ -282,7 +316,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({
                               type="number"
                               value={quotaValue}
                               onChange={(e) => handleFeatureQuotaChange(feat.id, Number(e.target.value))}
-                              className="w-24 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-right focus:outline-none focus:border-violet-500"
+                              className="w-20 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-right focus:outline-none focus:border-violet-500"
                               min={0}
                               placeholder="0"
                             />

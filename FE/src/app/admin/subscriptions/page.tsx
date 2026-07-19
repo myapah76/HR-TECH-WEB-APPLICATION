@@ -82,6 +82,8 @@ export default function AdminSubscriptionsPage() {
           subscriptionType: plan.subscriptionType,
           isActive: nextStatus,
           aiCreditBalance: plan.aiCreditBalance || 0,
+          dailyAiLimit: plan.dailyAiLimit || 0,
+          weeklyAiLimit: plan.weeklyAiLimit || 0,
           ...(plan.subscriptionType === SubscriptionType.COMPANY ? { jobPostBalance: plan.jobPostBalance || 0 } : {}),
           features: planFeaturesPayload,
         }

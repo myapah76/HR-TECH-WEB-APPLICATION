@@ -15,5 +15,11 @@ public record MySubscriptionResponse(
     Instant endDate,
     Integer aiCreditBalance,
     Integer jobPostBalance,
+    Integer dailyAiLimit,
+    Integer weeklyAiLimit,
+    Integer dailyAiUsage,
+    Integer weeklyAiUsage,
+    Instant lastDailyReset,
+    Instant lastWeeklyReset,
     List<SubFeatureUsageResponse> featuresUsage
 ) {}

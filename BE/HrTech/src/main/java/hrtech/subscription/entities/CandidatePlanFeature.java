@@ -32,8 +32,4 @@ public class CandidatePlanFeature extends BaseEntity {
     @Column(name = "ai_credit_cost", nullable = false)
     @Builder.Default
     private Integer aiCreditCost = 0;
-
-    @OneToMany(mappedBy = "planFeature", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<CandidatePlanFeatureRateLimit> rateLimits = new ArrayList<>();
 }

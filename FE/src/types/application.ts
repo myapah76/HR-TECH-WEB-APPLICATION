@@ -11,6 +11,8 @@ export interface ApplicationSummaryResponse {
   appliedAt: string;
   interviewDateTime?: string;
   candidatePreferredInterviewDateTime?: string;
+  overallScore?: number;
+  grade?: string;
 }
 
 export interface ApplicationDetailResponse {

@@ -9,7 +9,8 @@ import {
   RenewalAlertsProps,
   WalletSectionProps,
   RateLimitSectionProps,
-  StandardFeaturesSectionProps 
+  StandardFeaturesSectionProps,
+  ResetType
 } from '@/src/types/subscription'
 import Link from 'next/link'
 import { formatDate } from '@/src/utils'
@@ -202,11 +203,13 @@ const RateLimitSection: React.FC<RateLimitSectionProps> = ({ rateLimitFeatures }
       <div className={`grid grid-cols-1 ${rateLimitFeatures.length > 1 ? 'md:grid-cols-2' : ''} gap-6`}>
         {rateLimitFeatures.map((feature) => (
           <div key={feature.featureCode} className="bg-white rounded-2xl p-6 border border-slate-100/80 shadow-xs flex flex-col gap-4">
-            <div className="flex items-center gap-3 border-b border-slate-50 pb-3">
-              <div className="p-2.5 bg-slate-50 text-indigo-650 rounded-lg">
-                <Activity className="w-4 h-4" />
+            <div className="flex items-center justify-between border-b border-slate-50 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-slate-50 text-indigo-650 rounded-lg">
+                  <Activity className="w-4 h-4" />
+                </div>
+                <span className="font-bold text-slate-800">{feature.featureName}</span>
               </div>
-              <span className="font-bold text-slate-800">{feature.featureName}</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -221,7 +224,8 @@ const RateLimitSection: React.FC<RateLimitSectionProps> = ({ rateLimitFeatures }
                           {limit.resetType === 'DAILY' ? 'Trong ngày' : 'Trong tuần'}
                         </span>
                         <span className="text-xs font-bold text-slate-700">
-                          <span className={limNear ? 'text-rose-600 font-extrabold' : 'text-slate-800'}>{limit.used}</span> / {limit.capQuota}
+                          <span className={limNear ? 'text-rose-600 font-extrabold' : 'text-slate-800'}>{limit.used}</span>
+                          <span className="text-slate-400"> / {limit.capQuota} credits</span>
                         </span>
                       </div>
                       <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden my-2">
@@ -229,6 +233,13 @@ const RateLimitSection: React.FC<RateLimitSectionProps> = ({ rateLimitFeatures }
                           className={`h-full rounded-full transition-all duration-500 ${limNear ? 'bg-rose-500' : 'bg-indigo-600'}`}
                           style={{ width: `${limPercentage}%` }}
                         ></div>
+                      </div>
+                      <div className="flex justify-end">
+                        <span className={`text-[9px] font-bold ${
+                          limPercentage >= 100 ? 'text-rose-600' : limNear ? 'text-amber-600' : 'text-emerald-600'
+                        }`}>
+                          {limPercentage >= 100 ? 'Đã hết' : limNear ? 'Sắp hết' : `Còn ${100 - limPercentage}%`}
+                        </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 text-[9px] font-medium text-slate-400 mt-2">
@@ -289,9 +300,7 @@ export const CurrentPlanCard: React.FC<CurrentPlanCardProps> = ({ subscription, 
     wallets.push({
       featureCode: 'AI_CREDIT',
       featureName: 'Năng lượng AI',
-      aiCreditCost: 0,
-      used: 0,
-      rateLimits: []
+      aiCreditCost: 0
     });
   }
   // Only display job posting if it is greater than 0
@@ -299,19 +308,39 @@ export const CurrentPlanCard: React.FC<CurrentPlanCardProps> = ({ subscription, 
     wallets.push({
       featureCode: 'JOB_POSTING',
       featureName: 'Số tin tuyển dụng',
-      aiCreditCost: 0,
-      used: 0,
-      rateLimits: []
+      aiCreditCost: 0
     });
   }
 
-  const rateLimitFeatures = subscription.featuresUsage?.filter(feature => 
-    feature.rateLimits && feature.rateLimits.length > 0
-  ) || [];
+  const rateLimitFeatures = [];
+  const aiCreditRateLimits = [];
+  if (subscription.dailyAiLimit !== undefined && subscription.dailyAiLimit > 0) {
+    aiCreditRateLimits.push({
+      resetType: ResetType.DAILY,
+      capQuota: subscription.dailyAiLimit,
+      used: subscription.dailyAiUsage || 0,
+      lastResetDate: subscription.lastDailyReset || subscription.startDate,
+    });
+  }
+  if (subscription.weeklyAiLimit !== undefined && subscription.weeklyAiLimit > 0) {
+    aiCreditRateLimits.push({
+      resetType: ResetType.WEEKLY,
+      capQuota: subscription.weeklyAiLimit,
+      used: subscription.weeklyAiUsage || 0,
+      lastResetDate: subscription.lastWeeklyReset || subscription.startDate,
+    });
+  }
+
+  if (aiCreditRateLimits.length > 0) {
+    rateLimitFeatures.push({
+      featureCode: 'AI_CREDIT_RATE_LIMIT',
+      featureName: 'Giới hạn sử dụng AI',
+      rateLimits: aiCreditRateLimits,
+    });
+  }
 
   const standardFeatures = subscription.featuresUsage?.filter(feature => 
-    !['AI_CREDIT', 'JOB_POSTING'].includes(feature.featureCode) && 
-    (!feature.rateLimits || feature.rateLimits.length === 0)
+    !['AI_CREDIT', 'JOB_POSTING'].includes(feature.featureCode)
   ) || [];
 
   return (

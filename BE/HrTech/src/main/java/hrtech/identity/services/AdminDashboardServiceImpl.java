@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.redis.core.RedisTemplate;
 import hrtech.payment.abstractions.repositories.PaymentRepository;
 import hrtech.subscription.abstractions.repositories.CompanySubscriptionRepository;
-import hrtech.subscription.abstractions.repositories.CompanyFeatureRateUsageRepository;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -41,7 +40,6 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final PaymentRepository paymentRepository;
     private final CompanySubscriptionRepository companySubscriptionRepository;
-    private final CompanyFeatureRateUsageRepository companyFeatureRateUsageRepository;
 
     @Override
     public AdminDashboardSummaryResponse getAdminDashboardSummary() {
@@ -187,21 +185,7 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
         } catch (Exception e) {
 
         }
-
-
-     List<AdminDashboardSummaryResponse.AIUsageResponse> aiUsage = new ArrayList<>();
-        try {
-           List<Object[]> usageData = companyFeatureRateUsageRepository.findFeatureUsages(
-                    PageRequest.of(0, 5)
-            );
-            for (Object[] row : usageData) {
-                String featureName = (String) row[0];
-                long totalUsed = ((Number) row[1]).longValue();
-                aiUsage.add(new AdminDashboardSummaryResponse.AIUsageResponse(featureName, totalUsed));
-            }
-        } catch (Exception e) {
-
-        }
+        List<AdminDashboardSummaryResponse.AIUsageResponse> aiUsage = new ArrayList<>();
 
         return AdminDashboardSummaryResponse.builder()
                 .totalUsers(totalUsers)

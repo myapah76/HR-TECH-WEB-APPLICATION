@@ -263,7 +263,15 @@ public class ApplicationServiceImpl implements IApplicationService {
     @Transactional(readOnly = true)
     public Page<ApplicationSummaryResponse> getMyApplications(UUID userId, Pageable pageable) {
         return applicationRepository.findByUserId(userId, pageable)
-                .map(applicationMapper::toSummaryResponse);
+                .map(app -> {
+                    ApplicationSummaryResponse res = applicationMapper.toSummaryResponse(app);
+                    ApplicationScore score = app.getApplicationScore();
+                    if (score != null && score.isCandidatePaid()) {
+                        res.setOverallScore(score.getOverallScore());
+                        res.setGrade(score.getGrade() != null ? score.getGrade().name() : null);
+                    }
+                    return res;
+                });
     }
 
     @Override
@@ -282,14 +290,38 @@ public class ApplicationServiceImpl implements IApplicationService {
             throw new AppException(ErrorCode.FORBIDDEN, "You do not have permission to view this application");
         }
 
-        return applicationMapper.toDetailResponse(application);
+        ApplicationDetailResponse response = applicationMapper.toDetailResponse(application);
+        ApplicationScore score = application.getApplicationScore();
+        if (score != null) {
+            boolean hasPaid = false;
+            if (isApplicant && score.isCandidatePaid()) {
+                hasPaid = true;
+            } else if (isCompanyMember && score.isCompanyPaid()) {
+                hasPaid = true;
+            }
+            if (!hasPaid) {
+                response.setOverallScore(null);
+                response.setGrade(null);
+                response.setAiSummary(null);
+                response.setAiSuggestion(null);
+            }
+        }
+        return response;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId, Pageable pageable) {
         return applicationRepository.findByJobId(jobId, pageable)
-                .map(applicationMapper::toSummaryResponse);
+                .map(app -> {
+                    ApplicationSummaryResponse res = applicationMapper.toSummaryResponse(app);
+                    ApplicationScore score = app.getApplicationScore();
+                    if (score != null && score.isCompanyPaid()) {
+                        res.setOverallScore(score.getOverallScore());
+                        res.setGrade(score.getGrade() != null ? score.getGrade().name() : null);
+                    }
+                    return res;
+                });
     }
 
     @Override
@@ -341,52 +373,120 @@ public class ApplicationServiceImpl implements IApplicationService {
     // ─── SCORING METHOD ────────────────────────────────────────────────────────
 
     @Override
+    @Transactional
     public ApplicationDetailResponse scoreApplication(UUID userId, UUID applicationId) {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Application not found"));
 
-        if (application.getApplicationScore() != null) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Application has already been scored.");
+        boolean isApplicant = application.getUser().getId().equals(userId);
+        boolean isCompanyMember = application.getJob() != null
+                && application.getJob().getCompany() != null
+                && companyService.getMemberByCompanyIdAndUserId(
+                        application.getJob().getCompany().getId(), userId).isPresent();
+
+        if (!isApplicant && !isCompanyMember) {
+            throw new AppException(ErrorCode.FORBIDDEN, "You do not have permission to score this application");
         }
 
-        boolean isProcessed = false;
+        ApplicationScore existingScore = application.getApplicationScore();
 
-        if (creditService.hasCandidateFeatureAccess(userId, "APP_SCORING")) {
-            creditService.deductCandidateQuota(userId, "APP_SCORING", 1);
-            isProcessed = true;
-        }
-
-        if (!isProcessed) {
-            try {
-                if (creditService.hasCompanyFeatureAccess(userId, "APP_SCORING")) {
-                    creditService.deductCompanyFeatureQuota(userId, "APP_SCORING", 1);
-                    isProcessed = true;
+        // 1. Candidate paid
+        if (isApplicant) {
+            if (existingScore != null) {
+                if (existingScore.isCandidatePaid()) {
+                    throw new AppException(ErrorCode.INVALID_INPUT, "Bạn đã thanh toán để chấm điểm đơn ứng tuyển này rồi.");
                 }
-            } catch (Exception e) {
-                // Ignore if user is not a company member
+                if (!creditService.hasCandidateFeatureAccess(userId, "APP_SCORING")) {
+                    throw new AppException(ErrorCode.FORBIDDEN, "Gói của bạn không có tính năng Chấm điểm CV (APP_SCORING). Vui lòng nâng cấp gói.");
+                }
+                creditService.deductCandidateQuota(userId, "APP_SCORING", 1);
+                existingScore.setCandidatePaid(true);
+                applicationScoreRepository.save(existingScore);
+                
+                // Return updated detail (it will now be visible since candidatePaid is true)
+                return getApplicationDetail(userId, applicationId);
+            } else {
+                if (!creditService.hasCandidateFeatureAccess(userId, "APP_SCORING")) {
+                    throw new AppException(ErrorCode.FORBIDDEN, "Gói của bạn không có tính năng Chấm điểm CV (APP_SCORING). Vui lòng nâng cấp gói.");
+                }
+                creditService.deductCandidateQuota(userId, "APP_SCORING", 1);
+                ApplicationScore newScore = calculateAndSaveScore(application, true, false);
+                application.setApplicationScore(newScore);
+                return getApplicationDetail(userId, applicationId);
             }
         }
 
-        if (!isProcessed) {
-            throw new AppException(ErrorCode.FORBIDDEN, "Gói của bạn không có tính năng Chấm điểm CV (APP_SCORING). Vui lòng nâng cấp gói.");
+        // 2. Recruiter paid
+        if (isCompanyMember) {
+            if (existingScore != null) {
+                if (existingScore.isCompanyPaid()) {
+                    throw new AppException(ErrorCode.INVALID_INPUT, "Công ty của bạn đã thanh toán để chấm điểm đơn ứng tuyển này rồi.");
+                }
+                if (!creditService.hasCompanyFeatureAccessByUserId(userId, "APP_SCORING")) {
+                    throw new AppException(ErrorCode.FORBIDDEN, "Gói của công ty không có tính năng Chấm điểm CV (APP_SCORING). Vui lòng nâng cấp gói.");
+                }
+                creditService.deductCompanyFeatureQuota(userId, "APP_SCORING", 1);
+                existingScore.setCompanyPaid(true);
+                applicationScoreRepository.save(existingScore);
+                
+                return getApplicationDetail(userId, applicationId);
+            } else {
+                if (!creditService.hasCompanyFeatureAccessByUserId(userId, "APP_SCORING")) {
+                    throw new AppException(ErrorCode.FORBIDDEN, "Gói của công ty không có tính năng Chấm điểm CV (APP_SCORING). Vui lòng nâng cấp gói.");
+                }
+                creditService.deductCompanyFeatureQuota(userId, "APP_SCORING", 1);
+                ApplicationScore newScore = calculateAndSaveScore(application, false, true);
+                application.setApplicationScore(newScore);
+                return getApplicationDetail(userId, applicationId);
+            }
         }
 
+        throw new AppException(ErrorCode.FORBIDDEN, "Access denied");
+    }
+
+    private ApplicationScore calculateAndSaveScore(Application application, boolean candidatePaid, boolean companyPaid) {
         try {
             SkillMatchScoreResponse matchScore = recommendationService.calculateMatchScore(application.getCv().getId(), application.getJob().getId());
             ScoreGrade grade = matchScore.getGrade();
 
+            double scorePercent = matchScore.getOverallScore() * 100;
+            String summary = String.format("Độ tương thích CV của ứng viên đạt %.1f%%. Hệ thống ghi nhận đã khớp %d kỹ năng và thiếu %d kỹ năng so với mô tả công việc.",
+                    scorePercent,
+                    matchScore.getMatchedSkills().size(),
+                    matchScore.getMissingSkills().size());
+
+            StringBuilder suggestion = new StringBuilder();
+            suggestion.append("Kỹ năng phù hợp:\n");
+            if (!matchScore.getMatchedSkills().isEmpty()) {
+                for (String s : matchScore.getMatchedSkills()) {
+                    suggestion.append(" - ").append(s).append("\n");
+                }
+            } else {
+                suggestion.append(" - Không có kỹ năng nào trùng khớp.\n");
+            }
+            
+            suggestion.append("\nKỹ năng còn thiếu hoặc cần bổ sung:\n");
+            if (!matchScore.getMissingSkills().isEmpty()) {
+                for (String s : matchScore.getMissingSkills()) {
+                    suggestion.append(" - ").append(s).append("\n");
+                }
+            } else {
+                suggestion.append(" - Ứng viên đã đáp ứng đầy đủ kỹ năng yêu cầu.\n");
+            }
+
             ApplicationScore applicationScore = ApplicationScore.builder()
                     .application(application)
-                    .overallScore(BigDecimal.valueOf(matchScore.getOverallScore()))
+                    .candidatePaid(candidatePaid)
+                    .companyPaid(companyPaid)
+                    .overallScore(BigDecimal.valueOf(scorePercent))
                     .grade(grade)
-                    .aiSummary("AI Score calculated from graph and embeddings")
-                    .aiSuggestion(generateSuggestion(grade))
+                    .aiSummary(summary)
+                    .aiSuggestion(suggestion.toString())
                     .modelVersion("1.0")
                     .scoredAt(Instant.now())
                     .build();
 
             applicationScore = applicationScoreRepository.save(applicationScore);
-            application.setApplicationScore(applicationScore);
 
             // Save SkillMatch entities
             for (SkillMatchDetail detail : matchScore.getSkillDetails()) {
@@ -435,12 +535,11 @@ public class ApplicationServiceImpl implements IApplicationService {
                 skillMatchRepository.save(skillMatch);
             }
 
+            return applicationScore;
         } catch (Exception e) {
             log.error("Failed to calculate AI match score for application {}", application.getId(), e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Failed to score application: " + e.getMessage());
         }
-
-        return applicationMapper.toDetailResponse(application);
     }
 
     // ─── DASHBOARD METHODS ──────────────────────────────────────────────────────

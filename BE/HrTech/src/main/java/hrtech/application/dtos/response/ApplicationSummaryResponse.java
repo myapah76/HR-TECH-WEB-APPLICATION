@@ -1,5 +1,6 @@
 package hrtech.application.dtos.response;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -27,4 +28,6 @@ public class ApplicationSummaryResponse {
     private Instant appliedAt;
     private Instant interviewDateTime;
     private Instant candidatePreferredInterviewDateTime;
+    private BigDecimal overallScore;
+    private String grade;
 }

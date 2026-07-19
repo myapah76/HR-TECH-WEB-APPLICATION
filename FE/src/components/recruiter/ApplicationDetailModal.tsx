@@ -7,6 +7,7 @@ import {
   Briefcase,
   Clock,
   Brain,
+  Sparkles,
   MessageSquare,
   Lightbulb,
   Loader2,
@@ -19,13 +20,16 @@ import {
   MapPin,
   Link as LinkIcon,
 } from 'lucide-react'
-import { useGetApplicationDetail } from '@/src/hooks/application'
+import { toast } from 'sonner'
+import { useGetApplicationDetail, useScoreApplication } from '@/src/hooks/application'
 import { useGetCvDetail } from '@/src/hooks/cv'
 import {
   ApplicationStatus,
   ScheduleInterviewRequest,
   UpdateApplicationStatusRequest,
 } from '@/src/types'
+import { getErrorMessage } from '@/src/utils'
+import ConfirmModal from '@/src/components/common/ConfirmModal'
 
 // ─── Status config ────────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<
@@ -270,6 +274,8 @@ export default function ApplicationDetailModal({
   const [acceptedNote, setAcceptedNote] = useState('')
   const { data: app, isLoading } = useGetApplicationDetail(applicationId)
   const { data: cvDetail, isLoading: isCvLoading } = useGetCvDetail(app?.cvId ?? '', !!app?.cvId)
+  const scoreMutation = useScoreApplication()
+  const [showConfirmScore, setShowConfirmScore] = useState(false)
   // Hook ở component level (tuân thủ Rules of Hooks)
   const relativeTime = useRelativeTime(app?.appliedAt ?? '')
 
@@ -496,23 +502,41 @@ export default function ApplicationDetailModal({
                         <Lightbulb className="w-3.5 h-3.5" />
                         Gợi ý từ AI
                       </h4>
-                      <p className="text-sm text-slate-600 font-medium leading-relaxed">
-                        {app.aiSuggestion}
-                      </p>
+                       <p className="text-sm text-slate-600 font-medium leading-relaxed whitespace-pre-line">
+                         {app.aiSuggestion}
+                       </p>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-dashed border-violet-200 bg-violet-50/50 p-5 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
-                    <Brain className="w-5 h-5 text-violet-400" />
+                <div className="rounded-2xl border border-dashed border-violet-200 bg-violet-50/50 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
+                      <Brain className="w-5 h-5 text-violet-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-600">Chưa có điểm AI</p>
+                      <p className="text-xs text-slate-400 mt-0.5 font-semibold">
+                        Chấm điểm mức độ tương thích CV bằng mô hình AI (1 AI Credit)
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-600">Chưa có điểm AI</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Hệ thống đang phân tích hồ sơ này
-                    </p>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (scoreMutation.isPending) return
+                      setShowConfirmScore(true)
+                    }}
+                    disabled={scoreMutation.isPending}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-black transition-all shadow-xs hover:shadow-sm"
+                  >
+                    {scoreMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 text-white" />
+                    )}
+                    Chấm điểm ngay
+                  </button>
                 </div>
               )}
 
@@ -828,6 +852,32 @@ export default function ApplicationDetailModal({
           to   { transform: translateY(0);    opacity: 1; }
         }
       `}</style>
+
+      {/* AI Score Confirmation Modal */}
+      {app && (
+        <ConfirmModal
+          isOpen={showConfirmScore}
+          title="Xác nhận chấm điểm AI"
+          description="Đánh giá mức độ phù hợp của CV với vị trí tuyển dụng này sẽ tiêu tốn 1 AI Credit của công ty bạn. Bạn có muốn tiếp tục?"
+          confirmText="Chấm điểm"
+          cancelText="Hủy bỏ"
+          variant="info"
+          isLoading={scoreMutation.isPending}
+          onClose={() => setShowConfirmScore(false)}
+          onConfirm={() => {
+            scoreMutation.mutate(app.id, {
+              onSuccess: () => {
+                toast.success('Chấm điểm hồ sơ bằng AI thành công!')
+                setShowConfirmScore(false)
+              },
+              onError: (err) => {
+                toast.error(getErrorMessage(err))
+                setShowConfirmScore(false)
+              },
+            })
+          }}
+        />
+      )}
     </div>
   )
 }

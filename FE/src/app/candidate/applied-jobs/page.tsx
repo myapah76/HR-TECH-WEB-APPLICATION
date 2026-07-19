@@ -16,18 +16,26 @@ import {
   ArrowRight,
   FileText,
   Sparkles,
+  Brain,
   CalendarCheck2,
   CheckCircle2,
   RefreshCw,
   X,
 } from 'lucide-react'
-import { useAcceptInterviewSchedule, useChangeInterviewSchedule, useGetMyApplications } from '@/src/hooks/application'
+import {
+  useAcceptInterviewSchedule,
+  useChangeInterviewSchedule,
+  useGetMyApplications,
+  useScoreApplication,
+} from '@/src/hooks/application'
 import { useGetJobs } from '@/src/hooks/job'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import { ApplicationMatchModal } from '@/src/components/candidate/application/ApplicationMatchModal'
+import { ApplicationScoreDetailModal } from '@/src/components/candidate/application/ApplicationScoreDetailModal'
 import { ApplicationStatus } from '@/src/types'
 import { formatDate, formatDateTime, formatSalary, getErrorMessage } from '@/src/utils'
 import Pagination from '@/src/components/common/Pagination'
+import ConfirmModal from '@/src/components/common/ConfirmModal'
 
 const statusConfig: Record<string, { label: string; bg: string; text: string; border: string }> = {
   SUBMITTED: {
@@ -92,7 +100,11 @@ export default function AppliedJobsPage() {
   const { data: jobsData, isLoading: loadingJobs } = useGetJobs(0, 100)
   const acceptScheduleMutation = useAcceptInterviewSchedule()
   const changeScheduleMutation = useChangeInterviewSchedule()
+  const scoreMutation = useScoreApplication()
 
+  const [scoreDetailAppId, setScoreDetailAppId] = useState<string | null>(null)
+  const [scoringAppId, setScoringAppId] = useState<string | null>(null)
+  const [confirmScoreAppId, setConfirmScoreAppId] = useState<string | null>(null)
   const [matchApp, setMatchApp] = useState<{
     cvId: string
     jobId: string
@@ -234,9 +246,8 @@ export default function AppliedJobsPage() {
               <div
                 key={app.id}
                 onClick={() => setSelectedApplicationId(isSelected ? null : app.id)}
-                className={`group relative bg-white rounded-2xl border p-6 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:border-blue-200/80 hover:-translate-y-0.5 cursor-pointer ${
-                  isSelected ? 'border-blue-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.03)]' : 'border-slate-200/50'
-                }`}
+                className={`group relative bg-white rounded-2xl border p-6 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:border-blue-200/80 hover:-translate-y-0.5 cursor-pointer ${isSelected ? 'border-blue-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.03)]' : 'border-slate-200/50'
+                  }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                   <div className="flex items-start gap-4.5 flex-1 min-w-0">
@@ -292,22 +303,39 @@ export default function AppliedJobsPage() {
                       {statusInfo.label}
                     </span>
 
-                    <button
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        setMatchApp({
-                          cvId: app.cvId,
-                          jobId: app.jobId,
-                          jobTitle: app.jobTitle,
-                          companyName: companyName,
-                        })
-                      }}
-                      className="flex items-center justify-center gap-1 text-xs font-black text-indigo-600 hover:text-indigo-800 bg-indigo-50/70 hover:bg-indigo-100 px-3 py-2 rounded-xl transition-all border border-indigo-200/50 shadow-xs"
-                      title="Đánh giá mức độ phù hợp bằng AI"
-                    >
-                      <Sparkles className="h-4 w-4" />
-                      <span className="hidden sm:inline">AI Đánh giá</span>
-                    </button>
+                    {app.overallScore !== undefined && app.overallScore !== null ? (
+                      <button
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          setScoreDetailAppId(app.id)
+                        }}
+                        className="flex items-center justify-center gap-1.5 text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100/80 px-3 py-2 rounded-xl transition-all border border-emerald-200/80 shadow-xs"
+                        title="Xem chi tiết đánh giá AI"
+                      >
+                        <Brain className="h-4 w-4 text-emerald-600" />
+                        <span>AI: {app.overallScore}% ({app.grade})</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          if (scoreMutation.isPending) return
+                          setConfirmScoreAppId(app.id)
+                        }}
+                        disabled={scoreMutation.isPending && scoringAppId === app.id}
+                        className={`flex items-center justify-center gap-1.5 text-xs font-black text-indigo-650 hover:text-indigo-800 bg-indigo-50/70 hover:bg-indigo-100 px-3 py-2 rounded-xl transition-all border border-indigo-200/50 shadow-xs ${
+                          scoreMutation.isPending && scoringAppId === app.id ? 'opacity-60 cursor-not-allowed' : ''
+                        }`}
+                        title="Chấm điểm hồ sơ này bằng AI"
+                      >
+                        {scoreMutation.isPending && scoringAppId === app.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                        <span>AI Chấm điểm</span>
+                      </button>
+                    )}
 
                     <Link
                       href={`/jobs/${app.jobId}`}
@@ -411,6 +439,12 @@ export default function AppliedJobsPage() {
         companyName={matchApp?.companyName || ''}
       />
 
+      <ApplicationScoreDetailModal
+        applicationId={scoreDetailAppId || ''}
+        isOpen={!!scoreDetailAppId}
+        onClose={() => setScoreDetailAppId(null)}
+      />
+
       {changingApplication && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 py-8 backdrop-blur-sm"
@@ -500,6 +534,34 @@ export default function AppliedJobsPage() {
           </div>
         </div>
       )}
+
+      {/* AI Score Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmScoreAppId !== null}
+        title="Xác nhận chấm điểm AI"
+        description="Đánh giá mức độ phù hợp của CV với vị trí tuyển dụng này sẽ tiêu tốn 1 AI Credit từ tài khoản của bạn. Bạn có muốn tiếp tục?"
+        confirmText="Chấm điểm"
+        cancelText="Hủy bỏ"
+        variant="info"
+        isLoading={scoreMutation.isPending}
+        onClose={() => setConfirmScoreAppId(null)}
+        onConfirm={() => {
+          if (!confirmScoreAppId) return
+          setScoringAppId(confirmScoreAppId)
+          scoreMutation.mutate(confirmScoreAppId, {
+            onSuccess: () => {
+              toast.success('Chấm điểm đơn ứng tuyển thành công!')
+              setConfirmScoreAppId(null)
+              setScoringAppId(null)
+            },
+            onError: (err) => {
+              toast.error(getErrorMessage(err))
+              setConfirmScoreAppId(null)
+              setScoringAppId(null)
+            },
+          })
+        }}
+      />
     </div>
   )
 }

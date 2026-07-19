@@ -15,22 +15,17 @@ import hrtech.subscription.entities.CandidateSubscription;
 import hrtech.subscription.entities.CompanySubscription;
 import hrtech.subscription.entities.enums.ResetType;
 import hrtech.subscription.entities.enums.SubscriptionStatus;
-import hrtech.subscription.abstractions.repositories.CandidateFeatureRateUsageRepository;
-import hrtech.subscription.abstractions.repositories.CompanyFeatureRateUsageRepository;
-import hrtech.subscription.entities.CandidateFeatureRateUsage;
-import hrtech.subscription.entities.CompanyFeatureRateUsage;
 import hrtech.identity.abstractions.services.IUserService;
 import hrtech.company.entities.Company;
 import hrtech.identity.entities.User;
 import hrtech.subscription.entities.CandidatePlanFeature;
 import hrtech.subscription.entities.CompanyPlanFeature;
-import hrtech.subscription.entities.CandidatePlanFeatureRateLimit;
-import hrtech.subscription.entities.CompanyPlanFeatureRateLimit;
+import hrtech.subscription.entities.CandidateSubscriptionPlan;
+import hrtech.subscription.entities.CompanySubscriptionPlan;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -40,8 +35,6 @@ public class CreditServiceImpl implements ICreditService {
 
     private final CandidateSubscriptionRepository candidateSubscriptionRepository;
     private final CompanySubscriptionRepository companySubscriptionRepository;
-    private final CandidateFeatureRateUsageRepository CandidateFeatureRateUsageRepository;
-    private final CompanyFeatureRateUsageRepository companyFeatureRateUsageRepository;
     private final IUserService userService;
     private final ICompanyService companyService;
 
@@ -86,40 +79,70 @@ public class CreditServiceImpl implements ICreditService {
 
         // Deduct AI Credit if this feature has an AI credit cost
         if (targetPf.getAiCreditCost() != null && targetPf.getAiCreditCost() > 0) {
-            if (user.getAiCreditBalance() < targetPf.getAiCreditCost()) {
-                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA, "You do not have enough AI Credits. Required: " + targetPf.getAiCreditCost());
+            int cost = targetPf.getAiCreditCost();
+            checkAndUpdateCandidateSubscriptionRateLimits(sub, cost, user);
+            
+            if (user.getAiCreditBalance() < cost) {
+                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA, "You do not have enough AI Credits. Required: " + cost);
             }
-            user.setAiCreditBalance(user.getAiCreditBalance() - targetPf.getAiCreditCost());
+            user.setAiCreditBalance(user.getAiCreditBalance() - cost);
             userService.saveUserEntity(user);
         }
+    }
 
-        final CandidatePlanFeature finalTargetPf = targetPf;
-        for (CandidatePlanFeatureRateLimit rl : finalTargetPf.getRateLimits()) {
-            Optional<CandidateFeatureRateUsage> rateUsageOpt = CandidateFeatureRateUsageRepository
-                    .findByUserIdAndFeatureCodeAndResetType(userId, featureCode, rl.getResetType());
-            
-            CandidateFeatureRateUsage rateUsage = rateUsageOpt.orElseGet(() -> 
-                CandidateFeatureRateUsage.builder()
-                        .user(user)
-                        .feature(finalTargetPf.getFeature())
-                        .resetType(rl.getResetType())
-                        .used(0)
-                        .lastResetDate(Instant.now())
-                        .build()
-            );
-
-            if (isResetNeeded(rateUsage.getLastResetDate(), rateUsage.getResetType(), sub.getStartDate())) {
-                rateUsage.setUsed(0);
-                rateUsage.setLastResetDate(Instant.now());
-            }
-
-            if (rateUsage.getUsed() + amount > rl.getCapQuota()) {
-                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA, "Rate limit exceeded for " + rl.getResetType());
-            }
-
-            rateUsage.setUsed(rateUsage.getUsed() + amount);
-            CandidateFeatureRateUsageRepository.save(rateUsage);
+    private void checkAndUpdateCandidateSubscriptionRateLimits(CandidateSubscription sub, int cost, User user) {
+        Instant now = Instant.now();
+        if (sub.getLastDailyReset() == null || isResetNeeded(sub.getLastDailyReset(), ResetType.DAILY, sub.getStartDate())) {
+            sub.setDailyAiUsage(0);
+            sub.setLastDailyReset(now);
         }
+        if (sub.getLastWeeklyReset() == null || isResetNeeded(sub.getLastWeeklyReset(), ResetType.WEEKLY, sub.getStartDate())) {
+            sub.setWeeklyAiUsage(0);
+            sub.setLastWeeklyReset(now);
+        }
+        
+        CandidateSubscriptionPlan plan = sub.getPlan();
+        if (plan.getDailyAiLimit() != null && plan.getDailyAiLimit() > 0) {
+            if (sub.getDailyAiUsage() + cost > plan.getDailyAiLimit()) {
+                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA,
+                        "Hạn mức sử dụng AI hàng ngày đã hết. (Đã dùng: " + sub.getDailyAiUsage() + "/" + plan.getDailyAiLimit() + " AI Credits)");
+            }
+        }
+        if (plan.getWeeklyAiLimit() != null && plan.getWeeklyAiLimit() > 0) {
+            if (sub.getWeeklyAiUsage() + cost > plan.getWeeklyAiLimit()) {
+                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA,
+                        "Hạn mức sử dụng AI hàng tuần đã hết. (Đã dùng: " + sub.getWeeklyAiUsage() + "/" + plan.getWeeklyAiLimit() + " AI Credits)");
+            }
+        }
+        
+        sub.setDailyAiUsage(sub.getDailyAiUsage() + cost);
+        sub.setWeeklyAiUsage(sub.getWeeklyAiUsage() + cost);
+        candidateSubscriptionRepository.save(sub);
+    }
+
+    private boolean checkCandidateSubscriptionRateLimits(CandidateSubscription sub, int cost) {
+        int currentDailyUsage = sub.getDailyAiUsage() != null ? sub.getDailyAiUsage() : 0;
+        int currentWeeklyUsage = sub.getWeeklyAiUsage() != null ? sub.getWeeklyAiUsage() : 0;
+        
+        if (sub.getLastDailyReset() == null || isResetNeeded(sub.getLastDailyReset(), ResetType.DAILY, sub.getStartDate())) {
+            currentDailyUsage = 0;
+        }
+        if (sub.getLastWeeklyReset() == null || isResetNeeded(sub.getLastWeeklyReset(), ResetType.WEEKLY, sub.getStartDate())) {
+            currentWeeklyUsage = 0;
+        }
+        
+        CandidateSubscriptionPlan plan = sub.getPlan();
+        if (plan.getDailyAiLimit() != null && plan.getDailyAiLimit() > 0) {
+            if (currentDailyUsage + cost > plan.getDailyAiLimit()) {
+                return false;
+            }
+        }
+        if (plan.getWeeklyAiLimit() != null && plan.getWeeklyAiLimit() > 0) {
+            if (currentWeeklyUsage + cost > plan.getWeeklyAiLimit()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -150,22 +173,12 @@ public class CreditServiceImpl implements ICreditService {
 
         // If feature has an AI credit cost, check if user has enough credits
         if (targetPf.getAiCreditCost() != null && targetPf.getAiCreditCost() > 0) {
-            if (user.getAiCreditBalance() < targetPf.getAiCreditCost()) {
+            int cost = targetPf.getAiCreditCost();
+            if (user.getAiCreditBalance() < cost) {
                 return false;
             }
-        }
-        
-        for (CandidatePlanFeatureRateLimit rl : targetPf.getRateLimits()) {
-            Optional<CandidateFeatureRateUsage> rateUsageOpt = CandidateFeatureRateUsageRepository
-                    .findByUserIdAndFeatureCodeAndResetType(userId, featureCode, rl.getResetType());
-            if (rateUsageOpt.isPresent()) {
-                CandidateFeatureRateUsage rateUsage = rateUsageOpt.get();
-                if (isResetNeeded(rateUsage.getLastResetDate(), rateUsage.getResetType(), sub.getStartDate())) {
-                    continue; 
-                }
-                if (rateUsage.getUsed() >= rl.getCapQuota()) {
-                    return false;
-                }
+            if (!checkCandidateSubscriptionRateLimits(sub, cost)) {
+                return false;
             }
         }
         
@@ -218,39 +231,69 @@ public class CreditServiceImpl implements ICreditService {
 
         // Deduct AI Credit if this feature has an AI credit cost
         if (targetPf.getAiCreditCost() != null && targetPf.getAiCreditCost() > 0) {
-            if (company.getAiCreditBalance() < targetPf.getAiCreditCost()) {
-                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA, "Not enough AI Credits. Required: " + targetPf.getAiCreditCost());
-            }
-            companyService.updateCompanyBalances(company.getId(), -targetPf.getAiCreditCost(), 0);
-        }
-
-        final CompanyPlanFeature finalTargetPf = targetPf;
-        for (CompanyPlanFeatureRateLimit rl : finalTargetPf.getRateLimits()) {
-            Optional<CompanyFeatureRateUsage> rateUsageOpt = companyFeatureRateUsageRepository
-                    .findByCompanyIdAndFeatureCodeAndResetType(company.getId(), featureCode, rl.getResetType());
+            int cost = targetPf.getAiCreditCost();
+            checkAndUpdateCompanySubscriptionRateLimits(sub, cost, company);
             
-            CompanyFeatureRateUsage rateUsage = rateUsageOpt.orElseGet(() -> 
-                CompanyFeatureRateUsage.builder()
-                        .company(company)
-                        .feature(finalTargetPf.getFeature())
-                        .resetType(rl.getResetType())
-                        .used(0)
-                        .lastResetDate(Instant.now())
-                        .build()
-            );
-
-            if (isResetNeeded(rateUsage.getLastResetDate(), rateUsage.getResetType(), sub.getStartDate())) {
-                rateUsage.setUsed(0);
-                rateUsage.setLastResetDate(Instant.now());
+            if (company.getAiCreditBalance() < cost) {
+                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA, "Not enough AI Credits. Required: " + cost);
             }
-
-            if (rateUsage.getUsed() + amount > rl.getCapQuota()) {
-                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA, "Rate limit exceeded for " + rl.getResetType());
-            }
-
-            rateUsage.setUsed(rateUsage.getUsed() + amount);
-            companyFeatureRateUsageRepository.save(rateUsage);
+            companyService.updateCompanyBalances(company.getId(), -cost, 0);
         }
+    }
+
+    private void checkAndUpdateCompanySubscriptionRateLimits(CompanySubscription sub, int cost, Company company) {
+        Instant now = Instant.now();
+        if (sub.getLastDailyReset() == null || isResetNeeded(sub.getLastDailyReset(), ResetType.DAILY, sub.getStartDate())) {
+            sub.setDailyAiUsage(0);
+            sub.setLastDailyReset(now);
+        }
+        if (sub.getLastWeeklyReset() == null || isResetNeeded(sub.getLastWeeklyReset(), ResetType.WEEKLY, sub.getStartDate())) {
+            sub.setWeeklyAiUsage(0);
+            sub.setLastWeeklyReset(now);
+        }
+        
+        CompanySubscriptionPlan plan = sub.getPlan();
+        if (plan.getDailyAiLimit() != null && plan.getDailyAiLimit() > 0) {
+            if (sub.getDailyAiUsage() + cost > plan.getDailyAiLimit()) {
+                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA,
+                        "Hạn mức sử dụng AI hàng ngày của gói đã hết. (Đã dùng: " + sub.getDailyAiUsage() + "/" + plan.getDailyAiLimit() + " AI Credits)");
+            }
+        }
+        if (plan.getWeeklyAiLimit() != null && plan.getWeeklyAiLimit() > 0) {
+            if (sub.getWeeklyAiUsage() + cost > plan.getWeeklyAiLimit()) {
+                throw new AppException(ErrorCode.INSUFFICIENT_QUOTA,
+                        "Hạn mức sử dụng AI hàng tuần của gói đã hết. (Đã dùng: " + sub.getWeeklyAiUsage() + "/" + plan.getWeeklyAiLimit() + " AI Credits)");
+            }
+        }
+        
+        sub.setDailyAiUsage(sub.getDailyAiUsage() + cost);
+        sub.setWeeklyAiUsage(sub.getWeeklyAiUsage() + cost);
+        companySubscriptionRepository.save(sub);
+    }
+
+    private boolean checkCompanySubscriptionRateLimits(CompanySubscription sub, int cost) {
+        int currentDailyUsage = sub.getDailyAiUsage() != null ? sub.getDailyAiUsage() : 0;
+        int currentWeeklyUsage = sub.getWeeklyAiUsage() != null ? sub.getWeeklyAiUsage() : 0;
+        
+        if (sub.getLastDailyReset() == null || isResetNeeded(sub.getLastDailyReset(), ResetType.DAILY, sub.getStartDate())) {
+            currentDailyUsage = 0;
+        }
+        if (sub.getLastWeeklyReset() == null || isResetNeeded(sub.getLastWeeklyReset(), ResetType.WEEKLY, sub.getStartDate())) {
+            currentWeeklyUsage = 0;
+        }
+        
+        CompanySubscriptionPlan plan = sub.getPlan();
+        if (plan.getDailyAiLimit() != null && plan.getDailyAiLimit() > 0) {
+            if (currentDailyUsage + cost > plan.getDailyAiLimit()) {
+                return false;
+            }
+        }
+        if (plan.getWeeklyAiLimit() != null && plan.getWeeklyAiLimit() > 0) {
+            if (currentWeeklyUsage + cost > plan.getWeeklyAiLimit()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -283,22 +326,12 @@ public class CreditServiceImpl implements ICreditService {
 
         // If feature has an AI credit cost, check if company has enough credits
         if (targetPf.getAiCreditCost() != null && targetPf.getAiCreditCost() > 0) {
-            if (company.getAiCreditBalance() < targetPf.getAiCreditCost()) {
+            int cost = targetPf.getAiCreditCost();
+            if (company.getAiCreditBalance() < cost) {
                 return false;
             }
-        }
-        
-        for (CompanyPlanFeatureRateLimit rl : targetPf.getRateLimits()) {
-            Optional<CompanyFeatureRateUsage> rateUsageOpt = companyFeatureRateUsageRepository
-                    .findByCompanyIdAndFeatureCodeAndResetType(companyId, featureCode, rl.getResetType());
-            if (rateUsageOpt.isPresent()) {
-                CompanyFeatureRateUsage rateUsage = rateUsageOpt.get();
-                if (isResetNeeded(rateUsage.getLastResetDate(), rateUsage.getResetType(), sub.getStartDate())) {
-                    continue;
-                }
-                if (rateUsage.getUsed() >= rl.getCapQuota()) {
-                    return false;
-                }
+            if (!checkCompanySubscriptionRateLimits(sub, cost)) {
+                return false;
             }
         }
         

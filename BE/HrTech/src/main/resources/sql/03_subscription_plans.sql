@@ -1,8 +1,6 @@
 -- =====================================================================
 -- Xóa dữ liệu cũ để tạo lại sạch
 -- =====================================================================
-DELETE FROM company_plan_feature_rate_limits;
-DELETE FROM candidate_plan_feature_rate_limits;
 DELETE FROM company_plan_features;
 DELETE FROM candidate_plan_features;
 DELETE FROM features WHERE code IN ('JOB_POSTING', 'AI_CREDIT');
@@ -24,25 +22,25 @@ SET name = EXCLUDED.name, description = EXCLUDED.description, code = EXCLUDED.co
 -- COMPANY SUBSCRIPTION PLANS (with new balance columns)
 -- =====================================================================
 INSERT INTO company_subscription_plans
-(id, name, description, price, duration_days, is_active, ai_credit_balance, job_post_balance, created_at, updated_at, is_deleted)
+(id, name, description, price, duration_days, is_active, ai_credit_balance, job_post_balance, daily_ai_limit, weekly_ai_limit, created_at, updated_at, is_deleted)
 VALUES
-    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Khởi Đầu', 'Gói trải nghiệm miễn phí cho doanh nghiệp mới', 0, 30, true, 100, 1, NOW(), NOW(), false),
-    ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'Tiêu Chuẩn', 'Gói tăng trưởng: Phù hợp tuyển dụng vừa và nhỏ', 500000, 30, true, 3000, 5, NOW(), NOW(), false),
-    ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'Chuyên Nghiệp', 'Gói doanh nghiệp: Dành cho nhu cầu tuyển dụng cực lớn', 2000000, 30, true, 15000, 20, NOW(), NOW(), false)
+    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Khởi Đầu', 'Gói trải nghiệm miễn phí cho doanh nghiệp mới', 0, 30, true, 100, 1, 20, 50, NOW(), NOW(), false),
+    ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'Tiêu Chuẩn', 'Gói tăng trưởng: Phù hợp tuyển dụng vừa và nhỏ', 500000, 30, true, 3000, 5, 200, 500, NOW(), NOW(), false),
+    ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'Chuyên Nghiệp', 'Gói doanh nghiệp: Dành cho nhu cầu tuyển dụng cực lớn', 2000000, 30, true, 15000, 20, 1000, 2500, NOW(), NOW(), false)
 ON CONFLICT (id) DO UPDATE
-SET name = EXCLUDED.name, description = EXCLUDED.description, price = EXCLUDED.price, duration_days = EXCLUDED.duration_days, is_active = EXCLUDED.is_active, ai_credit_balance = EXCLUDED.ai_credit_balance, job_post_balance = EXCLUDED.job_post_balance;
+SET name = EXCLUDED.name, description = EXCLUDED.description, price = EXCLUDED.price, duration_days = EXCLUDED.duration_days, is_active = EXCLUDED.is_active, ai_credit_balance = EXCLUDED.ai_credit_balance, job_post_balance = EXCLUDED.job_post_balance, daily_ai_limit = EXCLUDED.daily_ai_limit, weekly_ai_limit = EXCLUDED.weekly_ai_limit;
 
 -- =====================================================================
 -- CANDIDATE SUBSCRIPTION PLANS (with new balance columns)
 -- =====================================================================
 INSERT INTO candidate_subscription_plans
-(id, name, description, price, duration_days, is_active, ai_credit_balance, created_at, updated_at, is_deleted)
+(id, name, description, price, duration_days, is_active, ai_credit_balance, daily_ai_limit, weekly_ai_limit, created_at, updated_at, is_deleted)
 VALUES
-    ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'Cơ Bản', 'Gói miễn phí cho ứng viên tìm việc', 0, 30, true, 50, NOW(), NOW(), false),
-    ('ffffffff-ffff-ffff-ffff-ffffffffffff', 'Cao Cấp', 'Gói thành viên cao cấp: Trải nghiệm toàn bộ sức mạnh AI', 2000, 30, true, 2000, NOW(), NOW(), false),
-    ('99999999-9999-9999-9999-999999999999', 'Chuyên Nghiệp', 'Gói tối thượng cho người tìm việc: Mở khoá tất cả tính năng', 5000, 30, true, 5000, NOW(), NOW(), false)
+    ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'Cơ Bản', 'Gói miễn phí cho ứng viên tìm việc', 0, 30, true, 50, 10, 25, NOW(), NOW(), false),
+    ('ffffffff-ffff-ffff-ffff-ffffffffffff', 'Cao Cấp', 'Gói thành viên cao cấp: Trải nghiệm toàn bộ sức mạnh AI', 2000, 30, true, 2000, 100, 250, NOW(), NOW(), false),
+    ('99999999-9999-9999-9999-999999999999', 'Chuyên Nghiệp', 'Gói tối thượng cho người tìm việc: Mở khoá tất cả tính năng', 5000, 30, true, 5000, 300, 750, NOW(), NOW(), false)
 ON CONFLICT (id) DO UPDATE
-SET name = EXCLUDED.name, description = EXCLUDED.description, price = EXCLUDED.price, duration_days = EXCLUDED.duration_days, is_active = EXCLUDED.is_active, ai_credit_balance = EXCLUDED.ai_credit_balance;
+SET name = EXCLUDED.name, description = EXCLUDED.description, price = EXCLUDED.price, duration_days = EXCLUDED.duration_days, is_active = EXCLUDED.is_active, ai_credit_balance = EXCLUDED.ai_credit_balance, daily_ai_limit = EXCLUDED.daily_ai_limit, weekly_ai_limit = EXCLUDED.weekly_ai_limit;
 
 -- =====================================================================
 -- COMPANY PLAN FEATURES (mapping with ai_credit_cost, no total_quota)

@@ -153,3 +153,8 @@ export const checkHasApplied = async (jobId: string): Promise<boolean> => {
   })
   return response.data.data
 }
+
+export const scoreApplication = async (id: string): Promise<ApplicationDetailResponse> => {
+  const response = await api.post<ApiResponse<ApplicationDetailResponse>>(`/applications/${id}/score`)
+  return response.data.data
+}

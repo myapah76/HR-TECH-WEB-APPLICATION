@@ -1,6 +1,7 @@
 package hrtech.subscription.services;
 
 import hrtech.subscription.entities.*;
+import hrtech.subscription.entities.enums.ResetType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import hrtech.company.abstractions.services.ICompanyService;
@@ -16,11 +17,8 @@ import hrtech.subscription.abstractions.services.ISubscriptionPlanService;
 import hrtech.subscription.abstractions.services.ISubscriptionService;
 import hrtech.subscription.abstractions.repositories.CandidateSubscriptionPlanRepository;
 import hrtech.subscription.abstractions.repositories.CompanySubscriptionPlanRepository;
-import hrtech.subscription.dtos.response.SubFeatureRateUsageResponse;
 import hrtech.subscription.entities.enums.SubscriptionStatus;
 import hrtech.subscription.entities.enums.SubscriptionType;
-import hrtech.subscription.abstractions.repositories.CandidateFeatureRateUsageRepository;
-import hrtech.subscription.abstractions.repositories.CompanyFeatureRateUsageRepository;
 import hrtech.company.entities.Company;
 import org.springframework.transaction.annotation.Transactional;
 import hrtech.notification.abstractions.services.INotificationService;
@@ -47,8 +45,6 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
     private final CompanySubscriptionRepository companySubscriptionRepository;
     private final CandidateSubscriptionPlanRepository candidateSubscriptionPlanRepository;
     private final CompanySubscriptionPlanRepository companySubscriptionPlanRepository;
-    private final CandidateFeatureRateUsageRepository CandidateFeatureRateUsageRepository;
-    private final CompanyFeatureRateUsageRepository companyFeatureRateUsageRepository;
     private final ICompanyService companyService;
     private final AuthUtils authUtils;
     private final INotificationService notificationService;
@@ -66,23 +62,34 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
             if (!subs.isEmpty()) {
                 CandidateSubscription sub = subs.get(0);
                 List<SubFeatureUsageResponse> usage = sub.getPlan().getPlanFeatures().stream()
-                        .map(pf -> {
-                            List<SubFeatureRateUsageResponse> rateUsages = pf.getRateLimits().stream().map(rl -> {
-                                int used = CandidateFeatureRateUsageRepository
-                                        .findByUserIdAndFeatureCodeAndResetType(userId, pf.getFeature().getCode(),
-                                                rl.getResetType())
-                                        .map(u -> u.getUsed()).orElse(0);
-                                return new SubFeatureRateUsageResponse(rl.getResetType(), rl.getCapQuota(), used,
-                                        Instant.now());
-                            }).collect(Collectors.toList());
-                            return new SubFeatureUsageResponse(pf.getFeature().getCode(), pf.getFeature().getName(), pf.getAiCreditCost(),
-                                    0, rateUsages);
-                        }).collect(Collectors.toList());
+                        .map(pf -> new SubFeatureUsageResponse(
+                                pf.getFeature().getCode(),
+                                pf.getFeature().getName(),
+                                pf.getAiCreditCost()
+                        )).collect(Collectors.toList());
+
+                int dailyUsage = sub.getDailyAiUsage() != null ? sub.getDailyAiUsage() : 0;
+                int weeklyUsage = sub.getWeeklyAiUsage() != null ? sub.getWeeklyAiUsage() : 0;
+                Instant lastDaily = sub.getLastDailyReset();
+                Instant lastWeekly = sub.getLastWeeklyReset();
+
+                if (lastDaily == null || isResetNeeded(lastDaily, ResetType.DAILY, sub.getStartDate())) {
+                    dailyUsage = 0;
+                    lastDaily = Instant.now();
+                }
+                if (lastWeekly == null || isResetNeeded(lastWeekly, ResetType.WEEKLY, sub.getStartDate())) {
+                    weeklyUsage = 0;
+                    lastWeekly = Instant.now();
+                }
+
                 return new MySubscriptionResponse(
                         sub.getId(), sub.getPlan().getId(), sub.getPlan().getName(), sub.getPlan().getPrice(),
                         sub.getStatus(), sub.getStartDate(), sub.getEndDate(),
-
-                        user.getAiCreditBalance(), 0, usage);
+                        user.getAiCreditBalance(), 0,
+                        sub.getPlan().getDailyAiLimit(), sub.getPlan().getWeeklyAiLimit(),
+                        dailyUsage, weeklyUsage,
+                        lastDaily, lastWeekly,
+                        usage);
             }
         } else {
             CompanyMember member = companyService.getMemberEntityByUserId(userId);
@@ -94,22 +101,34 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
                 if (!subs.isEmpty()) {
                     CompanySubscription sub = subs.get(0);
                     List<SubFeatureUsageResponse> usage = sub.getPlan().getPlanFeatures().stream()
-                            .map(pf -> {
-                                List<SubFeatureRateUsageResponse> rateUsages = pf.getRateLimits().stream().map(rl -> {
-                                    int used = companyFeatureRateUsageRepository
-                                            .findByCompanyIdAndFeatureCodeAndResetType(company.getId(),
-                                                    pf.getFeature().getCode(), rl.getResetType())
-                                            .map(u -> u.getUsed()).orElse(0);
-                                    return new SubFeatureRateUsageResponse(rl.getResetType(), rl.getCapQuota(), used,
-                                            Instant.now());
-                                }).collect(Collectors.toList());
-                                return new SubFeatureUsageResponse(pf.getFeature().getCode(), pf.getFeature().getName(),
-                                        pf.getAiCreditCost(), 0, rateUsages);
-                            }).collect(Collectors.toList());
+                            .map(pf -> new SubFeatureUsageResponse(
+                                    pf.getFeature().getCode(),
+                                    pf.getFeature().getName(),
+                                    pf.getAiCreditCost()
+                            )).collect(Collectors.toList());
+
+                    int dailyUsage = sub.getDailyAiUsage() != null ? sub.getDailyAiUsage() : 0;
+                    int weeklyUsage = sub.getWeeklyAiUsage() != null ? sub.getWeeklyAiUsage() : 0;
+                    Instant lastDaily = sub.getLastDailyReset();
+                    Instant lastWeekly = sub.getLastWeeklyReset();
+
+                    if (lastDaily == null || isResetNeeded(lastDaily, ResetType.DAILY, sub.getStartDate())) {
+                        dailyUsage = 0;
+                        lastDaily = Instant.now();
+                    }
+                    if (lastWeekly == null || isResetNeeded(lastWeekly, ResetType.WEEKLY, sub.getStartDate())) {
+                        weeklyUsage = 0;
+                        lastWeekly = Instant.now();
+                    }
+
                     return new MySubscriptionResponse(
                             sub.getId(), sub.getPlan().getId(), sub.getPlan().getName(), sub.getPlan().getPrice(),
                             sub.getStatus(), sub.getStartDate(), sub.getEndDate(),
-                            company.getAiCreditBalance(), company.getJobPostBalance(), usage);
+                            company.getAiCreditBalance(), company.getJobPostBalance(),
+                            sub.getPlan().getDailyAiLimit(), sub.getPlan().getWeeklyAiLimit(),
+                            dailyUsage, weeklyUsage,
+                            lastDaily, lastWeekly,
+                            usage);
                 }
             }
         }
@@ -357,5 +376,17 @@ public class SubscriptionServiceImpl implements ISubscriptionService {
                 // log error
             }
         }
+    }
+
+    private boolean isResetNeeded(Instant lastResetDate, ResetType resetType, Instant subStartDate) {
+        if (lastResetDate == null) return true;
+        Instant now = Instant.now();
+        if (subStartDate.isAfter(lastResetDate)) {
+            return true;
+        }
+        return switch (resetType) {
+            case DAILY -> ChronoUnit.DAYS.between(lastResetDate, now) >= 1;
+            case WEEKLY -> ChronoUnit.DAYS.between(lastResetDate, now) >= 7;
+        };
     }
 }
