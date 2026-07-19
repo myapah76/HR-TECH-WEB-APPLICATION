@@ -84,6 +84,7 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
     experienceLevel: job.experienceLevel,
     deadline: job.deadline,
     requirements: job.requirements,
+    benefits: job.benefits,
     skills: job.skills.map((skill) =>
       skill.requiredLevel
         ? {

@@ -68,6 +68,7 @@ export interface CreateJobRequest {
   experienceLevel?: string // Payload can still accept string for flexibility
   deadline?: string
   requirements?: string
+  benefits?: string
   skills?: JobSkillRequest[]
 }
 
