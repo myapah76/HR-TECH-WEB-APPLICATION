@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 import {
   useGetAllCvs,
   useUploadCv,
@@ -9,79 +9,27 @@ import {
   useUpdateCvTitle,
   useGetCvDetail,
 } from '@/src/hooks/cv'
-import { useGetSavedJobs } from '@/src/hooks/job'
-import { usePremiumAiMatch } from '@/src/hooks/recommendation'
-import { useSubscriptionAccess } from '@/src/hooks/subscription'
-import { AiMatchHistoryResponse } from '@/src/types/recommendation'
 import { toast } from 'sonner'
-import { FeatureGate } from '@/src/components/common/FeatureGate'
-import { ScanSearch } from 'lucide-react'
 import { isCvAlreadyExistsError } from '@/src/utils'
 
 // Import components
 import { CvUploadCard } from '@/src/components/candidate/cv/CvUploadCard'
-import { CvJobMatchCard } from '@/src/components/candidate/cv/CvJobMatchCard'
 import { CvListCard } from '@/src/components/candidate/cv/CvListCard'
 import { CvDetailModal } from '@/src/components/candidate/cv/CvDetailModal'
 
 export default function CandidateCvPage() {
-  const { hasPaidPlan, isLoading: isSubLoading } = useSubscriptionAccess()
   const { data: cvs = [], isLoading: loadingCvs } = useGetAllCvs()
-  const { data: savedJobs = [], isLoading: loadingJobs } = useGetSavedJobs()
-
-  const loading = loadingCvs || loadingJobs
 
   // Mutations
   const uploadCvMutation = useUploadCv()
   const setPrimaryCvMutation = useSetPrimaryCv()
   const deleteCvMutation = useDeleteCv()
   const updateCvTitleMutation = useUpdateCvTitle()
-  const calculateScoreMutation = usePremiumAiMatch()
 
   // Upload state
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [cvTitle, setCvTitle] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // Matching state
-  const [selectedCvId, setSelectedCvId] = useState<string>(() => {
-    if (typeof window !== 'undefined') return sessionStorage.getItem('match_selectedCvId') || ''
-    return ''
-  })
-  const [selectedJobId, setSelectedJobId] = useState<string>(() => {
-    if (typeof window !== 'undefined') return sessionStorage.getItem('match_selectedJobId') || ''
-    return ''
-  })
-  const [matchScore, setMatchScore] = useState<AiMatchHistoryResponse | null>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem('match_matchScore')
-      if (saved) {
-        try {
-          return JSON.parse(saved)
-        } catch {
-          return null
-        }
-      }
-    }
-    return null
-  })
-
-  // Persist matching state
-  useEffect(() => {
-    sessionStorage.setItem('match_selectedCvId', selectedCvId)
-  }, [selectedCvId])
-
-  useEffect(() => {
-    sessionStorage.setItem('match_selectedJobId', selectedJobId)
-  }, [selectedJobId])
-
-  useEffect(() => {
-    if (matchScore) {
-      sessionStorage.setItem('match_matchScore', JSON.stringify(matchScore))
-    } else {
-      sessionStorage.removeItem('match_matchScore')
-    }
-  }, [matchScore])
 
   // Edit & View state
   const [editingCvId, setEditingCvId] = useState<string | null>(null)
@@ -155,57 +103,23 @@ export default function CandidateCvPage() {
     setViewCvId(id)
   }
 
-  const handleMatch = () => {
-    if (!selectedCvId || !selectedJobId) return
-    calculateScoreMutation.mutate(
-      { cvId: selectedCvId, jobId: selectedJobId },
-      {
-        onSuccess: (score) => setMatchScore(score),
-        onError: (error) => console.error('Failed to calculate match score:', error),
-      }
-    )
-  }
-
-  if (loading) {
+  if (loadingCvs) {
     return <div className="p-8 text-center text-slate-500 font-medium">Đang tải dữ liệu...</div>
   }
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="space-y-8">
-          {/* UPLOAD SECTION WITH SCANNING ANIMATION */}
-          <CvUploadCard
-            cvTitle={cvTitle}
-            setCvTitle={setCvTitle}
-            selectedFile={selectedFile}
-            fileInputRef={fileInputRef}
-            handleFileChange={handleFileChange}
-            handleUpload={handleUpload}
-            isPending={uploadCvMutation.isPending}
-          />
-
-          {/* AI MATCHING SECTION – Premium feature */}
-          {!isSubLoading && !hasPaidPlan ? (
-            <FeatureGate
-              featureName="Chấm điểm Phù hợp (AI Matching)"
-              featureDescription="So sánh CV của bạn với công việc đã lưu và nhận điểm phù hợp chi tiết từ AI. Tính năng độc quyền cho gói trả phí."
-              showPreview={false}
-              icon={<ScanSearch className="w-10 h-10 text-white" />}
-            />
-          ) : (
-            <CvJobMatchCard
-              cvs={cvs}
-              savedJobs={savedJobs}
-              selectedCvId={selectedCvId}
-              setSelectedCvId={setSelectedCvId}
-              selectedJobId={selectedJobId}
-              setSelectedJobId={setSelectedJobId}
-              handleMatch={handleMatch}
-              isPending={calculateScoreMutation.isPending}
-              matchScore={matchScore}
-            />
-          )}
-        </div>
+        {/* UPLOAD SECTION WITH SCANNING ANIMATION */}
+        <CvUploadCard
+          cvTitle={cvTitle}
+          setCvTitle={setCvTitle}
+          selectedFile={selectedFile}
+          fileInputRef={fileInputRef}
+          handleFileChange={handleFileChange}
+          handleUpload={handleUpload}
+          isPending={uploadCvMutation.isPending}
+        />
 
         {/* CV LIST SECTION */}
         <CvListCard

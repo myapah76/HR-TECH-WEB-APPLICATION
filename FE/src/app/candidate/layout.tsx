@@ -14,6 +14,7 @@ import {
     Send,
     Star,
     UserCircle,
+    Sparkles,
 } from 'lucide-react'
 
 const candidateNavItems = [
@@ -44,6 +45,11 @@ const candidateNavItems = [
     icon: Brain,
     label: 'AI Assistant',
     path: '/candidate/ai-advisor',
+  },
+  {
+    icon: Sparkles,
+    label: 'AI Matching',
+    path: '/candidate/ai-matching',
   },
   {
     icon: MessageSquare,
