@@ -79,17 +79,21 @@ export default function HRApplicationsPage() {
   const allApplications = useMemo<ApplicationSummaryResponse[]>(() => {
     const merged = allJobQueries.flatMap((q) => (q.data as ApplicationSummaryResponse[]) ?? [])
     const seen = new Set<string>()
-    return merged.filter((a) => {
+    const unique = merged.filter((a) => {
       if (seen.has(a.id)) return false
       seen.add(a.id)
       return true
     })
+    return unique.sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime())
   }, [allJobQueries])
 
   const isAllAppsLoading =
     selectedJobId === '' && jobs.length > 0 && allJobQueries.some((q) => q.isLoading)
 
-  const applications: ApplicationSummaryResponse[] = selectedJobId ? singleJobData : allApplications
+  const applications: ApplicationSummaryResponse[] = useMemo(() => {
+    const raw = selectedJobId ? singleJobData : allApplications
+    return [...raw].sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime())
+  }, [selectedJobId, singleJobData, allApplications])
   const isAppsLoading = selectedJobId ? isSingleJobLoading : isAllAppsLoading
 
   const updateStatus = useUpdateApplicationStatus()

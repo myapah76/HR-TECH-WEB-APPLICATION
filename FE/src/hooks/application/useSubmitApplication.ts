@@ -5,10 +5,14 @@ export const useSubmitApplication = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: submitApplication,
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['appliedJobs'] })
       queryClient.invalidateQueries({ queryKey: ['candidate-recent-activities'] })
       queryClient.invalidateQueries({ queryKey: ['candidate-summary'] })
+      if (variables?.jobId) {
+        queryClient.setQueryData(['hasApplied', variables.jobId], true)
+        queryClient.invalidateQueries({ queryKey: ['hasApplied', variables.jobId] })
+      }
     },
   })
 }
