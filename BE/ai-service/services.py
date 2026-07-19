@@ -252,6 +252,7 @@ def review_job_posting(
     title: str,
     description: str,
     requirements: str,
+    benefits: str,
     location: str,
     salary_min=None,
     salary_max=None,

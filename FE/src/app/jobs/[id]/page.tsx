@@ -117,15 +117,6 @@ export default function JobDetailPage() {
     toast.success('Đã sao chép liên kết công việc vào khay nhớ tạm!')
   }
 
-  // Fallback Mock Benefits (if job doesn't provide them)
-  const mockBenefits = [
-    'Mức lương cạnh tranh kèm theo lương tháng 13 & thưởng hiệu suất cuối năm.',
-    'Gói bảo hiểm sức khỏe cao cấp dành riêng cho nhân viên và người thân.',
-    'Trang thiết bị làm việc hiện đại (Macbook Pro/Dell XPS + Màn hình phụ).',
-    'Thời gian làm việc linh hoạt (Hybrid: 2 ngày WFH/tuần), nghỉ phép 15 ngày/năm.',
-    'Lộ trình đào tạo rõ ràng, hỗ trợ 100% chi phí thi các chứng chỉ quốc tế.',
-  ]
-
   if (loadingJob) {
     return <Loading />
   }
@@ -162,9 +153,7 @@ export default function JobDetailPage() {
     ? job.description.split('\n').filter((line) => line.trim())
     : []
 
-  const benefitsList = job.benefits
-    ? job.benefits.split('\n').filter((line) => line.trim())
-    : mockBenefits
+  const benefitsList = job.benefits ? job.benefits.split('\n').filter((line) => line.trim()) : []
 
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans">

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useMemo } from 'react'
+import Image from 'next/image'
 import { Users, CheckCircle2, User } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/src/components/ui/card'
 import { Button } from '@/src/components/ui/button'
@@ -91,9 +92,12 @@ export function CandidateMatchResultList({
                     {/* Avatar */}
                     <div className="flex-shrink-0">
                       {candidate.avatarUrl ? (
-                        <img
+                        <Image
                           src={candidate.avatarUrl}
-                          alt={candidate.candidateName}
+                          alt={candidate.candidateName || 'Candidate Avatar'}
+                          width={48}
+                          height={48}
+                          unoptimized
                           className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
                         />
                       ) : (

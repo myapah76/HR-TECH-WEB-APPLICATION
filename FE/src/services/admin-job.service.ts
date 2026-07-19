@@ -14,7 +14,9 @@ export const adminApproveAppeal = async (id: string): Promise<Job> => {
   return response.data.data
 }
 
-export const adminRejectAppeal = async (id: string): Promise<Job> => {
-  const response = await api.put<ApiResponse<Job>>(`/admin/jobs/${id}/reject-appeal`)
+export const adminRejectAppeal = async (id: string, reason?: string): Promise<Job> => {
+  const response = await api.put<ApiResponse<Job>>(`/admin/jobs/${id}/reject-appeal`, undefined, {
+    params: reason ? { reason } : undefined,
+  })
   return response.data.data
 }

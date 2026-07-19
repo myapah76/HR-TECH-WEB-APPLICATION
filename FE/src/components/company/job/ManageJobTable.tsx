@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState, useEffect, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import { CircleX, Copy, Eye, MapPin, MoreHorizontal, Pencil, Send } from 'lucide-react'
+import { CircleX, Copy, Eye, MapPin, MoreHorizontal, Pencil, Send, ShieldAlert } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -21,9 +21,9 @@ import {
   JOB_STATUS_LABELS,
   JOB_STATUS_STYLES,
 } from '@/src/enums/job.enum'
-import JobPreviewModal from './JobPreviewModal'
-import JobRejectModal from './JobRejectModal'
-import JobConfirmModal from './JobConfirmModal'
+import JobPreviewModal from '@/components/common/JobPreviewModal'
+import JobRejectModal from '@/components/common/JobRejectModal'
+import ConfirmModal from '@/components/common/ConfirmModal'
 
 interface ManageJobTableProps {
   jobs: Job[]
@@ -31,7 +31,11 @@ interface ManageJobTableProps {
   companyRole?: CompanyMemberResponse['role']
 }
 
+<<<<<<< HEAD
 type ConfirmActionType = 'approve' | 'duplicate' | 'delete' | 'close' | 'submit'
+=======
+type ConfirmActionType = 'approve' | 'duplicate' | 'delete' | 'close' | 'appeal' | 'submit'
+>>>>>>> 9ad503856fb69398489c3c11ce28bd537e07f207
 
 type ConfirmActionState = {
   type: ConfirmActionType
@@ -215,73 +219,53 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {jobs.map((job) => {
-                const isJobCreator = job.createdById?.toLowerCase() === currentUserId?.toLowerCase()
-                const isManager = companyRole === 'HR_MANAGER'
-                const isHr = companyRole === 'HR'
-                const canSubmit =
-                  job.status === JobStatus.DRAFT && (isJobCreator || isHr) && !isManager
-                const canDirectApprove = job.status === JobStatus.DRAFT && isJobCreator && isManager
-                const canDelete = job.status === JobStatus.DRAFT && (isJobCreator || isManager)
-                const canEdit =
-                  job.status === JobStatus.DRAFT ||
-                  job.status === JobStatus.REJECTED ||
-                  job.status === JobStatus.FAILED_AI ||
-                  job.status === JobStatus.REJECTED_BY_ADMIN
-                const canClose = job.status === JobStatus.APPROVED && (isJobCreator || isManager)
-                const canReview = job.status === JobStatus.PENDING_APPROVAL && isManager
-                const canOpenPublic =
-                  job.status === JobStatus.APPROVED || job.status === JobStatus.OPEN
-                const viewTitle = canOpenPublic ? 'Xem tin công khai' : 'Xem nội bộ'
-
-                return (
-                  <tr key={job.id} className="transition-colors hover:bg-slate-50/70">
-                    <td className="px-6 py-5">
-                      <div className="max-w-80">
-                        <p className="font-bold text-slate-900">{job.title}</p>
-                        <p className="mt-1 truncate text-sm text-slate-500">
-                          {job.companyName || 'Chưa có tên công ty'}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-5">
-                      <span className="flex items-center gap-1.5 text-sm font-medium text-slate-600">
-                        <MapPin className="h-4 w-4 shrink-0 text-slate-400" />
-                        {job.location || 'Chưa cập nhật'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-5 text-sm font-semibold text-slate-600">
-                      {JOB_TYPE_LABELS[job.jobType] || job.jobType || 'Chưa cập nhật'}
-                    </td>
-                    <td className="px-4 py-5">
-                      <span
-                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${
-                          JOB_STATUS_STYLES[job.status] || JOB_STATUS_STYLES[JobStatus.CLOSED]
-                        }`}
+              {jobs.map((job) => (
+                <tr key={job.id} className="transition-colors hover:bg-slate-50/70">
+                  <td className="px-6 py-5">
+                    <div className="max-w-80">
+                      <p className="font-bold text-slate-900">{job.title}</p>
+                      <p className="mt-1 truncate text-sm text-slate-500">
+                        {job.companyName || 'Chưa có tên công ty'}
+                      </p>
+                    </div>
+                  </td>
+                  <td className="px-4 py-5">
+                    <span className="flex items-center gap-1.5 text-sm font-medium text-slate-600">
+                      <MapPin className="h-4 w-4 shrink-0 text-slate-400" />
+                      {job.location || 'Chưa cập nhật'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-5 text-sm font-semibold text-slate-600">
+                    {JOB_TYPE_LABELS[job.jobType] || job.jobType || 'Chưa cập nhật'}
+                  </td>
+                  <td className="px-4 py-5">
+                    <span
+                      className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${
+                        JOB_STATUS_STYLES[job.status] || JOB_STATUS_STYLES[JobStatus.CLOSED]
+                      }`}
+                    >
+                      {JOB_STATUS_LABELS[job.status] || job.status || 'Chưa xác định'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-5 text-sm font-medium text-slate-600">
+                    {job.createdAt ? formatDate(job.createdAt) : 'Chưa cập nhật'}
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="relative flex justify-end">
+                      <button
+                        type="button"
+                        onClick={(event) => toggleMenu(job.id, event)}
+                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-900"
+                        aria-expanded={openMenuJobId === job.id}
+                        aria-haspopup="menu"
                       >
-                        {JOB_STATUS_LABELS[job.status] || job.status || 'Chưa xác định'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-5 text-sm font-medium text-slate-600">
-                      {job.createdAt ? formatDate(job.createdAt) : 'Chưa cập nhật'}
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="relative flex justify-end">
-                        <button
-                          type="button"
-                          onClick={(event) => toggleMenu(job.id, event)}
-                          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-900"
-                          aria-expanded={openMenuJobId === job.id}
-                          aria-haspopup="menu"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                          Thao tác
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
+                        <MoreHorizontal className="h-4 w-4" />
+                        Thao tác
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -303,28 +287,35 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
       )}
 
       {jobToClose && (
-        <JobConfirmModal
+        <ConfirmModal
+          isOpen={true}
           title="Đóng tin tuyển dụng?"
-          description={`Tin “${jobToClose.title}” sẽ chuyển sang trạng thái CLOSED và ngừng nhận hồ sơ.`}
-          confirmLabel="Xác nhận đóng"
-          confirmTone="rose"
-          warningText={
+          description={`Tin “${jobToClose.title}” sẽ chuyển sang trạng thái CLOSED và ngừng nhận hồ sơ.${
             deadlineHasNotEnded && jobToClose.deadline
-              ? `Cảnh báo: hạn tuyển dụng chưa kết thúc. Hạn hiện tại là ${formatDate(jobToClose.deadline)}.`
-              : undefined
-          }
+              ? ` Cảnh báo: hạn tuyển dụng chưa kết thúc. Hạn hiện tại là ${formatDate(jobToClose.deadline)}.`
+              : ''
+          }`}
+          confirmText="Xác nhận đóng"
+          variant="danger"
           onClose={() => setJobToClose(null)}
           onConfirm={closeJob}
-          isPending={statusMutation.isPending}
+          isLoading={statusMutation.isPending}
         />
       )}
 
       {confirmAction && (
-        <JobConfirmModal
+        <ConfirmModal
+          isOpen={true}
           title={confirmAction.title}
           description={confirmAction.description}
-          confirmLabel={confirmAction.confirmLabel}
-          confirmTone={confirmAction.confirmTone}
+          confirmText={confirmAction.confirmLabel}
+          variant={
+            confirmAction.confirmTone === 'rose'
+              ? 'danger'
+              : confirmAction.confirmTone === 'emerald'
+                ? 'success'
+                : 'info'
+          }
           onClose={closeConfirmAction}
           onConfirm={() => {
             const handler = confirmAction.onConfirm
@@ -342,7 +333,8 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
         const isManager = companyRole === 'HR_MANAGER'
         const isHr = companyRole === 'HR'
 
-        const canSubmit = activeJob.status === JobStatus.DRAFT && (isJobCreator || isHr) && !isManager
+        const canSubmit =
+          activeJob.status === JobStatus.DRAFT && (isJobCreator || isHr) && !isManager
         const canDirectApprove = activeJob.status === JobStatus.DRAFT && isJobCreator && isManager
         const canDelete = activeJob.status === JobStatus.DRAFT && (isJobCreator || isManager)
         const canEdit =
@@ -352,6 +344,7 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
           activeJob.status === JobStatus.REJECTED_BY_ADMIN
         const canClose = activeJob.status === JobStatus.APPROVED && (isJobCreator || isManager)
         const canReview = activeJob.status === JobStatus.PENDING_APPROVAL && isManager
+        const canAppeal = activeJob.status === JobStatus.FAILED_AI && isManager
         const canOpenPublic =
           activeJob.status === JobStatus.APPROVED || activeJob.status === JobStatus.OPEN
         const viewTitle = canOpenPublic ? 'Xem tin công khai' : 'Xem nội bộ'
@@ -411,7 +404,9 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
                     aria-label={`Chỉnh sửa ${activeJob.title}`}
                     className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-amber-50 hover:text-amber-700"
                     title={
-                      activeJob.status === JobStatus.DRAFT ? 'Chỉnh sửa tin' : 'Chỉnh sửa và gửi lại'
+                      activeJob.status === JobStatus.DRAFT
+                        ? 'Chỉnh sửa tin'
+                        : 'Chỉnh sửa và gửi lại'
                     }
                     onClick={closeMenu}
                   >
@@ -462,6 +457,42 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
                   >
                     <Send className="h-4 w-4" />
                     Nộp tin
+                  </button>
+                )}
+
+                {canAppeal && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeMenu()
+                      openConfirmAction({
+                        type: 'appeal',
+                        title: 'Khiếu nại kiểm duyệt AI?',
+                        description:
+                          'Gửi yêu cầu khiếu nại lên Admin Hệ thống để phê duyệt thủ công tin tuyển dụng này. Bạn có chắc chắn muốn gửi khiếu nại không?',
+                        confirmLabel: 'Gửi khiếu nại',
+                        confirmTone: 'blue',
+                        onConfirm: () =>
+                          statusMutation.mutate(
+                            {
+                              jobId: activeJob.id,
+                              action: 'appeal',
+                              companyId: activeJob.companyId,
+                            },
+                            {
+                              onSuccess: () =>
+                                toast.success(
+                                  'Đã gửi khiếu nại lên Admin Hệ thống thành công! Trạng thái tin đã chuyển thành "Đang khiếu nại".'
+                                ),
+                            }
+                          ),
+                      })
+                    }}
+                    disabled={statusMutation.isPending}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-indigo-700 transition-colors hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <ShieldAlert className="h-4 w-4" />
+                    Khiếu nại AI
                   </button>
                 )}
 

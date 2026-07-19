@@ -12,7 +12,7 @@ import { Job } from '@/src/types/job'
 import { Skill } from '@/src/types/skill'
 import RequiredSkillInput, { RequiredSkill } from './RequiredSkillInput'
 import SkillTagInput from './SkillTagInput'
-import RejectionReasonDisplay from './RejectionReasonDisplay'
+import RejectionReasonDisplay from '@/components/common/RejectionReasonDisplay'
 import { formatDateForInput, formatVND, parseVND } from '@/src/utils'
 import {
   JobType,
@@ -103,19 +103,18 @@ export default function JobForm({
           <Briefcase className="w-6 h-6 text-emerald-600 dark:text-emerald-500" />
           {title}
         </h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">
-          {subtitle}
-        </p>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">{subtitle}</p>
       </div>
 
-      {job && (job.status === JobStatus.REJECTED ||
-        job.status === JobStatus.FAILED_AI ||
-        job.status === JobStatus.REJECTED_BY_ADMIN) &&
+      {job &&
+        (job.status === JobStatus.REJECTED ||
+          job.status === JobStatus.FAILED_AI ||
+          job.status === JobStatus.REJECTED_BY_ADMIN) &&
         job.rejectionReason && (
-        <div className="mb-6">
-          <RejectionReasonDisplay reason={job.rejectionReason} />
-        </div>
-      )}
+          <div className="mb-6">
+            <RejectionReasonDisplay reason={job.rejectionReason} />
+          </div>
+        )}
 
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8">
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">

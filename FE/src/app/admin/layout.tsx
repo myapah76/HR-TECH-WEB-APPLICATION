@@ -3,14 +3,22 @@
 import Sidebar from '@/src/components/layout/Sidebar'
 import { RoleUser } from '@/src/enums/role.enum'
 import { useAuthStore } from '@/src/stores/auth.store'
-import { Briefcase, Building2, CreditCard, GitBranch, LayoutDashboard, Settings, Users } from 'lucide-react'
+import {
+  Briefcase,
+  Building2,
+  CreditCard,
+  GitBranch,
+  LayoutDashboard,
+  Settings,
+  Users,
+} from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
 const adminNavItems = [
   { icon: LayoutDashboard, label: 'Bảng điều khiển', path: '/admin' },
   { icon: Users, label: 'Quản lý người dùng', path: '/admin/users' },
-  { icon: Briefcase, label: 'Quản lý khiếu nại', path: '/admin/jobs' },
+  { icon: Briefcase, label: 'Quản lý khiếu nại', path: '/admin/reports' },
   { icon: Building2, label: 'Quản lý công ty', path: '/admin/companies' },
   { icon: GitBranch, label: 'Quản lý kỹ năng', path: '/admin/skills' },
   { icon: CreditCard, label: 'Quản lý gói dịch vụ', path: '/admin/subscriptions' },
@@ -32,7 +40,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [user, isInitialized, router])
 
-  if (!isInitialized || !user || user.requirePasswordChange || user.roleResponse?.name !== RoleUser.ADMIN_SYSTEM) {
+  if (
+    !isInitialized ||
+    !user ||
+    user.requirePasswordChange ||
+    user.roleResponse?.name !== RoleUser.ADMIN_SYSTEM
+  ) {
     return null
   }
 

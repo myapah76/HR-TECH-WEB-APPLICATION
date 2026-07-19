@@ -164,32 +164,22 @@ public class JobServiceImpl implements IJobService {
                         logStatusChange(job, previousStatus, JobStatus.FAILED_AI, JobAuditAction.AI_OFFLINE_FAIL, null,
                                 errorMessage);
 
-                        // Notify creator
+                        // Notify recipients
                         try {
+                            List<UUID> recipientIds = new ArrayList<>();
+                            recipientIds.add(job.getCreatedBy().getId());
+                            if (triggerUserId != null && !job.getCreatedBy().getId().equals(triggerUserId)) {
+                                recipientIds.add(triggerUserId);
+                            }
                             notificationService.createAndSendNotification(
-                                    job.getCreatedBy().getId(),
+                                    recipientIds,
                                     "Kiểm duyệt AI thất bại",
                                     "Tin tuyển dụng '" + job.getTitle()
                                             + "' kiểm duyệt AI thất bại do hệ thống bận. Vui lòng gửi khiếu nại.",
                                     NotificationType.JOB_STATUS_UPDATED,
                                     job.getId().toString());
                         } catch (Exception e) {
-                            log.error("Failed to send AI offline notification to creator for job " + job.getId(), e);
-                        }
-
-                        // Notify triggerer (manager) if different from creator
-                        if (!job.getCreatedBy().getId().equals(triggerUserId)) {
-                            try {
-                                notificationService.createAndSendNotification(
-                                        triggerUserId,
-                                        "Kiểm duyệt AI thất bại",
-                                        "Tin tuyển dụng '" + job.getTitle()
-                                                + "' bạn phê duyệt đã gặp lỗi kiểm duyệt AI do hệ thống bận.",
-                                        NotificationType.JOB_STATUS_UPDATED,
-                                        job.getId().toString());
-                            } catch (Exception e) {
-                                log.error("Failed to send AI offline notification to manager", e);
-                            }
+                            log.error("Failed to send AI offline notification for job " + job.getId(), e);
                         }
                         return;
                     }
@@ -215,30 +205,21 @@ public class JobServiceImpl implements IJobService {
 
                         logStatusChange(job, previousStatus, JobStatus.FAILED_AI, JobAuditAction.AI_REJECT, null, reason);
 
-                        // Notify creator
+                        // Notify recipients
                         try {
+                            List<UUID> recipientIds = new ArrayList<>();
+                            recipientIds.add(job.getCreatedBy().getId());
+                            if (triggerUserId != null && !job.getCreatedBy().getId().equals(triggerUserId)) {
+                                recipientIds.add(triggerUserId);
+                            }
                             notificationService.createAndSendNotification(
-                                    job.getCreatedBy().getId(),
+                                    recipientIds,
                                     "Tin tuyển dụng bị AI từ chối",
                                     "Tin tuyển dụng '" + job.getTitle() + "' không vượt qua kiểm duyệt AI.",
                                     NotificationType.JOB_STATUS_UPDATED,
                                     job.getId().toString());
                         } catch (Exception e) {
-                            log.error("Failed to send AI reject notification to creator for job " + job.getId(), e);
-                        }
-
-                        // Notify triggerer (manager) if different from creator
-                        if (!job.getCreatedBy().getId().equals(triggerUserId)) {
-                            try {
-                                notificationService.createAndSendNotification(
-                                        triggerUserId,
-                                        "Tin tuyển dụng bị AI từ chối",
-                                        "Tin tuyển dụng '" + job.getTitle() + "' bạn phê duyệt không vượt qua kiểm duyệt AI.",
-                                        NotificationType.JOB_STATUS_UPDATED,
-                                        job.getId().toString());
-                            } catch (Exception e) {
-                                log.error("Failed to send AI reject notification to manager", e);
-                            }
+                            log.error("Failed to send AI reject notification for job " + job.getId(), e);
                         }
                     } else {
                         creditService.deductCompanyFeatureQuota(job.getCreatedBy().getId(), "JOB_POSTING", 1);
@@ -254,30 +235,21 @@ public class JobServiceImpl implements IJobService {
                         eventPublisher.publishEvent(new JobExtractionRequestedEvent(savedJob.getId()));
                         log.info("AI check PASSED for job {}", job.getId());
 
-                        // Notify creator
+                        // Notify recipients
                         try {
+                            List<UUID> recipientIds = new ArrayList<>();
+                            recipientIds.add(job.getCreatedBy().getId());
+                            if (triggerUserId != null && !job.getCreatedBy().getId().equals(triggerUserId)) {
+                                recipientIds.add(triggerUserId);
+                            }
                             notificationService.createAndSendNotification(
-                                    job.getCreatedBy().getId(),
+                                    recipientIds,
                                     "Tin tuyển dụng đã được duyệt",
                                     "Tin tuyển dụng '" + job.getTitle() + "' đã vượt qua kiểm duyệt AI và hiển thị chính thức.",
                                     NotificationType.JOB_STATUS_UPDATED,
                                     job.getId().toString());
                         } catch (Exception e) {
-                            log.error("Failed to send AI pass notification to creator for job " + job.getId(), e);
-                        }
-
-                        // Notify triggerer (manager) if different from creator
-                        if (!job.getCreatedBy().getId().equals(triggerUserId)) {
-                            try {
-                                notificationService.createAndSendNotification(
-                                        triggerUserId,
-                                        "Tin tuyển dụng đã được duyệt",
-                                        "Tin tuyển dụng '" + job.getTitle() + "' bạn phê duyệt đã vượt qua kiểm duyệt AI thành công.",
-                                        NotificationType.JOB_STATUS_UPDATED,
-                                        job.getId().toString());
-                            } catch (Exception e) {
-                                log.error("Failed to send AI pass notification to manager", e);
-                            }
+                            log.error("Failed to send AI pass notification for job " + job.getId(), e);
                         }
                     }
                 });
@@ -523,22 +495,44 @@ public class JobServiceImpl implements IJobService {
     public JobResponse approveAppeal(UUID jobId) {
         User currentUser = authUtils.getCurrentUser();
         Job job = getJobEntityById(jobId);
+        // Chỉ cho phép phê duyệt khiếu nại nếu trạng thái hiện tại là APPEALED
         if (job.getStatus() != JobStatus.APPEALED) {
             throw new AppException(ErrorCode.JOB_INVALID_STATUS,
                     "Only APPEALED jobs can be resolved. Current status: " + job.getStatus());
         }
+        // Chuyển trạng thái sang APPROVED và lưu lại
         JobStatus previousStatus = job.getStatus();
         job.setStatus(JobStatus.APPROVED);
         Job savedJob = jobRepository.save(job);
+        // Ghi log hành động phê duyệt khiếu nại
         logStatusChange(savedJob, previousStatus, JobStatus.APPROVED, JobAuditAction.ADMIN_APPROVE_APPEAL, currentUser,
                 "Admin phê duyệt khiếu nại. Tin tuyển dụng chính thức hiển thị.");
+        // Trừ 1 credit JOB_POSTING của công ty
         creditService.deductCompanyFeatureQuota(job.getCreatedBy().getId(), "JOB_POSTING", 1);
         eventPublisher.publishEvent(new JobExtractionRequestedEvent(savedJob.getId()));
+        // Gửi thông báo cho người dùng đã gửi khiếu nại (nếu có) hoặc người tạo tin tuyển dụng
+        UUID targetUserId = job.getCreatedBy().getId();
+        Optional<JobAuditLog> appealLog = jobAuditLogRepository
+                .findFirstByJobIdAndActionOrderByCreatedAtDesc(jobId, JobAuditAction.SUBMIT_APPEAL);
+        if (appealLog.isPresent() && appealLog.get().getActor() != null) {
+            targetUserId = appealLog.get().getActor().getId();
+        }
+        try {
+            notificationService.createAndSendNotification(
+                    targetUserId,
+                    "Khiếu nại tin tuyển dụng được chấp thuận",
+                    "Khiếu nại của bạn cho tin tuyển dụng '" + savedJob.getTitle() + "' đã được Admin chấp thuận.",
+                    NotificationType.JOB_STATUS_UPDATED,
+                    savedJob.getId().toString());
+        } catch (Exception e) {
+            log.error("Failed to send admin reject appeal notification for job " + savedJob.getId(), e);
+        }
+
         return toResponseWithReason(savedJob);
     }
 
     @Override
-    public JobResponse rejectAppeal(UUID jobId) {
+    public JobResponse rejectAppeal(UUID jobId, String reason) {
         User currentUser = authUtils.getCurrentUser();
         Job job = getJobEntityById(jobId);
         if (job.getStatus() != JobStatus.APPEALED) {
@@ -548,13 +542,23 @@ public class JobServiceImpl implements IJobService {
         JobStatus previousStatus = job.getStatus();
         job.setStatus(JobStatus.REJECTED_BY_ADMIN);
         Job savedJob = jobRepository.save(job);
+        
+        String notes = (reason != null && !reason.trim().isEmpty()) ? reason 
+                : "Admin bác bỏ khiếu nại. Tin tuyển dụng được trả về để chỉnh sửa.";
+        
         logStatusChange(savedJob, previousStatus, JobStatus.REJECTED_BY_ADMIN, JobAuditAction.ADMIN_REJECT_APPEAL,
-                currentUser,
-                "Admin bác bỏ khiếu nại. Tin tuyển dụng được trả về để chỉnh sửa.");
+                currentUser, notes);
+
+        UUID targetUserId = job.getCreatedBy().getId();
+        Optional<JobAuditLog> appealLog = jobAuditLogRepository
+                .findFirstByJobIdAndActionOrderByCreatedAtDesc(jobId, JobAuditAction.SUBMIT_APPEAL);
+        if (appealLog.isPresent() && appealLog.get().getActor() != null) {
+            targetUserId = appealLog.get().getActor().getId();
+        }
 
         try {
             notificationService.createAndSendNotification(
-                    savedJob.getCreatedBy().getId(),
+                    targetUserId,
                     "Khiếu nại tin tuyển dụng bị từ chối",
                     "Khiếu nại của bạn cho tin tuyển dụng '" + savedJob.getTitle() + "' đã bị Admin bác bỏ.",
                     NotificationType.JOB_STATUS_UPDATED,
@@ -798,6 +802,11 @@ public class JobServiceImpl implements IJobService {
                 || job.getStatus() == JobStatus.FAILED_AI) {
             return jobAuditLogRepository
                     .findFirstByJobIdAndToStatusOrderByCreatedAtDesc(job.getId(), job.getStatus().name())
+                    .map(auditLog -> auditLog.getReasonOrNotes())
+                    .orElse(null);
+        } else if (job.getStatus() == JobStatus.APPEALED) {
+            return jobAuditLogRepository
+                    .findFirstByJobIdAndToStatusOrderByCreatedAtDesc(job.getId(), JobStatus.FAILED_AI.name())
                     .map(auditLog -> auditLog.getReasonOrNotes())
                     .orElse(null);
         }

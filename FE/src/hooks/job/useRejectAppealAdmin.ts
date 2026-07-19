@@ -4,7 +4,8 @@ import { adminRejectAppeal } from '@/src/services/admin-job.service'
 export const useRejectAppealAdmin = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => adminRejectAppeal(id),
+    mutationFn: ({ jobId, reason }: { jobId: string; reason?: string }) =>
+      adminRejectAppeal(jobId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-jobs'] })
     },

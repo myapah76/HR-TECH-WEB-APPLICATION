@@ -226,6 +226,23 @@ public class NotificationServiceImpl implements INotificationService {
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void createAndSendNotification(
+            List<UUID> targetUserIds, String title, String content, NotificationType type, String referenceId
+    ) {
+        if (targetUserIds == null || targetUserIds.isEmpty()) {
+            return;
+        }
+        for (UUID targetUserId : targetUserIds) {
+            try {
+                createAndSendNotification(targetUserId, title, content, type, referenceId);
+            } catch (Exception e) {
+                log.error("Failed to send notification to user " + targetUserId + ": " + e.getMessage(), e);
+            }
+        }
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<NotificationResponse> getNotificationsForUser(UUID userId) {
         return notificationRepository.findAllByUserIdOrderByCreatedAtDesc(userId).stream()

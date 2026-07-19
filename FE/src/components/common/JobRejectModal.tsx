@@ -12,6 +12,10 @@ interface JobRejectModalProps {
   onClose: () => void
   onConfirm: () => void
   isPending: boolean
+  title?: string
+  description?: string
+  confirmLabel?: string
+  placeholder?: string
 }
 
 export default function JobRejectModal({
@@ -23,7 +27,15 @@ export default function JobRejectModal({
   onClose,
   onConfirm,
   isPending,
+  title = 'Từ chối tin tuyển dụng?',
+  description,
+  confirmLabel = 'Xác nhận từ chối',
+  placeholder = 'Ví dụ: Thiếu thông tin về phạm vi công việc, mô tả chưa rõ, hoặc chưa đúng chính sách công ty...',
 }: JobRejectModalProps) {
+  const displayDescription =
+    description ||
+    `Tin “${job.title}” sẽ chuyển sang trạng thái REJECTED và HR sẽ nhìn thấy lý do này.`
+
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl">
@@ -32,9 +44,9 @@ export default function JobRejectModal({
             <CircleX className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Từ chối tin tuyển dụng?</h2>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{title}</h2>
             <p className="mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-              Tin “{job.title}” sẽ chuyển sang trạng thái REJECTED và HR sẽ nhìn thấy lý do này.
+              {displayDescription}
             </p>
           </div>
         </div>
@@ -54,7 +66,7 @@ export default function JobRejectModal({
               if (rejectReasonError) setRejectReasonError('')
             }}
             rows={5}
-            placeholder="Ví dụ: Thiếu thông tin về phạm vi công việc, mô tả chưa rõ, hoặc chưa đúng chính sách công ty..."
+            placeholder={placeholder}
             className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-3 text-sm outline-none transition focus:border-rose-500 focus:ring-2 focus:ring-rose-500/15 text-slate-800 dark:text-slate-100"
           />
           {rejectReasonError && (
@@ -78,7 +90,7 @@ export default function JobRejectModal({
             className="inline-flex items-center gap-2 rounded-xl bg-rose-600 hover:bg-rose-700 px-4 py-2.5 text-sm font-bold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            Xác nhận từ chối
+            {confirmLabel}
           </button>
         </div>
       </div>

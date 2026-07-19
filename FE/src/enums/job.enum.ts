@@ -64,3 +64,22 @@ export const EXPERIENCE_LEVEL_LABELS: Record<ExperienceLevel, string> = {
 }
 
 export type JobStatusAction = 'submit' | 'approve' | 'reject' | 'close' | 'appeal'
+
+export const getStatusBadgeVariant = (status: JobStatus): 'success' | 'info' | 'warning' | 'danger' | 'outline' => {
+  switch (status) {
+    case JobStatus.APPROVED:
+    case JobStatus.OPEN:
+      return 'success'
+    case JobStatus.PENDING_APPROVAL:
+      return 'info'
+    case JobStatus.DRAFT:
+      return 'warning'
+    case JobStatus.REJECTED:
+    case JobStatus.FAILED_AI:
+    case JobStatus.REJECTED_BY_ADMIN:
+      return 'danger'
+    case JobStatus.CLOSED:
+    default:
+      return 'outline'
+  }
+}

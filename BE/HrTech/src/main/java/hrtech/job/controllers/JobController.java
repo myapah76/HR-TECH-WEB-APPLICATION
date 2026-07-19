@@ -167,7 +167,9 @@ public class JobController {
 
     @PutMapping("/admin/jobs/{id}/reject-appeal")
     @PreAuthorize("hasRole('ADMIN_SYSTEM')")
-    public ResponseEntity<ApiResponse<JobResponse>> rejectAppeal(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(jobService.rejectAppeal(id)));
+    public ResponseEntity<ApiResponse<JobResponse>> rejectAppeal(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String reason) {
+        return ResponseEntity.ok(ApiResponse.success(jobService.rejectAppeal(id, reason)));
     }
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useMemo, useEffect } from 'react'
+import Image from 'next/image'
 import { X, User, ExternalLink, CheckCircle2, XCircle, FileText } from 'lucide-react'
 import { CandidateRecommendationResponse } from '@/src/types/recommendation'
 import { CandidateMatchGrade } from '@/src/enums/recommendation.enum'
@@ -100,9 +101,12 @@ export function CandidateDetailModal({ candidate, onClose }: CandidateDetailModa
             {/* Avatar + name */}
             <div className="flex flex-col items-center text-center gap-3">
               {candidate.avatarUrl ? (
-                <img
+                <Image
                   src={candidate.avatarUrl}
-                  alt={candidate.candidateName}
+                  alt={candidate.candidateName || 'Candidate Avatar'}
+                  width={80}
+                  height={80}
+                  unoptimized
                   className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
                 />
               ) : (
