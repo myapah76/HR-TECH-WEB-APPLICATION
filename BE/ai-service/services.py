@@ -259,7 +259,6 @@ def review_job_posting(
     job_type: str = "",
     experience_level: str = "",
     position: str = "",
-    benefits: str = "",
 ) -> dict:
 
     prompt_text = JOB_REVIEW_PROMPT.format(
