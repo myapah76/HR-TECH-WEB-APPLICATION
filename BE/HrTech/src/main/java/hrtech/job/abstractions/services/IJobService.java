@@ -38,7 +38,7 @@ public interface IJobService {
 
     JobResponse approveAppeal(UUID jobId);
 
-    JobResponse rejectAppeal(UUID jobId);
+    JobResponse rejectAppeal(UUID jobId, String reason);
 
     JobResponse getJobDetails(UUID jobId);
 

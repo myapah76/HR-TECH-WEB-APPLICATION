@@ -252,6 +252,7 @@ def review_job_posting(
     title: str,
     description: str,
     requirements: str,
+    benefits: str,
     location: str,
     salary_min=None,
     salary_max=None,
@@ -270,6 +271,7 @@ def review_job_posting(
         salary_max=salary_max if salary_max is not None else "Thỏa thuận",
         description=description or "",
         requirements=requirements or "",
+        benefits=benefits or "",
     )
 
     response = invoke_llm_with_retry([HumanMessage(content=prompt_text)])

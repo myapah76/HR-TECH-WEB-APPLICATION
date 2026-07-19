@@ -106,6 +106,7 @@ class ReviewJobPostingRequest(BaseModel):
     title: str
     description: str
     requirements: Optional[str] = ""
+    benefits: Optional[str] = ""
     location: Optional[str] = ""
     salary_min: Optional[float] = None
     salary_max: Optional[float] = None

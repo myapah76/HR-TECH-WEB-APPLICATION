@@ -17,6 +17,9 @@ public interface INotificationService {
     void createAndSendNotification(
             UUID targetUserId, String title, String content, NotificationType type, String referenceId
     );
+    void createAndSendNotification(
+            List<UUID> targetUserIds, String title, String content, NotificationType type, String referenceId
+    );
     List<NotificationResponse> getNotificationsForUser(UUID userId);
     void markAsRead(UUID notificationId);
     long getUnreadCount(UUID userId);

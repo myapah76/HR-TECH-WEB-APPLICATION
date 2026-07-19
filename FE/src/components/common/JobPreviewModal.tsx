@@ -23,7 +23,7 @@ export default function JobPreviewModal({ job, onClose }: JobPreviewModalProps) 
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-800 px-6 py-5">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">
-              Xem nội bộ
+              Xem Chi Tiết Tin Tuyển Dụng
             </p>
             <h2 className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-100">
               {job.title}
@@ -138,38 +138,29 @@ export default function JobPreviewModal({ job, onClose }: JobPreviewModalProps) 
 
               {(job.status === JobStatus.REJECTED ||
                 job.status === JobStatus.FAILED_AI ||
-                job.status === JobStatus.REJECTED_BY_ADMIN) &&
-                job.rejectionReason && (
-                  <RejectionReasonDisplay reason={job.rejectionReason} />
-                )}
+                job.status === JobStatus.REJECTED_BY_ADMIN ||
+                job.status === JobStatus.APPEALED) &&
+                job.rejectionReason && <RejectionReasonDisplay reason={job.rejectionReason} />}
 
               <section className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 bg-white dark:bg-slate-900">
                 <h3 className="text-sm font-black uppercase tracking-wide text-slate-700 dark:text-slate-300">
                   Thông tin khác
                 </h3>
                 <div className="mt-3 space-y-3 text-sm text-slate-600 dark:text-slate-400">
-                  <div className="flex items-start justify-between gap-4">
-                    <span className="font-semibold text-slate-500 dark:text-slate-400">
-                      Người tạo
-                    </span>
-                    <span className="text-right font-medium text-slate-900 dark:text-slate-100">
-                      {job.createdByName || 'Chưa cập nhật'}
-                    </span>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 dark:text-slate-500">Người đăng</span>
+                    <span className="font-semibold">{job.createdByName || 'Chưa cập nhật'}</span>
                   </div>
-                  <div className="flex items-start justify-between gap-4">
-                    <span className="font-semibold text-slate-500 dark:text-slate-400">
-                      Hạn nộp
-                    </span>
-                    <span className="text-right font-medium text-slate-900 dark:text-slate-100">
-                      {job.deadline ? formatDate(job.deadline) : 'Chưa cập nhật'}
-                    </span>
-                  </div>
-                  <div className="flex items-start justify-between gap-4">
-                    <span className="font-semibold text-slate-500 dark:text-slate-400">
-                      Ngày tạo
-                    </span>
-                    <span className="text-right font-medium text-slate-900 dark:text-slate-100">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 dark:text-slate-500">Ngày tạo</span>
+                    <span className="font-semibold">
                       {job.createdAt ? formatDate(job.createdAt) : 'Chưa cập nhật'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 dark:text-slate-500">Hạn nộp</span>
+                    <span className="font-semibold">
+                      {job.deadline ? formatDate(job.deadline) : 'Không giới hạn'}
                     </span>
                   </div>
                 </div>
