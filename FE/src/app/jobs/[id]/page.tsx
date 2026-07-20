@@ -1,6 +1,6 @@
 'use client'
 
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useState } from 'react'
 import {
@@ -44,7 +44,9 @@ import { JobStatus, JOB_STATUS_LABELS, JOB_STATUS_STYLES, JOB_TYPE_LABELS, EXPER
 export default function JobDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const jobId = params.id as string
+  const preselectedCvId = searchParams.get('cvId') || undefined
 
   const { data: job, isLoading: loadingJob, error } = useGetJobById(jobId)
 
@@ -169,7 +171,16 @@ export default function JobDetailPage() {
       </div>
 
       {/* Main Page Content Body */}
-      <main className="max-w-6xl mx-auto w-full px-4 lg:px-8 pb-16 flex-1">
+      <main className="max-w-6xl mx-auto w-full px-4 lg:px-8 pb-16 flex-1 space-y-6">
+        {preselectedCvId && (
+          <div className="bg-emerald-50/90 border border-emerald-200/80 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-center gap-2.5 text-xs font-bold text-emerald-800">
+              <Sparkles className="w-4.5 h-4.5 text-emerald-600 shrink-0 animate-pulse" />
+              <span>Công việc này được gợi ý dựa trên phân tích AI. CV của bạn đã được chọn sẵn khi nộp đơn ứng tuyển.</span>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           {/* Left Description Column (2/3) */}
           <div className="lg:col-span-2 space-y-6">
@@ -512,6 +523,7 @@ export default function JobDetailPage() {
         isOpen={isApplyModalOpen}
         onClose={() => setIsApplyModalOpen(false)}
         jobId={jobId}
+        initialCvId={preselectedCvId}
       />
     </div>
   )

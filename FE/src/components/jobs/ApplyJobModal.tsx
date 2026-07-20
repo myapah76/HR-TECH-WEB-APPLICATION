@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, Send, Loader2 } from 'lucide-react'
+import { X, Send, Loader2, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { useGetAllCvs } from '@/src/hooks/cv'
 import { useSubmitApplication } from '@/src/hooks/application'
@@ -9,9 +9,10 @@ interface ApplyJobModalProps {
   isOpen: boolean
   onClose: () => void
   jobId: string
+  initialCvId?: string
 }
 
-export function ApplyJobModal({ isOpen, onClose, jobId }: ApplyJobModalProps) {
+export function ApplyJobModal({ isOpen, onClose, jobId, initialCvId }: ApplyJobModalProps) {
   const [selectedCvId, setSelectedCvId] = useState('')
   const [coverLetter, setCoverLetter] = useState('')
 
@@ -20,9 +21,10 @@ export function ApplyJobModal({ isOpen, onClose, jobId }: ApplyJobModalProps) {
 
   if (!isOpen) return null
 
-  // Pre-select primary CV at render time
+  // Pre-select initialCvId if valid, otherwise primary or first CV
+  const isInitialCvValid = !!(initialCvId && cvs.some((c) => c.id === initialCvId))
   const primaryCv = cvs.find((c) => c.isPrimary)
-  const defaultCvId = primaryCv ? primaryCv.id : cvs[0]?.id || ''
+  const defaultCvId = isInitialCvValid ? initialCvId! : (primaryCv ? primaryCv.id : cvs[0]?.id || '')
   const activeCvId = selectedCvId || defaultCvId
 
   const handleApplySubmit = (e: React.FormEvent) => {
@@ -89,6 +91,13 @@ export function ApplyJobModal({ isOpen, onClose, jobId }: ApplyJobModalProps) {
           </div>
         ) : (
           <form onSubmit={handleApplySubmit} className="space-y-4">
+            {isInitialCvValid && (
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-3.5 py-2.5 rounded-2xl">
+                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 animate-pulse" />
+                <span>Đã tự động chọn CV bạn đã dùng để phân tích gợi ý AI</span>
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <label className="text-xs font-black text-slate-500 uppercase tracking-wider">
                 Chọn CV ứng tuyển
@@ -100,7 +109,7 @@ export function ApplyJobModal({ isOpen, onClose, jobId }: ApplyJobModalProps) {
               >
                 {cvs.map((cv) => (
                   <option key={cv.id} value={cv.id}>
-                    {cv.title} {cv.isPrimary ? '(Mặc định)' : ''}
+                    {cv.title} {cv.id === initialCvId ? '(CV dùng phân tích AI)' : cv.isPrimary ? '(Mặc định)' : ''}
                   </option>
                 ))}
               </select>

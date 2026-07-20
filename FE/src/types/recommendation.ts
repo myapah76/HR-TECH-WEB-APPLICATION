@@ -43,6 +43,7 @@ export interface RecommendationResultResponse {
 
 export interface JobMatchingTaskResponse {
   taskId: string
+  cvId?: string
   status: JobMatchingStatus
   message: string
   progressPercentage: number

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { User } from '../types/user'
+import { queryClient } from '../lib/queryClient'
 
 interface AuthState {
   user: User | null
@@ -45,6 +46,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       document.cookie = 'hasSession=; path=/; max-age=0; SameSite=Lax'
       document.cookie = 'userRole=; path=/; max-age=0; SameSite=Lax'
     }
+    // Xóa toàn bộ cache React Query để tránh hiển thị data của user cũ
+    queryClient.clear()
     return set({
       user: null,
       accessToken: null,

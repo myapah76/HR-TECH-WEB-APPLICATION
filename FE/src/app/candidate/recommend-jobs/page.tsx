@@ -144,7 +144,11 @@ export default function RecommendJobsPage() {
     <>
       {isDone && taskStatus?.recommendedJobs ? (
         /* RESULT UI */
-        <JobMatchResultList recommendedJobs={taskStatus.recommendedJobs} onReset={handleReset} />
+        <JobMatchResultList
+          recommendedJobs={taskStatus.recommendedJobs}
+          onReset={handleReset}
+          selectedCvId={taskStatus.cvId || selectedCvId}
+        />
       ) : (
         /* UPLOAD & MOCKUP UI */
         <div
