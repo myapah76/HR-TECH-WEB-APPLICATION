@@ -33,19 +33,19 @@ export default function ApplicationAnalyticsChart({
   const maxChartHeight = Math.max(...chartData.map((d) => d.count), 1)
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/60 p-6 shadow-xs text-left h-full flex flex-col justify-between">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm text-left h-full flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between mb-6">
           <div className="space-y-1">
-            <h2 className="text-lg font-black text-slate-900">Thống kê hồ sơ ứng tuyển</h2>
-            <p className="text-xs font-bold text-slate-400">Số lượng hồ sơ nộp theo thời gian</p>
+            <h2 className="text-lg font-black text-slate-900 dark:text-slate-100">Thống kê hồ sơ ứng tuyển</h2>
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-500">Số lượng hồ sơ nộp theo thời gian</p>
           </div>
 
           {/* Dropdown selector */}
           <select
             value={activeRange}
             onChange={(e) => setActiveRange(e.target.value as TimeRange)}
-            className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold py-1.5 px-3 rounded-lg outline-none cursor-pointer transition-colors"
+            className="bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold py-1.5 px-3 rounded-lg outline-none cursor-pointer transition-colors"
           >
             {RANGES.map(({ key, label }) => (
               <option key={key} value={key}>
@@ -71,7 +71,7 @@ export default function ApplicationAnalyticsChart({
                   className="flex flex-col items-center justify-end h-full gap-1.5 flex-1 group"
                 >
                   {/* Tooltip */}
-                  <span className="text-[9px] font-black text-slate-700 bg-white border border-slate-200/50 px-1.5 py-0.5 rounded-md shadow-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none select-none">
+                  <span className="text-[9px] font-black text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700 px-1.5 py-0.5 rounded-md shadow-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none select-none">
                     {data.count} đơn
                   </span>
                   {/* Bar */}
@@ -82,7 +82,7 @@ export default function ApplicationAnalyticsChart({
                     />
                   </div>
                   {/* Label */}
-                  <span className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-wider text-center shrink-0">
+                  <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-wider text-center shrink-0">
                     {data.label}
                   </span>
                 </div>

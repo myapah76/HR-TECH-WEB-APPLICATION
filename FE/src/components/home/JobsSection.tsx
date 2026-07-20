@@ -97,7 +97,7 @@ export default function JobsSection() {
                       id={`job-salary-${job.id}`}
                     >
                       <DollarSign className="h-3.5 w-3.5 shrink-0" />
-                      <span>{formatSalary(job.salaryMin, job.salaryMax)}</span>
+                      <span>{formatSalary(job.salaryMin, job.salaryMax, job.salaryType)}</span>
                     </span>
                     <span className="flex items-center gap-1" id={`job-location-${job.id}`}>
                       <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" />

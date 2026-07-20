@@ -131,12 +131,16 @@ public class JobController {
             @RequestParam(required = false) String reason) {
         JobResponse response = switch (action.toLowerCase()) {
             case "submit" -> jobService.submitJob(jobId);
-            case "approve" -> jobService.approveJob(jobId);
-            case "reject" -> jobService.rejectJob(jobId, reason);
             case "close" -> jobService.closeJob(jobId);
-            case "appeal" -> jobService.appealJob(jobId);
+            case "appeal" -> {
+                if (reason == null || reason.trim().isEmpty()) {
+                    throw new IllegalArgumentException("Lý do khiếu nại là bắt buộc.");
+                }
+                yield jobService.appealJob(jobId, reason);
+            }
             default -> throw new IllegalArgumentException("Invalid action: " + action);
         };
+
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -169,7 +173,7 @@ public class JobController {
     @PreAuthorize("hasRole('ADMIN_SYSTEM')")
     public ResponseEntity<ApiResponse<JobResponse>> rejectAppeal(
             @PathVariable UUID id,
-            @RequestParam(required = false) String reason) {
+            @RequestParam String reason) {
         return ResponseEntity.ok(ApiResponse.success(jobService.rejectAppeal(id, reason)));
     }
 }

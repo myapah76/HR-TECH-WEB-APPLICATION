@@ -26,15 +26,11 @@ public interface IJobService {
 
     JobResponse submitJob(UUID jobId);
 
-    JobResponse approveJob(UUID jobId);
-
-    JobResponse rejectJob(UUID jobId, String reason);
-
     JobResponse closeJob(UUID jobId);
 
     void deleteJob(UUID jobId);
 
-    JobResponse appealJob(UUID jobId);
+    JobResponse appealJob(UUID jobId, String appealReason);
 
     JobResponse approveAppeal(UUID jobId);
 
@@ -51,7 +47,8 @@ public interface IJobService {
     Page<JobResponse> getPublicCompanyJobs(UUID companyId, Pageable pageable);
 
     Page<JobResponse> getManageCompanyJobs(
-            UUID companyId, String keyword, JobStatus status, JobType jobType, ExperienceLevel jobLevel, Pageable pageable);
+            UUID companyId, String keyword, JobStatus status, JobType jobType, ExperienceLevel jobLevel,
+            Pageable pageable);
 
     Job getJobEntityById(UUID jobId);
 

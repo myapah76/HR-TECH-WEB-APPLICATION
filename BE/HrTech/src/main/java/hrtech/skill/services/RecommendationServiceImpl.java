@@ -121,6 +121,7 @@ public class RecommendationServiceImpl implements IRecommendationService {
                     .location(job.getLocation())
                     .salaryMin(job.getSalaryMin())
                     .salaryMax(job.getSalaryMax())
+                    .salaryType(job.getSalaryType())
                     .matchScore(Math.round(matchScore * 100.0) / 100.0)
                     .matchGrade(getGrade(matchScore))
                     .matchedSkills(matchedSkills)

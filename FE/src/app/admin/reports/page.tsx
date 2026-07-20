@@ -256,6 +256,10 @@ function ReportsManagementContent() {
                           {EXPERIENCE_LEVEL_LABELS[job.experienceLevel] || job.experienceLevel}
                         </span>
                         <span>•</span>
+                        <span className="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded-sm">
+                          Khiếu nại: {job.appealCount ?? 0}/3
+                        </span>
+                        <span>•</span>
                         <span>{job.location}</span>
                       </div>
                     </td>
@@ -282,7 +286,7 @@ function ReportsManagementContent() {
                             {job.companyName}
                           </p>
                           <p className="text-[9px] font-extrabold text-emerald-600">
-                            {formatSalary(job.salaryMin, job.salaryMax)}
+                            {formatSalary(job.salaryMin, job.salaryMax, job.salaryType)}
                           </p>
                         </div>
                       </div>

@@ -240,7 +240,7 @@ export default function AppliedJobsPage() {
               border: 'border-slate-200/40',
             }
 
-            const salaryText = formatSalary(jobDetail?.salaryMin, jobDetail?.salaryMax)
+            const salaryText = formatSalary(jobDetail?.salaryMin, jobDetail?.salaryMax, jobDetail?.salaryType)
 
             return (
               <div

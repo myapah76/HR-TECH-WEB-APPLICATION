@@ -20,7 +20,7 @@ interface AiMatchingConfigCardProps {
   isPending: boolean
   selectedCv: any
   selectedJob: any
-  formatSalary: (min?: number, max?: number) => string
+  formatSalary: (min?: number, max?: number, salaryType?: string) => string
 }
 
 export function AiMatchingConfigCard({
@@ -176,7 +176,7 @@ export function AiMatchingConfigCard({
                   </div>
                   <div className="flex items-center gap-1 text-[11px] text-slate-500">
                     <DollarSign className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span className="truncate">{formatSalary(selectedJob.salaryMin, selectedJob.salaryMax)}</span>
+                    <span className="truncate">{formatSalary(selectedJob.salaryMin, selectedJob.salaryMax, selectedJob.salaryType)}</span>
                   </div>
                 </div>
               </div>

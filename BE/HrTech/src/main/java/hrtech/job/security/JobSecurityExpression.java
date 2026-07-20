@@ -68,8 +68,8 @@ public class JobSecurityExpression {
         if (jobId == null || action == null) return false;
         try {
             return switch (action.toLowerCase()) {
-                case "submit", "close" -> isJobCreatorOrManager(jobId);
-                case "approve", "reject", "appeal" -> isManager(jobId);
+                case "submit", "appeal" -> isJobCreatorOrManager(jobId);
+                case "close" -> isManager(jobId);
                 default -> false;
             };
         } catch (Exception e) {

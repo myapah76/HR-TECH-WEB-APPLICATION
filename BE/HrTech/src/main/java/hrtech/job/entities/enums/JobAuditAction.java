@@ -3,10 +3,7 @@ package hrtech.job.entities.enums;
 public enum JobAuditAction {
     CREATE,
     EDIT,
-    SUBMIT,
-    MANAGER_DIRECT_APPROVE,
-    MANAGER_APPROVE,
-    MANAGER_REJECT,
+    SUBMIT_TO_AI,
     CLOSE,
     SUBMIT_APPEAL,
     ADMIN_APPROVE_APPEAL,

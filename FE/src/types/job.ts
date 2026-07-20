@@ -1,5 +1,5 @@
-import { JobStatus, JobType, ExperienceLevel, JobStatusAction } from '@/src/enums/job.enum'
-export { JobStatus, JobType, ExperienceLevel }
+import { JobStatus, JobType, ExperienceLevel, JobStatusAction, SalaryType } from '@/src/enums/job.enum'
+export { JobStatus, JobType, ExperienceLevel, SalaryType }
 export type { JobStatusAction }
 
 export interface JobSkill {
@@ -28,6 +28,7 @@ export interface Job {
 
   salaryMin: number
   salaryMax: number
+  salaryType: string
 
   jobType: JobType
   experienceLevel: ExperienceLevel
@@ -44,6 +45,7 @@ export interface Job {
   skills: JobSkill[]
 
   rejectionReason?: string
+  appealCount?: number
 
   createdAt: string
   updatedAt: string
@@ -64,6 +66,7 @@ export interface CreateJobRequest {
   location?: string
   salaryMin?: number
   salaryMax?: number
+  salaryType?: string
   jobType?: string // Payload can still accept string for flexibility
   experienceLevel?: string // Payload can still accept string for flexibility
   deadline?: string
@@ -116,5 +119,5 @@ export interface UpdateJobStatusVariables {
   jobId: string
   action: JobStatusAction
   companyId: string
-  reason?: string
+  reason?: string // bắt buộc khi action === 'appeal'
 }

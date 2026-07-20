@@ -25,13 +25,13 @@ export default function HiringPipelineFunnel({
       stage: 'Ứng tuyển mới',
       count: submitted,
       percentage: getPercentage(submitted),
-      color: 'bg-blue-500',
+      color: 'bg-emerald-500',
     },
     {
       stage: 'Sàng lọc CV',
       count: screening,
       percentage: getPercentage(screening),
-      color: 'bg-amber-500',
+      color: 'bg-teal-500',
     },
     {
       stage: 'Phỏng vấn',
@@ -43,16 +43,16 @@ export default function HiringPipelineFunnel({
       stage: 'Nhận việc (Offer)',
       count: offer,
       percentage: getPercentage(offer),
-      color: 'bg-emerald-500',
+      color: 'bg-blue-500',
     },
   ]
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/60 p-6 shadow-xs text-left h-full flex flex-col justify-between">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm text-left h-full flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-black text-slate-900">Phễu ứng viên</h2>
-          <span className="text-[10px] font-bold text-slate-450 uppercase tracking-widest bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
+          <h2 className="text-lg font-black text-slate-900 dark:text-slate-100">Phễu ứng viên</h2>
+          <span className="text-[10px] font-bold text-slate-450 dark:text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-100 dark:border-slate-700">
             Quy trình tuyển dụng
           </span>
         </div>
@@ -60,7 +60,7 @@ export default function HiringPipelineFunnel({
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />
+              <div key={i} className="h-20 bg-slate-100 dark:bg-slate-800/60 rounded-xl animate-pulse" />
             ))}
           </div>
         ) : (
@@ -68,22 +68,22 @@ export default function HiringPipelineFunnel({
             {candidatePipeline.map((p, idx) => (
               <div
                 key={idx}
-                className="p-4 rounded-xl border border-slate-100/60 bg-slate-50/20 hover:bg-slate-50 transition-colors space-y-2.5"
+                className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-950/40 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors space-y-2.5"
               >
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-xs text-slate-500 uppercase tracking-wider">
+                  <span className="font-bold text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     {p.stage}
                   </span>
-                  <span className="text-xs font-black text-slate-800 bg-white border border-slate-150 px-2 py-0.5 rounded-md shadow-xs">
+                  <span className="text-xs font-black text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-150 dark:border-slate-700 px-2 py-0.5 rounded-md shadow-xs">
                     {p.count} hồ sơ
                   </span>
                 </div>
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-[10px] font-black text-slate-700">
+                  <div className="flex items-center justify-between text-[10px] font-black text-slate-700 dark:text-slate-300">
                     <span>Tỷ lệ phân phối</span>
                     <span>{p.percentage}%</span>
                   </div>
-                  <div className="bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div className="bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                     <div
                       className={`${p.color} h-full rounded-full transition-all duration-500`}
                       style={{ width: `${p.percentage}%` }}

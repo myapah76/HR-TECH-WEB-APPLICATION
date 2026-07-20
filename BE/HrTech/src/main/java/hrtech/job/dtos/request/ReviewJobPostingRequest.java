@@ -17,6 +17,7 @@ public class ReviewJobPostingRequest {
     private String location;
     private Double salary_min;
     private Double salary_max;
+    private String salary_type;
     private String job_type;
     private String experience_level;
     private String position;

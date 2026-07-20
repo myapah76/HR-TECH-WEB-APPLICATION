@@ -70,7 +70,7 @@ function RecommendedJobCard({
             {(rec.salaryMin !== undefined || rec.salaryMax !== undefined) && (
               <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg border border-emerald-100">
                 <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
-                {formatSalary(rec.salaryMin, rec.salaryMax)}
+                {formatSalary(rec.salaryMin, rec.salaryMax, rec.salaryType)}
               </span>
             )}
           </div>

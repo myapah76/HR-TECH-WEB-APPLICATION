@@ -28,6 +28,7 @@ export interface JobRecommendationResponse {
   location: string
   salaryMin?: number
   salaryMax?: number
+  salaryType?: string
   matchScore: number
   graphScore: number
   embeddingScore: number

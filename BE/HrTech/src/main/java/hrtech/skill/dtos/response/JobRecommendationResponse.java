@@ -1,5 +1,6 @@
 package hrtech.skill.dtos.response;
 
+import hrtech.job.entities.enums.SalaryType;
 import hrtech.shared.enums.ScoreGrade;
 
 import lombok.AllArgsConstructor;
@@ -23,6 +24,7 @@ public class JobRecommendationResponse {
     private String location;
     private BigDecimal salaryMin;
     private BigDecimal salaryMax;
+    private SalaryType salaryType;
 
     private double matchScore;       // Final match score (0.0 - 1.0)
     private ScoreGrade matchGrade;       // EXCELLENT, GOOD, FAIR, POOR

@@ -54,7 +54,7 @@ export default function JobCard({ job }: JobCardProps) {
           <div className="flex flex-wrap gap-2 text-xs font-extrabold">
             <span className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-xl border border-amber-100/60">
               <DollarSign className="h-4 w-4 text-amber-600" />
-              <span>{formatSalary(job.salaryMin, job.salaryMax)}</span>
+              <span>{formatSalary(job.salaryMin, job.salaryMax, job.salaryType)}</span>
             </span>
 
             <span className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-650 rounded-xl border border-slate-150">

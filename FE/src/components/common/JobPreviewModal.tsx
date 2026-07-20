@@ -75,7 +75,7 @@ export default function JobPreviewModal({ job, onClose }: JobPreviewModalProps) 
                 Mức lương
               </p>
               <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                {formatSalary(job.salaryMin, job.salaryMax)}
+                {formatSalary(job.salaryMin, job.salaryMax, job.salaryType)}
               </p>
             </div>
           </div>
@@ -136,8 +136,7 @@ export default function JobPreviewModal({ job, onClose }: JobPreviewModalProps) 
                 </div>
               </section>
 
-              {(job.status === JobStatus.REJECTED ||
-                job.status === JobStatus.FAILED_AI ||
+              {(job.status === JobStatus.FAILED_AI ||
                 job.status === JobStatus.REJECTED_BY_ADMIN ||
                 job.status === JobStatus.APPEALED) &&
                 job.rejectionReason && <RejectionReasonDisplay reason={job.rejectionReason} />}

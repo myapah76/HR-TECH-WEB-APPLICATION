@@ -18,6 +18,7 @@ import lombok.*;
 import hrtech.job.entities.enums.ExperienceLevel;
 import hrtech.job.entities.enums.JobStatus;
 import hrtech.job.entities.enums.JobType;
+import hrtech.job.entities.enums.SalaryType;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -61,11 +62,23 @@ public class Job extends SoftDeleteEntity {
     private JobType jobType;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private SalaryType salaryType = SalaryType.MONTHLY;
+
+    @Enumerated(EnumType.STRING)
     private ExperienceLevel experienceLevel;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private JobStatus status = JobStatus.DRAFT;
+
+    @Column(name = "appeal_count", columnDefinition = "integer default 0")
+    @Builder.Default
+    private Integer appealCount = 0;
+
+    public int getAppealCount() {
+        return appealCount != null ? appealCount : 0;
+    }
 
     private Instant deadline;
 

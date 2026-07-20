@@ -18,6 +18,7 @@ import hrtech.job.dtos.request.JobRequest;
 import hrtech.job.dtos.response.JobResponse;
 import hrtech.job.entities.enums.ExperienceLevel;
 import hrtech.job.entities.enums.JobType;
+import hrtech.job.entities.enums.SalaryType;
 import hrtech.subscription.abstractions.services.ISubscriptionService;
 import hrtech.subscription.entities.enums.SubscriptionType;
 
@@ -156,19 +157,7 @@ public class MasterDataSeeder implements CommandLineRunner {
             createdJobIds2.add(job.id());
         }
 
-        // Approve Jobs
-        mockSecurityContext(hrmgr);
-        for (UUID jobId : createdJobIds1) {
-            jobService.approveJob(jobId);
-            Thread.sleep(4500); // Rate limit to prevent Gemini API 429
-        }
-
-        mockSecurityContext(hrmgr2);
-        for (UUID jobId : createdJobIds2) {
-            jobService.approveJob(jobId);
-            Thread.sleep(4500); // Rate limit to prevent Gemini API 429
-        }
-        log.info("Seeded 20 Jobs and triggered AI Extraction.");
+        log.info("Seeded Jobs and triggered AI Extraction.");
 
         // 3. Seed Saved Job
         mockSecurityContext(candidate);
@@ -191,6 +180,7 @@ public class MasterDataSeeder implements CommandLineRunner {
                 BigDecimal.valueOf(salaryMin),
                 BigDecimal.valueOf(salaryMax),
                 JobType.FULL_TIME,
+                SalaryType.MONTHLY,
                 ExperienceLevel.MIDDLE,
                 Instant.now().plus(30, ChronoUnit.DAYS),
                 "Must have experience with: " + skills,

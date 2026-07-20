@@ -20,6 +20,7 @@ public record JobResponse(
         String location,
         BigDecimal salaryMin,
         BigDecimal salaryMax,
+        String salaryType,
         String jobType,
         String experienceLevel,
         String status,
@@ -29,6 +30,7 @@ public record JobResponse(
         ExtractionStatus extractionStatus,
         List<JobSkillResponse> skills,
         String rejectionReason,
+        int appealCount,
         Instant createdAt,
         Instant updatedAt
 ) {}

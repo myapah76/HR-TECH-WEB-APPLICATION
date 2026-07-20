@@ -47,7 +47,7 @@ export default function SavedJobsPage() {
           </div>
         ) : (
           savedJobs.map((job) => {
-            const salaryText = formatSalary(job.salaryMin, job.salaryMax)
+            const salaryText = formatSalary(job.salaryMin, job.salaryMax, job.salaryType)
 
             return (
               <div

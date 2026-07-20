@@ -5,6 +5,7 @@ export const jobSchema = z
     title: z.string().min(5, 'Tiêu đề phải có ít nhất 5 ký tự'),
     position: z.string().min(1, 'Vui lòng nhập vị trí/vai trò tuyển dụng (VD: Java Developer)'),
     jobType: z.string().min(1, 'Vui lòng chọn hình thức làm việc'),
+    salaryType: z.enum(['MONTHLY', 'HOURLY']).optional(),
     experienceLevel: z.string().min(1, 'Vui lòng chọn cấp bậc'),
     location: z.string().min(3, 'Vui lòng nhập địa điểm'),
     salaryMin: z.number().min(0, 'Lương tối thiểu không hợp lệ').optional(),

@@ -19,8 +19,6 @@ import {
   Award,
   Clock,
   Loader2,
-  ThumbsDown,
-  ThumbsUp,
 } from 'lucide-react'
 import {
   useGetJobById,
@@ -80,19 +78,6 @@ export default function JobDetailPage() {
   const unsaveMutation = useUnsaveJob()
   const statusMutation = useUpdateJobStatusMutation()
 
-  const reviewJob = (action: 'approve' | 'reject') => {
-    if (!job?.companyId) return
-    statusMutation.mutate(
-      { jobId, action, companyId: job.companyId },
-      {
-        onSuccess: () => {
-          toast.success(
-            action === 'approve' ? 'Đã phê duyệt tin tuyển dụng!' : 'Đã từ chối tin tuyển dụng!'
-          )
-        },
-      }
-    )
-  }
 
   const handleSaveToggle = () => {
     if (!user) {
@@ -229,7 +214,7 @@ export default function JobDetailPage() {
                   <div className="flex flex-wrap gap-2.5 mt-3 text-xs font-bold text-slate-500">
                     <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-xl border border-emerald-150/40">
                       <DollarSign className="h-4 w-4" />
-                      <span>{formatSalary(job.salaryMin, job.salaryMax)}</span>
+                      <span>{formatSalary(job.salaryMin, job.salaryMax, job.salaryType)}</span>
                     </span>
                     <span className="flex items-center gap-1.5 bg-blue-50/50 text-blue-700 px-3 py-1.5 rounded-xl border border-blue-100/40">
                       <MapPin className="h-4 w-4" />
@@ -253,37 +238,6 @@ export default function JobDetailPage() {
 
               {/* Action Buttons Row */}
               <div className="flex flex-wrap items-center gap-3 mt-8 pt-6 border-t border-slate-100">
-                {isHrManager && job.status === JobStatus.PENDING_APPROVAL && (
-                  <div className="flex items-center gap-3 mr-auto">
-                    <button
-                      type="button"
-                      onClick={() => reviewJob('approve')}
-                      disabled={statusMutation.isPending}
-                      className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {statusMutation.isPending &&
-                      statusMutation.variables?.action === 'approve' ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <ThumbsUp className="h-4 w-4" />
-                      )}
-                      APPROVED
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => reviewJob('reject')}
-                      disabled={statusMutation.isPending}
-                      className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-5 py-3 text-sm font-black text-white transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {statusMutation.isPending && statusMutation.variables?.action === 'reject' ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <ThumbsDown className="h-4 w-4" />
-                      )}
-                      REJECTED
-                    </button>
-                  </div>
-                )}
 
                 {(!user || isCandidate) && (
                   <button
@@ -504,7 +458,7 @@ export default function JobDetailPage() {
                       </div>
                       <div className="flex justify-between items-center mt-2.5 pt-2 border-t border-slate-50/60">
                         <span className="text-[10px] font-bold text-emerald-600">
-                          {formatSalary(rj.salaryMin, rj.salaryMax)}
+                          {formatSalary(rj.salaryMin, rj.salaryMax, rj.salaryType)}
                         </span>
                         <span className="text-[9px] font-semibold text-slate-400">
                           {rj.location}

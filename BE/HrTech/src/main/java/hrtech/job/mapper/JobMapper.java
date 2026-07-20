@@ -39,6 +39,7 @@ public abstract class JobMapper {
     @Mapping(target = "createdById", source = "createdBy.id")
     @Mapping(target = "createdByName", expression = "java(job.getCreatedBy() != null ? job.getCreatedBy().getFirstName() + \" \" + job.getCreatedBy().getLastName() : null)")
     @Mapping(target = "jobType", expression = "java(job.getJobType() != null ? job.getJobType().name() : null)")
+    @Mapping(target = "salaryType", expression = "java(job.getSalaryType() != null ? job.getSalaryType().name() : \"MONTHLY\")")
     @Mapping(target = "experienceLevel", expression = "java(job.getExperienceLevel() != null ? job.getExperienceLevel().name() : null)")
     @Mapping(target = "status", expression = "java(job.getStatus() != null ? job.getStatus().name() : null)")
     @Mapping(target = "skills", source = "jobSkills")

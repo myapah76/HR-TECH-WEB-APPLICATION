@@ -2,6 +2,7 @@ package hrtech.job.dtos.request;
 
 import hrtech.job.entities.enums.ExperienceLevel;
 import hrtech.job.entities.enums.JobType;
+import hrtech.job.entities.enums.SalaryType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
@@ -22,6 +23,8 @@ public record JobRequest(
         BigDecimal salaryMax,
 
         JobType jobType,
+
+        SalaryType salaryType,
 
         ExperienceLevel experienceLevel,
 

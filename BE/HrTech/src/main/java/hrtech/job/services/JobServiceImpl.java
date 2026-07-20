@@ -3,7 +3,6 @@ package hrtech.job.services;
 import com.querydsl.core.BooleanBuilder;
 import hrtech.application.abstractions.services.IApplicationService;
 import hrtech.application.entities.enums.ApplicationStatus;
-import hrtech.company.abstractions.services.ICompanyMemberService;
 import hrtech.company.abstractions.services.ICompanyService;
 import hrtech.company.entities.Company;
 import hrtech.company.entities.CompanyMember;
@@ -24,10 +23,7 @@ import hrtech.job.entities.Job;
 import hrtech.job.entities.JobAuditLog;
 import hrtech.job.entities.JobSkill;
 import hrtech.job.entities.QJob;
-import hrtech.job.entities.enums.ExperienceLevel;
-import hrtech.job.entities.enums.JobAuditAction;
-import hrtech.job.entities.enums.JobStatus;
-import hrtech.job.entities.enums.JobType;
+import hrtech.job.entities.enums.*;
 import hrtech.notification.abstractions.services.INotificationService;
 import hrtech.notification.entities.enums.NotificationType;
 import hrtech.job.mapper.JobMapper;
@@ -126,15 +122,25 @@ public class JobServiceImpl implements IJobService {
 
                     JobStatus previousStatus = job.getStatus();
 
+                    boolean isHourly = job.getSalaryType() == SalaryType.HOURLY;
+                    String salaryInfoStr = isHourly
+                            ? "\n\n(Đơn vị mức lương: Tính theo giờ - VNĐ/giờ)"
+                            : "\n\n(Đơn vị mức lương: Tính theo tháng - VNĐ/tháng)";
+
+                    String descriptionForAi = (job.getDescription() != null ? job.getDescription() : "") + salaryInfoStr;
+                    String jobTypeForAi = (job.getJobType() != null ? job.getJobType().name() : "")
+                            + (isHourly ? " (LƯƠNG THEO GIỜ - VNĐ/GIỜ)" : "");
+
                     ReviewJobPostingRequest reviewRequest = ReviewJobPostingRequest.builder()
                             .title(job.getTitle())
-                            .description(job.getDescription())
+                            .description(descriptionForAi)
                             .requirements(job.getRequirements())
                             .benefits(job.getBenefits())
                             .location(job.getLocation())
                             .salary_min(job.getSalaryMin() != null ? job.getSalaryMin().doubleValue() : null)
                             .salary_max(job.getSalaryMax() != null ? job.getSalaryMax().doubleValue() : null)
-                            .job_type(job.getJobType() != null ? job.getJobType().name() : "")
+                            .salary_type(job.getSalaryType() != null ? job.getSalaryType().name() : "MONTHLY")
+                            .job_type(jobTypeForAi)
                             .experience_level(job.getExperienceLevel() != null ? job.getExperienceLevel().name() : "")
                             .position(job.getPosition())
                             .build();
@@ -306,11 +312,10 @@ public class JobServiceImpl implements IJobService {
 
         JobStatus previousStatus = job.getStatus();
         if (previousStatus != JobStatus.DRAFT
-                && previousStatus != JobStatus.REJECTED
                 && previousStatus != JobStatus.FAILED_AI
                 && previousStatus != JobStatus.REJECTED_BY_ADMIN) {
             throw new AppException(ErrorCode.JOB_INVALID_STATUS,
-                    "Only DRAFT, REJECTED, FAILED_AI, or REJECTED_BY_ADMIN jobs can be edited. Current status: "
+                    "Only DRAFT, FAILED_AI, or REJECTED_BY_ADMIN jobs can be edited. Current status: "
                             + previousStatus);
         }
 
@@ -326,25 +331,7 @@ public class JobServiceImpl implements IJobService {
         logStatusChange(updatedJob, previousStatus, JobStatus.DRAFT, JobAuditAction.EDIT, currentUser,
                 "Chỉnh sửa nội dung, đưa về trạng thái nháp.");
 
-        if (previousStatus == JobStatus.REJECTED
-                || previousStatus == JobStatus.FAILED_AI
-                || previousStatus == JobStatus.REJECTED_BY_ADMIN) {
-            CompanyRole role = companyService
-                    .getMemberByCompanyIdAndUserId(job.getCompany().getId(), currentUser.getId())
-                    .map(CompanyMember::getCompanyRole)
-                    .orElse(CompanyRole.HR);
-
-            if (role == CompanyRole.HR_MANAGER || role == CompanyRole.OWNER) {
-                // Set status to PENDING_APPROVAL so manager can directly approve the updated
-                // job via approveJob
-                updatedJob.setStatus(JobStatus.PENDING_APPROVAL);
-                jobRepository.save(updatedJob);
-                return approveJob(jobId);
-            } else {
-                return submitJob(jobId);
-            }
-        }
-
+        // Sau khi edit, giữ ở trạng thái DRAFT để người dùng xem lại hoặc tự bấm "Gửi duyệt AI"
         return jobMapper.toResponse(updatedJob);
     }
 
@@ -356,89 +343,13 @@ public class JobServiceImpl implements IJobService {
                     "Only DRAFT jobs can be submitted. Current status: " + job.getStatus());
         }
         JobStatus previousStatus = job.getStatus();
-        job.setStatus(JobStatus.PENDING_APPROVAL);
-        Job savedJob = jobRepository.save(job);
-        logStatusChange(savedJob, previousStatus, JobStatus.PENDING_APPROVAL, JobAuditAction.SUBMIT,
-                authUtils.getCurrentUser(), "Gửi duyệt tin tuyển dụng.");
-        return jobMapper.toResponse(savedJob);
-    }
-
-    @Override
-    public JobResponse approveJob(UUID jobId) {
-        Job job = getJobEntityById(jobId);
-        User currentUser = authUtils.getCurrentUser();
-
-        // Direct approve if manager created draft
-        boolean isOwnerOrManager = companyService
-                .getMemberByCompanyIdAndUserId(job.getCompany().getId(), currentUser.getId())
-                .map(m -> m.getCompanyRole() == CompanyRole.OWNER || m.getCompanyRole() == CompanyRole.HR_MANAGER)
-                .orElse(false);
-        boolean isManagerCreatedDraft = job.getStatus() == JobStatus.DRAFT
-                && job.getCreatedBy().getId().equals(currentUser.getId())
-                && isOwnerOrManager;
-
-        if (isManagerCreatedDraft) {
-            JobStatus previousStatus = job.getStatus();
-            job.setStatus(JobStatus.PENDING_AI);
-            Job savedJob = jobRepository.save(job);
-
-            logStatusChange(
-                    savedJob,
-                    previousStatus,
-                    JobStatus.PENDING_AI,
-                    JobAuditAction.MANAGER_DIRECT_APPROVE,
-                    currentUser,
-                    "HR Manager tự duyệt tin tuyển dụng do chính mình tạo. Chuyển tiếp quét AI tự động.");
-
-            runAiCheck(savedJob.getId(), currentUser.getId());
-            return toResponseWithReason(savedJob);
-        }
-
-        if (job.getStatus() != JobStatus.PENDING_APPROVAL) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS,
-                    "Only PENDING_APPROVAL jobs can be approved. Current status: " + job.getStatus());
-        }
-        JobStatus previousStatus = job.getStatus();
         job.setStatus(JobStatus.PENDING_AI);
         Job savedJob = jobRepository.save(job);
-        logStatusChange(savedJob, previousStatus, JobStatus.PENDING_AI, JobAuditAction.MANAGER_APPROVE, currentUser,
-                "HR Manager phê duyệt tin tuyển dụng. Chuyển tiếp quét AI tự động.");
-
-        runAiCheck(savedJob.getId(), currentUser.getId());
-        return toResponseWithReason(savedJob);
-    }
-
-    @Override
-    public JobResponse rejectJob(UUID jobId, String reason) {
-        Job job = getJobEntityById(jobId);
-        if (job.getStatus() != JobStatus.PENDING_APPROVAL) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS,
-                    "Only PENDING_APPROVAL jobs can be rejected. Current status: " + job.getStatus());
-        }
-
-        if (reason == null || reason.trim().isEmpty()) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "Reject reason is required.");
-        }
-
-        JobStatus previousStatus = job.getStatus();
-        job.setStatus(JobStatus.REJECTED);
-        Job savedJob = jobRepository.save(job);
         User currentUser = authUtils.getCurrentUser();
-        logStatusChange(savedJob, previousStatus, JobStatus.REJECTED, JobAuditAction.MANAGER_REJECT, currentUser,
-                reason.trim());
-
-        try {
-            notificationService.createAndSendNotification(
-                    savedJob.getCreatedBy().getId(),
-                    "Tin tuyển dụng bị từ chối",
-                    "Tin tuyển dụng '" + savedJob.getTitle() + "' đã bị từ chối bởi Manager.",
-                    NotificationType.JOB_STATUS_UPDATED,
-                    savedJob.getId().toString());
-        } catch (Exception e) {
-            log.error("Failed to send manager reject notification for job " + savedJob.getId(), e);
-        }
-
-        return toResponseWithReason(savedJob);
+        logStatusChange(savedJob, previousStatus, JobStatus.PENDING_AI, JobAuditAction.SUBMIT_TO_AI,
+                currentUser, "Gửi duyệt tin tuyển dụng – chuyển thẳng sang hàng đợi quét AI.");
+        runAiCheck(savedJob.getId(), currentUser.getId());
+        return jobMapper.toResponse(savedJob);
     }
 
     @Override
@@ -476,18 +387,26 @@ public class JobServiceImpl implements IJobService {
     }
 
     @Override
-    public JobResponse appealJob(UUID jobId) {
+    public JobResponse appealJob(UUID jobId, String appealReason) {
+        if (appealReason == null || appealReason.trim().isEmpty()) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Lý do khiếu nại là bắt buộc.");
+        }
         Job job = getJobEntityById(jobId);
+        if (job.getAppealCount() >= 3) {
+            throw new AppException(ErrorCode.BAD_REQUEST,
+                    "Tin tuyển dụng này đã đạt giới hạn số lần khiếu nại tối đa (3/3).");
+        }
         if (job.getStatus() != JobStatus.FAILED_AI) {
             throw new AppException(ErrorCode.JOB_INVALID_STATUS,
                     "Only FAILED_AI jobs can be appealed. Current status: " + job.getStatus());
         }
         JobStatus previousStatus = job.getStatus();
         job.setStatus(JobStatus.APPEALED);
+        job.setAppealCount(job.getAppealCount() + 1);
         Job savedJob = jobRepository.save(job);
         User currentUser = authUtils.getCurrentUser();
         logStatusChange(savedJob, previousStatus, JobStatus.APPEALED, JobAuditAction.SUBMIT_APPEAL, currentUser,
-                "Gửi khiếu nại lên Admin Hệ thống.");
+                appealReason.trim());
         return toResponseWithReason(savedJob);
     }
 
@@ -542,12 +461,12 @@ public class JobServiceImpl implements IJobService {
         JobStatus previousStatus = job.getStatus();
         job.setStatus(JobStatus.REJECTED_BY_ADMIN);
         Job savedJob = jobRepository.save(job);
-        
-        String notes = (reason != null && !reason.trim().isEmpty()) ? reason 
-                : "Admin bác bỏ khiếu nại. Tin tuyển dụng được trả về để chỉnh sửa.";
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Lý do từ chối khiếu nại không được để trống.");
+        }
         
         logStatusChange(savedJob, previousStatus, JobStatus.REJECTED_BY_ADMIN, JobAuditAction.ADMIN_REJECT_APPEAL,
-                currentUser, notes);
+                currentUser, reason.trim());
 
         UUID targetUserId = job.getCreatedBy().getId();
         Optional<JobAuditLog> appealLog = jobAuditLogRepository
@@ -783,6 +702,7 @@ public class JobServiceImpl implements IJobService {
                 response.location(),
                 response.salaryMin(),
                 response.salaryMax(),
+                response.salaryType(),
                 response.jobType(),
                 response.experienceLevel(),
                 response.status(),
@@ -792,13 +712,13 @@ public class JobServiceImpl implements IJobService {
                 response.extractionStatus(),
                 response.skills(),
                 resolveRejectionReason(job),
+                job.getAppealCount(),
                 response.createdAt(),
                 response.updatedAt());
     }
 
     private String resolveRejectionReason(Job job) {
-        if (job.getStatus() == JobStatus.REJECTED
-                || job.getStatus() == JobStatus.REJECTED_BY_ADMIN
+        if (job.getStatus() == JobStatus.REJECTED_BY_ADMIN
                 || job.getStatus() == JobStatus.FAILED_AI) {
             return jobAuditLogRepository
                     .findFirstByJobIdAndToStatusOrderByCreatedAtDesc(job.getId(), job.getStatus().name())

@@ -1,19 +1,33 @@
 /**
- * Helper to format job salaries dynamically for both VND and USD.
+ * Helper to format job salaries dynamically.
  *
  * Examples:
- * - formatSalary(10000000, 20000000) => "10tr - 20tr"
- * - formatSalary(15500000, 25000000) => "15.5tr - 25tr"
- * - formatSalary(1000, 2500) => "$1,000 - $2,500"
+ * - formatSalary(10000000, 20000000) => "10tr - 20tr/tháng"
+ * - formatSalary(50000, 200000, 'HOURLY') => "50k - 200k/giờ"
  * - formatSalary(null, null) => "Thỏa thuận"
  */
-export function formatSalary(min: number | undefined | null, max: number | undefined | null): string {
+export function formatSalary(
+  min: number | undefined | null,
+  max: number | undefined | null,
+  salaryType?: string | null
+): string {
   if (!min && !max) return 'Thỏa thuận'
 
   const minVal = min || 0
   const maxVal = max || 0
 
-  // Check if it's VND (large numbers > 100,000)
+  // Hourly salary (PART_TIME with HOURLY type)
+  if (salaryType === 'HOURLY') {
+    const formatK = (val: number) => {
+      if (val >= 1000) return `${(val / 1000).toFixed(0)}k`
+      return `${val}`
+    }
+    if (minVal && maxVal) return `${formatK(minVal)} - ${formatK(maxVal)}/giờ`
+    if (minVal) return `Từ ${formatK(minVal)}/giờ`
+    return `Đến ${formatK(maxVal)}/giờ`
+  }
+
+  // Monthly VND (large numbers > 100,000)
   if (minVal > 100000 || maxVal > 100000) {
     const formatMillions = (val: number) => {
       if (val % 1000000 === 0) {
@@ -22,16 +36,17 @@ export function formatSalary(min: number | undefined | null, max: number | undef
       return `${(val / 1000000).toFixed(1).replace('.0', '')}tr`
     }
 
-    if (minVal && maxVal) return `${formatMillions(minVal)} - ${formatMillions(maxVal)}`
-    if (minVal) return `Từ ${formatMillions(minVal)}`
-    return `Đến ${formatMillions(maxVal)}`
+    if (minVal && maxVal) return `${formatMillions(minVal)} - ${formatMillions(maxVal)}/tháng`
+    if (minVal) return `Từ ${formatMillions(minVal)}/tháng`
+    return `Đến ${formatMillions(maxVal)}/tháng`
   }
 
-  // If it's USD (small numbers <= 100,000)
+  // USD (small numbers <= 100,000)
   if (minVal && maxVal) return `$${minVal.toLocaleString()} - $${maxVal.toLocaleString()}`
   if (minVal) return `Từ $${minVal.toLocaleString()}`
   return `Đến $${maxVal.toLocaleString()}`
 }
+
 
 export function formatVND(value: unknown): string {
   if (value === undefined || value === null || value === '') return ''
