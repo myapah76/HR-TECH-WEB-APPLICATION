@@ -20,7 +20,6 @@ export default function JobSearch({
 }: JobSearchProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const popularKeywords = ['React', 'Golang', 'Node.js', 'Remote', 'Senior']
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,18 +39,7 @@ export default function JobSearch({
     onSearch?.()
   }
 
-  const handleTagClick = (tag: string) => {
-    setKeyword?.(tag)
-    const params = new URLSearchParams(searchParams.toString())
-    params.set('keyword', tag)
-    if (location.trim()) params.set('location', location.trim())
-    else params.delete('location')
 
-    params.set('page', '1')
-
-    router.push(`/jobs?${params.toString()}`)
-    onSearch?.()
-  }
 
   const handleClearKeyword = () => {
     setKeyword?.('')
@@ -133,21 +121,6 @@ export default function JobSearch({
           <span>Tìm kiếm</span>
         </button>
       </form>
-
-      {/* Popular Suggestions */}
-      <div className="flex flex-wrap items-center gap-2 mt-4 text-xs font-bold text-white/80">
-        <span className="text-white/60 font-medium select-none">Tìm kiếm phổ biến:</span>
-        {popularKeywords.map((tag) => (
-          <button
-            key={tag}
-            type="button"
-            onClick={() => handleTagClick(tag)}
-            className="px-3 py-1 bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/5 rounded-full transition-all duration-200 select-none text-white text-[11px] cursor-pointer"
-          >
-            {tag}
-          </button>
-        ))}
-      </div>
     </div>
   )
 }
