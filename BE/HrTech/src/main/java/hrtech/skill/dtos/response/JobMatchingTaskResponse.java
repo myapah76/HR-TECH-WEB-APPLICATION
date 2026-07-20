@@ -8,6 +8,7 @@ import java.util.List;
 @Builder
 public class JobMatchingTaskResponse {
     private String taskId;
+    private String cvId;
     private String status;
     private String message;
     private int progressPercentage;

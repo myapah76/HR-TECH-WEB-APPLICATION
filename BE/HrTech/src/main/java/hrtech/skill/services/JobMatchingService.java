@@ -29,6 +29,7 @@ public class JobMatchingService {
         String taskId = UUID.randomUUID().toString();
         tasks.put(taskId, JobMatchingTaskResponse.builder()
                 .taskId(taskId)
+                .cvId(cvId.toString())
                 .status("EXTRACTING")
                 .message("Đang bóc tách kỹ năng từ CV...")
                 .progressPercentage(10)

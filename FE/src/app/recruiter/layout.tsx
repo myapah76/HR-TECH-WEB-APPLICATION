@@ -7,14 +7,14 @@ import { RoleUser } from '@/src/enums/role.enum'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import {
-  Building2,
-  CreditCard,
-  LayoutDashboard,
-  List,
-  PlusCircle,
-  Search,
-  UserCheck,
-  Users,
+    Building2, CalendarClock,
+    CreditCard,
+    LayoutDashboard,
+    List,
+    PlusCircle,
+    Search,
+    UserCheck,
+    Users,
 } from 'lucide-react'
 import { useMemo } from 'react'
 
@@ -29,6 +29,7 @@ const recruiterNavItems = [
   { icon: List, label: 'Quản lý tin đăng', path: '/recruiter/manage-jobs' },
   { icon: Search, label: 'AI Tìm Ứng Viên', path: '/recruiter/find-candidates' },
   { icon: Users, label: 'Đơn ứng tuyển', path: '/recruiter/applications' },
+  { icon: CalendarClock, label: 'Quản Lý Lịch Phỏng Vấn', path: '/recruiter/interview-schedules' },
 
   // ── Công ty ───────────────────────────────────────────────────────────────
   { label: 'Công ty', isHeader: true },
@@ -51,9 +52,7 @@ export default function RecruiterLayout({ children }: { children: React.ReactNod
     }
   }, [user, isInitialized, router])
 
-  const { data: myCompany } = useGetMyCompany(
-    isInitialized && !!user && user.roleResponse?.name === RoleUser.RECRUITER
-  )
+  const { data: myCompany } = useGetMyCompany(isInitialized && !!user && user.roleResponse?.name === RoleUser.RECRUITER)
 
   const { data: companyMembers = [] } = useGetCompanyMembers(
     myCompany?.id,
