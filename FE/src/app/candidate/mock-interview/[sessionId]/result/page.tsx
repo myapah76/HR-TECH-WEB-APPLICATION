@@ -2,10 +2,9 @@
 
 import React, { useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
 import { Card } from '@/src/components/ui/card'
 import { Button } from '@/src/components/ui/button'
-import { getInterviewResult } from '@/src/services/interview.service'
+import { useGetInterviewResult } from '@/src/hooks/interview'
 import {
   BookOpen,
   CheckCircle2,
@@ -29,11 +28,7 @@ export default function MockInterviewResultPage() {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0)
 
   // Fetch Evaluation Result
-  const { data: result, isLoading, error } = useQuery({
-    queryKey: ['interviewResult', sessionId],
-    queryFn: () => getInterviewResult(sessionId),
-    retry: 1,
-  })
+  const { data: result, isLoading, error } = useGetInterviewResult(sessionId)
 
   const toggleExpand = (idx: number) => {
     setExpandedIndex(expandedIndex === idx ? null : idx)

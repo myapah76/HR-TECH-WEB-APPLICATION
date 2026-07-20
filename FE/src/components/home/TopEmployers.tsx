@@ -84,9 +84,12 @@ export default function TopEmployers() {
                     </div>
                   ) : (
                     <div className="h-12 flex items-center justify-center mb-3">
-                      <img
+                      <Image
                         src={company.logoUrl}
                         alt={company.name}
+                        width={48}
+                        height={48}
+                        unoptimized
                         onError={() => setFailedLogos((prev) => ({ ...prev, [company.id]: true }))}
                         className="max-h-full max-w-full object-contain transition-transform group-hover:scale-105 duration-300"
                         id={`employer-img-${company.id}`}

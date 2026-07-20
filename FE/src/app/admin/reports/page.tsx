@@ -3,11 +3,12 @@
 import { useEffect, useState, useMemo, Suspense, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+
 import { toast } from 'sonner'
 import Badge from '@/src/components/ui/Badge'
 import Pagination from '@/src/components/common/Pagination'
-import { Briefcase, Search, X, MoreHorizontal, Eye, CheckCircle, XCircle } from 'lucide-react'
+import { Briefcase, MoreHorizontal, Eye, CheckCircle, XCircle } from 'lucide-react'
+import SearchInput from '@/src/components/common/SearchInput'
 import { useGetJobReport, useApproveAppealAdmin, useRejectAppealAdmin } from '@/src/hooks/job'
 import {
   JobStatus,
@@ -21,6 +22,7 @@ import { Job } from '@/src/types/job'
 import JobPreviewModal from '@/components/common/JobPreviewModal'
 import ConfirmModal from '@/components/common/ConfirmModal'
 import JobRejectModal from '@/components/common/JobRejectModal'
+import { useUrlFilter } from '@/src/hooks/useUrlFilter'
 
 type ConfirmActionType = 'approve' | 'reject'
 
@@ -30,22 +32,17 @@ interface ConfirmActionState {
 }
 
 function ReportsManagementContent() {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-
-  // Get filter state from URL params
-  const urlKeyword = searchParams.get('keyword') || ''
-  const urlPage = parseInt(searchParams.get('page') || '1', 10)
-  const urlSize = parseInt(searchParams.get('size') || '10', 10)
-
-  const [keywordInput, setKeywordInput] = useState(urlKeyword)
-
-  useEffect(() => {
-    setTimeout(() => {
-      setKeywordInput(urlKeyword)
-    }, 0)
-  }, [urlKeyword])
+  const {
+    keywordInput,
+    setKeywordInput,
+    urlKeyword,
+    urlPage,
+    urlSize,
+    updateUrlParams,
+  } = useUrlFilter({
+    defaultPage: 1,
+    defaultSize: 10,
+  })
 
   const queryParams = useMemo(() => {
     const params: Record<string, string | number> = {
@@ -109,27 +106,7 @@ function ReportsManagementContent() {
     }
   }, [openMenuJobId])
 
-  const updateUrlParams = (newParams: {
-    keyword?: string
-    status?: string
-    page?: number
-    size?: number
-  }) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (newParams.keyword !== undefined) {
-      if (newParams.keyword.trim()) params.set('keyword', newParams.keyword.trim())
-      else params.delete('keyword')
-      params.set('page', '1')
-    }
-    if (newParams.status !== undefined) {
-      if (newParams.status && newParams.status !== 'ALL') params.set('status', newParams.status)
-      else params.delete('status')
-      params.set('page', '1')
-    }
-    if (newParams.page !== undefined) params.set('page', String(newParams.page))
-    if (newParams.size !== undefined) params.set('size', String(newParams.size))
-    router.push(`${pathname}?${params.toString()}`)
-  }
+
 
   const executeTransition = async () => {
     if (!confirmAction) return
@@ -195,33 +172,14 @@ function ReportsManagementContent() {
 
       {/* Filters */}
       <div className="grid gap-3 rounded-2xl border border-slate-200/60 bg-white p-4 shadow-xs md:grid-cols-[1fr]">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            updateUrlParams({ keyword: keywordInput })
-          }}
-          className="relative block"
-        >
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            value={keywordInput}
-            onChange={(e) => setKeywordInput(e.target.value)}
-            placeholder="Tìm theo tiêu đề khiếu nại hoặc tên công ty... (Nhấn Enter)"
-            className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-12 text-xs font-bold text-slate-700 outline-hidden transition focus:border-violet-500 focus:ring-2 focus:ring-violet-50"
-          />
-          {keywordInput && (
-            <button
-              type="button"
-              onClick={() => {
-                setKeywordInput('')
-                updateUrlParams({ keyword: '' })
-              }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          )}
-        </form>
+        <SearchInput
+          value={keywordInput}
+          onChange={setKeywordInput}
+          placeholder="Tìm theo tiêu đề khiếu nại hoặc tên công ty... (Nhấn Enter)"
+          onSubmit={(v) => updateUrlParams({ keyword: v })}
+          clearable
+          className="block"
+        />
       </div>
 
       {/* Table */}

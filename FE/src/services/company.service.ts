@@ -2,7 +2,9 @@ import { api } from '@/src/lib/axios'
 import { ApiResponse, PageResponse } from '@/src/types/api'
 import {
   AddMemberRequest,
+  CompanyDetailPublic,
   CompanyMemberResponse,
+  CompanyPublicJob,
   CompanyResponse,
   CompanyUpdateRequest,
   GetCompaniesParams,
@@ -109,5 +111,16 @@ export const getRecruiterActiveJobs = async (): Promise<RecruiterActiveJob[]> =>
 
 export const getRecruiterAnalytics = async (): Promise<RecruiterAnalyticsResponse> => {
   const response = await api.get<ApiResponse<RecruiterAnalyticsResponse>>('/applications/recruiter/dashboard/analytics')
+  return response.data.data
+}
+
+
+export const getCompanyDetail = async (id: string): Promise<CompanyDetailPublic> => {
+  const response = await api.get<ApiResponse<CompanyDetailPublic>>(`/companies/${id}`)
+  return response.data.data
+}
+
+export const getCompanyPublicJobs = async (id: string): Promise<PageResponse<CompanyPublicJob>> => {
+  const response = await api.get<ApiResponse<PageResponse<CompanyPublicJob>>>(`/companies/${id}/jobs`)
   return response.data.data
 }

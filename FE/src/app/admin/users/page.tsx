@@ -9,7 +9,10 @@ import { useGetUsers, useUpdateUserBlockedStatus } from '@/src/hooks/user'
 import { useAuthStore } from '@/src/stores/auth.store'
 import { AdminUsersParams, User } from '@/src/types/user'
 import { getErrorMessage } from '@/src/utils'
-import { AlertTriangle, Lock, Search, Shield, Unlock, X } from 'lucide-react'
+import { AlertTriangle, Lock, Shield, Unlock, X } from 'lucide-react'
+import SearchInput from '@/src/components/common/SearchInput'
+import FilterSelect from '@/src/components/common/FilterSelect'
+import { useUrlFilter } from '@/src/hooks/useUrlFilter'
 
 type BlockedFilter = 'ALL' | 'ACTIVE' | 'BLOCKED'
 
@@ -34,11 +37,23 @@ const getFullName = (user: User) => {
 
 export default function UsersPage() {
   const currentUser = useAuthStore((state) => state.user)
-  const [emailSearch, setEmailSearch] = useState('')
-  const [roleFilter, setRoleFilter] = useState<'ALL' | RoleUser>('ALL')
-  const [blockedFilter, setBlockedFilter] = useState<BlockedFilter>('ALL')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_PAGE_SIZE)
+
+  const {
+    keywordInput: emailSearch,
+    setKeywordInput: setEmailSearch,
+    urlKeyword: urlEmail,
+    urlPage: currentPage,
+    urlSize: itemsPerPage,
+    searchParams,
+    updateUrlParams,
+  } = useUrlFilter({
+    keywordKey: 'email',
+    defaultPage: 1,
+    defaultSize: DEFAULT_PAGE_SIZE,
+  })
+
+  const roleFilter = (searchParams.get('role') || 'ALL') as 'ALL' | RoleUser
+  const blockedFilter = (searchParams.get('blocked') || 'ALL') as BlockedFilter
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null)
   const [confirmUser, setConfirmUser] = useState<User | null>(null)
 
@@ -47,14 +62,14 @@ export default function UsersPage() {
       page: currentPage - 1,
       size: itemsPerPage,
     }
-    const trimmedEmail = emailSearch.trim()
+    const trimmedEmail = urlEmail.trim()
 
     if (trimmedEmail) params.email = trimmedEmail
     if (roleFilter !== 'ALL') params.role = roleFilter
     if (blockedFilter !== 'ALL') params.isBlocked = blockedFilter === 'BLOCKED'
 
     return params
-  }, [blockedFilter, currentPage, emailSearch, roleFilter])
+  }, [blockedFilter, currentPage, urlEmail, roleFilter, itemsPerPage])
 
   const { data: usersPage, isLoading, isError, refetch } = useGetUsers(queryParams)
   const updateBlockedStatus = useUpdateUserBlockedStatus()
@@ -63,17 +78,19 @@ export default function UsersPage() {
   const totalPages = Math.max(1, usersPage?.page?.totalPages ?? 1)
   const safeCurrentPage = Math.min(currentPage, totalPages)
 
+  // Update users page count side-effect
   useEffect(() => {
     const finalTotalPages = usersPage?.page?.totalPages ?? 0
     if (usersPage && finalTotalPages > 0 && currentPage > finalTotalPages) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCurrentPage(finalTotalPages)
+      updateUrlParams({ page: finalTotalPages })
     }
-  }, [currentPage, usersPage])
+  }, [currentPage, usersPage, updateUrlParams])
 
-  const updateFilter = (callback: () => void) => {
-    callback()
-    setCurrentPage(1)
+  const updateFilter = (newFilters: Record<string, string | number | undefined | null>) => {
+    updateUrlParams({
+      ...newFilters,
+      page: 1,
+    })
   }
 
   const handleRequestToggleBlocked = (user: User) => {
@@ -104,42 +121,33 @@ export default function UsersPage() {
   return (
     <div>
       <div className="mb-4 grid gap-3 rounded-2xl border border-slate-200/60 bg-white p-4 shadow-xs md:grid-cols-[1fr_180px_180px]">
-        <label className="relative block">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            value={emailSearch}
-            onChange={(event) => updateFilter(() => setEmailSearch(event.target.value))}
-            placeholder="Tìm theo email"
-            className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-xs font-bold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
-          />
-        </label>
+        <SearchInput
+          value={emailSearch}
+          onChange={(v) => {
+            setEmailSearch(v)
+            updateUrlParams({ email: v || undefined })
+          }}
+          placeholder="Tìm theo email"
+        />
 
-        <select
+        <FilterSelect
           value={roleFilter}
-          onChange={(event) =>
-            updateFilter(() => setRoleFilter(event.target.value as 'ALL' | RoleUser))
-          }
-          className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
-        >
-          <option value="ALL">Tất cả vai trò</option>
-          {Object.values(RoleUser).map((role) => (
-            <option key={role} value={role}>
-              {roleLabels[role]}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => updateFilter({ role: v })}
+          options={[
+            { value: 'ALL', label: 'Tất cả vai trò' },
+            ...Object.values(RoleUser).map((role) => ({ value: role, label: roleLabels[role] })),
+          ]}
+        />
 
-        <select
+        <FilterSelect
           value={blockedFilter}
-          onChange={(event) =>
-            updateFilter(() => setBlockedFilter(event.target.value as BlockedFilter))
-          }
-          className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
-        >
-          <option value="ALL">Tất cả trạng thái</option>
-          <option value="ACTIVE">Đang hoạt động</option>
-          <option value="BLOCKED">Đã khóa</option>
-        </select>
+          onChange={(v) => updateFilter({ blocked: v })}
+          options={[
+            { value: 'ALL', label: 'Tất cả trạng thái' },
+            { value: 'ACTIVE', label: 'Đang hoạt động' },
+            { value: 'BLOCKED', label: 'Đã khóa' },
+          ]}
+        />
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-xs">
@@ -251,14 +259,15 @@ export default function UsersPage() {
         </div>
       </div>
 
+      {/* Pagination */}
       {!isLoading && !isError && totalPages > 1 && (
         <Pagination
           currentPage={safeCurrentPage}
           totalPages={totalPages}
           totalItems={totalElements}
           itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
-          onItemsPerPageChange={setItemsPerPage}
+          onPageChange={(page) => updateUrlParams({ page })}
+          onItemsPerPageChange={(size) => updateUrlParams({ size, page: 1 })}
         />
       )}
 

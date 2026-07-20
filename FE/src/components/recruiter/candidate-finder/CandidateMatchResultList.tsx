@@ -90,7 +90,7 @@ export function CandidateMatchResultList({
                 <CardHeader className="bg-slate-50/50 border-b border-slate-100 group-hover:bg-emerald-50/20 transition-colors p-5">
                   <div className="flex items-start gap-4">
                     {/* Avatar */}
-                    <div className="flex-shrink-0">
+                    <div className="shrink-0">
                       {candidate.avatarUrl ? (
                         <Image
                           src={candidate.avatarUrl}
@@ -101,7 +101,7 @@ export function CandidateMatchResultList({
                           className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-sm">
+                        <div className="w-12 h-12 rounded-full bg-linear-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-sm">
                           <User className="w-6 h-6 text-white" />
                         </div>
                       )}
@@ -121,13 +121,15 @@ export function CandidateMatchResultList({
                     </div>
 
                     {/* Score badge */}
-                    <div className="flex-shrink-0 flex flex-col items-end gap-1">
+                    <div className="shrink-0 flex flex-col items-end gap-1">
                       <div
                         className={`px-3 py-1 rounded-full text-sm font-black border ${gradeStyle.badge}`}
                       >
                         {scorePercent}%
                       </div>
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${gradeStyle.badge}`}>
+                      <span
+                        className={`text-xs font-semibold px-2 py-0.5 rounded border ${gradeStyle.badge}`}
+                      >
                         {GRADE_LABELS[candidate.matchGrade] ?? candidate.matchGrade}
                       </span>
                     </div>

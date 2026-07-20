@@ -24,6 +24,8 @@ public interface IApplicationService {
 
     ApplicationDetailResponse getApplicationDetail(UUID userId, UUID applicationId);
 
+    Application getApplicationEntityById(UUID applicationId);
+
     void withdrawApplication(UUID userId, UUID applicationId);
 
     ApplicationSummaryResponse updateStatus(UUID applicationId, UpdateApplicationStatusRequest request);
@@ -46,16 +48,6 @@ public interface IApplicationService {
     boolean hasApplied(UUID userId, UUID jobId);
 
     long countApplicationsByStatus(ApplicationStatus status);
-
-    long countApplicationsByUserId(UUID userId);
-
-    long countApplicationsByUserIdAndStatus(UUID userId, ApplicationStatus status);
-
-    List<Application> getRecentApplications(UUID userId, int limit);
-
-    List<Application> getUpcomingInterviews(UUID userId);
-
-    List<Application> getAllApplicationsByUserId(UUID userId);
 
     ApplicationDashboardSummaryResponse getApplicationDashboardSummary(UUID userId);
 

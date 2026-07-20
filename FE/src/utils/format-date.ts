@@ -107,3 +107,54 @@ export const getRelativeUrgency = (dateStr: string | number | Date | null | unde
   }
 }
 
+export function calcTimeAgo(dateStr: string): string {
+  if (!dateStr) return ''
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const seconds = Math.floor(diff / 1000)
+  if (seconds < 60) return `${Math.max(0, seconds)} giây trước`
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes} phút trước`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} giờ trước`
+  return `${Math.floor(hours / 24)} ngày trước`
+}
+
+export function toDateTimeLocalValue(dateStr?: string | Date | null): string {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+export function formatTimeOnly(dateStr?: string | Date | null): string {
+  if (!dateStr) return '--:--'
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return '--:--'
+  return d.toLocaleTimeString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+export function getDateKey(dateStr?: string | Date | null): string {
+  if (!dateStr) return 'no-date'
+  const d = dayjs(dateStr)
+  if (!d.isValid()) return 'no-date'
+  return d.format('YYYY-MM-DD')
+}
+
+export function getDateLabel(dateKey: string, today: dayjs.Dayjs = dayjs()): string {
+  if (dateKey === 'no-date') return 'Chưa có thời gian'
+
+  const date = dayjs(dateKey)
+  const tomorrow = today.add(1, 'day')
+  const dateText = date.format('DD/MM/YYYY')
+
+  if (date.isSame(today, 'day')) return `Hôm nay - ${dateText}`
+  if (date.isSame(tomorrow, 'day')) return `Ngày mai - ${dateText}`
+  return dateText
+}
+
+
+

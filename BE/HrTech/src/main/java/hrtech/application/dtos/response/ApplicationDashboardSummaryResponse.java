@@ -11,5 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ApplicationDashboardSummaryResponse {
     private long appliedCount;
+    private long savedCount;
+    private long cvCount;
     private long interviewCount;
 }

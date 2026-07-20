@@ -1,4 +1,5 @@
 import React from 'react'
+import Image from 'next/image'
 import { Progress } from '@/src/components/ui/progress'
 import {
   Loader2,
@@ -62,10 +63,12 @@ export function JobMatchProgressCard({ isProcessActive, taskStatus, onReset }: J
     <div className="relative flex flex-col items-center justify-center p-8 bg-slate-100/50 rounded-2xl border border-slate-200 shadow-inner min-h-125 overflow-hidden animate-in fade-in slide-in-from-right-8 duration-500">
       {/* The CV Mockup Image */}
       <div className="relative w-full max-w-sm aspect-[1/1.4] rounded-lg shadow-2xl overflow-hidden border border-slate-300 bg-white">
-        <img
+        <Image
           src="/cv_mockup.png"
           alt="CV Mockup"
-          className="w-full h-full object-cover opacity-90"
+          fill
+          sizes="(max-width: 384px) 100vw, 384px"
+          className="object-cover opacity-90"
         />
 
         {/* Scanner overlay */}

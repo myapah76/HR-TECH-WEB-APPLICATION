@@ -96,3 +96,30 @@ export interface RecruiterAnalyticsResponse {
   sixMonths: RecruiterAnalyticsItem[]
   threeYears: RecruiterAnalyticsItem[]
 }
+
+// ─── Public / unauthenticated views ─────────────────────────────────────────
+
+/** Company detail dùng cho trang công khai /companies/[id] */
+export interface CompanyDetailPublic {
+  id: string
+  name: string
+  description: string
+  logoUrl: string
+  website: string
+  address: string
+  email: string
+  phone: string
+  taxCode: string
+  industry?: string
+  size?: string
+}
+
+/** Job item rút gọn dùng trong trang công khai của công ty */
+export interface CompanyPublicJob {
+  id: string
+  title: string
+  location: string
+  salary: string
+  jobType: string
+  postedAt?: string
+}
