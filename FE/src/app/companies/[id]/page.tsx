@@ -4,34 +4,11 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { api } from '@/src/lib/axios'
 import { ArrowLeft, MapPin, Users, Calendar, Globe, CheckCircle, Briefcase } from 'lucide-react'
 import { motion } from 'motion/react'
+import { useGetCompanyDetail, useGetCompanyPublicJobs } from '@/src/hooks/company'
+import type { CompanyPublicJob } from '@/src/types/company'
 
-// Define interfaces locally or import them
-interface CompanyDetail {
-  id: string
-  name: string
-  description: string
-  logoUrl: string
-  website: string
-  address: string
-  email: string
-  phone: string
-  taxCode: string
-  industry?: string
-  size?: string
-}
-
-interface JobItem {
-  id: string
-  title: string
-  location: string
-  salary: string
-  jobType: string
-  postedAt?: string
-}
 
 export default function CompanyDetailPage() {
   const params = useParams()
@@ -39,28 +16,13 @@ export default function CompanyDetailPage() {
   const id = params?.id as string
   const [imgError, setImgError] = useState(false)
 
-  // 1. Fetch Company details from API /api/companies/{id}
-  const { data: company, isLoading: isLoadingCompany } = useQuery<CompanyDetail>({
-    queryKey: ['companyDetail', id],
-    queryFn: async () => {
-      const res = await api.get(`/companies/${id}`)
-      return res.data.data
-    },
-    enabled: !!id,
-  })
+  const { data: company, isLoading: isLoadingCompany } = useGetCompanyDetail(id)
 
-  // 2. Fetch Jobs of this company from API /api/companies/{id}/jobs (or public list filtered by company)
-  const { data: pageData, isLoading: isLoadingJobs } = useQuery({
-    queryKey: ['companyJobsPublic', id],
-    queryFn: async () => {
-      const res = await api.get(`/companies/${id}/jobs`)
-      return res.data.data
-    },
-    enabled: !!id,
-  })
+  // 2. Fetch Jobs của công ty này
+  const { data: pageData, isLoading: isLoadingJobs } = useGetCompanyPublicJobs(id)
 
   // Extract jobs from Spring Page wrapper
-  const companyJobs: JobItem[] = pageData?.content || []
+  const companyJobs: CompanyPublicJob[] = pageData?.content || []
 
   if (isLoadingCompany || isLoadingJobs) {
     return (

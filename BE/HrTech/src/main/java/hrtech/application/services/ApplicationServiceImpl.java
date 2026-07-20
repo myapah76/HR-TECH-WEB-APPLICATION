@@ -28,6 +28,7 @@ import hrtech.cv.entities.Cv;
 import hrtech.identity.abstractions.services.IUserService;
 import hrtech.identity.entities.User;
 import hrtech.job.abstractions.services.IJobService;
+import hrtech.job.abstractions.services.ISavedJobService;
 import hrtech.job.entities.Job;
 import hrtech.job.entities.enums.JobStatus;
 import hrtech.notification.abstractions.services.INotificationService;
@@ -74,16 +75,20 @@ public class ApplicationServiceImpl implements IApplicationService {
     private static final ZoneId ZONE_VN = ZoneId.of("Asia/Ho_Chi_Minh");
 
     private final IJobService jobService;
+    private final ISavedJobService savedJobService;
     private final ICvService cvService;
     private final IUserService userService;
     private final INotificationService notificationService;
     private final ICreditService creditService;
     private final IRecommendationService recommendationService;
     private final ICompanyService companyService;
+
     private final ApplicationRepository applicationRepository;
     private final ApplicationScoreRepository applicationScoreRepository;
     private final SkillMatchRepository skillMatchRepository;
+
     private final ApplicationMapper applicationMapper;
+
     private final AuthUtils authUtils;
 
     @Value("${app.frontend-base-url:http://localhost:3000}")
@@ -136,8 +141,7 @@ public class ApplicationServiceImpl implements IApplicationService {
                         title,
                         content,
                         NotificationType.APPLICATION_STATUS_UPDATED,
-                        application.getId().toString()
-                );
+                        application.getId().toString());
             } catch (Exception e) {
                 log.error("Failed to send notification to recruiter for new application", e);
             }
@@ -148,9 +152,15 @@ public class ApplicationServiceImpl implements IApplicationService {
     }
 
     @Override
-    public void withdrawApplication(UUID userId, UUID applicationId) {
-        Application application = applicationRepository.findById(applicationId)
+    @Transactional(readOnly = true)
+    public Application getApplicationEntityById(UUID applicationId) {
+        return applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Application not found"));
+    }
+
+    @Override
+    public void withdrawApplication(UUID userId, UUID applicationId) {
+        Application application = getApplicationEntityById(applicationId);
 
         if (!application.getUser().getId().equals(userId)) {
             throw new AppException(ErrorCode.JOB_PERMISSION_DENIED, "Application does not belong to user");
@@ -176,8 +186,7 @@ public class ApplicationServiceImpl implements IApplicationService {
             }
         }
 
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Application not found"));
+        Application application = getApplicationEntityById(applicationId);
 
         application.setStatus(newStatus);
         application = applicationRepository.save(application);
@@ -189,8 +198,7 @@ public class ApplicationServiceImpl implements IApplicationService {
 
     @Override
     public ApplicationSummaryResponse scheduleInterview(UUID applicationId, ScheduleInterviewRequest request) {
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Application not found"));
+        Application application = getApplicationEntityById(applicationId);
 
         application.setStatus(ApplicationStatus.PENDING_INTERVIEW_SCHEDULE);
         application.setInterviewDateTime(request.interviewDateTime());
@@ -221,7 +229,8 @@ public class ApplicationServiceImpl implements IApplicationService {
     }
 
     @Override
-    public ApplicationSummaryResponse changeInterviewSchedule(UUID userId, UUID applicationId, ChangeInterviewScheduleRequest request) {
+    public ApplicationSummaryResponse changeInterviewSchedule(UUID userId, UUID applicationId,
+            ChangeInterviewScheduleRequest request) {
         Application application = findCandidateApplicationWaitingForSchedule(userId, applicationId);
 
         application.setStatus(ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE);
@@ -277,8 +286,7 @@ public class ApplicationServiceImpl implements IApplicationService {
     @Override
     @Transactional(readOnly = true)
     public ApplicationDetailResponse getApplicationDetail(UUID userId, UUID applicationId) {
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Application not found"));
+        Application application = getApplicationEntityById(applicationId);
 
         boolean isApplicant = application.getUser().getId().equals(userId);
         boolean isCompanyMember = application.getJob() != null
@@ -293,12 +301,7 @@ public class ApplicationServiceImpl implements IApplicationService {
         ApplicationDetailResponse response = applicationMapper.toDetailResponse(application);
         ApplicationScore score = application.getApplicationScore();
         if (score != null) {
-            boolean hasPaid = false;
-            if (isApplicant && score.isCandidatePaid()) {
-                hasPaid = true;
-            } else if (isCompanyMember && score.isCompanyPaid()) {
-                hasPaid = true;
-            }
+            boolean hasPaid = isApplicant && score.isCandidatePaid() || isCompanyMember && score.isCompanyPaid();
             if (!hasPaid) {
                 response.setOverallScore(null);
                 response.setGrade(null);
@@ -338,45 +341,12 @@ public class ApplicationServiceImpl implements IApplicationService {
     public long countApplicationsByStatus(ApplicationStatus status) {
         return applicationRepository.countByStatus(status);
     }
-
-    @Override
-    @Transactional(readOnly = true)
-    public long countApplicationsByUserId(UUID userId) {
-        return applicationRepository.countByUserId(userId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public long countApplicationsByUserIdAndStatus(UUID userId, ApplicationStatus status) {
-        return applicationRepository.countByUserIdAndStatus(userId, status);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Application> getRecentApplications(UUID userId, int limit) {
-        return applicationRepository.findByUserIdOrderByAppliedAtDesc(userId, PageRequest.of(0, limit));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Application> getUpcomingInterviews(UUID userId) {
-        return applicationRepository.findByUserIdAndStatusAndInterviewDateTimeGreaterThanEqualOrderByInterviewDateTimeAsc(
-                userId, ApplicationStatus.INTERVIEW, Instant.now());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Application> getAllApplicationsByUserId(UUID userId) {
-        return applicationRepository.findByUserId(userId);
-    }
-
     // ─── SCORING METHOD ────────────────────────────────────────────────────────
 
     @Override
     @Transactional
     public ApplicationDetailResponse scoreApplication(UUID userId, UUID applicationId) {
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Application not found"));
+        Application application = getApplicationEntityById(applicationId);
 
         boolean isApplicant = application.getUser().getId().equals(userId);
         boolean isCompanyMember = application.getJob() != null
@@ -394,20 +364,23 @@ public class ApplicationServiceImpl implements IApplicationService {
         if (isApplicant) {
             if (existingScore != null) {
                 if (existingScore.isCandidatePaid()) {
-                    throw new AppException(ErrorCode.INVALID_INPUT, "Bạn đã thanh toán để chấm điểm đơn ứng tuyển này rồi.");
+                    throw new AppException(ErrorCode.INVALID_INPUT,
+                            "Bạn đã thanh toán để chấm điểm đơn ứng tuyển này rồi.");
                 }
                 if (!creditService.hasCandidateFeatureAccess(userId, "APP_SCORING")) {
-                    throw new AppException(ErrorCode.FORBIDDEN, "Gói của bạn không có tính năng Chấm điểm CV (APP_SCORING). Vui lòng nâng cấp gói.");
+                    throw new AppException(ErrorCode.FORBIDDEN,
+                            "Gói của bạn không có tính năng Chấm điểm CV (APP_SCORING). Vui lòng nâng cấp gói.");
                 }
                 creditService.deductCandidateQuota(userId, "APP_SCORING", 1);
                 existingScore.setCandidatePaid(true);
                 applicationScoreRepository.save(existingScore);
-                
+
                 // Return updated detail (it will now be visible since candidatePaid is true)
                 return getApplicationDetail(userId, applicationId);
             } else {
                 if (!creditService.hasCandidateFeatureAccess(userId, "APP_SCORING")) {
-                    throw new AppException(ErrorCode.FORBIDDEN, "Gói của bạn không có tính năng Chấm điểm CV (APP_SCORING). Vui lòng nâng cấp gói.");
+                    throw new AppException(ErrorCode.FORBIDDEN,
+                            "Gói của bạn không có tính năng Chấm điểm CV (APP_SCORING). Vui lòng nâng cấp gói.");
                 }
                 creditService.deductCandidateQuota(userId, "APP_SCORING", 1);
                 ApplicationScore newScore = calculateAndSaveScore(application, true, false);
@@ -420,19 +393,22 @@ public class ApplicationServiceImpl implements IApplicationService {
         if (isCompanyMember) {
             if (existingScore != null) {
                 if (existingScore.isCompanyPaid()) {
-                    throw new AppException(ErrorCode.INVALID_INPUT, "Công ty của bạn đã thanh toán để chấm điểm đơn ứng tuyển này rồi.");
+                    throw new AppException(ErrorCode.INVALID_INPUT,
+                            "Công ty của bạn đã thanh toán để chấm điểm đơn ứng tuyển này rồi.");
                 }
                 if (!creditService.hasCompanyFeatureAccessByUserId(userId, "APP_SCORING")) {
-                    throw new AppException(ErrorCode.FORBIDDEN, "Gói của công ty không có tính năng Chấm điểm CV (APP_SCORING). Vui lòng nâng cấp gói.");
+                    throw new AppException(ErrorCode.FORBIDDEN,
+                            "Gói của công ty không có tính năng Chấm điểm CV (APP_SCORING). Vui lòng nâng cấp gói.");
                 }
                 creditService.deductCompanyFeatureQuota(userId, "APP_SCORING", 1);
                 existingScore.setCompanyPaid(true);
                 applicationScoreRepository.save(existingScore);
-                
+
                 return getApplicationDetail(userId, applicationId);
             } else {
                 if (!creditService.hasCompanyFeatureAccessByUserId(userId, "APP_SCORING")) {
-                    throw new AppException(ErrorCode.FORBIDDEN, "Gói của công ty không có tính năng Chấm điểm CV (APP_SCORING). Vui lòng nâng cấp gói.");
+                    throw new AppException(ErrorCode.FORBIDDEN,
+                            "Gói của công ty không có tính năng Chấm điểm CV (APP_SCORING). Vui lòng nâng cấp gói.");
                 }
                 creditService.deductCompanyFeatureQuota(userId, "APP_SCORING", 1);
                 ApplicationScore newScore = calculateAndSaveScore(application, false, true);
@@ -444,13 +420,16 @@ public class ApplicationServiceImpl implements IApplicationService {
         throw new AppException(ErrorCode.FORBIDDEN, "Access denied");
     }
 
-    private ApplicationScore calculateAndSaveScore(Application application, boolean candidatePaid, boolean companyPaid) {
+    private ApplicationScore calculateAndSaveScore(Application application, boolean candidatePaid,
+            boolean companyPaid) {
         try {
-            SkillMatchScoreResponse matchScore = recommendationService.calculateMatchScore(application.getCv().getId(), application.getJob().getId());
+            SkillMatchScoreResponse matchScore = recommendationService.calculateMatchScore(application.getCv().getId(),
+                    application.getJob().getId());
             ScoreGrade grade = matchScore.getGrade();
 
             double scorePercent = matchScore.getOverallScore() * 100;
-            String summary = String.format("Độ tương thích CV của ứng viên đạt %.1f%%. Hệ thống ghi nhận đã khớp %d kỹ năng và thiếu %d kỹ năng so với mô tả công việc.",
+            String summary = String.format(
+                    "Độ tương thích CV của ứng viên đạt %.1f%%. Hệ thống ghi nhận đã khớp %d kỹ năng và thiếu %d kỹ năng so với mô tả công việc.",
                     scorePercent,
                     matchScore.getMatchedSkills().size(),
                     matchScore.getMissingSkills().size());
@@ -464,7 +443,7 @@ public class ApplicationServiceImpl implements IApplicationService {
             } else {
                 suggestion.append(" - Không có kỹ năng nào trùng khớp.\n");
             }
-            
+
             suggestion.append("\nKỹ năng còn thiếu hoặc cần bổ sung:\n");
             if (!matchScore.getMissingSkills().isEmpty()) {
                 for (String s : matchScore.getMissingSkills()) {
@@ -514,13 +493,17 @@ public class ApplicationServiceImpl implements IApplicationService {
 
                 SkillLevel reqLevel = null;
                 try {
-                    if (detail.getRequiredLevel() != null) reqLevel = SkillLevel.valueOf(detail.getRequiredLevel());
-                } catch (Exception ignored) {}
+                    if (detail.getRequiredLevel() != null)
+                        reqLevel = SkillLevel.valueOf(detail.getRequiredLevel());
+                } catch (Exception ignored) {
+                }
 
                 SkillLevel candLevel = null;
                 try {
-                    if (detail.getCandidateLevel() != null) candLevel = SkillLevel.valueOf(detail.getCandidateLevel());
-                } catch (Exception ignored) {}
+                    if (detail.getCandidateLevel() != null)
+                        candLevel = SkillLevel.valueOf(detail.getCandidateLevel());
+                } catch (Exception ignored) {
+                }
 
                 SkillMatch skillMatch = SkillMatch.builder()
                         .applicationScore(applicationScore)
@@ -549,8 +532,12 @@ public class ApplicationServiceImpl implements IApplicationService {
     public ApplicationDashboardSummaryResponse getApplicationDashboardSummary(UUID userId) {
         long appliedCount = applicationRepository.countByUserId(userId);
         long interviewCount = applicationRepository.countByUserIdAndStatus(userId, ApplicationStatus.INTERVIEW);
+        long savedCount = savedJobService.countSavedJobsByUserId(userId);
+        long cvCount = cvService.countCvsByUserId(userId);
         return ApplicationDashboardSummaryResponse.builder()
                 .appliedCount(appliedCount)
+                .savedCount(savedCount)
+                .cvCount(cvCount)
                 .interviewCount(interviewCount)
                 .build();
     }
@@ -559,7 +546,10 @@ public class ApplicationServiceImpl implements IApplicationService {
     @Transactional(readOnly = true)
     public List<RecentActivityResponse> getRecentApplicationsForDashboard(UUID userId, int limit) {
         List<RecentActivityResponse> activities = new ArrayList<>();
-        getRecentApplications(userId, limit).forEach(app -> {
+        List<Application> recentApplications = applicationRepository.findByUserIdOrderByAppliedAtDesc(
+                userId, PageRequest.of(0, limit));
+
+        recentApplications.forEach(app -> {
             String jobTitle = app.getJob() != null ? app.getJob().getTitle() : "Vị trí tuyển dụng";
             activities.add(RecentActivityResponse.builder()
                     .action("Nộp hồ sơ ứng tuyển vị trí: " + jobTitle)
@@ -567,13 +557,17 @@ public class ApplicationServiceImpl implements IApplicationService {
                     .status("submitted")
                     .build());
         });
+
         return activities;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<UpcomingInterviewResponse> getUpcomingInterviewsForDashboard(UUID userId) {
-        return getUpcomingInterviews(userId).stream()
+        return applicationRepository
+                .findByUserIdAndStatusAndInterviewDateTimeGreaterThanEqualOrderByInterviewDateTimeAsc(
+                        userId, ApplicationStatus.INTERVIEW, Instant.now())
+                .stream()
                 .map(this::toUpcomingInterviewResponse)
                 .toList();
     }
@@ -624,8 +618,7 @@ public class ApplicationServiceImpl implements IApplicationService {
                 null,
                 request.getAcceptedStartDateTime(),
                 normalizeBlank(request.getAcceptedWorkAddress()),
-                normalizeBlank(request.getAcceptedNote())
-        );
+                normalizeBlank(request.getAcceptedNote()));
 
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -658,8 +651,7 @@ public class ApplicationServiceImpl implements IApplicationService {
                 "Phản hồi lịch phỏng vấn",
                 null,
                 null,
-                null
-        );
+                null);
 
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -675,15 +667,15 @@ public class ApplicationServiceImpl implements IApplicationService {
     }
 
     private Application findCandidateApplicationWaitingForSchedule(UUID userId, UUID applicationId) {
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Application not found"));
+        Application application = getApplicationEntityById(applicationId);
 
         if (!application.getUser().getId().equals(userId)) {
             throw new AppException(ErrorCode.FORBIDDEN, "Application does not belong to current candidate");
         }
 
         if (application.getStatus() != ApplicationStatus.PENDING_INTERVIEW_SCHEDULE) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS, "Application is not waiting for interview schedule response");
+            throw new AppException(ErrorCode.JOB_INVALID_STATUS,
+                    "Application is not waiting for interview schedule response");
         }
 
         if (application.getInterviewDateTime() == null) {
@@ -694,15 +686,15 @@ public class ApplicationServiceImpl implements IApplicationService {
     }
 
     private Application findApplicationWaitingForRescheduleReview(UUID applicationId) {
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Application not found"));
+        Application application = getApplicationEntityById(applicationId);
 
         if (application.getStatus() != ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE) {
             throw new AppException(ErrorCode.JOB_INVALID_STATUS, "Application is not waiting for reschedule review");
         }
 
         if (application.getCandidatePreferredInterviewDateTime() == null) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS, "Application does not have a candidate preferred interview time");
+            throw new AppException(ErrorCode.JOB_INVALID_STATUS,
+                    "Application does not have a candidate preferred interview time");
         }
 
         return application;
@@ -727,15 +719,6 @@ public class ApplicationServiceImpl implements IApplicationService {
             return user.getUsername();
         }
         return user.getEmail();
-    }
-
-    private String generateSuggestion(ScoreGrade grade) {
-        return switch (grade) {
-            case EXCELLENT -> "Ứng viên rất phù hợp với vị trí này.";
-            case GOOD -> "Ứng viên khá phù hợp, cần kiểm tra thêm ở vòng phỏng vấn.";
-            case FAIR -> "Ứng viên đạt yêu cầu cơ bản, nhưng thiếu một số kỹ năng quan trọng.";
-            case POOR -> "Ứng viên chưa đáp ứng yêu cầu của vị trí này.";
-        };
     }
 
     private UpcomingInterviewResponse toUpcomingInterviewResponse(Application app) {
@@ -915,7 +898,8 @@ public class ApplicationServiceImpl implements IApplicationService {
         List<RecruiterAnalyticsItem> sixMonths = new ArrayList<>();
         for (int i = 5; i >= 0; i--) {
             ZonedDateTime month = now.minusMonths(i);
-            int yr = month.getYear(), mo = month.getMonthValue();
+            int yr = month.getYear();
+            int mo = month.getMonthValue();
             long count = apps.stream()
                     .filter(a -> a.getAppliedAt() != null)
                     .filter(a -> {

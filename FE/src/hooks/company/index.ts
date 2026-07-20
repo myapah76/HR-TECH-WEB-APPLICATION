@@ -1,5 +1,7 @@
 export * from './useGetMyCompany'
 export * from './useGetCompanies'
+export * from './useGetCompanyDetail'
+export * from './useGetCompanyPublicJobs'
 export * from './useGetCompanyMembers'
 export * from './useUpdateCompany'
 export * from './useAddCompanyMember'

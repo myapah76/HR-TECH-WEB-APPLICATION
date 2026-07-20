@@ -1,9 +1,10 @@
 'use client'
 
-import { Briefcase, Loader2, PlusCircle, Search } from 'lucide-react'
+import { Briefcase, Loader2, PlusCircle } from 'lucide-react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import SearchInput from '@/src/components/common/SearchInput'
+import FilterSelect from '@/src/components/common/FilterSelect'
+import { useUrlFilter } from '@/src/hooks/useUrlFilter'
 
 import ManageJobTable from '@/src/components/company/job/ManageJobTable'
 import Pagination from '@/src/components/common/Pagination'
@@ -44,23 +45,24 @@ const EXPERIENCE_LEVEL_OPTIONS = [
 ]
 
 export default function ManageJobPage() {
-  const searchParams = useSearchParams()
-  const [page, setPage] = useState(0)
-  const [size, setSize] = useState(10)
-  const [keyword, setKeyword] = useState('')
-  const [status, setStatus] = useState('')
-  const [jobType, setJobType] = useState('')
-  const [experienceLevel, setExperienceLevel] = useState('')
-  const { user } = useAuthStore()
+  const {
+    keywordInput: keyword,
+    setKeywordInput: setKeyword,
+    urlKeyword,
+    urlPage: pageNumber,
+    urlSize: size,
+    searchParams,
+    updateUrlParams,
+  } = useUrlFilter({
+    defaultPage: 1,
+    defaultSize: 10,
+  })
 
-  useEffect(() => {
-    const q = searchParams.get('keyword')
-    if (q) {
-      setTimeout(() => {
-        setKeyword(q)
-      }, 0)
-    }
-  }, [searchParams])
+  const page = pageNumber - 1
+  const status = searchParams.get('status') || ''
+  const jobType = searchParams.get('jobType') || ''
+  const experienceLevel = searchParams.get('experienceLevel') || ''
+  const { user } = useAuthStore()
 
   const {
     data: myCompany,
@@ -73,7 +75,7 @@ export default function ManageJobPage() {
     isLoading: isJobsLoading,
     isError: isJobsError,
   } = useGetManageJobs(myCompany?.id, {
-    keyword: keyword || undefined,
+    keyword: urlKeyword || undefined,
     status: status || undefined,
     jobType: jobType || undefined,
     experienceLevel: experienceLevel || undefined,
@@ -99,11 +101,13 @@ export default function ManageJobPage() {
     newExperienceLevel: string,
     newKeyword: string = ''
   ) => {
-    setPage(0)
-    setStatus(newStatus)
-    setJobType(newJobType)
-    setExperienceLevel(newExperienceLevel)
-    setKeyword(newKeyword)
+    updateUrlParams({
+      status: newStatus || undefined,
+      jobType: newJobType || undefined,
+      experienceLevel: newExperienceLevel || undefined,
+      keyword: newKeyword || undefined,
+      page: 1,
+    })
   }
 
   return (
@@ -121,59 +125,37 @@ export default function ManageJobPage() {
       {/* Filter Bar */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Search */}
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          <input
-            id="search-jobs"
-            type="text"
-            placeholder="Tìm theo tên tin, vị trí..."
-            value={keyword}
-            onChange={(e) => {
-              setKeyword(e.target.value)
-              setPage(0)
-            }}
-            className="w-full pl-9 pr-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400"
-          />
-        </div>
+        <SearchInput
+          id="search-jobs"
+          value={keyword}
+          onChange={(v) => {
+            setKeyword(v)
+            updateUrlParams({ keyword: v || undefined })
+          }}
+          placeholder="Tìm theo tên tin, vị trí..."
+          className="w-full sm:w-64"
+        />
 
-        <select
+        <FilterSelect
           id="filter-status"
           value={status}
-          onChange={(e) => handleFilterChange(e.target.value, jobType, experienceLevel, keyword)}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-        >
-          {STATUS_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => handleFilterChange(v, jobType, experienceLevel, keyword)}
+          options={STATUS_OPTIONS}
+        />
 
-        <select
+        <FilterSelect
           id="filter-job-type"
           value={jobType}
-          onChange={(e) => handleFilterChange(status, e.target.value, experienceLevel, keyword)}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-        >
-          {JOB_TYPE_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => handleFilterChange(status, v, experienceLevel, keyword)}
+          options={JOB_TYPE_OPTIONS}
+        />
 
-        <select
+        <FilterSelect
           id="filter-experience-level"
           value={experienceLevel}
-          onChange={(e) => handleFilterChange(status, jobType, e.target.value, keyword)}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-        >
-          {EXPERIENCE_LEVEL_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => handleFilterChange(status, jobType, v, keyword)}
+          options={EXPERIENCE_LEVEL_OPTIONS}
+        />
 
         {(status || jobType || experienceLevel || keyword) && (
           <button
@@ -208,15 +190,12 @@ export default function ManageJobPage() {
           <ManageJobTable jobs={jobs} currentUserId={user?.id} companyRole={currentMember?.role} />
 
           <Pagination
-            currentPage={page + 1}
+            currentPage={pageNumber}
             totalPages={totalPages}
             totalItems={totalElements}
             itemsPerPage={size}
-            onPageChange={(p) => setPage(p - 1)}
-            onItemsPerPageChange={(s) => {
-              setSize(s)
-              setPage(0)
-            }}
+            onPageChange={(p) => updateUrlParams({ page: p })}
+            onItemsPerPageChange={(s) => updateUrlParams({ size: s, page: 1 })}
           />
         </>
       ) : (

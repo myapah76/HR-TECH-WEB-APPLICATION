@@ -1,9 +1,10 @@
 'use client'
 
 import { useGetCompanies } from '@/src/hooks/company'
-import { Search, Briefcase } from 'lucide-react'
+import { Briefcase } from 'lucide-react'
 import { useState } from 'react'
 import CompanyCard from '@/src/components/company/CompanyCard'
+import SearchInput from '@/src/components/common/SearchInput'
 
 
 export default function CompaniesListPage() {
@@ -28,14 +29,11 @@ export default function CompaniesListPage() {
         </p>
       </div>
 
-      <div className="max-w-lg mx-auto mb-8 relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400" />
-        <input
-          type="text"
+      <div className="max-w-lg mx-auto mb-8">
+        <SearchInput
           value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
+          onChange={setKeyword}
           placeholder="Tìm công ty, ngành nghề..."
-          className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm font-semibold focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-xs"
         />
       </div>
 

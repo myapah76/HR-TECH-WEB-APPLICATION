@@ -9,6 +9,7 @@ import {
   useMarkNotificationRead,
 } from '@/src/hooks/notification'
 import { getNotificationRedirectUrl } from '@/src/utils/notification'
+import { calcTimeAgo } from '@/src/utils'
 import { useRouter } from 'next/navigation'
 
 export default function NotificationDropdown() {
@@ -25,15 +26,7 @@ export default function NotificationDropdown() {
     router.push(targetUrl)
   }
 
-  const formatRelativeTime = (isoString: string) => {
-    const diff = new Date().getTime() - new Date(isoString).getTime()
-    const mins = Math.floor(diff / 60000)
-    if (mins < 1) return 'Vừa xong'
-    if (mins < 60) return `${mins} phút trước`
-    const hours = Math.floor(mins / 60)
-    if (hours < 24) return `${hours} giờ trước`
-    return new Date(isoString).toLocaleDateString('vi-VN')
-  }
+
 
   return (
     <div className="relative">
@@ -90,7 +83,7 @@ export default function NotificationDropdown() {
                       {n.content}
                     </p>
                     <span className="text-[9px] text-slate-400 font-bold mt-1">
-                      {formatRelativeTime(n.createdAt)}
+                      {calcTimeAgo(n.createdAt)}
                     </span>
                   </div>
                 ))

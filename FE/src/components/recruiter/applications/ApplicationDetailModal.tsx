@@ -7,7 +7,6 @@ import {
   Briefcase,
   Clock,
   Brain,
-  Sparkles,
   MessageSquare,
   Lightbulb,
   Loader2,
@@ -19,8 +18,8 @@ import {
   CalendarClock,
   MapPin,
   Link as LinkIcon,
+  Sparkles,
 } from 'lucide-react'
-import { toast } from 'sonner'
 import { useGetApplicationDetail, useScoreApplication } from '@/src/hooks/application'
 import { useGetCvDetail } from '@/src/hooks/cv'
 import {
@@ -28,88 +27,15 @@ import {
   ScheduleInterviewRequest,
   UpdateApplicationStatusRequest,
 } from '@/src/types'
-import { getErrorMessage } from '@/src/utils'
+import { formatDateTime, getErrorMessage, toDateTimeLocalValue } from '@/src/utils'
+import { useRelativeTime } from '@/src/hooks/useRelativeTime'
+import { toast } from 'sonner'
 import ConfirmModal from '@/src/components/common/ConfirmModal'
+import { APPLICATION_STATUS_CONFIG } from '@/src/constants/application-status'
+import ScheduleInterviewModal from './ScheduleInterviewModal'
+import OfferModal from './OfferModal'
 
-// ─── Status config ────────────────────────────────────────────────────────────
-const STATUS_CONFIG: Record<
-  ApplicationStatus,
-  { label: string; color: string; bg: string; border: string; dot: string }
-> = {
-  [ApplicationStatus.SUBMITTED]: {
-    label: 'Mới nộp',
-    color: 'text-blue-700',
-    bg: 'bg-blue-50',
-    border: 'border-blue-200',
-    dot: 'bg-blue-500',
-  },
-  [ApplicationStatus.SCORED]: {
-    label: 'Đã chấm',
-    color: 'text-violet-700',
-    bg: 'bg-violet-50',
-    border: 'border-violet-200',
-    dot: 'bg-violet-500',
-  },
-  [ApplicationStatus.PENDING_INTERVIEW_SCHEDULE]: {
-    label: 'CHỜ LỊCH PHỎNG VẤN',
-    color: 'text-orange-700',
-    bg: 'bg-orange-50',
-    border: 'border-orange-200',
-    dot: 'bg-orange-500',
-  },
-  [ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE]: {
-    label: 'ỨNG VIÊN XIN ĐỔI LỊCH',
-    color: 'text-cyan-700',
-    bg: 'bg-cyan-50',
-    border: 'border-cyan-200',
-    dot: 'bg-cyan-500',
-  },
-  [ApplicationStatus.INTERVIEW]: {
-    label: 'PHỎNG VẤN',
-    color: 'text-indigo-700',
-    bg: 'bg-indigo-50',
-    border: 'border-indigo-200',
-    dot: 'bg-indigo-500',
-  },
-
-  [ApplicationStatus.INTERVIEW_COMPLETED]: {
-    label: 'ĐÃ PHỎNG VẤN',
-    color: 'text-teal-700',
-    bg: 'bg-teal-50',
-    border: 'border-teal-200',
-    dot: 'bg-teal-500',
-  },
-  [ApplicationStatus.NO_SHOW]: {
-    label: 'KHÔNG THAM GIA',
-    color: 'text-gray-700',
-    bg: 'bg-gray-100',
-    border: 'border-gray-200',
-    dot: 'bg-gray-500',
-  },
-  [ApplicationStatus.ACCEPTED]: {
-    label: 'ĐÃ NHẬN',
-    color: 'text-green-700',
-    bg: 'bg-green-50',
-    border: 'border-green-200',
-    dot: 'bg-green-500',
-  },
-
-  [ApplicationStatus.REJECTED]: {
-    label: 'TỪ CHỐI',
-    color: 'text-rose-700',
-    bg: 'bg-rose-50',
-    border: 'border-rose-200',
-    dot: 'bg-rose-500',
-  },
-  [ApplicationStatus.WITHDRAWN]: {
-    label: 'Đã rút',
-    color: 'text-slate-600',
-    bg: 'bg-slate-100',
-    border: 'border-slate-200',
-    dot: 'bg-slate-400',
-  },
-}
-
+// ─── Next Actions config ──────────────────────────────────────────────────────
 const NEXT_ACTIONS: Partial<
   Record<ApplicationStatus, { status: ApplicationStatus; label: string; style: string }[]>
 > = {
@@ -163,6 +89,7 @@ const NEXT_ACTIONS: Partial<
   ],
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function gradeColor(grade?: string) {
   if (!grade) return 'text-slate-500'
   if (grade === 'A+' || grade === 'A') return 'text-emerald-600'
@@ -204,42 +131,6 @@ function ScoreRing({ score }: { score: number }) {
   )
 }
 
-function calcTimeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const seconds = Math.floor(diff / 1000)
-  if (seconds < 60) return `${seconds} giây trước`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes} phút trước`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} giờ trước`
-  return `${Math.floor(hours / 24)} ngày trước`
-}
-
-function useRelativeTime(dateStr: string) {
-  const compute = useCallback(() => calcTimeAgo(dateStr), [dateStr])
-  const [label, setLabel] = useState(compute)
-
-  const [prevDateStr, setPrevDateStr] = useState(dateStr)
-  if (dateStr !== prevDateStr) {
-    setPrevDateStr(dateStr)
-    setLabel(compute())
-  }
-
-  useEffect(() => {
-    const id = setInterval(() => setLabel(compute()), 30_000)
-    return () => clearInterval(id)
-  }, [compute])
-  return label
-}
-
-function toDateTimeLocalValue(dateStr?: string) {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  if (Number.isNaN(date.getTime())) return ''
-  const offsetMs = date.getTimezoneOffset() * 60_000
-  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16)
-}
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 interface Props {
   applicationId: string
@@ -272,20 +163,15 @@ export default function ApplicationDetailModal({
   const [acceptedStartDateTime, setAcceptedStartDateTime] = useState('')
   const [acceptedWorkAddress, setAcceptedWorkAddress] = useState('')
   const [acceptedNote, setAcceptedNote] = useState('')
+  const [showConfirmScore, setShowConfirmScore] = useState(false)
+
+  const scoreMutation = useScoreApplication()
   const { data: app, isLoading } = useGetApplicationDetail(applicationId)
   const { data: cvDetail, isLoading: isCvLoading } = useGetCvDetail(app?.cvId ?? '', !!app?.cvId)
-  const scoreMutation = useScoreApplication()
-  const [showConfirmScore, setShowConfirmScore] = useState(false)
-  // Hook ở component level (tuân thủ Rules of Hooks)
-  const relativeTime = useRelativeTime(app?.appliedAt ?? '')
 
-  const handleViewCv = () => {
-    if (cvDetail?.fileUrl) {
-      window.open(cvDetail.fileUrl, '_blank', 'noopener,noreferrer')
-    }
-  }
+  const relativeTime = useRelativeTime(app?.appliedAt || '')
 
-  // Close on Esc
+  // ── Close on Esc ──────────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -294,17 +180,22 @@ export default function ApplicationDetailModal({
     return () => document.removeEventListener('keydown', handler)
   }, [onClose])
 
-  const cfg = useMemo(() => (app ? STATUS_CONFIG[app.status] : null), [app])
-  const nextActions = useMemo(() => (app ? (NEXT_ACTIONS[app.status] ?? []) : []), [app])
-
-  const [prevStatus, setPrevStatus] = useState<ApplicationStatus | undefined>(app?.status)
-  if (app?.status !== prevStatus) {
-    setPrevStatus(app?.status)
+  // ── Sync schedule/acceptance forms when status changes ────────────────────
+  useEffect(() => {
     if (app?.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE) {
       setIsScheduleOpen(false)
     }
     if (app?.status === ApplicationStatus.ACCEPTED) {
       setIsAcceptanceOpen(false)
+    }
+  }, [app?.status])
+
+  const cfg = useMemo(() => (app ? APPLICATION_STATUS_CONFIG[app.status] : null), [app])
+  const nextActions = useMemo(() => (app ? (NEXT_ACTIONS[app.status] ?? []) : []), [app])
+
+  const handleViewCv = () => {
+    if (cvDetail?.fileUrl) {
+      window.open(cvDetail.fileUrl, '_blank', 'noopener,noreferrer')
     }
   }
 
@@ -381,7 +272,7 @@ export default function ApplicationDetailModal({
         className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
         style={{ animation: 'slideUp 0.25s ease' }}
       >
-        {/* ─── Top bar ───────────────────────────────────────────────────────── */}
+        {/* ─── Top bar ─────────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <h2 className="text-lg font-black text-slate-900">Chi tiết hồ sơ</h2>
           <button
@@ -393,7 +284,7 @@ export default function ApplicationDetailModal({
           </button>
         </div>
 
-        {/* ─── Body ──────────────────────────────────────────────────────────── */}
+        {/* ─── Body ────────────────────────────────────────────────────────── */}
         <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -404,7 +295,7 @@ export default function ApplicationDetailModal({
             <p className="text-center text-sm text-slate-500 py-10">Không tìm thấy hồ sơ</p>
           ) : (
             <>
-              {/* ── Info header ────────────────────────────────────────────────── */}
+              {/* ── Info header ──────────────────────────────────────────────── */}
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-lg font-black shrink-0">
                   {app.cvTitle?.slice(0, 2).toUpperCase() || 'UV'}
@@ -502,9 +393,9 @@ export default function ApplicationDetailModal({
                         <Lightbulb className="w-3.5 h-3.5" />
                         Gợi ý từ AI
                       </h4>
-                       <p className="text-sm text-slate-600 font-medium leading-relaxed whitespace-pre-line">
-                         {app.aiSuggestion}
-                       </p>
+                      <p className="text-sm text-slate-600 font-medium leading-relaxed">
+                        {app.aiSuggestion}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -528,7 +419,7 @@ export default function ApplicationDetailModal({
                       setShowConfirmScore(true)
                     }}
                     disabled={scoreMutation.isPending}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-black transition-all shadow-xs hover:shadow-sm"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-black transition-all shadow-xs hover:shadow-sm"
                   >
                     {scoreMutation.isPending ? (
                       <Loader2 className="w-4 h-4 animate-spin text-white" />
@@ -570,7 +461,7 @@ export default function ApplicationDetailModal({
                   </h3>
                   {app.interviewDateTime && (
                     <p className="text-sm font-semibold text-slate-700">
-                      {new Date(app.interviewDateTime).toLocaleString('vi-VN')}
+                      {formatDateTime(app.interviewDateTime)}
                     </p>
                   )}
                   {app.interviewLocation && (
@@ -597,13 +488,13 @@ export default function ApplicationDetailModal({
                     </h3>
                     {app.interviewDateTime && (
                       <p className="text-sm font-semibold text-slate-600">
-                        Lịch hiện tại: {new Date(app.interviewDateTime).toLocaleString('vi-VN')}
+                        Lịch hiện tại: {formatDateTime(app.interviewDateTime)}
                       </p>
                     )}
                     {app.candidatePreferredInterviewDateTime && (
                       <p className="text-sm font-black text-slate-800">
                         Lịch ứng viên đề xuất:{' '}
-                        {new Date(app.candidatePreferredInterviewDateTime).toLocaleString('vi-VN')}
+                        {formatDateTime(app.candidatePreferredInterviewDateTime)}
                       </p>
                     )}
                     {app.candidateInterviewResponseMessage && (
@@ -630,7 +521,7 @@ export default function ApplicationDetailModal({
                       ) : (
                         <CheckCircle2 className="w-4 h-4" />
                       )}
-                      Accept new schedule
+                      Chấp nhận lịch mới
                     </button>
                     <button
                       type="button"
@@ -639,13 +530,13 @@ export default function ApplicationDetailModal({
                       className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <XCircle className="w-4 h-4" />
-                      Reject new schedule
+                      Từ chối lịch mới
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* ── Completed states ─────────────────────────────────────────── */}
+              {/* ── Completed states ──────────────────────────────────────────── */}
               {app.status === ApplicationStatus.REJECTED && (
                 <div className="flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-2xl p-4">
                   <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
@@ -663,197 +554,36 @@ export default function ApplicationDetailModal({
         </div>
       </div>
 
-      {isScheduleOpen && app && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/50">
-          <form
-            onSubmit={handleScheduleSubmit}
-            className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden"
-          >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-              <h3 className="text-base font-black text-slate-900">Lên lịch phỏng vấn</h3>
-              <button
-                type="button"
-                onClick={() => setIsScheduleOpen(false)}
-                className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center"
-              >
-                <X className="w-4 h-4 text-slate-600" />
-              </button>
-            </div>
+      {/* ─── Schedule Interview Modal ────────────────────────────────────────── */}
+      <ScheduleInterviewModal
+        isOpen={isScheduleOpen && !!app}
+        isSubmitting={isSchedulingInterview}
+        interviewDateTime={interviewDateTime}
+        interviewLocation={interviewLocation}
+        interviewMeetingLink={interviewMeetingLink}
+        interviewNote={interviewNote}
+        onDateTimeChange={setInterviewDateTime}
+        onLocationChange={setInterviewLocation}
+        onMeetingLinkChange={setInterviewMeetingLink}
+        onNoteChange={setInterviewNote}
+        onSubmit={handleScheduleSubmit}
+        onClose={() => setIsScheduleOpen(false)}
+      />
 
-            <div className="p-5 space-y-4">
-              <label className="block">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
-                  Thời gian phỏng vấn
-                </span>
-                <input
-                  id="interview-date-time"
-                  type="datetime-local"
-                  required
-                  value={interviewDateTime}
-                  onChange={(e) => setInterviewDateTime(e.target.value)}
-                  className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
-                />
-              </label>
+      {/* ─── Offer / Acceptance Modal ────────────────────────────────────────── */}
+      <OfferModal
+        isOpen={isAcceptanceOpen && !!app}
+        acceptedStartDateTime={acceptedStartDateTime}
+        acceptedWorkAddress={acceptedWorkAddress}
+        acceptedNote={acceptedNote}
+        onStartDateTimeChange={setAcceptedStartDateTime}
+        onWorkAddressChange={setAcceptedWorkAddress}
+        onNoteChange={setAcceptedNote}
+        onSubmit={handleAcceptanceSubmit}
+        onClose={() => setIsAcceptanceOpen(false)}
+      />
 
-              <label className="block">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
-                  Địa điểm
-                </span>
-                <input
-                  id="interview-location"
-                  type="text"
-                  value={interviewLocation}
-                  onChange={(e) => setInterviewLocation(e.target.value)}
-                  placeholder="VD: Văn phòng công ty, tầng 5"
-                  className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
-                />
-              </label>
-
-              <label className="block">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
-                  Meeting link
-                </span>
-                <input
-                  id="interview-meeting-link"
-                  type="url"
-                  value={interviewMeetingLink}
-                  onChange={(e) => setInterviewMeetingLink(e.target.value)}
-                  placeholder="https://meet.google.com/..."
-                  className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
-                />
-              </label>
-
-              <label className="block">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
-                  Ghi chú
-                </span>
-                <textarea
-                  id="interview-note"
-                  value={interviewNote}
-                  onChange={(e) => setInterviewNote(e.target.value)}
-                  rows={3}
-                  placeholder="Thông tin cần chuẩn bị, người liên hệ..."
-                  className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 resize-none"
-                />
-              </label>
-            </div>
-
-            <div className="flex justify-end gap-2 px-5 py-4 border-t border-slate-100 bg-slate-50">
-              <button
-                type="button"
-                onClick={() => setIsScheduleOpen(false)}
-                className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100"
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
-                disabled={
-                  isSchedulingInterview ||
-                  !interviewDateTime ||
-                  (!interviewLocation.trim() && !interviewMeetingLink.trim())
-                }
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isSchedulingInterview && <Loader2 className="w-4 h-4 animate-spin" />}
-                Gửi lịch phỏng vấn
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {isAcceptanceOpen && app && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/50">
-          <form
-            onSubmit={handleAcceptanceSubmit}
-            className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden"
-          >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-              <h3 className="text-base font-black text-slate-900">Thông tin nhận việc</h3>
-              <button
-                type="button"
-                onClick={() => setIsAcceptanceOpen(false)}
-                className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center"
-              >
-                <X className="w-4 h-4 text-slate-600" />
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4">
-              <label className="block">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
-                  Thời gian nhận việc / báo cáo
-                </span>
-                <input
-                  id="accepted-start-date-time"
-                  type="datetime-local"
-                  required
-                  value={acceptedStartDateTime}
-                  onChange={(e) => setAcceptedStartDateTime(e.target.value)}
-                  className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
-                />
-              </label>
-
-              <label className="block">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
-                  Địa điểm làm việc / báo cáo
-                </span>
-                <textarea
-                  id="accepted-work-address"
-                  required
-                  value={acceptedWorkAddress}
-                  onChange={(e) => setAcceptedWorkAddress(e.target.value)}
-                  rows={3}
-                  placeholder="VD: Văn phòng công ty, tầng 5"
-                  className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 resize-none"
-                />
-              </label>
-
-              <label className="block">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
-                  Ghi chú
-                </span>
-                <textarea
-                  id="accepted-note"
-                  value={acceptedNote}
-                  onChange={(e) => setAcceptedNote(e.target.value)}
-                  rows={3}
-                  placeholder="Thông tin cần chuẩn bị, người liên hệ..."
-                  className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 resize-none"
-                />
-              </label>
-            </div>
-
-            <div className="flex justify-end gap-2 px-5 py-4 border-t border-slate-100 bg-slate-50">
-              <button
-                type="button"
-                onClick={() => setIsAcceptanceOpen(false)}
-                className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100"
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
-                disabled={!acceptedStartDateTime || !acceptedWorkAddress.trim()}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                Xác nhận và gửi email
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <style>{`
-        @keyframes slideUp {
-          from { transform: translateY(20px); opacity: 0; }
-          to   { transform: translateY(0);    opacity: 1; }
-        }
-      `}</style>
-
-      {/* AI Score Confirmation Modal */}
+      {/* ─── AI Score Confirmation Modal ────────────────────────────────────────── */}
       {app && (
         <ConfirmModal
           isOpen={showConfirmScore}

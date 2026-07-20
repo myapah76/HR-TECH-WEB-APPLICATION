@@ -1,126 +1,31 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState } from 'react'
 import { Clock, FileText, Eye, Brain, Sparkles, Loader2 } from 'lucide-react'
 import { ApplicationStatus, ApplicationSummaryResponse } from '@/src/types'
 import { useScoreApplication } from '@/src/hooks/application'
+import { useRelativeTime } from '@/src/hooks/useRelativeTime'
 import { toast } from 'sonner'
-import { getErrorMessage } from '@/src/utils'
+import { calcTimeAgo, getErrorMessage } from '@/src/utils'
 import ConfirmModal from '@/src/components/common/ConfirmModal'
+import { APPLICATION_STATUS_CONFIG } from '@/src/constants/application-status'
 
-// ─── Status config ────────────────────────────────────────────────────────────
-export const STATUS_CONFIG: Record<
-    ApplicationStatus,
-    { label: string; color: string; bg: string; dot: string }
-> = {
-    [ApplicationStatus.SUBMITTED]: {
-        label: 'Mới nộp',
-        color: 'text-blue-700',
-        bg: 'bg-blue-50',
-        dot: 'bg-blue-500',
-    },
-    [ApplicationStatus.SCORED]: {
-        label: 'Đã chấm',
-        color: 'text-violet-700',
-        bg: 'bg-violet-50',
-        dot: 'bg-violet-500',
-    },
-    [ApplicationStatus.PENDING_INTERVIEW_SCHEDULE]: {
-        label: 'CHỜ LỊCH PHỎNG VẤN',
-        color: 'text-orange-700',
-        bg: 'bg-orange-50',
-        dot: 'bg-orange-500',
-    },
-    [ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE]: {
-        label: 'ỨNG VIÊN XIN ĐỔI LỊCH',
-        color: 'text-cyan-700',
-        bg: 'bg-cyan-50',
-        dot: 'bg-cyan-500',
-    },
-    [ApplicationStatus.INTERVIEW]: {
-        label: 'PHỎNG VẤN',
-        color: 'text-indigo-700',
-        bg: 'bg-indigo-50',
-        dot: 'bg-indigo-500',
-    },
-
-    [ApplicationStatus.INTERVIEW_COMPLETED]: {
-        label: 'ĐÃ PHỎNG VẤN',
-        color: 'text-teal-700',
-        bg: 'bg-teal-50',
-        dot: 'bg-teal-500',
-    },
-    [ApplicationStatus.NO_SHOW]: {
-        label: 'KHÔNG THAM GIA',
-        color: 'text-gray-700',
-        bg: 'bg-gray-100',
-        dot: 'bg-gray-500',
-    },
-    [ApplicationStatus.ACCEPTED]: {
-        label: 'ĐÃ NHẬN',
-        color: 'text-green-700',
-        bg: 'bg-green-50',
-        dot: 'bg-green-500',
-    },
-
-    [ApplicationStatus.REJECTED]: {
-        label: 'TỪ CHỐI',
-        color: 'text-rose-700',
-        bg: 'bg-rose-50',
-        dot: 'bg-rose-500',
-    },
-    [ApplicationStatus.WITHDRAWN]: {
-        label: 'Đã rút',
-        color: 'text-slate-600',
-        bg: 'bg-slate-100',
-        dot: 'bg-slate-400',
-    },
-};
+// Re-export STATUS_CONFIG alias for backwards-compatibility với các file đang import
+export { APPLICATION_STATUS_CONFIG as STATUS_CONFIG } from '@/src/constants/application-status'
 
 export const FILTER_STATUS_OPTIONS: { value: ApplicationStatus | ''; label: string }[] = [
-    { value: '', label: 'Tất cả trạng thái' },
-    { value: ApplicationStatus.SUBMITTED, label: 'Mới nộp' },
-    { value: ApplicationStatus.SCORED, label: 'Đã chấm điểm AI' },
-    { value: ApplicationStatus.PENDING_INTERVIEW_SCHEDULE, label: 'Chờ lịch phỏng vấn' },
-    { value: ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE, label: 'Ứng viên xin đổi lịch' },
-    { value: ApplicationStatus.INTERVIEW, label: 'Phỏng vấn' },
+  { value: '', label: 'Tất cả trạng thái' },
+  { value: ApplicationStatus.SUBMITTED, label: 'Mới nộp' },
+  { value: ApplicationStatus.SCORED, label: 'Đã chấm điểm AI' },
+  { value: ApplicationStatus.PENDING_INTERVIEW_SCHEDULE, label: 'Chờ lịch phỏng vấn' },
+  { value: ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE, label: 'Ứng viên xin đổi lịch' },
+  { value: ApplicationStatus.INTERVIEW, label: 'Phỏng vấn' },
+  { value: ApplicationStatus.INTERVIEW_COMPLETED, label: 'Đã phỏng vấn' },
+  { value: ApplicationStatus.NO_SHOW, label: 'Không tham gia' },
+  { value: ApplicationStatus.ACCEPTED, label: 'Đã nhận' },
+  { value: ApplicationStatus.REJECTED, label: 'Từ chối' },
+  { value: ApplicationStatus.WITHDRAWN, label: 'Đã rút' },
+]
 
-    { value: ApplicationStatus.INTERVIEW_COMPLETED, label: 'Đã phỏng vấn' },
-    { value: ApplicationStatus.NO_SHOW, label: 'Không tham gia' },
-    { value: ApplicationStatus.ACCEPTED, label: 'Đã nhận' },
-
-    { value: ApplicationStatus.REJECTED, label: 'Từ chối' },
-    { value: ApplicationStatus.WITHDRAWN, label: 'Đã rút' },
-];
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function calcTimeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const seconds = Math.floor(diff / 1000)
-  if (seconds < 60) return `${seconds} giây trước`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes} phút trước`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} giờ trước`
-  return `${Math.floor(hours / 24)} ngày trước`
-}
-
-function useRelativeTime(dateStr: string) {
-  const compute = useCallback(() => calcTimeAgo(dateStr), [dateStr])
-  const [label, setLabel] = useState(compute)
-
-  const [prevDateStr, setPrevDateStr] = useState(dateStr)
-  if (dateStr !== prevDateStr) {
-    setPrevDateStr(dateStr)
-    setLabel(compute())
-  }
-
-  useEffect(() => {
-    // Update every 30s
-    const id = setInterval(() => setLabel(compute()), 30_000)
-    return () => clearInterval(id)
-  }, [compute])
-
-  return label
-}
-
 export function RelativeTime({ dateStr }: { dateStr: string }) {
   const label = useRelativeTime(dateStr)
   return (
@@ -132,7 +37,7 @@ export function RelativeTime({ dateStr }: { dateStr: string }) {
 }
 
 export function StatusBadge({ status }: { status: ApplicationStatus }) {
-  const cfg = STATUS_CONFIG[status]
+  const cfg = APPLICATION_STATUS_CONFIG[status]
   return (
     <span
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${cfg.bg} ${cfg.color}`}
@@ -155,23 +60,26 @@ export function ApplicationRow({ app, onViewDetail }: ApplicationRowProps) {
   const initials = app.cvTitle?.slice(0, 2).toUpperCase() || 'UV'
   const colors = ['bg-blue-500', 'bg-violet-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500']
   const colorIdx = app.id.charCodeAt(0) % colors.length
+  const avatarBg = colors[colorIdx]
 
   return (
     <tr
-      className="group hover:bg-slate-50/80 transition-colors duration-150 cursor-pointer"
       onClick={() => onViewDetail(app)}
+      className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
     >
-      {/* Avatar + CV */}
+      {/* Candidate / CV */}
       <td className="px-5 py-4">
         <div className="flex items-center gap-3">
           <div
-            className={`w-9 h-9 rounded-xl ${colors[colorIdx]} flex items-center justify-center text-white text-xs font-black shrink-0`}
+            className={`w-9 h-9 rounded-xl ${avatarBg} text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs`}
           >
             {initials}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-slate-800 truncate max-w-45">{app.cvTitle}</p>
-            <p className="text-xs text-slate-400 font-medium flex items-center gap-1 mt-0.5">
+            <p className="text-sm font-bold text-slate-800 truncate max-w-44 group-hover:text-emerald-600 transition-colors">
+              {app.candidateName || app.cvTitle}
+            </p>
+            <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1 font-medium truncate max-w-44">
               <FileText className="w-3 h-3" />
               CV đính kèm
             </p>
