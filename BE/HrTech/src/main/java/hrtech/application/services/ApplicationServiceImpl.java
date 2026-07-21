@@ -5,9 +5,12 @@ import hrtech.application.abstractions.repositories.ApplicationScoreRepository;
 import hrtech.application.abstractions.repositories.SkillMatchRepository;
 import hrtech.application.abstractions.services.IApplicationService;
 import hrtech.application.dtos.request.SubmitApplicationRequest;
+import hrtech.application.dtos.request.BulkScoreRequest;
+import hrtech.application.dtos.request.BulkRejectRequest;
 import hrtech.application.dtos.response.ApplicationDetailResponse;
 import hrtech.application.dtos.response.ApplicationSummaryResponse;
 import hrtech.application.dtos.response.ApplicationDashboardSummaryResponse;
+import hrtech.application.dtos.response.BulkScoreResponse;
 import hrtech.shared.dtos.RecentActivityResponse;
 import hrtech.application.dtos.response.UpcomingInterviewResponse;
 import hrtech.application.dtos.response.JobSearchAnalyticsResponse;
@@ -813,4 +816,127 @@ public class ApplicationServiceImpl implements IApplicationService {
                 })
                 .toList();
     }
-}
+
+    // ─── BULK SCORING ────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public BulkScoreResponse bulkScoreByJob(UUID jobId, BulkScoreRequest request) {
+        UUID currentUserId = authUtils.getCurrentUserId();
+
+        // 1. Kiểm tra quyền truy cập tính năng APP_SCORING của công ty
+        if (!creditService.hasCompanyFeatureAccessByUserId(currentUserId, "APP_SCORING")) {
+            throw new AppException(ErrorCode.FORBIDDEN,
+                    "Gói của công ty không có tính năng Chấm điểm CV (APP_SCORING). Vui lòng nâng cấp gói.");
+        }
+
+        // 2. Lấy toàn bộ application của job
+        List<Application> allApps = applicationRepository.findByJobId(jobId);
+
+        // 3. Phân loại: Các đơn SUBMITTED chưa được công ty chấm điểm -> Cần chấm
+        List<Application> toScore = allApps.stream()
+                .filter(a -> a.getStatus() == ApplicationStatus.SUBMITTED
+                        && (a.getApplicationScore() == null || !a.getApplicationScore().isCompanyPaid()))
+                .toList();
+
+        List<Application> alreadyScoredList = allApps.stream()
+                .filter(a -> a.getApplicationScore() != null && a.getApplicationScore().isCompanyPaid())
+                .toList();
+
+        int alreadyScoredCount = alreadyScoredList.size();
+        int autoRejected = 0;
+        int failed = 0;
+
+        // 4. Nếu có đơn chưa chấm: Trừ credit và chấm điểm từng đơn
+        if (!toScore.isEmpty()) {
+            creditService.deductCompanyFeatureQuota(currentUserId, "APP_SCORING", toScore.size());
+
+            for (Application app : toScore) {
+                try {
+                    ApplicationScore score = calculateAndSaveScore(app, false, true);
+                    app.setApplicationScore(score);
+                    app.setStatus(ApplicationStatus.SCORED);
+
+                    double scorePercent = score.getOverallScore().doubleValue();
+
+                    if (request.isAutoRejectBelowThreshold() && scorePercent < request.getThresholdPercent()) {
+                        app.setStatus(ApplicationStatus.REJECTED);
+                        autoRejected++;
+                    }
+
+                    applicationRepository.save(app);
+                } catch (Exception e) {
+                    log.warn("[BulkScore] Failed to score application {}: {}", app.getId(), e.getMessage());
+                    failed++;
+                }
+            }
+        }
+
+        // 5. Nếu bật tự động từ chối dưới ngưỡng: Kiểm tra cả các đơn đã scored trước đó
+        if (request.isAutoRejectBelowThreshold()) {
+            for (Application app : alreadyScoredList) {
+                if (app.getStatus() == ApplicationStatus.SCORED && app.getApplicationScore() != null) {
+                    double scorePercent = app.getApplicationScore().getOverallScore().doubleValue();
+                    if (scorePercent < request.getThresholdPercent()) {
+                        app.setStatus(ApplicationStatus.REJECTED);
+                        applicationRepository.save(app);
+                        autoRejected++;
+                    }
+                }
+            }
+        }
+
+        // 6. Trả về kết quả sau khi xử lý
+        List<Application> refreshedAll = applicationRepository.findByJobId(jobId);
+        List<ApplicationSummaryResponse> allResults = refreshedAll.stream()
+                .map(applicationMapper::toSummaryResponse)
+                .toList();
+
+        int totalNewlyScored = toScore.size() - failed;
+
+        long aboveThresholdCount = refreshedAll.stream()
+                .filter(a -> a.getApplicationScore() != null
+                        && a.getApplicationScore().getOverallScore().doubleValue() >= request.getThresholdPercent()
+                        && a.getStatus() != ApplicationStatus.REJECTED)
+                .count();
+
+        return BulkScoreResponse.builder()
+                .totalScored(totalNewlyScored)
+                .autoRejectedCount(autoRejected)
+                .aboveThresholdCount((int) aboveThresholdCount)
+                .alreadyScoredCount(alreadyScoredCount)
+                .failedCount(failed)
+                .allApplications(allResults)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public List<ApplicationSummaryResponse> bulkRejectApplications(List<UUID> applicationIds) {
+        // Lấy currentUserId nội bộ từ SecurityContext (không nhận từ Controller)
+        UUID currentUserId = authUtils.getCurrentUserId();
+
+        List<Application> apps = applicationRepository.findAllByIdIn(applicationIds);
+
+        List<Application> rejected = new ArrayList<>();
+        for (Application app : apps) {
+            // Xác nhận HR thuộc công ty của job
+            boolean isCompanyMember = app.getJob() != null
+                    && app.getJob().getCompany() != null
+                    && companyService.getMemberByCompanyIdAndUserId(
+                            app.getJob().getCompany().getId(), currentUserId).isPresent();
+
+            if (!isCompanyMember) {
+                log.warn("[BulkReject] User {} không có quyền reject application {}", currentUserId, app.getId());
+                continue;
+            }
+
+            app.setStatus(ApplicationStatus.REJECTED);
+            rejected.add(applicationRepository.save(app));
+        }
+
+        return rejected.stream()
+                .map(applicationMapper::toSummaryResponse)
+                .toList();
+    }
+}

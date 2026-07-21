@@ -160,3 +160,24 @@ export const scoreApplication = async (id: string): Promise<ApplicationDetailRes
   const response = await api.post<ApiResponse<ApplicationDetailResponse>>(`/applications/${id}/score`)
   return response.data.data
 }
+
+export const bulkScoreByJob = async (
+  jobId: string,
+  options: { thresholdPercent: number; autoRejectBelowThreshold: boolean }
+): Promise<import('../types/application').BulkScoreResponse> => {
+  const response = await api.post<ApiResponse<import('../types/application').BulkScoreResponse>>(
+    `/applications/jobs/${jobId}/bulk-score`,
+    options
+  )
+  return response.data.data
+}
+
+export const bulkRejectApplications = async (
+  applicationIds: string[]
+): Promise<ApplicationSummaryResponse[]> => {
+  const response = await api.post<ApiResponse<ApplicationSummaryResponse[]>>(
+    '/applications/bulk-reject',
+    { applicationIds }
+  )
+  return response.data.data
+}

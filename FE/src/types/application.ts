@@ -79,3 +79,19 @@ export interface ApplicationMatchModalProps {
   jobTitle: string
   companyName: string
 }
+
+// --- Bulk Scoring ---
+
+export interface BulkScoreRequest {
+  thresholdPercent: number
+  autoRejectBelowThreshold: boolean
+}
+
+export interface BulkScoreResponse {
+  totalScored: number
+  autoRejectedCount: number
+  aboveThresholdCount: number
+  alreadyScoredCount: number
+  failedCount: number
+  allApplications: ApplicationSummaryResponse[]
+}
