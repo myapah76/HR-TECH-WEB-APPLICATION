@@ -58,7 +58,7 @@ export default function RecruiterDashboardPage() {
           icon={Calendar}
           label="Lịch hẹn phỏng vấn"
           value={summary?.interviewAppsCount ?? 0}
-          color="violet"
+          color="blue"
           isLoading={isSummaryLoading}
           href="/recruiter/interview-schedules"
         />

@@ -13,5 +13,7 @@ public record RecruiterManageJobResponse(
         String status,
         Instant deadline,
         long newApplicationsCount,
+        long totalApplicationsCount,
+        long interviewsCount,
         Instant createdAt
 ) {}

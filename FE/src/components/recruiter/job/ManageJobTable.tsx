@@ -189,16 +189,17 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
                 <th className="px-4 py-4 text-center w-12">STT</th>
                 <th className="px-6 py-4">Tin tuyển dụng</th>
                 <th className="px-4 py-4">Địa điểm</th>
-                <th className="px-4 py-4">Đơn mới</th>
                 <th className="px-4 py-4">Ngày tạo</th>
                 <th className="px-4 py-4">Hạn nộp</th>
                 <th className="px-4 py-4">Trạng thái</th>
+                <th className="px-4 py-4">Hồ sơ & Phỏng vấn</th>
                 <th className="px-6 py-4 text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {jobs.map((job, index) => {
-                const count = job.newApplicationsCount ?? 0
+                const totalAppsCount = job.totalApplicationsCount ?? job.newApplicationsCount ?? 0
+                const interviewsCount = job.interviewsCount ?? 0
                 const canManageCandidates =
                   job.status === JobStatus.APPROVED || job.status === JobStatus.CLOSED
 
@@ -220,20 +221,6 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
                         <MapPin className="h-4 w-4 shrink-0 text-slate-400" />
                         {job.location || 'Chưa cập nhật'}
                       </span>
-                    </td>
-                    <td className="px-4 py-5">
-                      {canManageCandidates ? (
-                        <Link
-                          href={`/recruiter/manage-jobs/${job.id}/applications`}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-extrabold transition-colors border border-indigo-200"
-                          title="Xem danh sách đơn ứng tuyển mới"
-                        >
-                          <Users className="w-3.5 h-3.5" />
-                          <span>{count} đơn mới</span>
-                        </Link>
-                      ) : (
-                        <span className="text-xs text-slate-400 font-medium italic">—</span>
-                      )}
                     </td>
                     <td className="px-4 py-5">
                       <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
@@ -262,42 +249,41 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
                         {JOB_STATUS_LABELS[job.status] || job.status || 'Chưa xác định'}
                       </span>
                     </td>
-                    <td className="px-6 py-5">
-                      <div className="relative flex items-center justify-end gap-2">
-                        {canManageCandidates ? (
-                          <>
-                            <Link
-                              href={`/recruiter/manage-jobs/${job.id}/applications`}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition-colors border border-indigo-200"
-                              title="Xem và lọc AI danh sách đơn ứng tuyển"
-                            >
-                              <Users className="w-3.5 h-3.5" />
-                              Ứng viên
-                            </Link>
-                            <Link
-                              href={`/recruiter/manage-jobs/${job.id}/interviews`}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition-colors border border-emerald-200"
-                              title="Quản lý lịch phỏng vấn nhiều vòng"
-                            >
-                              <Calendar className="w-3.5 h-3.5" />
-                              Phỏng vấn
-                            </Link>
-                          </>
-                        ) : (
-                          <span
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-400 text-xs font-bold border border-slate-200 cursor-not-allowed select-none"
-                            title="Tin chưa xuất bản hoặc chưa duyệt, chưa có ứng viên"
+                    <td className="px-4 py-5">
+                      {canManageCandidates ? (
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/recruiter/manage-jobs/${job.id}/applications`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition-colors border border-blue-200/80"
+                            title="Xem và quản lý hồ sơ ứng viên"
                           >
-                            <Users className="w-3.5 h-3.5" />
-                            Chưa nhận đơn
-                          </span>
-                        )}
+                            <Users className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Ứng viên ({totalAppsCount})</span>
+                          </Link>
+                          <Link
+                            href={`/recruiter/manage-jobs/${job.id}/interviews`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition-colors border border-emerald-200/80"
+                            title="Quản lý lịch phỏng vấn"
+                          >
+                            <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Phỏng vấn ({interviewsCount})</span>
+                          </Link>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-medium italic">
+                          Chưa nhận đơn
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="relative flex items-center justify-end">
                         <button
                           type="button"
                           onClick={(event) => toggleMenu(job.id, event)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 hover:text-slate-900"
+                          className="inline-flex items-center justify-center p-2 rounded-xl border border-slate-200 bg-white text-slate-700 shadow-xs transition-colors hover:bg-slate-50 hover:text-slate-900"
                           aria-expanded={openMenuJobId === job.id}
                           aria-haspopup="menu"
+                          title="Thao tác khác"
                         >
                           <MoreHorizontal className="h-4 w-4" />
                         </button>
@@ -529,7 +515,7 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
                       })
                     }}
                     disabled={statusMutation.isPending}
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-indigo-700 transition-colors hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <ShieldAlert className="h-4 w-4" />
                     Khiếu nại AI

@@ -19,6 +19,8 @@ export interface RecruiterManageJobResponse {
   status: JobStatus
   deadline?: string
   newApplicationsCount?: number
+  totalApplicationsCount?: number
+  interviewsCount?: number
   createdAt: string
 }
 

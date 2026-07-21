@@ -35,14 +35,14 @@ export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
   [JobStatus.APPROVED]: 'Đã duyệt',
   [JobStatus.OPEN]: 'Đang tuyển',
   [JobStatus.CLOSED]: 'Đã đóng',
-  [JobStatus.REJECTED_BY_ADMIN]: 'Admin từ chối khiếu nại',
+  [JobStatus.REJECTED_BY_ADMIN]: 'Admin từ chối',
 }
 
 export const JOB_STATUS_STYLES: Record<JobStatus, string> = {
   [JobStatus.DRAFT]: 'bg-amber-50 text-amber-700 border-amber-200',
-  [JobStatus.PENDING_AI]: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  [JobStatus.PENDING_AI]: 'bg-blue-50 text-blue-700 border-blue-200',
   [JobStatus.FAILED_AI]: 'bg-red-50 text-red-700 border-red-200',
-  [JobStatus.APPEALED]: 'bg-purple-50 text-purple-700 border-purple-200',
+  [JobStatus.APPEALED]: 'bg-sky-50 text-sky-700 border-sky-200',
   [JobStatus.APPROVED]: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   [JobStatus.OPEN]: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   [JobStatus.CLOSED]: 'bg-slate-100 text-slate-600 border-slate-200',

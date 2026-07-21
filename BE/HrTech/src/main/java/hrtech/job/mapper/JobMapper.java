@@ -50,6 +50,8 @@ public abstract class JobMapper {
     @Mapping(target = "createdById", source = "createdBy.id")
     @Mapping(target = "status", expression = "java(job.getStatus() != null ? job.getStatus().name() : null)")
     @Mapping(target = "newApplicationsCount", expression = "java(job.getApplications() != null ? job.getApplications().stream().filter(a -> a.getStatus() == hrtech.application.entities.enums.ApplicationStatus.SUBMITTED || a.getStatus() == hrtech.application.entities.enums.ApplicationStatus.SCORED).count() : 0)")
+    @Mapping(target = "totalApplicationsCount", expression = "java(job.getApplications() != null ? job.getApplications().size() : 0)")
+    @Mapping(target = "interviewsCount", expression = "java(job.getApplications() != null ? job.getApplications().stream().filter(a -> a.getStatus() == hrtech.application.entities.enums.ApplicationStatus.PENDING_INTERVIEW_SCHEDULE || a.getStatus() == hrtech.application.entities.enums.ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE || a.getStatus() == hrtech.application.entities.enums.ApplicationStatus.INTERVIEW || a.getStatus() == hrtech.application.entities.enums.ApplicationStatus.INTERVIEW_COMPLETED).count() : 0)")
     public abstract RecruiterManageJobResponse toManageResponse(Job job);
 
     @Mapping(target = "skillName", expression = "java(resolveSkillName(jobSkill.getSkillNeo4jId()))")

@@ -50,7 +50,7 @@ const Pagination = ({
               onItemsPerPageChange(Number(e.target.value))
               onPageChange(1)
             }}
-            className="px-2.5 py-1.5 border border-slate-200 rounded-xl bg-white text-slate-700 font-bold focus:outline-hidden focus:border-violet-500 transition-all cursor-pointer"
+            className="px-2.5 py-1.5 border border-slate-200 rounded-xl bg-white text-slate-700 font-bold focus:outline-hidden focus:border-emerald-500 transition-all cursor-pointer"
           >
             {pageSizeOptions.map((size) => (
               <option key={size} value={size}>
@@ -76,7 +76,7 @@ const Pagination = ({
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
           title="Trang đầu"
-          className="p-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-violet-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-600 disabled:cursor-not-allowed transition-all"
+          className="p-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-emerald-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-600 disabled:cursor-not-allowed transition-all"
         >
           <ChevronsLeft className="h-4 w-4" />
         </button>
@@ -87,7 +87,7 @@ const Pagination = ({
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
           title="Trang trước"
-          className="p-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-violet-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-600 disabled:cursor-not-allowed transition-all"
+          className="p-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-emerald-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-600 disabled:cursor-not-allowed transition-all"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -101,7 +101,7 @@ const Pagination = ({
               onClick={() => onPageChange(page)}
               className={`w-8.5 h-8.5 rounded-xl text-xs font-bold transition-all ${
                 currentPage === page
-                  ? 'bg-violet-600 text-white shadow-xs scale-105'
+                  ? 'bg-emerald-600 text-white shadow-xs scale-105 shadow-emerald-600/20'
                   : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
               }`}
             >
@@ -116,7 +116,7 @@ const Pagination = ({
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
           title="Trang sau"
-          className="p-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-violet-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-600 disabled:cursor-not-allowed transition-all"
+          className="p-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-emerald-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-600 disabled:cursor-not-allowed transition-all"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -127,7 +127,7 @@ const Pagination = ({
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
           title="Trang cuối"
-          className="p-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-violet-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-600 disabled:cursor-not-allowed transition-all"
+          className="p-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-emerald-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-600 disabled:cursor-not-allowed transition-all"
         >
           <ChevronsRight className="h-4 w-4" />
         </button>

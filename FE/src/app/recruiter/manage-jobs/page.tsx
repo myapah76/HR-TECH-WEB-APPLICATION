@@ -158,7 +158,7 @@ export default function ManageJobPage() {
           icon={Users}
           label="Tổng số ứng viên"
           value={totalApplicantsCount}
-          color="violet"
+          color="blue"
           isLoading={isCardLoading}
         />
       </div>
