@@ -940,4 +940,3 @@ public class ApplicationServiceImpl implements IApplicationService {
                 .toList();
     }
 }
->>>>>>> b10c6c6eafcd43ab3bbf3c89b68bf336397f8760
