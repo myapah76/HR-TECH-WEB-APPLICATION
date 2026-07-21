@@ -5,7 +5,6 @@ export interface AdminDashboardSummary {
   newJobsToday: number
   totalCompanies: number
   newCompaniesToday: number
-  dailyVisits: number
   systemActivities: {
     newUsersToday: number
     newJobsToday: number

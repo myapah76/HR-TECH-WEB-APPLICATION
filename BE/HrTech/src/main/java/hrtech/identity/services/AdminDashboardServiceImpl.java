@@ -11,7 +11,6 @@ import hrtech.payment.entities.Payment;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.data.redis.core.RedisTemplate;
 import hrtech.payment.abstractions.repositories.PaymentRepository;
 import hrtech.subscription.abstractions.repositories.CompanySubscriptionRepository;
 
@@ -37,7 +36,6 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
     private final CompanyRepository companyRepository;
     private final ApplicationRepository applicationRepository;
     private final CvRepository cvRepository;
-    private final RedisTemplate<String, Object> redisTemplate;
     private final PaymentRepository paymentRepository;
     private final CompanySubscriptionRepository companySubscriptionRepository;
 
@@ -55,24 +53,6 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
 
         long totalCompanies = companyRepository.count();
         long newCompaniesToday = companyRepository.countByCreatedAtAfter(todayStart);
-
-
-        long dailyVisits = 0;
-        String todayStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        String redisKey = "traffic:visits:" + todayStr;
-        try {
-            Object val = redisTemplate.opsForValue().get(redisKey);
-            if (val != null) {
-                if (val instanceof Number) {
-                    dailyVisits = ((Number) val).longValue();
-                } else {
-                    dailyVisits = Long.parseLong(val.toString());
-                }
-            }
-        } catch (Exception e) {
-            dailyVisits = 0;
-        }
-
 
         long applicationsToday = applicationRepository.countByCreatedAtAfter(todayStart);
         long cvScansToday = cvRepository.countByCreatedAtAfter(todayStart);
@@ -194,7 +174,6 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
                 .newJobsToday(newJobsToday)
                 .totalCompanies(totalCompanies)
                 .newCompaniesToday(newCompaniesToday)
-                .dailyVisits(dailyVisits)
                 .systemActivities(systemActivities)
                 .userDistribution(userDistribution)
                 .revenueHistory(revenueHistory)
