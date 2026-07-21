@@ -21,10 +21,6 @@ interface FilterSelectProps<T extends string = string> {
   children?: ReactNode
 }
 
-/**
- * Dropdown filter dùng chung cho các trang quản lý.
- * Tự động render icon bên trái và ChevronDown bên phải.
- */
 export default function FilterSelect<T extends string = string>({
   id,
   value,
@@ -45,9 +41,7 @@ export default function FilterSelect<T extends string = string>({
         onChange={(e) => onChange(e.target.value as T)}
         className={`w-full ${Icon ? 'pl-9' : 'pl-3'} pr-9 py-2.5 text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all`}
       >
-        {placeholder !== undefined && (
-          <option value="">{placeholder}</option>
-        )}
+        {placeholder !== undefined && <option value="">{placeholder}</option>}
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}

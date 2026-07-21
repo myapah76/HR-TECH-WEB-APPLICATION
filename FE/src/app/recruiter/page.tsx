@@ -44,7 +44,7 @@ export default function RecruiterDashboardPage() {
           value={summary?.totalApps ?? 0}
           color="emerald"
           isLoading={isSummaryLoading}
-          href="/recruiter/applications"
+          href="/recruiter/manage-jobs"
         />
         <StatCard
           icon={Inbox}
@@ -52,7 +52,7 @@ export default function RecruiterDashboardPage() {
           value={summary?.submittedAppsCount ?? 0}
           color="amber"
           isLoading={isSummaryLoading}
-          href="/recruiter/applications"
+          href="/recruiter/manage-jobs"
         />
         <StatCard
           icon={Calendar}
@@ -60,7 +60,7 @@ export default function RecruiterDashboardPage() {
           value={summary?.interviewAppsCount ?? 0}
           color="violet"
           isLoading={isSummaryLoading}
-          href="/recruiter/applications"
+          href="/recruiter/interview-schedules"
         />
       </div>
 

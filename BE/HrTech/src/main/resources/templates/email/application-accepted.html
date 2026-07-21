@@ -8,7 +8,7 @@
 
     <h1 style="text-align:center; color:#4b2e2a;">HR Tech</h1>
 
-    <h2 style="color:#4b2e2a;">Application Accepted</h2>
+    <h2 style="color:#2e7d32;">Hồ sơ đã được duyệt</h2>
 
     <p>Xin chào <span th:text="${fullName}"></span>,</p>
 
@@ -21,22 +21,13 @@
         đã được chấp nhận.
     </p>
 
-    <div style="background:#f8f1e7; padding:18px; border-radius:12px; margin:24px 0;">
-        <p style="margin:6px 0;">
-            <b>Thời gian nhận việc :</b>
-            <span th:text="${#temporals.format(acceptedStartDateTime, 'HH:mm dd/MM/yyyy')}"></span>
-        </p>
-        <p style="margin:6px 0;">
-            <b>Địa điểm làm việc :</b>
-            <span th:text="${acceptedWorkAddress}"></span>
-        </p>
-        <p style="margin:6px 0;" th:if="${acceptedNote != null}">
-            <b>Ghi chú:</b>
-            <span th:text="${acceptedNote}"></span>
+    <div style="background:#e8f5e9; border-left: 4px solid #2e7d32; padding:18px; border-radius:12px; margin:24px 0;">
+        <p style="margin:0; color:#1b5e20; font-weight:600;">
+            Hồ sơ CV của bạn đã vượt qua vòng sơ tuyển! Bộ phận tuyển dụng sẽ liên hệ và gửi lịch phỏng vấn chi tiết tới bạn trong thời gian sớm nhất.
         </p>
     </div>
 
-    <p>Bộ phận tuyển dụng sẽ tiếp tục hỗ trợ bạn trong các bước tiếp theo. Rất mong được chào đón bạn.</p>
+    <p style="color:#666;">Vui lòng thường xuyên kiểm tra hòm thư email và hệ thống thông báo để nhận thông tin phỏng vấn mới nhất.</p>
 
     <div th:replace="~{email/fragments/footer :: footer}"></div>
 

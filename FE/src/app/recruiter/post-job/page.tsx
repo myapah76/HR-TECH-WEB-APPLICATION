@@ -5,9 +5,9 @@ import { useGetMyCompany } from '@/src/hooks/company'
 import Loading from '@/src/app/loading'
 import { dateInputToInstant } from '@/src/utils'
 import { JobFormData } from '@/src/schemas/job.schema'
-import { RequiredSkill } from '@/src/components/company/job/RequiredSkillInput'
+import { RequiredSkill } from '@/components/recruiter/job/RequiredSkillInput'
 import { Skill } from '@/src/types/skill'
-import JobForm from '@/src/components/company/job/JobForm'
+import JobForm from '@/components/recruiter/job/JobForm'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
@@ -16,11 +16,7 @@ export default function PostJobPage() {
   const createJobMutation = useCreateJobMutation()
   const { data: myCompany, isLoading: isCompanyLoading } = useGetMyCompany()
 
-  const onSubmit = (
-    data: JobFormData,
-    requiredSkills: RequiredSkill[],
-    relatedSkills: Skill[]
-  ) => {
+  const onSubmit = (data: JobFormData, requiredSkills: RequiredSkill[], relatedSkills: Skill[]) => {
     if (!myCompany?.id) {
       toast.error('Không tìm thấy thông tin công ty của bạn!')
       return

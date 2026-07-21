@@ -50,10 +50,11 @@ export function StatusBadge({ status }: { status: ApplicationStatus }) {
 
 interface ApplicationRowProps {
   app: ApplicationSummaryResponse
+  index?: number
   onViewDetail: (app: ApplicationSummaryResponse) => void
 }
 
-export function ApplicationRow({ app, onViewDetail }: ApplicationRowProps) {
+export function ApplicationRow({ app, index, onViewDetail }: ApplicationRowProps) {
   const scoreMutation = useScoreApplication()
   const [isScoring, setIsScoring] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -67,6 +68,13 @@ export function ApplicationRow({ app, onViewDetail }: ApplicationRowProps) {
       onClick={() => onViewDetail(app)}
       className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
     >
+      {/* STT */}
+      {index !== undefined && (
+        <td className="px-4 py-4 text-center font-bold text-xs text-slate-400">
+          {index + 1}
+        </td>
+      )}
+
       {/* Candidate / CV */}
       <td className="px-5 py-4">
         <div className="flex items-center gap-3">
@@ -166,10 +174,10 @@ export function ApplicationRow({ app, onViewDetail }: ApplicationRowProps) {
             e.stopPropagation()
             onViewDetail(app)
           }}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-emerald-600 hover:shadow-md active:scale-95 transition-all duration-150"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-xl shadow-xs hover:bg-indigo-700 active:scale-95 transition-all cursor-pointer"
         >
-          <Eye className="w-3.5 h-3.5" />
-          Xem
+          <FileText className="w-3.5 h-3.5" />
+          Xem CV
         </button>
       </td>
     </tr>

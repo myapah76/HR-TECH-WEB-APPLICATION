@@ -15,6 +15,7 @@ export interface CompanyResponse {
   industry?: string;
   size?: string;
   isDeleted?: boolean;
+  aiCreditBalance?: number;
 }
 
 export interface CompanyMemberResponse {

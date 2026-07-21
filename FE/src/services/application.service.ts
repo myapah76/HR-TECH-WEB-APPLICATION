@@ -21,11 +21,14 @@ export const getMyApplications = async (page = 0, size = 10): Promise<PageRespon
 export const getApplicationsByJob = async (
   jobId: string,
   page = 0,
-  size = 10
+  size = 10,
+  status?: string
 ): Promise<PageResponse<ApplicationSummaryResponse>> => {
+  const params: Record<string, any> = { page, size }
+  if (status) params.status = status
   const response = await api.get<ApiResponse<PageResponse<ApplicationSummaryResponse>>>(
     `/applications/jobs/${jobId}`,
-    { params: { page, size } }
+    { params }
   )
   return response.data.data
 }
@@ -84,14 +87,13 @@ export const getApplicationDetail = async (id: string): Promise<ApplicationDetai
   return response.data.data
 }
 
-export const updateApplicationStatus = async (
-  id: string,
-  request: UpdateApplicationStatusRequest
-): Promise<ApplicationSummaryResponse> => {
-  const response = await api.put<ApiResponse<ApplicationSummaryResponse>>(
-    `/applications/${id}/status`,
-    request
-  )
+export const acceptApplication = async (id: string): Promise<ApplicationSummaryResponse> => {
+  const response = await api.put<ApiResponse<ApplicationSummaryResponse>>(`/applications/${id}/accept`)
+  return response.data.data
+}
+
+export const rejectApplication = async (id: string): Promise<ApplicationSummaryResponse> => {
+  const response = await api.put<ApiResponse<ApplicationSummaryResponse>>(`/applications/${id}/reject`)
   return response.data.data
 }
 

@@ -2,10 +2,7 @@ package hrtech.application.abstractions.services;
 
 import hrtech.application.dtos.response.*;
 import hrtech.shared.dtos.RecentActivityResponse;
-import hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
-import hrtech.application.dtos.request.ScheduleInterviewRequest;
 import hrtech.application.dtos.request.SubmitApplicationRequest;
-import hrtech.application.dtos.request.UpdateApplicationStatusRequest;
 import hrtech.company.dtos.response.RecruiterActiveJobResponse;
 import hrtech.company.dtos.response.RecruiterAnalyticsResponse;
 import hrtech.company.dtos.response.RecruiterDashboardSummaryResponse;
@@ -28,20 +25,11 @@ public interface IApplicationService {
 
     void withdrawApplication(UUID userId, UUID applicationId);
 
-    ApplicationSummaryResponse updateStatus(UUID applicationId, UpdateApplicationStatusRequest request);
+    ApplicationSummaryResponse acceptApplication(UUID applicationId);
 
-    ApplicationSummaryResponse scheduleInterview(UUID applicationId, ScheduleInterviewRequest request);
+    ApplicationSummaryResponse rejectApplication(UUID applicationId);
 
-    ApplicationSummaryResponse acceptInterviewSchedule(UUID userId, UUID applicationId);
-
-    ApplicationSummaryResponse changeInterviewSchedule(UUID userId, UUID applicationId,
-            ChangeInterviewScheduleRequest request);
-
-    ApplicationSummaryResponse acceptCandidateReschedule(UUID applicationId);
-
-    ApplicationSummaryResponse rejectCandidateReschedule(UUID applicationId);
-
-    Page<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId, Pageable pageable);
+    Page<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId, ApplicationStatus status, Pageable pageable);
 
     ApplicationDetailResponse scoreApplication(UUID userId, UUID applicationId);
 

@@ -8,8 +8,8 @@ import { useGetJobById, useUpdateJobMutation } from '@/src/hooks/job'
 import { Job } from '@/src/types/job'
 import { Skill } from '@/src/types/skill'
 import { JobFormData } from '@/src/schemas/job.schema'
-import { RequiredSkill } from '@/src/components/company/job/RequiredSkillInput'
-import JobForm from '@/src/components/company/job/JobForm'
+import { RequiredSkill } from '@/components/recruiter/job/RequiredSkillInput'
+import JobForm from '@/components/recruiter/job/JobForm'
 import { dateInputToInstant } from '@/src/utils'
 import { toast } from 'sonner'
 
@@ -42,11 +42,7 @@ function UpdateJobForm({ job }: { job: Job }) {
   const router = useRouter()
   const updateJobMutation = useUpdateJobMutation(job.id)
 
-  const onSubmit = (
-    data: JobFormData,
-    requiredSkills: RequiredSkill[],
-    relatedSkills: Skill[]
-  ) => {
+  const onSubmit = (data: JobFormData, requiredSkills: RequiredSkill[], relatedSkills: Skill[]) => {
     const updatePayload = {
       ...data,
       companyId: job.companyId,

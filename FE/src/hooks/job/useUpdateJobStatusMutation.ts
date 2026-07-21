@@ -13,6 +13,7 @@ export const useUpdateJobStatusMutation = () => {
       queryClient.setQueryData(['job', updatedJob.id], updatedJob)
       queryClient.invalidateQueries({ queryKey: ['jobs'] })
       queryClient.invalidateQueries({ queryKey: ['manageJobs'] })
+      queryClient.invalidateQueries({ queryKey: ['recruiter-job-stats'] })
     },
   })
 }

@@ -2,8 +2,10 @@
 
 import React, { createContext, useEffect, useRef } from 'react'
 import { useAuthStore } from '@/src/stores/auth.store'
-import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { useRealtimeSync } from '@/src/hooks/notification'
+
+import { NotificationResponse } from '@/src/types'
 
 const NotificationContext = createContext<any>(null)
 
@@ -11,7 +13,7 @@ const baseUrl = process.env.NEXT_PUBLIC_API_URL
 
 export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {
   const { user, accessToken } = useAuthStore()
-  const queryClient = useQueryClient()
+  const { syncRealtimeData } = useRealtimeSync()
   const eventSourceRef = useRef<EventSource | null>(null)
 
   useEffect(() => {
@@ -30,26 +32,15 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     })
 
     eventSource.addEventListener('NEW_NOTIFICATION', (event) => {
-      const payload = JSON.parse(event.data)
+      const payload: NotificationResponse = JSON.parse(event.data)
 
       toast(payload.title, {
         description: payload.content,
         duration: 6000,
       })
 
-      queryClient.invalidateQueries({ queryKey: ['notifications'] })
-      queryClient.invalidateQueries({ queryKey: ['unreadNotificationCount'] })
-
-      if (payload.type === 'SUBSCRIPTION_UPGRADED') {
-        queryClient.invalidateQueries({ queryKey: ['myPaymentHistory'] })
-        queryClient.invalidateQueries({ queryKey: ['myCurrentSubscription'] })
-      }
-
-      if (payload.type === 'JOB_STATUS_UPDATED' && payload.referenceId) {
-        queryClient.invalidateQueries({ queryKey: ['job', payload.referenceId] })
-        queryClient.invalidateQueries({ queryKey: ['manageJobs'] })
-        queryClient.invalidateQueries({ queryKey: ['jobs'] })
-      }
+      // Delegate query cache invalidations to the domain sync hook
+      syncRealtimeData(payload)
     })
 
     eventSource.onerror = (err) => {
@@ -62,7 +53,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
       eventSource.close()
       eventSourceRef.current = null
     }
-  }, [user, accessToken, queryClient])
+  }, [user, accessToken, syncRealtimeData])
 
   return <NotificationContext.Provider value={{}}>{children}</NotificationContext.Provider>
 }

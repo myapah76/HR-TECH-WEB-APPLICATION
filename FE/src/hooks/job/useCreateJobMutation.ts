@@ -8,6 +8,7 @@ export const useCreateJobMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] })
       queryClient.invalidateQueries({ queryKey: ['manageJobs'] })
+      queryClient.invalidateQueries({ queryKey: ['recruiter-job-stats'] })
     },
   })
 }

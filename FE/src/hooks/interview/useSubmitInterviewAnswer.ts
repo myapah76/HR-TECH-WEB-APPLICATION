@@ -1,6 +1,6 @@
 import { submitInterviewAnswer } from '@/src/services/interview.service'
 import { useMutation } from '@tanstack/react-query'
-import { AnswerSubmitRequest } from '@/src/types/interview'
+import { AnswerSubmitRequest } from '@/types/mock-interview'
 
 export const useSubmitInterviewAnswer = () => {
   return useMutation({

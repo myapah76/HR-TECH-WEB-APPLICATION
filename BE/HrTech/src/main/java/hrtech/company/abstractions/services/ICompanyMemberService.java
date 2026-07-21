@@ -15,6 +15,8 @@ public interface ICompanyMemberService {
 
     List<CompanyMemberResponse> getMembers(UUID companyId);
 
+    CompanyMemberResponse getMyMember(UUID companyId);
+
     void removeMember(UUID companyId, UUID memberId);
 
     void reactivateMember(UUID companyId, UUID memberId, boolean resetPassword);

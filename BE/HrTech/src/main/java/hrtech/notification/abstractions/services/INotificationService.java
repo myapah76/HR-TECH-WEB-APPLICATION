@@ -1,7 +1,6 @@
 package hrtech.notification.abstractions.services;
 
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import hrtech.notification.dtos.request.ApplicationStatusNotificationRequest;
 import hrtech.notification.dtos.request.OtpNotificationRequest;
 import hrtech.notification.dtos.response.NotificationResponse;
 import hrtech.notification.entities.enums.NotificationType;
@@ -11,7 +10,8 @@ import java.util.UUID;
 
 public interface INotificationService {
     void OtpNotificationHandler(OtpNotificationRequest request);
-    void ApplicationStatusNotificationHandler(ApplicationStatusNotificationRequest request);
+    void sendApplicationAcceptedNotification(String email, String fullName, String jobTitle, String companyName, String applicationId);
+    void sendApplicationRejectedNotification(String email, String fullName, String jobTitle, String companyName, String applicationId);
 
     SseEmitter createConnection(UUID userId);
     void createAndSendNotification(

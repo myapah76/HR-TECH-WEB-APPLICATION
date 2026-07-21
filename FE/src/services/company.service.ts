@@ -43,6 +43,13 @@ export const getCompanyMembers = async (companyId: string): Promise<CompanyMembe
   return response.data.data
 }
 
+export const getMyCompanyMember = async (companyId: string): Promise<CompanyMemberResponse> => {
+  const response = await api.get<ApiResponse<CompanyMemberResponse>>(
+    `/companies/${companyId}/members/me`
+  )
+  return response.data.data
+}
+
 export const updateCompany = async (
   id: string,
   request: CompanyUpdateRequest

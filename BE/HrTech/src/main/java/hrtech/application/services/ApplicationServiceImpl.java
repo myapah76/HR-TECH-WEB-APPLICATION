@@ -4,10 +4,7 @@ import hrtech.application.abstractions.repositories.ApplicationRepository;
 import hrtech.application.abstractions.repositories.ApplicationScoreRepository;
 import hrtech.application.abstractions.repositories.SkillMatchRepository;
 import hrtech.application.abstractions.services.IApplicationService;
-import hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
-import hrtech.application.dtos.request.ScheduleInterviewRequest;
 import hrtech.application.dtos.request.SubmitApplicationRequest;
-import hrtech.application.dtos.request.UpdateApplicationStatusRequest;
 import hrtech.application.dtos.response.ApplicationDetailResponse;
 import hrtech.application.dtos.response.ApplicationSummaryResponse;
 import hrtech.application.dtos.response.ApplicationDashboardSummaryResponse;
@@ -32,7 +29,6 @@ import hrtech.job.abstractions.services.ISavedJobService;
 import hrtech.job.entities.Job;
 import hrtech.job.entities.enums.JobStatus;
 import hrtech.notification.abstractions.services.INotificationService;
-import hrtech.notification.dtos.request.ApplicationStatusNotificationRequest;
 import hrtech.notification.entities.enums.NotificationType;
 import hrtech.shared.enums.ScoreGrade;
 import hrtech.shared.enums.SkillLevel;
@@ -171,100 +167,60 @@ public class ApplicationServiceImpl implements IApplicationService {
     }
 
     @Override
-    public ApplicationSummaryResponse updateStatus(UUID applicationId, UpdateApplicationStatusRequest request) {
-        if (request == null || request.getStatus() == null) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Application status is required");
-        }
-
-        ApplicationStatus newStatus = request.getStatus();
-        if (newStatus == ApplicationStatus.ACCEPTED) {
-            if (request.getAcceptedStartDateTime() == null) {
-                throw new AppException(ErrorCode.INVALID_INPUT, "Accepted start date/time is required");
-            }
-            if (normalizeBlank(request.getAcceptedWorkAddress()) == null) {
-                throw new AppException(ErrorCode.INVALID_INPUT, "Accepted work address is required");
-            }
-        }
-
+    public ApplicationSummaryResponse acceptApplication(UUID applicationId) {
         Application application = getApplicationEntityById(applicationId);
 
-        application.setStatus(newStatus);
+        application.setStatus(ApplicationStatus.ACCEPTED);
         application = applicationRepository.save(application);
 
-        notifyCandidateAfterStatusCommit(application, request);
+        notifyCandidateStatusAfterCommit(application, ApplicationStatus.ACCEPTED);
 
         return applicationMapper.toSummaryResponse(application);
     }
 
     @Override
-    public ApplicationSummaryResponse scheduleInterview(UUID applicationId, ScheduleInterviewRequest request) {
+    public ApplicationSummaryResponse rejectApplication(UUID applicationId) {
         Application application = getApplicationEntityById(applicationId);
 
-        application.setStatus(ApplicationStatus.PENDING_INTERVIEW_SCHEDULE);
-        application.setInterviewDateTime(request.interviewDateTime());
-        application.setInterviewLocation(normalizeBlank(request.interviewLocation()));
-        application.setInterviewMeetingLink(normalizeBlank(request.interviewMeetingLink()));
-        application.setInterviewNote(normalizeBlank(request.note()));
-        application.setInterviewAcceptedAt(null);
-        application.setCandidateInterviewResponseMessage(null);
-        application.setCandidatePreferredInterviewDateTime(null);
-
+        application.setStatus(ApplicationStatus.REJECTED);
         application = applicationRepository.save(application);
 
-        notifyInterviewScheduleAfterCommit(application);
+        notifyCandidateStatusAfterCommit(application, ApplicationStatus.REJECTED);
 
         return applicationMapper.toSummaryResponse(application);
     }
 
-    @Override
-    public ApplicationSummaryResponse acceptInterviewSchedule(UUID userId, UUID applicationId) {
-        Application application = findCandidateApplicationWaitingForSchedule(userId, applicationId);
+    private void notifyCandidateStatusAfterCommit(Application application, ApplicationStatus status) {
+        String email = application.getUser().getEmail();
+        String fullName = buildFullName(application.getUser());
+        String jobTitle = application.getJob() != null ? application.getJob().getTitle() : null;
+        String companyName = (application.getJob() != null && application.getJob().getCompany() != null)
+                ? application.getJob().getCompany().getName() : null;
+        String appIdStr = application.getId().toString();
 
-        application.setStatus(ApplicationStatus.INTERVIEW);
-        application.setInterviewAcceptedAt(Instant.now());
-        application.setCandidateInterviewResponseMessage(null);
-        application.setCandidatePreferredInterviewDateTime(null);
+        Runnable notificationTask;
+        switch (status) {
+            case ApplicationStatus.ACCEPTED -> notificationTask = () ->
+                    notificationService.sendApplicationAcceptedNotification(email, fullName, jobTitle, companyName, appIdStr);
+            case ApplicationStatus.REJECTED -> notificationTask = () ->
+                    notificationService.sendApplicationRejectedNotification(email, fullName, jobTitle, companyName, appIdStr);
+            default -> {
+                return;
+            }
+        }
 
-        return applicationMapper.toSummaryResponse(applicationRepository.save(application));
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    notificationTask.run();
+                }
+            });
+        } else {
+            notificationTask.run();
+        }
     }
 
-    @Override
-    public ApplicationSummaryResponse changeInterviewSchedule(UUID userId, UUID applicationId,
-            ChangeInterviewScheduleRequest request) {
-        Application application = findCandidateApplicationWaitingForSchedule(userId, applicationId);
-
-        application.setStatus(ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE);
-        application.setInterviewAcceptedAt(null);
-        application.setCandidatePreferredInterviewDateTime(request.candidatePreferredInterviewDateTime());
-        application.setCandidateInterviewResponseMessage(normalizeBlank(request.reason()));
-
-        return applicationMapper.toSummaryResponse(applicationRepository.save(application));
-    }
-
-    @Override
-    public ApplicationSummaryResponse acceptCandidateReschedule(UUID applicationId) {
-        Application application = findApplicationWaitingForRescheduleReview(applicationId);
-
-        application.setInterviewDateTime(application.getCandidatePreferredInterviewDateTime());
-        application.setStatus(ApplicationStatus.INTERVIEW);
-        application.setInterviewAcceptedAt(Instant.now());
-        application.setCandidatePreferredInterviewDateTime(null);
-        application.setCandidateInterviewResponseMessage(null);
-
-        return applicationMapper.toSummaryResponse(applicationRepository.save(application));
-    }
-
-    @Override
-    public ApplicationSummaryResponse rejectCandidateReschedule(UUID applicationId) {
-        Application application = findApplicationWaitingForRescheduleReview(applicationId);
-
-        application.setStatus(ApplicationStatus.PENDING_INTERVIEW_SCHEDULE);
-        application.setInterviewAcceptedAt(null);
-        application.setCandidatePreferredInterviewDateTime(null);
-        application.setCandidateInterviewResponseMessage(null);
-
-        return applicationMapper.toSummaryResponse(applicationRepository.save(application));
-    }
 
     // ─── QUERY METHODS ─────────────────────────────────────────────────────────
 
@@ -314,17 +270,20 @@ public class ApplicationServiceImpl implements IApplicationService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId, Pageable pageable) {
-        return applicationRepository.findByJobId(jobId, pageable)
-                .map(app -> {
-                    ApplicationSummaryResponse res = applicationMapper.toSummaryResponse(app);
-                    ApplicationScore score = app.getApplicationScore();
-                    if (score != null && score.isCompanyPaid()) {
-                        res.setOverallScore(score.getOverallScore());
-                        res.setGrade(score.getGrade() != null ? score.getGrade().name() : null);
-                    }
-                    return res;
-                });
+    public Page<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId, ApplicationStatus status, Pageable pageable) {
+        Page<Application> page = (status != null)
+                ? applicationRepository.findByJobIdAndStatus(jobId, status, pageable)
+                : applicationRepository.findByJobId(jobId, pageable);
+
+        return page.map(app -> {
+            ApplicationSummaryResponse res = applicationMapper.toSummaryResponse(app);
+            ApplicationScore score = app.getApplicationScore();
+            if (score != null && score.isCompanyPaid()) {
+                res.setOverallScore(score.getOverallScore());
+                res.setGrade(score.getGrade() != null ? score.getGrade().name() : null);
+            }
+            return res;
+        });
     }
 
     @Override
@@ -596,109 +555,9 @@ public class ApplicationServiceImpl implements IApplicationService {
                 .build();
     }
 
-    // ─── PRIVATE HELPERS ────────────────────────────────────────────────────────
 
-    private void notifyCandidateAfterStatusCommit(Application application, UpdateApplicationStatusRequest request) {
-        Job job = application.getJob();
-        String jobTitle = job == null ? null : job.getTitle();
-        String companyName = job == null || job.getCompany() == null ? null : job.getCompany().getName();
 
-        ApplicationStatusNotificationRequest notificationRequest = new ApplicationStatusNotificationRequest(
-                application.getUser().getEmail(),
-                buildFullName(application.getUser()),
-                jobTitle,
-                companyName,
-                request.getStatus().name(),
-                application.getId().toString(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                request.getAcceptedStartDateTime(),
-                normalizeBlank(request.getAcceptedWorkAddress()),
-                normalizeBlank(request.getAcceptedNote()));
 
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    notificationService.ApplicationStatusNotificationHandler(notificationRequest);
-                }
-            });
-            return;
-        }
-
-        notificationService.ApplicationStatusNotificationHandler(notificationRequest);
-    }
-
-    private void notifyInterviewScheduleAfterCommit(Application application) {
-        String actionLink = frontendBaseUrl + "/candidate/applied-jobs";
-
-        ApplicationStatusNotificationRequest notificationRequest = new ApplicationStatusNotificationRequest(
-                application.getUser().getEmail(),
-                buildFullName(application.getUser()),
-                application.getJob().getTitle(),
-                application.getJob().getCompany() == null ? null : application.getJob().getCompany().getName(),
-                ApplicationStatus.PENDING_INTERVIEW_SCHEDULE.name(),
-                application.getId().toString(),
-                application.getInterviewDateTime(),
-                application.getInterviewLocation(),
-                application.getInterviewMeetingLink(),
-                application.getInterviewNote(),
-                actionLink,
-                "Phản hồi lịch phỏng vấn",
-                null,
-                null,
-                null);
-
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    notificationService.ApplicationStatusNotificationHandler(notificationRequest);
-                }
-            });
-            return;
-        }
-
-        notificationService.ApplicationStatusNotificationHandler(notificationRequest);
-    }
-
-    private Application findCandidateApplicationWaitingForSchedule(UUID userId, UUID applicationId) {
-        Application application = getApplicationEntityById(applicationId);
-
-        if (!application.getUser().getId().equals(userId)) {
-            throw new AppException(ErrorCode.FORBIDDEN, "Application does not belong to current candidate");
-        }
-
-        if (application.getStatus() != ApplicationStatus.PENDING_INTERVIEW_SCHEDULE) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS,
-                    "Application is not waiting for interview schedule response");
-        }
-
-        if (application.getInterviewDateTime() == null) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS, "Application does not have an interview schedule");
-        }
-
-        return application;
-    }
-
-    private Application findApplicationWaitingForRescheduleReview(UUID applicationId) {
-        Application application = getApplicationEntityById(applicationId);
-
-        if (application.getStatus() != ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS, "Application is not waiting for reschedule review");
-        }
-
-        if (application.getCandidatePreferredInterviewDateTime() == null) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS,
-                    "Application does not have a candidate preferred interview time");
-        }
-
-        return application;
-    }
 
     private String normalizeBlank(String value) {
         if (value == null || value.isBlank()) {

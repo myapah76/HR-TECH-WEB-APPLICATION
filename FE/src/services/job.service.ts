@@ -7,6 +7,7 @@ import {
   JobSearchParams,
   LandingStatsResponse,
   HotPosition,
+  RecruiterJobStatsResponse,
 } from '@/src/types/job'
 import { ApiResponse, PageResponse } from '../types/api'
 import { TrendingSkill } from '@/src/types/skill'
@@ -124,6 +125,13 @@ export const createJob = async (data: CreateJobRequest): Promise<Job> => {
   return response.data.data
 }
 
+export const duplicateJob = async (jobId: string, companyId: string): Promise<Job> => {
+  const response = await api.post<ApiResponse<Job>>(
+    `/recruiter/companies/${companyId}/jobs/${jobId}/duplicate`
+  )
+  return response.data.data
+}
+
 export const updateJob = async (id: string, data: CreateJobRequest): Promise<Job> => {
   const companyId = data.companyId
   const response = await api.put<ApiResponse<Job>>(
@@ -175,6 +183,15 @@ export const getHotPositions = async (limit = 6): Promise<HotPosition[]> => {
 export const appealJob = async (id: string, companyId: string): Promise<Job> => {
   const response = await api.put<ApiResponse<Job>>(
     `/recruiter/companies/${companyId}/jobs/${id}/appeal`
+  )
+  return response.data.data
+}
+
+export const getRecruiterJobStats = async (
+  companyId: string
+): Promise<RecruiterJobStatsResponse> => {
+  const response = await api.get<ApiResponse<RecruiterJobStatsResponse>>(
+    `/recruiter/companies/${companyId}/jobs/stats`
   )
   return response.data.data
 }

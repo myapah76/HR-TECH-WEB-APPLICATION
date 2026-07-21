@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { startInterviewSession } from '@/src/services/interview.service'
-import { SessionStartResponse } from '@/src/types/interview'
+import { SessionStartResponse } from '@/types/mock-interview'
 
 export const useStartInterviewSession = () => {
   const queryClient = useQueryClient()

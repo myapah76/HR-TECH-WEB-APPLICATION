@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { Card } from '@/src/components/ui/card'
 import { Button } from '@/src/components/ui/button'
 import { useGetInterviewResult } from '@/src/hooks/interview'
+import { DetailedFeedbackItem } from '@/src/types/interview'
 import {
   BookOpen,
   CheckCircle2,
@@ -157,7 +158,7 @@ export default function MockInterviewResultPage() {
           </h3>
           <ul className="space-y-3 text-sm text-slate-600 font-medium">
             {Array.isArray(result.strengths) ? (
-              result.strengths.map((str, idx) => (
+              result.strengths.map((str: string, idx: number) => (
                 <li key={idx} className="flex gap-2">
                   <span className="text-emerald-500 shrink-0">•</span> {str}
                 </li>
@@ -175,7 +176,7 @@ export default function MockInterviewResultPage() {
           </h3>
           <ul className="space-y-3 text-sm text-slate-600 font-medium">
             {Array.isArray(result.weaknesses) ? (
-              result.weaknesses.map((weak, idx) => (
+              result.weaknesses.map((weak: string, idx: number) => (
                 <li key={idx} className="flex gap-2">
                   <span className="text-rose-500 shrink-0">•</span> {weak}
                 </li>
@@ -204,7 +205,7 @@ export default function MockInterviewResultPage() {
         </h3>
 
         <div className="space-y-3">
-          {result.detailedFeedback?.map((item, idx) => {
+          {result.detailedFeedback?.map((item: DetailedFeedbackItem, idx: number) => {
             const isExpanded = expandedIndex === idx
 
             return (

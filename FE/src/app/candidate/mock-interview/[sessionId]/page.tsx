@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Card } from '@/src/components/ui/card'
 import { Button } from '@/src/components/ui/button'
-import { QuestionResponse } from '@/src/types/interview'
+import { QuestionResponse } from '@/types/mock-interview'
 import { Loader2, HelpCircle, ChevronLeft } from 'lucide-react'
 import { MockInterviewEvaluating } from '@/src/components/candidate/interview/MockInterviewEvaluating'
 import { MockInterviewIdleState } from '@/src/components/candidate/interview/MockInterviewIdleState'
@@ -43,11 +43,18 @@ export default function MockInterviewPracticePage() {
   const evaluateSessionMut = useSubmitAndEvaluateInterview()
   const submitAnswerMut = useSubmitInterviewAnswer()
 
-  const currentSession = useMemo(() => history.find((s) => s.sessionId === sessionId), [history, sessionId])
+  const currentSession = useMemo(
+    () => history.find((s) => s.sessionId === sessionId),
+    [history, sessionId]
+  )
   const totalQuestions = currentSession?.totalQuestions || 5
 
   const [prevSessionQuestionId, setPrevSessionQuestionId] = useState<string | null>(null)
-  if (currentSession?.currentQuestion && !currentQuestion && prevSessionQuestionId !== currentSession.currentQuestion.id) {
+  if (
+    currentSession?.currentQuestion &&
+    !currentQuestion &&
+    prevSessionQuestionId !== currentSession.currentQuestion.id
+  ) {
     setPrevSessionQuestionId(currentSession.currentQuestion.id)
     setCurrentQuestion(currentSession.currentQuestion)
   }

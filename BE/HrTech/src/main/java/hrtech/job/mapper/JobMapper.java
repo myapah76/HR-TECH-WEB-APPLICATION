@@ -5,10 +5,9 @@ import hrtech.job.dtos.request.JobRequest;
 import hrtech.job.dtos.request.JobSkillRequest;
 import hrtech.job.dtos.response.JobResponse;
 import hrtech.job.dtos.response.JobSkillResponse;
+import hrtech.job.dtos.response.RecruiterManageJobResponse;
 import hrtech.job.entities.Job;
 import hrtech.job.entities.JobSkill;
-import hrtech.job.entities.enums.ExperienceLevel;
-import hrtech.job.entities.enums.JobType;
 import hrtech.shared.error.ErrorCode;
 import hrtech.shared.enums.SkillLevel;
 import hrtech.shared.exceptions.AppException;
@@ -45,6 +44,13 @@ public abstract class JobMapper {
     @Mapping(target = "skills", source = "jobSkills")
     @Mapping(target = "rejectionReason", ignore = true)
     public abstract JobResponse toResponse(Job job);
+
+    @Mapping(target = "companyId", source = "company.id")
+    @Mapping(target = "companyName", source = "company.name")
+    @Mapping(target = "createdById", source = "createdBy.id")
+    @Mapping(target = "status", expression = "java(job.getStatus() != null ? job.getStatus().name() : null)")
+    @Mapping(target = "newApplicationsCount", expression = "java(job.getApplications() != null ? job.getApplications().stream().filter(a -> a.getStatus() == hrtech.application.entities.enums.ApplicationStatus.SUBMITTED).count() : 0)")
+    public abstract RecruiterManageJobResponse toManageResponse(Job job);
 
     @Mapping(target = "skillName", expression = "java(resolveSkillName(jobSkill.getSkillNeo4jId()))")
     @Mapping(target = "requiredLevel", expression = "java(jobSkill.getRequiredLevel() != null ? jobSkill.getRequiredLevel().name() : null)")

@@ -29,12 +29,10 @@ import hrtech.shared.exceptions.AppException;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.Map;
 import java.util.Set;
 import java.util.EnumMap;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -100,12 +98,6 @@ public class CompanyMemberServiceImpl implements ICompanyMemberService {
     @Override
     @Transactional
     public CompanyMemberResponse addMember(UUID companyId, AddMemberRequest request) {
-        User currentUser = authUtils.getCurrentUser();
-
-        if (!hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
-            throw new AppException(ErrorCode.FORBIDDEN, "Access Denied");
-        }
-
         String email = request.email().toLowerCase();
         if (userService.existsByEmail(email)) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_REGISTERED,
@@ -175,20 +167,14 @@ public class CompanyMemberServiceImpl implements ICompanyMemberService {
         return companyMemberRepository.findByCompanyIdAndDeletedFalse(companyId)
                 .stream()
                 .map(companyMapper::toMemberResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional
     public void removeMember(UUID companyId, UUID memberId) {
-        User currentUser = authUtils.getCurrentUser();
-
-        if (!hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
-            throw new AppException(ErrorCode.FORBIDDEN, "Access Denied");
-        }
-
         CompanyMember targetMember = companyMemberRepository.findById(memberId)
-                .orElseThrow(() -> new AppException(ErrorCode.MEMBER_NOT_FOUND, "Member not found."));
+                .orElseThrow(() -> new AppException(ErrorCode.MEMBER_NOT_FOUND));
 
         if (!targetMember.getCompany().getId().equals(companyId)) {
             throw new AppException(ErrorCode.INVALID_MEMBER_ASSOCIATION, "User does not belong to this company.");
@@ -214,12 +200,6 @@ public class CompanyMemberServiceImpl implements ICompanyMemberService {
     @Override
     @Transactional
     public void reactivateMember(UUID companyId, UUID memberId, boolean resetPassword) {
-        User currentUser = authUtils.getCurrentUser();
-
-        if (!hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
-            throw new AppException(ErrorCode.FORBIDDEN, "Access Denied");
-        }
-
         CompanyMember targetMember = companyMemberRepository.findById(memberId)
                 .orElseThrow(() -> new AppException(ErrorCode.MEMBER_NOT_FOUND, "Member not found."));
 
@@ -255,12 +235,6 @@ public class CompanyMemberServiceImpl implements ICompanyMemberService {
     @Override
     @Transactional
     public void updateMemberRole(UUID companyId, UUID memberId, UpdateMemberRoleRequest request) {
-        User currentUser = authUtils.getCurrentUser();
-
-        if (!hasPermission(currentUser.getId(), companyId, CompanyPermission.MANAGE_MEMBERS)) {
-            throw new AppException(ErrorCode.FORBIDDEN, "Access Denied");
-        }
-
         CompanyMember targetMember = companyMemberRepository.findById(memberId)
                 .orElseThrow(() -> new AppException(ErrorCode.MEMBER_NOT_FOUND, "Member not found."));
 
@@ -339,5 +313,15 @@ public class CompanyMemberServiceImpl implements ICompanyMemberService {
                     return permissions != null && permissions.contains(permission);
                 })
                 .orElse(false);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CompanyMemberResponse getMyMember(UUID companyId) {
+        UUID currentUserId = authUtils.getCurrentUserId();
+        CompanyMember member = companyMemberRepository
+                .findByCompanyIdAndUserIdAndDeletedFalse(companyId, currentUserId)
+                .orElseThrow(() -> new AppException(ErrorCode.MEMBER_NOT_FOUND, "You are not a member of this company"));
+        return companyMapper.toMemberResponse(member);
     }
 }
