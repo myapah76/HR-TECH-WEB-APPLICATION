@@ -14,12 +14,17 @@ import ActiveJobsList from '@/components/recruiter/dashboard/ActiveJobsList'
 import ApplicationAnalyticsChart from '@/components/recruiter/dashboard/ApplicationAnalyticsChart'
 import HiringPipelineFunnel from '@/components/recruiter/dashboard/HiringPipelineFunnel'
 
+import { useAuthStore } from '@/src/stores/auth.store'
+
 export default function RecruiterDashboardPage() {
-  const { data: summary, isLoading: isSummaryLoading } = useGetRecruiterDashboardSummary()
+  const { user, isInitialized } = useAuthStore()
+  const isEnabled = isInitialized && !!user
+
+  const { data: summary, isLoading: isSummaryLoading } = useGetRecruiterDashboardSummary(isEnabled)
   const { data: upcomingInterviews = [], isLoading: isInterviewsLoading } =
-    useGetRecruiterUpcomingInterviews()
-  const { data: activeJobs = [], isLoading: isActiveJobsLoading } = useGetRecruiterActiveJobs()
-  const { data: analytics, isLoading: isAnalyticsLoading } = useGetRecruiterAnalytics()
+    useGetRecruiterUpcomingInterviews(isEnabled)
+  const { data: activeJobs = [], isLoading: isActiveJobsLoading } = useGetRecruiterActiveJobs(isEnabled)
+  const { data: analytics, isLoading: isAnalyticsLoading } = useGetRecruiterAnalytics(isEnabled)
 
   return (
     <div className="space-y-8 animate-fade-in font-sans">

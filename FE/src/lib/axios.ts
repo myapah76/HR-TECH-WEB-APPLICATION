@@ -115,7 +115,17 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    if (error.config?.url?.includes('/auth/refresh')) {
+    const requestUrl = error.config?.url || ''
+    const isAuthEndpoint =
+      requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/refresh') ||
+      requestUrl.includes('/auth/google') ||
+      requestUrl.includes('/auth/register') ||
+      requestUrl.includes('/auth/forgot-password') ||
+      requestUrl.includes('/auth/confirm-otp') ||
+      requestUrl.includes('/auth/reset-password')
+
+    if (isAuthEndpoint) {
       return Promise.reject(error)
     }
 
