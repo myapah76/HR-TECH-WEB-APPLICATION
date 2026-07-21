@@ -321,7 +321,8 @@ public class ApplicationServiceImpl implements IApplicationService {
     @Override
     @Transactional(readOnly = true)
     public boolean hasCandidatesInRound(UUID jobInterviewRoundId) {
-        if (jobInterviewRoundId == null) return false;
+        if (jobInterviewRoundId == null)
+            return false;
         return applicationInterviewRoundRepository.existsByJobInterviewRoundId(jobInterviewRoundId);
     }
 
@@ -872,7 +873,8 @@ public class ApplicationServiceImpl implements IApplicationService {
             }
         }
 
-        // 5. Nếu bật tự động từ chối dưới ngưỡng: Kiểm tra cả các đơn đã scored trước đó
+        // 5. Nếu bật tự động từ chối dưới ngưỡng: Kiểm tra cả các đơn đã scored trước
+        // đó
         if (request.isAutoRejectBelowThreshold()) {
             for (Application app : alreadyScoredList) {
                 if (app.getStatus() == ApplicationStatus.SCORED && app.getApplicationScore() != null) {
