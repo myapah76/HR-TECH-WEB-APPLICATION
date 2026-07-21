@@ -96,5 +96,11 @@ public class Job extends SoftDeleteEntity {
 
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
     @BatchSize(size = 20)
+    @Builder.Default
     private List<JobSkill> jobSkills = new ArrayList<>();
+
+    @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("roundNumber ASC")
+    @Builder.Default
+    private List<JobInterviewRound> interviewRounds = new ArrayList<>();
 }

@@ -35,6 +35,8 @@ public interface IApplicationService {
 
     boolean hasApplied(UUID userId, UUID jobId);
 
+    boolean hasCandidatesInRound(UUID jobInterviewRoundId);
+
     long countApplicationsByStatus(ApplicationStatus status);
 
     ApplicationDashboardSummaryResponse getApplicationDashboardSummary(UUID userId);

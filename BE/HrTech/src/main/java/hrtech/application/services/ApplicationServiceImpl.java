@@ -1,5 +1,6 @@
 package hrtech.application.services;
 
+import hrtech.application.abstractions.repositories.ApplicationInterviewRoundRepository;
 import hrtech.application.abstractions.repositories.ApplicationRepository;
 import hrtech.application.abstractions.repositories.ApplicationScoreRepository;
 import hrtech.application.abstractions.repositories.SkillMatchRepository;
@@ -12,6 +13,7 @@ import hrtech.shared.dtos.RecentActivityResponse;
 import hrtech.application.dtos.response.UpcomingInterviewResponse;
 import hrtech.application.dtos.response.JobSearchAnalyticsResponse;
 import hrtech.application.entities.Application;
+import hrtech.application.entities.ApplicationInterviewRound;
 import hrtech.application.entities.ApplicationScore;
 import hrtech.application.entities.SkillMatch;
 import hrtech.application.entities.enums.ApplicationStatus;
@@ -82,6 +84,7 @@ public class ApplicationServiceImpl implements IApplicationService {
     private final ApplicationRepository applicationRepository;
     private final ApplicationScoreRepository applicationScoreRepository;
     private final SkillMatchRepository skillMatchRepository;
+    private final ApplicationInterviewRoundRepository applicationInterviewRoundRepository;
 
     private final ApplicationMapper applicationMapper;
 
@@ -195,21 +198,22 @@ public class ApplicationServiceImpl implements IApplicationService {
         String fullName = buildFullName(application.getUser());
         String jobTitle = application.getJob() != null ? application.getJob().getTitle() : null;
         String companyName = (application.getJob() != null && application.getJob().getCompany() != null)
-                ? application.getJob().getCompany().getName() : null;
+                ? application.getJob().getCompany().getName()
+                : null;
         String appIdStr = application.getId().toString();
 
         Runnable notificationTask;
         switch (status) {
-            case ApplicationStatus.ACCEPTED -> notificationTask = () ->
-                    notificationService.sendApplicationAcceptedNotification(email, fullName, jobTitle, companyName, appIdStr);
-            case ApplicationStatus.REJECTED -> notificationTask = () ->
-                    notificationService.sendApplicationRejectedNotification(email, fullName, jobTitle, companyName, appIdStr);
+            case ApplicationStatus.ACCEPTED -> notificationTask = () -> notificationService
+                    .sendApplicationAcceptedNotification(email, fullName, jobTitle, companyName, appIdStr);
+            case ApplicationStatus.REJECTED -> notificationTask = () -> notificationService
+                    .sendApplicationRejectedNotification(email, fullName, jobTitle, companyName, appIdStr);
             default -> {
                 return;
             }
         }
 
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
@@ -221,6 +225,21 @@ public class ApplicationServiceImpl implements IApplicationService {
         }
     }
 
+    private String buildFullName(User user) {
+        if (user == null)
+            return null;
+        String firstName = user.getFirstName() == null ? "" : user.getFirstName().trim();
+        String lastName = user.getLastName() == null ? "" : user.getLastName().trim();
+        String fullName = (firstName + " " + lastName).trim();
+
+        if (!fullName.isBlank()) {
+            return fullName;
+        }
+        if (user.getUsername() != null && !user.getUsername().isBlank()) {
+            return user.getUsername();
+        }
+        return user.getEmail();
+    }
 
     // ─── QUERY METHODS ─────────────────────────────────────────────────────────
 
@@ -270,7 +289,8 @@ public class ApplicationServiceImpl implements IApplicationService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId, ApplicationStatus status, Pageable pageable) {
+    public Page<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId, ApplicationStatus status,
+            Pageable pageable) {
         Page<Application> page = (status != null)
                 ? applicationRepository.findByJobIdAndStatus(jobId, status, pageable)
                 : applicationRepository.findByJobId(jobId, pageable);
@@ -293,6 +313,13 @@ public class ApplicationServiceImpl implements IApplicationService {
                 userId,
                 jobId,
                 List.of(ApplicationStatus.REJECTED, ApplicationStatus.WITHDRAWN));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasCandidatesInRound(UUID jobInterviewRoundId) {
+        if (jobInterviewRoundId == null) return false;
+        return applicationInterviewRoundRepository.existsByJobInterviewRoundId(jobInterviewRoundId);
     }
 
     @Override
@@ -523,11 +550,24 @@ public class ApplicationServiceImpl implements IApplicationService {
     @Override
     @Transactional(readOnly = true)
     public List<UpcomingInterviewResponse> getUpcomingInterviewsForDashboard(UUID userId) {
-        return applicationRepository
-                .findByUserIdAndStatusAndInterviewDateTimeGreaterThanEqualOrderByInterviewDateTimeAsc(
-                        userId, ApplicationStatus.INTERVIEW, Instant.now())
-                .stream()
-                .map(this::toUpcomingInterviewResponse)
+        List<Application> apps = applicationRepository.findByUserId(userId);
+        Instant now = Instant.now();
+        return apps.stream()
+                .filter(a -> a.getInterviewRounds() != null)
+                .flatMap(a -> a.getInterviewRounds().stream())
+                .filter(r -> r.getScheduledTime() != null && !r.getScheduledTime().isBefore(now))
+                .sorted(Comparator.comparing(ApplicationInterviewRound::getScheduledTime))
+                .map(r -> UpcomingInterviewResponse.builder()
+                        .company(r.getApplication().getJob() != null && r.getApplication().getJob().getCompany() != null
+                                ? r.getApplication().getJob().getCompany().getName()
+                                : "Nhà tuyển dụng")
+                        .position(r.getApplication().getJob() != null ? r.getApplication().getJob().getTitle()
+                                : "Vị trí không xác định")
+                        .dateTime(r.getScheduledTime())
+                        .meetUrl(r.getMeetingLink())
+                        .location(r.getLocation())
+                        .applicationId(r.getApplication().getId())
+                        .build())
                 .toList();
     }
 
@@ -552,46 +592,6 @@ public class ApplicationServiceImpl implements IApplicationService {
                 .weeklyData(buildWeeklyData(apps))
                 .monthlyData(buildMonthlyData(apps))
                 .yearlyData(buildYearlyData(apps))
-                .build();
-    }
-
-
-
-
-
-    private String normalizeBlank(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return value.trim();
-    }
-
-    private String buildFullName(User user) {
-        String firstName = user.getFirstName() == null ? "" : user.getFirstName().trim();
-        String lastName = user.getLastName() == null ? "" : user.getLastName().trim();
-        String fullName = (firstName + " " + lastName).trim();
-
-        if (!fullName.isBlank()) {
-            return fullName;
-        }
-        if (user.getUsername() != null && !user.getUsername().isBlank()) {
-            return user.getUsername();
-        }
-        return user.getEmail();
-    }
-
-    private UpcomingInterviewResponse toUpcomingInterviewResponse(Application app) {
-        String companyName = (app.getJob() != null && app.getJob().getCompany() != null)
-                ? app.getJob().getCompany().getName()
-                : "Nhà tuyển dụng";
-        String jobTitle = app.getJob() != null ? app.getJob().getTitle() : "Vị trí không xác định";
-        return UpcomingInterviewResponse.builder()
-                .company(companyName)
-                .position(jobTitle)
-                .dateTime(app.getInterviewDateTime())
-                .meetUrl(app.getInterviewMeetingLink())
-                .location(app.getInterviewLocation())
-                .applicationId(app.getId())
                 .build();
     }
 
@@ -668,8 +668,6 @@ public class ApplicationServiceImpl implements IApplicationService {
         return result;
     }
 
-    // ─── RECRUITER DASHBOARD METHODS ───────────────────────────────────────────
-
     private Company resolveRecruiterCompany() {
         User currentUser = authUtils.getCurrentUser();
         CompanyMember member = companyService.getMemberEntityByUserId(currentUser.getId());
@@ -717,14 +715,17 @@ public class ApplicationServiceImpl implements IApplicationService {
         List<Application> apps = getCompanyApplications(jobs);
 
         return apps.stream()
-                .filter(a -> a.getInterviewDateTime() != null)
-                .sorted(Comparator.comparing(Application::getInterviewDateTime))
+                .filter(a -> a.getInterviewRounds() != null)
+                .flatMap(a -> a.getInterviewRounds().stream())
+                .filter(r -> r.getScheduledTime() != null)
+                .sorted(Comparator.comparing(ApplicationInterviewRound::getScheduledTime))
                 .limit(4)
-                .map(a -> RecruiterUpcomingInterviewResponse.builder()
-                        .cvTitle(a.getCv() != null ? a.getCv().getTitle() : "CV")
-                        .jobTitle(a.getJob() != null ? a.getJob().getTitle() : "Vị trí tuyển dụng")
-                        .interviewDateTime(a.getInterviewDateTime())
-                        .status(a.getStatus().name())
+                .map(r -> RecruiterUpcomingInterviewResponse.builder()
+                        .cvTitle(r.getApplication().getCv() != null ? r.getApplication().getCv().getTitle() : "CV")
+                        .jobTitle(r.getApplication().getJob() != null ? r.getApplication().getJob().getTitle()
+                                : "Vị trí tuyển dụng")
+                        .interviewDateTime(r.getScheduledTime())
+                        .status(r.getStatus().name())
                         .build())
                 .toList();
     }

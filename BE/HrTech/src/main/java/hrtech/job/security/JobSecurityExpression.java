@@ -51,6 +51,23 @@ public class JobSecurityExpression {
         }
     }
 
+    public boolean isCompanyRecruiter(UUID jobId) {
+        if (jobId == null) return false;
+        try {
+            User currentUser = authUtils.getCurrentUser();
+            if (currentUser.getRole() != null && "ADMIN_SYSTEM".equals(currentUser.getRole().getName())) {
+                return true;
+            }
+            Job job = jobRepository.findById(jobId).orElse(null);
+            if (job == null || job.getCompany() == null) {
+                return false;
+            }
+            return companySecurity.isRecruiter(job.getCompany().getId());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public boolean isManager(UUID jobId) {
         if (jobId == null) return false;
         try {

@@ -127,20 +127,6 @@ export default function JobApplicationsPage() {
     }, 1200)
   }
 
-  const handleAcceptCv = (appId: string) => {
-    setApplications((prev) =>
-      prev.map((a) => (a.id === appId ? { ...a, status: ApplicationStatus.SCORED } : a))
-    )
-    toast.success('Đã duyệt CV vào danh sách thành công!')
-  }
-
-  const handleRejectCv = (appId: string) => {
-    setApplications((prev) =>
-      prev.map((a) => (a.id === appId ? { ...a, status: ApplicationStatus.REJECTED } : a))
-    )
-    toast.success('Đã từ chối đơn ứng tuyển!')
-  }
-
   return (
     <div className="space-y-6 pb-12">
       {/* Header Bar */}
@@ -177,7 +163,7 @@ export default function JobApplicationsPage() {
 
       {/* 2. Filter & Search Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-        <div className="flex items-center gap-3 flex-1 min-w-[240px]">
+        <div className="flex items-center gap-3 flex-1 min-w-60">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input

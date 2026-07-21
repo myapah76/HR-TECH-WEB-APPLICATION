@@ -11,6 +11,7 @@ import {
 } from '@/src/types/job'
 import { ApiResponse, PageResponse } from '../types/api'
 import { TrendingSkill } from '@/src/types/skill'
+import { JobInterviewRoundRequest, JobInterviewRoundResponse } from '@/src/types/recruiter-interview'
 
 export const getJobs = async (page = 0, size = 10): Promise<PageResponse<Job>> => {
   const response = await api.get<ApiResponse<PageResponse<Job>>>(`/jobs`, {
@@ -195,3 +196,35 @@ export const getRecruiterJobStats = async (
   )
   return response.data.data
 }
+
+// ─── Job Interview Rounds API ──────────────────────────────────────────────────
+
+export const getJobInterviewRounds = async (jobId: string): Promise<JobInterviewRoundResponse[]> => {
+  const response = await api.get<ApiResponse<JobInterviewRoundResponse[]>>(`/jobs/${jobId}/interview-rounds`)
+  return response.data.data
+}
+
+export const createJobInterviewRound = async (
+  jobId: string,
+  payload: JobInterviewRoundRequest
+): Promise<JobInterviewRoundResponse> => {
+  const response = await api.post<ApiResponse<JobInterviewRoundResponse>>(`/jobs/${jobId}/interview-rounds`, payload)
+  return response.data.data
+}
+
+export const updateJobInterviewRound = async (
+  jobId: string,
+  roundId: string,
+  payload: JobInterviewRoundRequest
+): Promise<JobInterviewRoundResponse> => {
+  const response = await api.put<ApiResponse<JobInterviewRoundResponse>>(
+    `/jobs/${jobId}/interview-rounds/${roundId}`,
+    payload
+  )
+  return response.data.data
+}
+
+export const deleteJobInterviewRound = async (jobId: string, roundId: string): Promise<void> => {
+  await api.delete<ApiResponse<void>>(`/jobs/${jobId}/interview-rounds/${roundId}`)
+}
+

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useMemo, useState } from 'react'
-import { CheckCircle2, Clock, AlertTriangle, MessageSquare, ArrowRight, User, Calendar, Check, X, ShieldAlert, Star, Users } from 'lucide-react'
+import { CheckCircle2, Clock, Calendar, Check, X, Star, Users } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
 import { InterviewRoundConfig, InterviewRoundDetail } from '@/src/types/recruiter-interview'
 import { toast } from 'sonner'
@@ -12,7 +12,12 @@ interface MultiRoundInterviewStepperProps {
   onSelectRound: (roundNumber: number) => void
   candidatesInRound: InterviewRoundDetail[]
   onOpenScheduler: (roundNumber: number, candidateIds: string[]) => void
-  onPassCandidate: (applicationId: string, roundNumber: number, feedback: string, rating: number) => void
+  onPassCandidate: (
+    applicationId: string,
+    roundNumber: number,
+    feedback: string,
+    rating: number
+  ) => void
   onFailCandidate: (applicationId: string, roundNumber: number, feedback: string) => void
 }
 
@@ -63,10 +68,7 @@ export default function MultiRoundInterviewStepper({
   const unconfirmedCandidates = useMemo(
     () =>
       candidatesInRound.filter(
-        (c) =>
-          c.status !== 'CONFIRMED' ||
-          !c.scheduledTime ||
-          c.scheduledTime.includes('Chờ')
+        (c) => c.status !== 'CONFIRMED' || !c.scheduledTime || c.scheduledTime.includes('Chờ')
       ),
     [candidatesInRound]
   )
@@ -74,10 +76,7 @@ export default function MultiRoundInterviewStepper({
   const confirmedCandidates = useMemo(
     () =>
       candidatesInRound.filter(
-        (c) =>
-          c.status === 'CONFIRMED' &&
-          c.scheduledTime &&
-          !c.scheduledTime.includes('Chờ')
+        (c) => c.status === 'CONFIRMED' && c.scheduledTime && !c.scheduledTime.includes('Chờ')
       ),
     [candidatesInRound]
   )
@@ -161,7 +160,8 @@ export default function MultiRoundInterviewStepper({
             Danh sách Phỏng vấn - {currentRoundInfo.roundName}
           </h4>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Tổng số {candidatesInRound.length} ứng viên ở vòng này • {confirmedCandidates.length} đã chốt lịch • {schedulableCandidates.length} chưa có lịch
+            Tổng số {candidatesInRound.length} ứng viên ở vòng này • {confirmedCandidates.length} đã
+            chốt lịch • {schedulableCandidates.length} chưa có lịch
           </p>
         </div>
 
@@ -204,7 +204,9 @@ export default function MultiRoundInterviewStepper({
                         disabled={schedulableCandidates.length === 0}
                         checked={
                           schedulableCandidates.length > 0 &&
-                          schedulableCandidates.every((c) => selectedCandidates.includes(c.applicationId))
+                          schedulableCandidates.every((c) =>
+                            selectedCandidates.includes(c.applicationId)
+                          )
                         }
                         onChange={(e) => {
                           if (e.target.checked) {
@@ -227,7 +229,10 @@ export default function MultiRoundInterviewStepper({
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                   {unconfirmedCandidates.map((cand, idx) => {
-                    const isSchedulable = cand.status === 'NOT_STARTED' || !cand.scheduledTime || cand.scheduledTime.includes('Chưa')
+                    const isSchedulable =
+                      cand.status === 'NOT_STARTED' ||
+                      !cand.scheduledTime ||
+                      cand.scheduledTime.includes('Chưa')
                     const isSelected = selectedCandidates.includes(cand.applicationId)
                     const isRescheduleCapped = cand.rescheduleCount >= 3
 
@@ -277,8 +282,8 @@ export default function MultiRoundInterviewStepper({
                               isRescheduleCapped
                                 ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-950/40'
                                 : cand.rescheduleCount > 0
-                                ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/40'
-                                : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800'
+                                  ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/40'
+                                  : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800'
                             }`}
                           >
                             Đổi lịch: {cand.rescheduleCount}/3 lần
@@ -291,10 +296,15 @@ export default function MultiRoundInterviewStepper({
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    toast.success(`Đã chấp nhận lịch đề xuất của ${cand.candidateName}!`)
+                                    toast.success(
+                                      `Đã chấp nhận lịch đề xuất của ${cand.candidateName}!`
+                                    )
                                     cand.status = 'CONFIRMED'
                                     if (cand.scheduledTime?.includes('Đề xuất đổi lịch sang')) {
-                                      cand.scheduledTime = cand.scheduledTime.replace('Đề xuất đổi lịch sang ', '')
+                                      cand.scheduledTime = cand.scheduledTime.replace(
+                                        'Đề xuất đổi lịch sang ',
+                                        ''
+                                      )
                                     }
                                   }}
                                   className="px-2.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors cursor-pointer inline-flex items-center gap-1"
@@ -313,7 +323,11 @@ export default function MultiRoundInterviewStepper({
                             ) : cand.status === 'SLOTS_SENT' ? (
                               <button
                                 type="button"
-                                onClick={() => toast.success(`Đã gửi email nhắc nhở cho ${cand.candidateName} chốt lịch!`)}
+                                onClick={() =>
+                                  toast.success(
+                                    `Đã gửi email nhắc nhở cho ${cand.candidateName} chốt lịch!`
+                                  )
+                                }
                                 className="px-2.5 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors cursor-pointer"
                               >
                                 Gửi nhắc nhở

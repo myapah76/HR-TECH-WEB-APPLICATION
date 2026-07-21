@@ -65,7 +65,7 @@ export default function JobApplicationsTable({
   if (activeTotalItems === 0) {
     return (
       <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 rounded-2xl p-12 text-center text-slate-500 text-xs">
-        Chưa có đơn ứng tuyển nào mới.
+        Chưa có đơn ứng tuyển mới.
       </div>
     )
   }

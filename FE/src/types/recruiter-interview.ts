@@ -9,10 +9,26 @@ export interface AvailableSlot {
 }
 
 export interface InterviewRoundConfig {
+  id?: string
   roundNumber: number
   roundName: string
   description?: string
   interviewerRole?: string
+}
+
+export interface JobInterviewRoundResponse {
+  id: string
+  jobId: string
+  roundNumber: number
+  roundName: string
+  description?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface JobInterviewRoundRequest {
+  roundName: string
+  description?: string
 }
 
 import { InterviewRoundStatusType, InterviewRoundStatus as InterviewRoundStatusEnum } from '@/src/enums/interview.enum'

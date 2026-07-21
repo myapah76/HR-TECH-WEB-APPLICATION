@@ -48,6 +48,7 @@ export interface Job {
 
   salaryMin: number
   salaryMax: number
+  salaryType?: any
 
   jobType: JobType
   experienceLevel: ExperienceLevel
@@ -64,6 +65,7 @@ export interface Job {
   skills: JobSkill[]
 
   rejectionReason?: string
+  appealCount?: number
 
   createdAt: string
   updatedAt: string

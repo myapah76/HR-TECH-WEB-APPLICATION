@@ -43,9 +43,6 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
 
     List<Application> findByUserIdOrderByAppliedAtDesc(UUID userId, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"job", "job.company", "cv", "user"})
-    List<Application> findByUserIdAndStatusAndInterviewDateTimeGreaterThanEqualOrderByInterviewDateTimeAsc(UUID userId, ApplicationStatus status, Instant now);
-
     long countByCreatedAtAfter(Instant date);
 }
 

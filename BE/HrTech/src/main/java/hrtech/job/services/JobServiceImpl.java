@@ -10,6 +10,7 @@ import hrtech.company.entities.enums.CompanyRole;
 import hrtech.identity.entities.User;
 import hrtech.identity.utils.AuthUtils;
 import hrtech.job.abstractions.repositories.JobAuditLogRepository;
+import hrtech.job.abstractions.repositories.JobInterviewRoundRepository;
 import hrtech.job.abstractions.repositories.JobRepository;
 import hrtech.job.abstractions.repositories.JobSkillRepository;
 import hrtech.job.abstractions.services.IJobService;
@@ -23,6 +24,7 @@ import hrtech.job.dtos.response.RecruiterManageJobResponse;
 import hrtech.job.dtos.response.TrendingSkillResponse;
 import hrtech.job.entities.Job;
 import hrtech.job.entities.JobAuditLog;
+import hrtech.job.entities.JobInterviewRound;
 import hrtech.job.entities.JobSkill;
 import hrtech.job.entities.QJob;
 import hrtech.job.entities.enums.*;
@@ -76,6 +78,7 @@ public class JobServiceImpl implements IJobService {
     private final JobRepository jobRepository;
     private final JobSkillRepository jobSkillRepository;
     private final JobAuditLogRepository jobAuditLogRepository;
+    private final JobInterviewRoundRepository jobInterviewRoundRepository;
     private final PlatformTransactionManager transactionManager;
 
     private final JobMapper jobMapper;
@@ -311,6 +314,15 @@ public class JobServiceImpl implements IJobService {
         Job job = jobMapper.toEntity(request);
         job.setCompany(company);
         job.setCreatedBy(currentUser);
+
+        // Tự động tạo 1 vòng phỏng vấn mặc định (Vòng 1)
+        JobInterviewRound defaultRound = JobInterviewRound.builder()
+                .job(job)
+                .roundNumber(1)
+                .roundName("Vòng 1: Phỏng vấn")
+                .description("Vòng phỏng vấn mặc định")
+                .build();
+        job.getInterviewRounds().add(defaultRound);
 
         Job savedJob = jobRepository.save(job);
         logStatusChange(savedJob, null, JobStatus.DRAFT, JobAuditAction.CREATE, currentUser,
@@ -664,6 +676,29 @@ public class JobServiceImpl implements IJobService {
                     .toList();
             jobSkillRepository.saveAll(copiedSkills);
             savedDuplicate.setJobSkills(copiedSkills);
+        }
+
+        // Sao chép các vòng phỏng vấn hoặc tạo vòng phỏng vấn mặc định
+        if (original.getInterviewRounds() != null && !original.getInterviewRounds().isEmpty()) {
+            List<JobInterviewRound> copiedRounds = original.getInterviewRounds().stream()
+                    .map(round -> JobInterviewRound.builder()
+                            .job(savedDuplicate)
+                            .roundNumber(round.getRoundNumber())
+                            .roundName(round.getRoundName())
+                            .description(round.getDescription())
+                            .build())
+                    .toList();
+            jobInterviewRoundRepository.saveAll(copiedRounds);
+            savedDuplicate.setInterviewRounds(new ArrayList<>(copiedRounds));
+        } else {
+            JobInterviewRound defaultRound = JobInterviewRound.builder()
+                    .job(savedDuplicate)
+                    .roundNumber(1)
+                    .roundName("Vòng 1: Phỏng vấn")
+                    .description("Vòng phỏng vấn mặc định")
+                    .build();
+            jobInterviewRoundRepository.save(defaultRound);
+            savedDuplicate.getInterviewRounds().add(defaultRound);
         }
 
         return jobMapper.toResponse(savedDuplicate);
