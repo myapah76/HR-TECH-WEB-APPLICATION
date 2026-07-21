@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { X, Calendar, Clock, Plus, Trash2, MapPin, Link as LinkIcon, Users } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
 import { AvailableSlot } from '@/src/types/recruiter-interview'
+import { toast } from 'sonner'
 
 interface MultiSlotSchedulerModalProps {
   isOpen: boolean
@@ -14,6 +15,33 @@ interface MultiSlotSchedulerModalProps {
   onSubmit: (slots: AvailableSlot[], note?: string) => void
 }
 
+const HOURLY_OPTIONS = [
+  '07:00',
+  '08:00',
+  '09:00',
+  '10:00',
+  '11:00',
+  '12:00',
+  '13:00',
+  '14:00',
+  '15:00',
+  '16:00',
+  '17:00',
+  '18:00',
+  '19:00',
+  '20:00',
+  '21:00',
+]
+
+interface SlotInputState {
+  id: string
+  date: string
+  startHour: string
+  endHour: string
+  location: string
+  meetingLink: string
+}
+
 export default function MultiSlotSchedulerModal({
   isOpen,
   onClose,
@@ -22,11 +50,17 @@ export default function MultiSlotSchedulerModal({
   roundName,
   onSubmit,
 }: MultiSlotSchedulerModalProps) {
-  const [slots, setSlots] = useState<AvailableSlot[]>([
+  const getTodayString = () => {
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  }
+
+  const [slots, setSlots] = useState<SlotInputState[]>([
     {
       id: '1',
-      startTime: '',
-      endTime: '',
+      date: getTodayString(),
+      startHour: '09:00',
+      endHour: '10:00',
       location: '',
       meetingLink: '',
     },
@@ -36,14 +70,16 @@ export default function MultiSlotSchedulerModal({
   if (!isOpen) return null
 
   const handleAddSlot = () => {
+    const lastSlot = slots[slots.length - 1]
     setSlots([
       ...slots,
       {
         id: String(Date.now()),
-        startTime: '',
-        endTime: '',
-        location: slots[0]?.location || '',
-        meetingLink: slots[0]?.meetingLink || '',
+        date: lastSlot?.date || getTodayString(),
+        startHour: '09:00',
+        endHour: '10:00',
+        location: lastSlot?.location || '',
+        meetingLink: lastSlot?.meetingLink || '',
       },
     ])
   }
@@ -53,19 +89,62 @@ export default function MultiSlotSchedulerModal({
     setSlots(slots.filter((s) => s.id !== id))
   }
 
-  const handleSlotChange = (id: string, field: keyof AvailableSlot, value: string) => {
-    setSlots(slots.map((s) => (s.id === id ? { ...s, [field]: value } : s)))
+  const handleSlotChange = (id: string, updates: Partial<SlotInputState>) => {
+    setSlots(
+      slots.map((s) => {
+        if (s.id !== id) return s
+        const updated = { ...s, ...updates }
+
+        // Enforce startHour < endHour automatically
+        if (updates.startHour) {
+          const startIdx = HOURLY_OPTIONS.indexOf(updates.startHour)
+          const endIdx = HOURLY_OPTIONS.indexOf(updated.endHour)
+          if (endIdx <= startIdx && startIdx < HOURLY_OPTIONS.length - 1) {
+            updated.endHour = HOURLY_OPTIONS[startIdx + 1]
+          }
+        }
+        return updated
+      })
+    )
   }
 
   const handleConfirm = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(slots, note)
+
+    // Validate slots
+    for (let i = 0; i < slots.length; i++) {
+      const slot = slots[i]
+      if (!slot.date) {
+        toast.error(`Vui lòng chọn ngày cho Khung giờ ${i + 1}`)
+        return
+      }
+      const startIdx = HOURLY_OPTIONS.indexOf(slot.startHour)
+      const endIdx = HOURLY_OPTIONS.indexOf(slot.endHour)
+      if (startIdx >= endIdx) {
+        toast.error(`Khung giờ ${i + 1}: Giờ kết thúc phải muộn hơn Giờ bắt đầu!`)
+        return
+      }
+    }
+
+    const formattedSlots: AvailableSlot[] = slots.map((s) => {
+      const startIso = new Date(`${s.date}T${s.startHour}:00`).toISOString()
+      const endIso = new Date(`${s.date}T${s.endHour}:00`).toISOString()
+      return {
+        id: s.id,
+        startTime: startIso,
+        endTime: endIso,
+        location: s.location,
+        meetingLink: s.meetingLink,
+      }
+    })
+
+    onSubmit(formattedSlots, note)
     onClose()
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
           <div className="flex items-center gap-3">
@@ -74,7 +153,7 @@ export default function MultiSlotSchedulerModal({
             </div>
             <div>
               <h3 className="font-bold text-slate-900 dark:text-slate-100 text-lg">
-                Tạo Lịch Phỏng Vấn (Nhiều Khung Giờ)
+                Tạo Lịch Phỏng Vấn (Chọn Ngày & Giờ)
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {roundName} (Vòng {roundNumber}) • {candidateNames.length} Ứng viên được chọn
@@ -124,80 +203,112 @@ export default function MultiSlotSchedulerModal({
               </button>
             </div>
 
-            <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-              {slots.map((slot, index) => (
-                <div
-                  key={slot.id}
-                  className="p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 rounded-2xl space-y-3 relative group"
-                >
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-                    <span>Khung giờ {index + 1}</span>
-                    {slots.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSlot(slot.id)}
-                        className="text-red-500 hover:text-red-700 p-1 cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
+            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+              {slots.map((slot, index) => {
+                const startIdx = HOURLY_OPTIONS.indexOf(slot.startHour)
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">
-                        Thời gian bắt đầu:
-                      </span>
-                      <input
-                        type="datetime-local"
-                        required
-                        value={slot.startTime}
-                        onChange={(e) => handleSlotChange(slot.id, 'startTime', e.target.value)}
-                        className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500"
-                      />
+                return (
+                  <div
+                    key={slot.id}
+                    className="p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 rounded-2xl space-y-3 relative group"
+                  >
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                      <span>Khung giờ {index + 1}</span>
+                      {slots.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSlot(slot.id)}
+                          className="text-red-500 hover:text-red-700 p-1 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
-                    <div>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">
-                        Thời gian kết thúc:
-                      </span>
-                      <input
-                        type="datetime-local"
-                        required
-                        value={slot.endTime}
-                        onChange={(e) => handleSlotChange(slot.id, 'endTime', e.target.value)}
-                        className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500"
-                      />
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Step 1: Date Picker */}
                     <div>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1 flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-slate-400" /> Địa điểm (Offline):
+                      <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                        1. Chọn Ngày phỏng vấn:
                       </span>
                       <input
-                        type="text"
-                        placeholder="Ví dụ: Tầng 5, Tòa nhà FPT Tower..."
-                        value={slot.location || ''}
-                        onChange={(e) => handleSlotChange(slot.id, 'location', e.target.value)}
+                        type="date"
+                        required
+                        min={getTodayString()}
+                        value={slot.date}
+                        onChange={(e) => handleSlotChange(slot.id, { date: e.target.value })}
                         className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500"
                       />
                     </div>
-                    <div>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1 flex items-center gap-1">
-                        <LinkIcon className="w-3 h-3 text-slate-400" /> Link Google Meet (Online):
-                      </span>
-                      <input
-                        type="url"
-                        placeholder="https://meet.google.com/..."
-                        value={slot.meetingLink || ''}
-                        onChange={(e) => handleSlotChange(slot.id, 'meetingLink', e.target.value)}
-                        className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500"
-                      />
+
+                    {/* Step 2: Start & End Hour Selection */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                          2. Giờ bắt đầu (Mốc giờ tròn):
+                        </span>
+                        <select
+                          value={slot.startHour}
+                          onChange={(e) => handleSlotChange(slot.id, { startHour: e.target.value })}
+                          className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500 cursor-pointer"
+                        >
+                          {HOURLY_OPTIONS.map((hour) => (
+                            <option key={hour} value={hour}>
+                              {hour}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                          3. Giờ kết thúc (Vô hiệu hóa ≤ Giờ bắt đầu):
+                        </span>
+                        <select
+                          value={slot.endHour}
+                          onChange={(e) => handleSlotChange(slot.id, { endHour: e.target.value })}
+                          className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500 cursor-pointer"
+                        >
+                          {HOURLY_OPTIONS.map((hour, idx) => {
+                            const isDisabled = idx <= startIdx
+                            return (
+                              <option key={hour} value={hour} disabled={isDisabled}>
+                                {hour} {isDisabled ? '⛔ (không hợp lệ)' : ''}
+                              </option>
+                            )
+                          })}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Location & Meeting Link */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1 flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-slate-400" /> Địa điểm (Offline):
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Ví dụ: Tầng 5, Tòa nhà FPT Tower..."
+                          value={slot.location}
+                          onChange={(e) => handleSlotChange(slot.id, { location: e.target.value })}
+                          className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1 flex items-center gap-1">
+                          <LinkIcon className="w-3 h-3 text-slate-400" /> Link Google Meet (Online):
+                        </span>
+                        <input
+                          type="url"
+                          placeholder="https://meet.google.com/..."
+                          value={slot.meetingLink}
+                          onChange={(e) => handleSlotChange(slot.id, { meetingLink: e.target.value })}
+                          className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 

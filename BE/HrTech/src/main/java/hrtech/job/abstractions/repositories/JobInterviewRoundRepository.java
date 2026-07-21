@@ -14,5 +14,7 @@ public interface JobInterviewRoundRepository extends JpaRepository<JobInterviewR
 
     int countByJobId(UUID jobId);
 
+    Optional<JobInterviewRound> findByJobIdAndRoundNumber(UUID jobId, Integer roundNumber);
+
     Optional<JobInterviewRound> findByIdAndJobId(UUID id, UUID jobId);
 }

@@ -192,13 +192,15 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
                 <th className="px-4 py-4">Ngày tạo</th>
                 <th className="px-4 py-4">Hạn nộp</th>
                 <th className="px-4 py-4">Trạng thái</th>
+                <th className="px-4 py-4 text-center">Đơn mới</th>
                 <th className="px-4 py-4">Hồ sơ & Phỏng vấn</th>
                 <th className="px-6 py-4 text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {jobs.map((job, index) => {
-                const totalAppsCount = job.totalApplicationsCount ?? job.newApplicationsCount ?? 0
+                const totalAppsCount = job.totalApplicationsCount ?? 0
+                const newAppsCount = job.newApplicationsCount ?? 0
                 const interviewsCount = job.interviewsCount ?? 0
                 const canManageCandidates =
                   job.status === JobStatus.APPROVED || job.status === JobStatus.CLOSED
@@ -248,6 +250,16 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
                       >
                         {JOB_STATUS_LABELS[job.status] || job.status || 'Chưa xác định'}
                       </span>
+                    </td>
+                    {/* Cột Đơn mới */}
+                    <td className="px-4 py-5 text-center">
+                      {newAppsCount > 0 ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1 text-xs font-black shadow-2xs">
+                          {newAppsCount} đơn mới
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-medium">0 đơn mới</span>
+                      )}
                     </td>
                     <td className="px-4 py-5">
                       {canManageCandidates ? (

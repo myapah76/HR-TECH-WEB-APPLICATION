@@ -1,10 +1,8 @@
 package hrtech.application.abstractions.services;
 
+import hrtech.application.dtos.request.*;
 import hrtech.application.dtos.response.*;
 import hrtech.shared.dtos.RecentActivityResponse;
-import hrtech.application.dtos.request.SubmitApplicationRequest;
-import hrtech.application.dtos.request.BulkScoreRequest;
-import hrtech.application.dtos.request.BulkRejectRequest;
 import hrtech.company.dtos.response.RecruiterActiveJobResponse;
 import hrtech.company.dtos.response.RecruiterAnalyticsResponse;
 import hrtech.company.dtos.response.RecruiterDashboardSummaryResponse;
@@ -69,4 +67,18 @@ public interface IApplicationService {
      * Từ chối thủ công nhiều application theo danh sách IDs HR đã chọn.
      */
     List<ApplicationSummaryResponse> bulkRejectApplications(List<UUID> applicationIds);
+
+    List<ApplicationSummaryResponse> scheduleMultiSlotInterview(ScheduleMultiSlotRequest request);
+
+    ApplicationInterviewRoundResponse selectInterviewSlot(UUID applicationId, Integer roundNumber, SelectSlotRequest request);
+
+    ApplicationInterviewRoundResponse requestInterviewReschedule(UUID applicationId, Integer roundNumber, RequestRescheduleRequest request);
+
+    ApplicationInterviewRoundResponse reviewInterviewReschedule(UUID applicationId, Integer roundNumber, ReviewRescheduleRequest request);
+
+    ApplicationInterviewRoundResponse evaluateInterviewRound(UUID applicationId, Integer roundNumber, EvaluateRoundRequest request);
+
+    ApplicationSummaryResponse finalConfirmInterview(UUID applicationId, FinalConfirmationRequest request);
+
+    List<ApplicationInterviewRoundResponse> getApplicationInterviewRounds(UUID applicationId);
 }

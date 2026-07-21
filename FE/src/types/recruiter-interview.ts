@@ -6,6 +6,7 @@ export interface AvailableSlot {
   endTime: string
   location?: string
   meetingLink?: string
+  isSelected?: boolean
 }
 
 export interface InterviewRoundConfig {
@@ -35,6 +36,14 @@ import { InterviewRoundStatusType, InterviewRoundStatus as InterviewRoundStatusE
 export type InterviewRoundStatus = InterviewRoundStatusType
 export { InterviewRoundStatusEnum }
 
+export interface RoundEvaluationHistory {
+  roundNumber: number
+  roundName: string
+  rating: number
+  feedbackNote: string
+  evaluatedAt?: string
+}
+
 export interface InterviewRoundDetail {
   id: string
   applicationId: string
@@ -45,9 +54,15 @@ export interface InterviewRoundDetail {
   status: InterviewRoundStatus
   scheduledTime?: string
   slots?: AvailableSlot[]
+  candidatePreferredTime?: string
+  candidateRescheduleReason?: string
+  hrRejectionReason?: string
+  hrAvailableSlots?: AvailableSlot[]
   rescheduleCount: number
+  attendedAt?: string
   feedbackNote?: string
   rating?: number
+  previousRoundsHistory?: RoundEvaluationHistory[]
 }
 
 export interface ScheduleMultiSlotRequest {

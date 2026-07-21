@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   X,
   FileText,
@@ -10,6 +11,7 @@ import {
   XCircle,
   ExternalLink,
   Lightbulb,
+  Calendar,
 } from 'lucide-react'
 import { useGetApplicationDetail } from '@/src/hooks/application'
 import { useGetCvDetail } from '@/src/hooks/cv'
@@ -26,7 +28,7 @@ import ConfirmModal from '@/src/components/common/ConfirmModal'
 function gradeColor(grade?: string) {
   if (!grade) return 'text-slate-500'
   if (grade === 'A+' || grade === 'A') return 'text-emerald-600 dark:text-emerald-400'
-  if (grade === 'B+' || grade === 'B') return 'text-blue-600 dark:text-blue-400'
+  if (grade === 'B+' || grade === 'B') return 'text-teal-600 dark:text-teal-400'
   if (grade === 'C+' || grade === 'C') return 'text-amber-600 dark:text-amber-400'
   return 'text-rose-600 dark:text-rose-400'
 }
@@ -36,7 +38,7 @@ function ScoreRing({ score }: { score: number }) {
   const r = 38
   const circ = 2 * Math.PI * r
   const offset = circ * (1 - pct / 100)
-  const color = pct >= 80 ? '#10b981' : pct >= 60 ? '#6366f1' : pct >= 40 ? '#f59e0b' : '#f43f5e'
+  const color = pct >= 80 ? '#10b981' : pct >= 60 ? '#0d9488' : pct >= 40 ? '#f59e0b' : '#f43f5e'
 
   return (
     <svg width="96" height="96" viewBox="0 0 96 96">
@@ -124,6 +126,15 @@ export default function ApplicationDetailModal({
     }
   }
 
+  const router = useRouter()
+
+  const handleGoToInterviews = () => {
+    onClose()
+    if (activeApp?.jobId) {
+      router.push(`/recruiter/manage-jobs/${activeApp.jobId}/interviews`)
+    }
+  }
+
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean
     title: string
@@ -186,7 +197,7 @@ export default function ApplicationDetailModal({
         {/* ─── Header Top Bar ──────────────────────────────────────────────── */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900 z-10">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-sm shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-black text-sm shrink-0 shadow-xs">
               {activeApp?.candidateName?.slice(0, 2).toUpperCase() || 'UV'}
             </div>
             <div className="min-w-0">
@@ -206,7 +217,7 @@ export default function ApplicationDetailModal({
                 id="view-cv-cloud"
                 type="button"
                 onClick={handleViewCvCloud}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 text-xs font-bold transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold transition-all border border-emerald-200/80 dark:border-emerald-800/80 cursor-pointer"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span>Mở tab mới</span>
@@ -225,7 +236,7 @@ export default function ApplicationDetailModal({
         {/* ─── Split-Pane Body Layout ──────────────────────────────────────── */}
         {isLoading && !activeApp ? (
           <div className="flex flex-col items-center justify-center flex-1 py-20 gap-3">
-            <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
             <p className="text-sm font-semibold text-slate-500">Đang tải thông tin hồ sơ...</p>
           </div>
         ) : !activeApp ? (
@@ -239,9 +250,9 @@ export default function ApplicationDetailModal({
               <div className="space-y-6">
                 {/* AI Score Panel */}
                 {activeApp.overallScore !== undefined && activeApp.overallScore !== null ? (
-                  <div className="rounded-2xl border border-violet-100 dark:border-violet-900/40 bg-linear-to-br from-violet-50/80 to-indigo-50/80 dark:from-slate-800 dark:to-slate-800/80 p-5 shadow-xs">
-                    <h3 className="flex items-center gap-2 text-xs font-black text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-4">
-                      <Brain className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                  <div className="rounded-2xl border border-emerald-200/80 dark:border-emerald-900/40 bg-gradient-to-br from-emerald-50/80 to-teal-50/80 dark:from-emerald-950/40 dark:to-teal-950/30 p-5 shadow-xs">
+                    <h3 className="flex items-center gap-2 text-xs font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-wider mb-4">
+                      <Brain className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       Đánh giá AI Match Score
                     </h3>
                     <div className="flex items-center gap-5">
@@ -264,9 +275,9 @@ export default function ApplicationDetailModal({
                     </div>
 
                     {activeApp.aiSuggestion && (
-                      <div className="mt-4 pt-4 border-t border-violet-100 dark:border-slate-700">
-                        <h4 className="flex items-center gap-1.5 text-xs font-black text-violet-600 dark:text-violet-400 mb-1.5">
-                          <Lightbulb className="w-3.5 h-3.5" />
+                      <div className="mt-4 pt-4 border-t border-emerald-200/60 dark:border-emerald-900/60">
+                        <h4 className="flex items-center gap-1.5 text-xs font-black text-emerald-800 dark:text-emerald-300 mb-1.5">
+                          <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
                           Gợi ý tuyển dụng từ AI
                         </h4>
                         <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
@@ -306,7 +317,7 @@ export default function ApplicationDetailModal({
                     </div>
                     <div className="flex justify-between py-1">
                       <span className="text-slate-400">Tên tệp CV</span>
-                      <span className="font-bold text-indigo-600 dark:text-indigo-400 truncate max-w-[180px]">
+                      <span className="font-bold text-emerald-700 dark:text-emerald-400 truncate max-w-[180px]">
                         {activeApp.cvTitle || 'CV.pdf'}
                       </span>
                     </div>
@@ -314,24 +325,42 @@ export default function ApplicationDetailModal({
                 </div>
               </div>
 
-              {/* Action Buttons Footer (Loại / Duyệt CV) */}
+              {/* Action Buttons Footer (Handles ACCEPTED, REJECTED, SUBMITTED/SCORED) */}
               <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleOpenRejectConfirm}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold text-rose-700 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-900/60 rounded-xl transition-all cursor-pointer shadow-xs active:scale-98"
-                >
-                  <XCircle className="w-4 h-4" />
-                  <span>Loại CV</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleOpenAcceptConfirm}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all cursor-pointer shadow-sm active:scale-98"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Duyệt CV</span>
-                </button>
+                {activeApp.status === ApplicationStatus.REJECTED ? (
+                  <div className="w-full py-3 text-center rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-xs border border-rose-200 dark:border-rose-900/60 flex items-center justify-center gap-2">
+                    <XCircle className="w-4 h-4 text-rose-600" />
+                    <span>Hồ sơ ứng tuyển đã bị từ chối</span>
+                  </div>
+                ) : activeApp.status === ApplicationStatus.ACCEPTED || activeApp.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE ? (
+                  <button
+                    type="button"
+                    onClick={handleGoToInterviews}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all cursor-pointer shadow-sm active:scale-98"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span>Xem Phỏng Vấn</span>
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleOpenRejectConfirm}
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold text-rose-700 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-900/60 rounded-xl transition-all cursor-pointer shadow-xs active:scale-98"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      <span>Loại CV</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleOpenAcceptConfirm}
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all cursor-pointer shadow-sm active:scale-98"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Duyệt CV</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -339,7 +368,7 @@ export default function ApplicationDetailModal({
             <div className="lg:col-span-7 p-4 bg-slate-100 dark:bg-slate-950 flex flex-col h-full min-h-0 overflow-hidden">
               <div className="flex items-center justify-between px-2 pb-3 shrink-0">
                 <span className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-wider">
-                  <FileText className="w-4 h-4 text-indigo-600" />
+                  <FileText className="w-4 h-4 text-emerald-600" />
                   Xem nội dung CV trực tiếp
                 </span>
               </div>
@@ -347,7 +376,7 @@ export default function ApplicationDetailModal({
               <div className="flex-1 w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
                 {isCvLoading ? (
                   <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400">
-                    <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-1" />
+                    <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mb-1" />
                     <span className="text-xs font-bold">Đang tải xem trước CV...</span>
                   </div>
                 ) : cvDetail?.fileUrl ? (

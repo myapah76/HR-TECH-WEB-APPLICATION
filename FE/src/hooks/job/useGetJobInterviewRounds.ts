@@ -6,5 +6,6 @@ export const useGetJobInterviewRounds = (jobId: string) => {
     queryKey: ['job-interview-rounds', jobId],
     queryFn: () => getJobInterviewRounds(jobId),
     enabled: !!jobId,
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
   })
 }

@@ -53,9 +53,18 @@ public class ApplicationInterviewRound extends SoftDeleteEntity {
     @Column(name = "candidate_reschedule_reason", columnDefinition = "TEXT")
     private String candidateRescheduleReason;
 
+    @Column(name = "hr_rejection_reason", columnDefinition = "TEXT")
+    private String hrRejectionReason;
+
+    @Column(name = "hr_available_slots_json", columnDefinition = "TEXT")
+    private String hrAvailableSlotsJson;
+
     @Column(name = "reschedule_count", columnDefinition = "integer default 0")
     @Builder.Default
     private Integer rescheduleCount = 0;
+
+    @Column(name = "attended_at")
+    private Instant attendedAt;
 
     @Column(name = "feedback_note", columnDefinition = "TEXT")
     private String feedbackNote;

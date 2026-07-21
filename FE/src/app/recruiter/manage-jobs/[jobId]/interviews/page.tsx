@@ -1,29 +1,71 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
-import { useParams } from 'next/navigation'
-import { ArrowLeft, Sparkles } from 'lucide-react'
-import Link from 'next/link'
+import { useRouter, useParams } from 'next/navigation'
+import {
+  ArrowLeft,
+  Sparkles,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react'
 import { toast } from 'sonner'
-import MultiRoundInterviewStepper from '@/src/components/recruiter/interview-schedules/MultiRoundInterviewStepper'
-import MultiSlotSchedulerModal from '@/src/components/recruiter/interview-schedules/MultiSlotSchedulerModal'
-import InterviewRoundConfigModal from '@/src/components/recruiter/interview-schedules/InterviewRoundConfigModal'
+import JobInterviewsHeader from '@/src/components/recruiter/interviews/JobInterviewsHeader'
+import JobInterviewsModals from '@/src/components/recruiter/interviews/JobInterviewsModals'
+import InterviewStatusFilterTabs, { InterviewStatusTab } from '@/src/components/recruiter/interviews/InterviewStatusFilterTabs'
+import InterviewRoundsPanel from '@/src/components/recruiter/interviews/InterviewRoundsPanel'
+import InterviewsBulkActionBar from '@/src/components/recruiter/interviews/InterviewsBulkActionBar'
+import JobInterviewsTable from '@/src/components/recruiter/interviews/JobInterviewsTable'
 import { AvailableSlot, InterviewRoundConfig, InterviewRoundDetail } from '@/src/types/recruiter-interview'
 import { useGetJobInterviewRounds } from '@/src/hooks/job'
+import {
+  useGetApplicationsByJob,
+  useScheduleMultiSlot,
+  useReviewInterviewReschedule,
+  useEvaluateInterviewRound,
+  useFinalConfirmInterview,
+} from '@/src/hooks/application'
 
 export default function JobInterviewsPage() {
+  const router = useRouter()
   const params = useParams()
-  const jobId = params?.jobId as string
+  const jobId = (params?.jobId as string) || ''
 
+  const handleBackToJobList = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push('/recruiter/manage-jobs')
+    }
+  }
+
+  // ── State Management ────────────────────────────────────────────────────────
   const [activeRound, setActiveRound] = useState<number>(1)
+  const [showRoundsBox, setShowRoundsBox] = useState<boolean>(true)
   const [isSchedulerOpen, setIsSchedulerOpen] = useState(false)
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false)
-  const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([])
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [activeTab, setActiveTab] = useState<InterviewStatusTab>('ALL')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
 
-  // ─── BE REAL DATA: INTERVIEW ROUNDS ──────────────────────────────────────────────
+  // Candidate Modals
+  const [evaluatingCandidate, setEvaluatingCandidate] = useState<InterviewRoundDetail | null>(null)
+  const [reviewingRescheduleCandidate, setReviewingRescheduleCandidate] = useState<InterviewRoundDetail | null>(null)
+  const [finalConfirmationCandidate, setFinalConfirmationCandidate] = useState<InterviewRoundDetail | null>(null)
+  const [viewSlotsCandidate, setViewSlotsCandidate] = useState<InterviewRoundDetail | null>(null)
+
+  // ── Real BE Rounds & Applications Data (React Query Cache - Zero useEffect) ──
   const { data: dbRounds = [], isLoading: isLoadingRounds } = useGetJobInterviewRounds(jobId)
+  const { data: pageData } = useGetApplicationsByJob(jobId, 0, 100)
 
-  // Map BE rounds to InterviewRoundConfig format
+  // Interview Workflow Mutation Hooks
+  const scheduleMultiSlotMutation = useScheduleMultiSlot()
+  const reviewRescheduleMutation = useReviewInterviewReschedule()
+  const evaluateRoundMutation = useEvaluateInterviewRound()
+  const finalConfirmMutation = useFinalConfirmInterview()
+
   const roundsConfig: InterviewRoundConfig[] = useMemo(() => {
     if (dbRounds && dbRounds.length > 0) {
       return dbRounds.map((r) => ({
@@ -33,271 +75,449 @@ export default function JobInterviewsPage() {
         description: r.description || '',
       }))
     }
-    return [
-      { roundNumber: 1, roundName: 'Vòng 1: HR Screening', description: 'Đánh giá thái độ, văn hóa & tổng quan' },
-    ]
+    return []
   }, [dbRounds])
 
-  // Mock candidate round pipeline state (10 ứng viên ở Vòng 1)
-  const [candidates, setCandidates] = useState<InterviewRoundDetail[]>([
-    {
-      id: 'app-1',
-      applicationId: 'app-1',
-      candidateName: 'Nguyễn Văn Anh',
-      jobTitle: 'Senior Fullstack Engineer',
-      roundNumber: 1,
-      roundName: 'Vòng 1: HR Screening',
-      status: 'CONFIRMED',
-      scheduledTime: '22/07/2026 09:00',
-      rescheduleCount: 1,
-      feedbackNote: 'Ứng viên tự tin, tiếng Anh giao tiếp tốt.',
-      rating: 4,
-    },
-    {
-      id: 'app-2',
-      applicationId: 'app-2',
-      candidateName: 'Trần Thị Bình',
-      jobTitle: 'Senior Fullstack Engineer',
-      roundNumber: 1,
-      roundName: 'Vòng 1: HR Screening',
-      status: 'CONFIRMED',
-      scheduledTime: '22/07/2026 09:00',
-      rescheduleCount: 0,
-      feedbackNote: 'Đã gửi file bài test kỹ thuật trước phỏng vấn.',
-      rating: 5,
-    },
-    {
-      id: 'app-3',
-      applicationId: 'app-3',
-      candidateName: 'Lê Văn Cường',
-      jobTitle: 'Senior Fullstack Engineer',
-      roundNumber: 1,
-      roundName: 'Vòng 1: HR Screening',
-      status: 'SLOTS_SENT',
-      scheduledTime: '22/07/2026 10:30',
-      rescheduleCount: 0,
-      rating: 0,
-    },
-    {
-      id: 'app-4',
-      applicationId: 'app-4',
-      candidateName: 'Phạm Minh Đức',
-      jobTitle: 'Senior Fullstack Engineer',
-      roundNumber: 1,
-      roundName: 'Vòng 1: HR Screening',
-      status: 'RESCHEDULED',
-      scheduledTime: '22/07/2026 14:00',
-      rescheduleCount: 1,
-      rating: 0,
-    },
-    {
-      id: 'app-5',
-      applicationId: 'app-5',
-      candidateName: 'Hoàng Hoàng Em',
-      jobTitle: 'Senior Fullstack Engineer',
-      roundNumber: 1,
-      roundName: 'Vòng 1: HR Screening',
-      status: 'PASSED',
-      scheduledTime: '21/07/2026 15:30',
-      rescheduleCount: 0,
-      feedbackNote: 'Vượt qua vòng HR xuất sắc.',
-      rating: 5,
-    },
-    {
-      id: 'app-6',
-      applicationId: 'app-6',
-      candidateName: 'Vũ Thị Giang',
-      jobTitle: 'Senior Fullstack Engineer',
-      roundNumber: 1,
-      roundName: 'Vòng 1: HR Screening',
-      status: 'NOT_STARTED',
-      rescheduleCount: 0,
-    },
-    {
-      id: 'app-7',
-      applicationId: 'app-7',
-      candidateName: 'Đặng Quốc Hùng',
-      jobTitle: 'Senior Fullstack Engineer',
-      roundNumber: 1,
-      roundName: 'Vòng 1: HR Screening',
-      status: 'NOT_STARTED',
-      rescheduleCount: 0,
-    },
-    {
-      id: 'app-8',
-      applicationId: 'app-8',
-      candidateName: 'Bùi Thị Hương',
-      jobTitle: 'Senior Fullstack Engineer',
-      roundNumber: 1,
-      roundName: 'Vòng 1: HR Screening',
-      status: 'NOT_STARTED',
-      rescheduleCount: 0,
-    },
-    {
-      id: 'app-9',
-      applicationId: 'app-9',
-      candidateName: 'Đỗ Văn Khoa',
-      jobTitle: 'Senior Fullstack Engineer',
-      roundNumber: 1,
-      roundName: 'Vòng 1: HR Screening',
-      status: 'FAILED',
-      rescheduleCount: 0,
-      feedbackNote: 'Không phù hợp mức lương kỳ vọng.',
-      rating: 2,
-    },
-    {
-      id: 'app-10',
-      applicationId: 'app-10',
-      candidateName: 'Ngô Thị Linh',
-      jobTitle: 'Senior Fullstack Engineer',
-      roundNumber: 1,
-      roundName: 'Vòng 1: HR Screening',
-      status: 'FAILED',
-      rescheduleCount: 0,
-      feedbackNote: 'Thiếu kinh nghiệm làm việc thực tế.',
-      rating: 1,
-    },
-  ])
+  const isConfigured = roundsConfig.length > 0
+  const maxRoundNumber = useMemo(() => {
+    if (roundsConfig.length === 0) return 1
+    return Math.max(...roundsConfig.map((r) => r.roundNumber))
+  }, [roundsConfig])
 
-  const handleOpenSchedulerForCandidates = (roundNum: number, appIds: string[]) => {
-    setSelectedCandidateIds(appIds)
-    setIsSchedulerOpen(true)
+  // Local interactive overrides for UI actions
+  const [localOverrides, setLocalOverrides] = useState<Record<string, Partial<InterviewRoundDetail>>>({})
+
+  // ── Candidates computed declaratively via useMemo (No useEffect) ─────────────
+  const candidates: InterviewRoundDetail[] = useMemo(() => {
+    if (!pageData?.content || pageData.content.length === 0) return []
+
+    const firstRoundName = roundsConfig[0]?.roundName || 'Vòng 1: HR Screening'
+
+    const interviewEligibleApps = pageData.content.filter(
+      (a: any) =>
+        a.status === 'ACCEPTED' ||
+        a.status === 'PENDING_INTERVIEW_SCHEDULE' ||
+        a.status === 'CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE' ||
+        a.status === 'INTERVIEW' ||
+        a.status === 'SLOTS_SENT' ||
+        a.status === 'RESCHEDULE_REQUESTED' ||
+        a.status === 'RESCHEDULE_REJECTED' ||
+        a.status === 'CONFIRMED' ||
+        a.status === 'ATTENDED' ||
+        a.status === 'PASSED' ||
+        a.status === 'INTERVIEW_COMPLETED' ||
+        a.status === 'TERMINATED'
+    )
+
+    return interviewEligibleApps.map((a: any) => {
+      const candidateName = a.candidateName || a.fullName || 'Ứng viên'
+      const jobTitle = a.jobTitle || a.title || 'Vị trí tuyển dụng'
+      const baseStatus =
+        a.status === 'ACCEPTED'
+          ? 'NOT_STARTED'
+          : a.status === 'PENDING_INTERVIEW_SCHEDULE'
+          ? 'SLOTS_SENT'
+          : a.status === 'CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE'
+          ? 'RESCHEDULE_REQUESTED'
+          : a.status === 'INTERVIEW'
+          ? 'CONFIRMED'
+          : (a.status as any)
+
+      const baseCandidate: InterviewRoundDetail = {
+        id: a.id,
+        applicationId: a.id,
+        candidateName,
+        jobTitle,
+        roundNumber: 1,
+        roundName: firstRoundName,
+        status: baseStatus,
+        rescheduleCount: a.rescheduleCount || 0,
+        scheduledTime: a.scheduledTime,
+        candidatePreferredTime: a.candidatePreferredTime,
+        candidateRescheduleReason: a.candidateRescheduleReason,
+        hrRejectionReason: a.hrRejectionReason,
+        hrAvailableSlots: a.hrAvailableSlots,
+        attendedAt: a.attendedAt,
+        feedbackNote: a.feedbackNote,
+        rating: a.rating,
+        slots: a.slots,
+      }
+
+      const override = localOverrides[a.id]
+      if (override) {
+        return { ...baseCandidate, ...override }
+      }
+      return baseCandidate
+    })
+  }, [pageData, roundsConfig, localOverrides])
+
+  // Filter candidates by activeRound, activeTab & searchQuery
+  const roundCandidates = useMemo(
+    () => candidates.filter((c) => c.roundNumber === activeRound),
+    [candidates, activeRound]
+  )
+
+  const counts = useMemo(() => {
+    const total = roundCandidates.length
+    const notStarted = roundCandidates.filter((c) => c.status === 'NOT_STARTED').length
+    const slotsSent = roundCandidates.filter(
+      (c) =>
+        c.status === 'SLOTS_SENT' ||
+        c.status === 'RESCHEDULE_REQUESTED' ||
+        c.status === 'RESCHEDULE_REJECTED'
+    ).length
+    const confirmed = roundCandidates.filter((c) => c.status === 'CONFIRMED' || c.status === 'ATTENDED').length
+    const passed = roundCandidates.filter((c) => c.status === 'PASSED' || c.status === 'INTERVIEW_COMPLETED').length
+    const failed = roundCandidates.filter((c) => c.status === 'FAILED' || c.status === 'TERMINATED').length
+    return { total, notStarted, slotsSent, confirmed, passed, failed }
+  }, [roundCandidates])
+
+  const filteredCandidates = useMemo(() => {
+    return roundCandidates.filter((c) => {
+      if (activeTab === 'NOT_STARTED') {
+        if (c.status !== 'NOT_STARTED') return false
+      } else if (activeTab === 'SLOTS_SENT') {
+        if (
+          c.status !== 'SLOTS_SENT' &&
+          c.status !== 'RESCHEDULE_REQUESTED' &&
+          c.status !== 'RESCHEDULE_REJECTED'
+        )
+          return false
+      } else if (activeTab === 'CONFIRMED') {
+        if (c.status !== 'CONFIRMED' && c.status !== 'ATTENDED') return false
+      } else if (activeTab === 'PASSED') {
+        if (c.status !== 'PASSED' && c.status !== 'INTERVIEW_COMPLETED') return false
+      } else if (activeTab === 'FAILED') {
+        if (c.status !== 'FAILED' && c.status !== 'TERMINATED') return false
+      }
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim()
+        const nameMatch = c.candidateName.toLowerCase().includes(q)
+        const jobMatch = c.jobTitle.toLowerCase().includes(q)
+        if (!nameMatch && !jobMatch) return false
+      }
+
+      return true
+    })
+  }, [roundCandidates, activeTab, searchQuery])
+
+  // Pagination slicing
+  const paginatedCandidates = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    return filteredCandidates.slice(start, start + itemsPerPage)
+  }, [filteredCandidates, currentPage, itemsPerPage])
+
+  // Checkbox handlers
+  const handleToggleSelect = (id: string) => {
+    if (!isConfigured) {
+      toast.error('Vui lòng cấu hình quy trình phỏng vấn trước khi thao tác!')
+      setIsConfigModalOpen(true)
+      return
+    }
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return new Set(next)
+    })
   }
 
-  const handleSaveMultiSlotSchedule = (slots: AvailableSlot[], note?: string) => {
-    setCandidates((prev) =>
-      prev.map((c) => {
-        if (selectedCandidateIds.includes(c.applicationId)) {
-          return {
-            ...c,
-            status: 'SLOTS_SENT',
-            slots: slots,
-          }
-        }
-        return c
-      })
-    )
-    toast.success(
-      `Đã tạo ${slots.length} khung giờ phỏng vấn và gửi thông báo chọn lịch tới ${selectedCandidateIds.length} ứng viên!`
-    )
-  }
-
-  const handleUpdateCandidateRoundStatus = (
-    applicationId: string,
-    passed: boolean,
-    feedbackNote: string,
-    rating?: number
-  ) => {
-    setCandidates((prev) =>
-      prev.map((c) => {
-        if (c.applicationId === applicationId) {
-          if (passed) {
-            const nextRoundNum = c.roundNumber + 1
-            const nextRoundObj = roundsConfig.find((r) => r.roundNumber === nextRoundNum)
-            const nextRoundName = nextRoundObj
-              ? nextRoundObj.roundName
-              : `Vòng ${nextRoundNum}: Phỏng vấn Vòng ${nextRoundNum}`
-
-            return {
-              ...c,
-              roundNumber: nextRoundNum,
-              roundName: nextRoundName,
-              status: 'NOT_STARTED',
-              scheduledTime: undefined,
-              slots: undefined,
-              rescheduleCount: 0,
-              feedbackNote,
-              rating: rating || c.rating,
-            }
-          } else {
-            return {
-              ...c,
-              status: 'FAILED',
-              feedbackNote,
-              rating: rating || c.rating,
-            }
-          }
-        }
-        return c
-      })
-    )
-
-    if (passed) {
-      toast.success('Đã đánh giá ĐẠT! Đơn ứng tuyển đã được tự động chuyển sang vòng tiếp theo.')
+  const handleToggleSelectAll = (checked: boolean) => {
+    if (!isConfigured) {
+      toast.error('Vui lòng cấu hình quy trình phỏng vấn trước khi thao tác!')
+      setIsConfigModalOpen(true)
+      return
+    }
+    if (checked) {
+      setSelectedIds(new Set(paginatedCandidates.map((c) => c.applicationId)))
     } else {
-      toast.info('Đã đánh giá TRƯỢT. Đã cập nhật trạng thái hồ sơ.')
+      setSelectedIds(new Set())
     }
   }
 
+  // Scheduler handlers
+  const handleOpenSingleScheduler = (appId: string) => {
+    if (!isConfigured) {
+      toast.error('Vui lòng cấu hình quy trình phỏng vấn trước khi tạo lịch phỏng vấn!')
+      setIsConfigModalOpen(true)
+      return
+    }
+    setSelectedIds(new Set([appId]))
+    setIsSchedulerOpen(true)
+  }
+
+  // View sent slots handler
+  const handleOpenViewSlots = (appId: string) => {
+    const cand = candidates.find((c) => c.applicationId === appId)
+    if (cand) {
+      setViewSlotsCandidate(cand)
+    }
+  }
+
+  const handleOpenBulkScheduler = () => {
+    if (!isConfigured) {
+      toast.error('Vui lòng cấu hình quy trình phỏng vấn trước khi tạo lịch phỏng vấn!')
+      setIsConfigModalOpen(true)
+      return
+    }
+    if (selectedIds.size === 0) return
+    setIsSchedulerOpen(true)
+  }
+
+  const handleSaveMultiSlotSchedule = (slots: AvailableSlot[]) => {
+    const targetIds = Array.from(selectedIds)
+    const formattedSlots = slots.map((s) => ({
+      startTime: s.startTime,
+      endTime: s.endTime,
+      location: s.location,
+      meetingLink: s.meetingLink,
+    }))
+
+    scheduleMultiSlotMutation.mutate(
+      {
+        applicationIds: targetIds,
+        roundNumber: activeRound,
+        slots: formattedSlots,
+      },
+      {
+        onSuccess: () => {
+          setSelectedIds(new Set())
+          toast.success(`Đã gửi khung giờ phỏng vấn tới ${targetIds.length} ứng viên!`)
+        },
+        onError: () => {
+          toast.error('Có lỗi xảy ra khi gửi khung giờ phỏng vấn!')
+        },
+      }
+    )
+  }
+
+  // Reschedule Negotiation Handlers
+  const handleAcceptCandidateTime = (appId: string) => {
+    reviewRescheduleMutation.mutate(
+      {
+        applicationId: appId,
+        roundNumber: activeRound,
+        accepted: true,
+      },
+      {
+        onSuccess: () => {
+          setReviewingRescheduleCandidate(null)
+          toast.success('Đã chấp nhận thời gian đề xuất của ứng viên & chốt lịch chính thức!')
+        },
+        onError: () => {
+          toast.error('Có lỗi xảy ra khi duyệt lịch!')
+        },
+      }
+    )
+  }
+
+  const handleRejectAndOfferNewSlots = (
+    appId: string,
+    rejectionReason: string,
+    newSlots: AvailableSlot[],
+    isTerminated: boolean
+  ) => {
+    const formattedSlots = newSlots.map((s) => ({
+      startTime: s.startTime,
+      endTime: s.endTime,
+      location: s.location,
+      meetingLink: s.meetingLink,
+    }))
+
+    reviewRescheduleMutation.mutate(
+      {
+        applicationId: appId,
+        roundNumber: activeRound,
+        accepted: false,
+        rejectionReason,
+        newSlots: formattedSlots,
+      },
+      {
+        onSuccess: () => {
+          setReviewingRescheduleCandidate(null)
+          if (isTerminated) {
+            toast.info('Đã dừng luồng tuyển dụng do quá 3 lần đổi lịch. Hệ thống đã gửi email cảm ơn & từ chối.')
+          } else {
+            toast.success('Đã từ chối đề xuất và gửi lại danh sách khung giờ rảnh mới của HR tới ứng viên!')
+          }
+        },
+        onError: () => {
+          toast.error('Có lỗi xảy ra khi phản hồi yêu cầu đổi lịch!')
+        },
+      }
+    )
+  }
+
+  // Evaluation Handlers (Pass / Fail)
+  const handlePassCandidate = (feedbackNote: string, rating: number) => {
+    if (!evaluatingCandidate) return
+    const appId = evaluatingCandidate.applicationId
+
+    evaluateRoundMutation.mutate(
+      {
+        applicationId: appId,
+        roundNumber: activeRound,
+        passed: true,
+        rating,
+        feedbackNote,
+        isAttended: true,
+      },
+      {
+        onSuccess: () => {
+          setEvaluatingCandidate(null)
+          toast.success('Đã chấm ĐẠT vòng phỏng vấn thành công!')
+        },
+        onError: () => {
+          toast.error('Có lỗi xảy ra khi lưu kết quả đánh giá!')
+        },
+      }
+    )
+  }
+
+  const handleFailCandidate = (feedbackNote: string, rating: number) => {
+    if (!evaluatingCandidate) return
+    const appId = evaluatingCandidate.applicationId
+
+    evaluateRoundMutation.mutate(
+      {
+        applicationId: appId,
+        roundNumber: activeRound,
+        passed: false,
+        rating,
+        feedbackNote,
+        isAttended: true,
+      },
+      {
+        onSuccess: () => {
+          setEvaluatingCandidate(null)
+          toast.info('Đã đánh giá TRƯỢT. Đã cập nhật trạng thái hồ sơ.')
+        },
+        onError: () => {
+          toast.error('Có lỗi xảy ra khi lưu kết quả đánh giá!')
+        },
+      }
+    )
+  }
+
+  // Final Decision Handler (Approve / Reject at INTERVIEW_COMPLETED)
+  const handleConfirmFinalResult = (appId: string, approved: boolean, note: string) => {
+    finalConfirmMutation.mutate(
+      {
+        applicationId: appId,
+        approved,
+        note,
+      },
+      {
+        onSuccess: () => {
+          setFinalConfirmationCandidate(null)
+          if (approved) {
+            toast.success('Đã DUYỆT TUYỂN DỤNG thành công! Hệ thống đã gửi email chúc mừng tới ứng viên.')
+          } else {
+            toast.info('Đã TỪ CHỐI hồ sơ ứng tuyển. Hệ thống đã gửi email thư cảm ơn.')
+          }
+        },
+        onError: () => {
+          toast.error('Có lỗi xảy ra khi lưu kết quả tuyển dụng cuối cùng!')
+        },
+      }
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-6 lg:p-10 space-y-8">
-      {/* Header section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/recruiter/manage-jobs"
-              className="p-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <h1 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-                Quản Lý Quy Trình Phỏng Vấn 多 Vòng
-                <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
-                  {roundsConfig.length} Vòng Phỏng Vấn
-                </span>
-              </h1>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Lên lịch nhiều slot giờ, tự động điều phối ứng viên & đánh giá kết quả nâng vòng
-              </p>
-            </div>
-          </div>
-        </div>
+    <div className="space-y-6 pb-12">
+      {/* ── 1. Header Bar ───────────────────────────────────────── */}
+      <JobInterviewsHeader
+        onBack={handleBackToJobList}
+        showRoundsBox={showRoundsBox}
+        onToggleRoundsBox={() => setShowRoundsBox((prev) => !prev)}
+      />
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIsConfigModalOpen(true)}
-            className="px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-2 transition-all"
-          >
-            <Sparkles className="w-4 h-4 text-amber-500" />
-            Cấu hình Quy trình Vòng ({roundsConfig.length} Vòng)
-          </button>
-        </div>
-      </div>
+      {/* ── 2. Collapsible Rounds Panel ───────────────────────────────────── */}
+      {showRoundsBox && (
+        <InterviewRoundsPanel
+          isLoading={isLoadingRounds}
+          isConfigured={isConfigured}
+          roundsConfig={roundsConfig}
+          activeRound={activeRound}
+          onRoundClick={(roundNum) => {
+            setActiveRound(roundNum)
+            setSelectedIds(new Set())
+          }}
+          onOpenConfig={() => setIsConfigModalOpen(true)}
+        />
+      )}
 
-      {/* Pipeline Stepper component */}
-      <MultiRoundInterviewStepper
-        roundsConfig={roundsConfig}
+
+      {/* ── 3. Combined Filter & Search Bar Container (Matching JobApplicationsPage) ─ */}
+      <InterviewStatusFilterTabs
+        activeTab={activeTab}
+        onTabChange={(tab) => {
+          setActiveTab(tab)
+          setCurrentPage(1)
+        }}
+        searchQuery={searchQuery}
+        onSearchChange={(q) => {
+          setSearchQuery(q)
+          setCurrentPage(1)
+        }}
+        counts={counts}
+      />
+
+      <InterviewsBulkActionBar
+        selectedCount={selectedIds.size}
+        onCreateGroupSchedule={handleOpenBulkScheduler}
+        onClearSelection={() => setSelectedIds(new Set())}
+      />
+
+      {/* ── 4. Candidate Table & Pagination ──────────────────────── */}
+      <JobInterviewsTable
+        candidates={paginatedCandidates}
+        totalItems={filteredCandidates.length}
         activeRound={activeRound}
-        onSelectRound={(roundNum) => setActiveRound(roundNum)}
-        candidatesInRound={candidates.filter((c) => c.roundNumber === activeRound)}
-        onOpenScheduler={handleOpenSchedulerForCandidates}
-        onPassCandidate={(appId, roundNum, feedback, rating) =>
-          handleUpdateCandidateRoundStatus(appId, true, feedback, rating)
-        }
-        onFailCandidate={(appId, roundNum, feedback) =>
-          handleUpdateCandidateRoundStatus(appId, false, feedback)
-        }
+        isConfigured={isConfigured}
+        selectedIds={selectedIds}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        onPageChange={(page) => setCurrentPage(page)}
+        onItemsPerPageChange={(size) => setItemsPerPage(size)}
+        onToggleSelect={handleToggleSelect}
+        onToggleSelectAll={handleToggleSelectAll}
+        onOpenScheduler={handleOpenSingleScheduler}
+        onOpenViewSlots={handleOpenViewSlots}
+        onOpenEvaluationModal={(cand) => setEvaluatingCandidate(cand)}
+        onOpenRescheduleReviewModal={(cand) => setReviewingRescheduleCandidate(cand)}
+        onOpenFinalConfirmationModal={(cand) => setFinalConfirmationCandidate(cand)}
+        onOpenConfigModal={() => setIsConfigModalOpen(true)}
       />
 
-      {/* Multi-slot Scheduler Modal */}
-      <MultiSlotSchedulerModal
-        isOpen={isSchedulerOpen}
-        onClose={() => setIsSchedulerOpen(false)}
-        candidateNames={candidates.filter((c) => selectedCandidateIds.includes(c.applicationId)).map((c) => c.candidateName)}
-        roundNumber={activeRound}
-        roundName={roundsConfig.find((r) => r.roundNumber === activeRound)?.roundName || `Vòng ${activeRound}`}
-        onSubmit={handleSaveMultiSlotSchedule}
-      />
-
-      {/* Modal Cấu hình Quy trình Phỏng vấn */}
-      <InterviewRoundConfigModal
-        isOpen={isConfigModalOpen}
-        onClose={() => setIsConfigModalOpen(false)}
+      {/* ── 5. All Modals Isolated Bundle ──────────────────────── */}
+      <JobInterviewsModals
         jobId={jobId}
+        activeRound={activeRound}
+        maxRoundNumber={maxRoundNumber}
         roundsConfig={roundsConfig}
+        isSchedulerOpen={isSchedulerOpen}
+        onCloseScheduler={() => setIsSchedulerOpen(false)}
+        selectedCandidateNames={candidates
+          .filter((c) => selectedIds.has(c.applicationId))
+          .map((c) => c.candidateName)}
+        onSaveSchedule={handleSaveMultiSlotSchedule}
+        isConfigOpen={isConfigModalOpen}
+        onCloseConfig={() => setIsConfigModalOpen(false)}
+        evaluatingCandidate={evaluatingCandidate}
+        onCloseEvaluation={() => setEvaluatingCandidate(null)}
+        onPassCandidate={handlePassCandidate}
+        onFailCandidate={handleFailCandidate}
+        reviewingRescheduleCandidate={reviewingRescheduleCandidate}
+        onCloseRescheduleReview={() => setReviewingRescheduleCandidate(null)}
+        onAcceptCandidateTime={handleAcceptCandidateTime}
+        onRejectAndOfferNewSlots={handleRejectAndOfferNewSlots}
+        finalConfirmationCandidate={finalConfirmationCandidate}
+        onCloseFinalConfirmation={() => setFinalConfirmationCandidate(null)}
+        onConfirmFinalResult={handleConfirmFinalResult}
+        viewSlotsCandidate={viewSlotsCandidate}
+        onCloseViewSlots={() => setViewSlotsCandidate(null)}
       />
     </div>
   )

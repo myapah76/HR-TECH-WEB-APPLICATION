@@ -181,3 +181,89 @@ export const bulkRejectApplications = async (
   )
   return response.data.data
 }
+
+// ─── INTERVIEW WORKFLOW SERVICES ──────────────────────────────────────────────
+
+export const scheduleMultiSlotInterview = async (request: {
+  applicationIds: string[]
+  roundNumber: number
+  slots: { startTime: string; endTime: string; location?: string; meetingLink?: string }[]
+  note?: string
+}): Promise<ApplicationSummaryResponse[]> => {
+  const response = await api.post<ApiResponse<ApplicationSummaryResponse[]>>(
+    '/applications/interview-rounds/schedule-slots',
+    request
+  )
+  return response.data.data
+}
+
+export const selectInterviewSlot = async (
+  applicationId: string,
+  roundNumber: number,
+  slotId: string
+): Promise<any> => {
+  const response = await api.post<ApiResponse<any>>(
+    `/applications/${applicationId}/interview-rounds/${roundNumber}/select-slot`,
+    { slotId }
+  )
+  return response.data.data
+}
+
+export const requestInterviewReschedule = async (
+  applicationId: string,
+  roundNumber: number,
+  preferredTime: string,
+  reason: string
+): Promise<any> => {
+  const response = await api.post<ApiResponse<any>>(
+    `/applications/${applicationId}/interview-rounds/${roundNumber}/request-reschedule`,
+    { preferredTime, reason }
+  )
+  return response.data.data
+}
+
+export const reviewInterviewReschedule = async (
+  applicationId: string,
+  roundNumber: number,
+  accepted: boolean,
+  rejectionReason?: string,
+  newSlots?: { startTime: string; endTime: string; location?: string; meetingLink?: string }[]
+): Promise<any> => {
+  const response = await api.post<ApiResponse<any>>(
+    `/applications/${applicationId}/interview-rounds/${roundNumber}/review-reschedule`,
+    { accepted, rejectionReason, newSlots }
+  )
+  return response.data.data
+}
+
+export const evaluateInterviewRound = async (
+  applicationId: string,
+  roundNumber: number,
+  passed: boolean,
+  rating?: number,
+  feedbackNote?: string,
+  isAttended?: boolean
+): Promise<any> => {
+  const response = await api.post<ApiResponse<any>>(
+    `/applications/${applicationId}/interview-rounds/${roundNumber}/evaluate`,
+    { passed, rating, feedbackNote, isAttended }
+  )
+  return response.data.data
+}
+
+export const finalConfirmInterview = async (
+  applicationId: string,
+  approved: boolean,
+  note?: string
+): Promise<ApplicationSummaryResponse> => {
+  const response = await api.post<ApiResponse<ApplicationSummaryResponse>>(
+    `/applications/${applicationId}/final-confirm`,
+    { approved, note }
+  )
+  return response.data.data
+}
+
+export const getApplicationInterviewRounds = async (applicationId: string): Promise<any[]> => {
+  const response = await api.get<ApiResponse<any[]>>(`/applications/${applicationId}/interview-rounds`)
+  return response.data.data
+}

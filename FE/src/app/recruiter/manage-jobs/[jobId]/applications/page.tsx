@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { useParams } from 'next/navigation'
-import { ArrowLeft, Search, Calendar, Trash2, CheckSquare, Sparkles } from 'lucide-react'
+import { useRouter, useParams } from 'next/navigation'
+import { ArrowLeft, Calendar, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import BulkAiScoringBar from '@/src/components/recruiter/applications/BulkAiScoringBar'
+import ApplicationFilterBar from '@/src/components/recruiter/applications/ApplicationFilterBar'
 import ApplicationDetailModal from '@/src/components/recruiter/applications/ApplicationDetailModal'
 import JobApplicationsTable from '@/src/components/recruiter/applications/JobApplicationsTable'
 import RejectSelectedModal from '@/src/components/recruiter/applications/RejectSelectedModal'
@@ -20,8 +21,17 @@ import {
 import { useGetMyCompany } from '@/src/hooks/company'
 
 export default function JobApplicationsPage() {
+  const router = useRouter()
   const params = useParams()
   const jobId = (params?.jobId as string) || ''
+
+  const handleBackToJobList = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push('/recruiter/manage-jobs')
+    }
+  }
 
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -68,9 +78,38 @@ export default function JobApplicationsPage() {
     [localApplications]
   )
 
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'SUBMITTED' | 'SCORED' | 'ACCEPTED' | 'PENDING_INTERVIEW_SCHEDULE' | 'REJECTED'>('ALL')
+  const [showAiPanel, setShowAiPanel] = useState<boolean>(false)
+
+  // Status counts
+  const countSubmitted = useMemo(
+    () => localApplications.filter((a) => a.status === ApplicationStatus.SUBMITTED).length,
+    [localApplications]
+  )
+  const countScored = useMemo(
+    () => localApplications.filter((a) => a.status === ApplicationStatus.SCORED).length,
+    [localApplications]
+  )
+  const countAccepted = useMemo(
+    () => localApplications.filter((a) => a.status === ApplicationStatus.ACCEPTED).length,
+    [localApplications]
+  )
+  const countPendingInterview = useMemo(
+    () => localApplications.filter((a) => a.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE).length,
+    [localApplications]
+  )
+  const countRejected = useMemo(
+    () => localApplications.filter((a) => a.status === ApplicationStatus.REJECTED).length,
+    [localApplications]
+  )
+
   // Sort & filter
   const processedApplications = useMemo(() => {
     let list = [...localApplications]
+
+    if (statusFilter !== 'ALL') {
+      list = list.filter((a) => a.status === statusFilter)
+    }
 
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase()
@@ -89,7 +128,7 @@ export default function JobApplicationsPage() {
     }
 
     return list
-  }, [localApplications, searchTerm, hasScoredLocal, isAnyScored])
+  }, [localApplications, statusFilter, searchTerm, hasScoredLocal, isAnyScored])
 
   // ─── Bulk Score handler ────────────────────────────────────────────────────
   const handleRunBulkAiScoring = (options: {
@@ -155,7 +194,7 @@ export default function JobApplicationsPage() {
 
   const handleAcceptCv = (appId: string) => {
     setLocalApplications((prev) =>
-      prev.map((a) => (a.id === appId ? { ...a, status: ApplicationStatus.SCORED } : a))
+      prev.map((a) => (a.id === appId ? { ...a, status: ApplicationStatus.ACCEPTED } : a))
     )
     toast.success('Đã duyệt CV thành công!')
   }
@@ -173,75 +212,78 @@ export default function JobApplicationsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link
-            href="/recruiter/manage-jobs"
-            className="p-2 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-colors"
+          <button
+            type="button"
+            onClick={handleBackToJobList}
+            className="p-2 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-colors cursor-pointer"
+            title="Quay lại danh sách tin tuyển dụng"
           >
             <ArrowLeft className="w-5 h-5" />
-          </Link>
+          </button>
           <div>
             <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
               Danh sách Đơn Ứng Tuyển
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Quản lý, sàng lọc AI và xem chi tiết CV ứng viên
+              Quản lý toàn bộ ứng viên, xem CV trực tiếp và duyệt/từ chối hồ sơ
             </p>
           </div>
         </div>
 
-        <Link
-          href={`/recruiter/manage-jobs/${jobId}/interviews`}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition-all shrink-0 cursor-pointer"
-        >
-          <Calendar className="w-4 h-4" />
-          <span>Quản lý Phỏng vấn</span>
-        </Link>
-      </div>
-
-      {/* Bulk AI Scoring Bar */}
-      <BulkAiScoringBar
-        unscoredCount={unscoredCount}
-        totalCount={localApplications.length}
-        aiCreditBalance={myCompany?.aiCreditBalance ?? undefined}
-        isScoring={isScoringBulk}
-        thresholdPercent={thresholdPercent}
-        onThresholdChange={setThresholdPercent}
-        onRunBulkScore={handleRunBulkAiScoring}
-      />
-
-      {/* Filter & Search Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-        <div className="flex items-center gap-3 flex-1 min-w-60">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Tìm theo tên ứng viên, tên CV..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-            />
-          </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={() => setShowAiPanel((v) => !v)}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs border transition-all cursor-pointer ${
+              showAiPanel
+                ? 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300'
+                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-amber-500" />
+            <span>{showAiPanel ? 'Ẩn công cụ AI' : 'Công cụ Sàng lọc AI'}</span>
+          </button>
+          <Link
+            href={`/recruiter/manage-jobs/${jobId}/interviews`}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition-all shrink-0 cursor-pointer"
+          >
+            <Calendar className="w-4 h-4" />
+            <span>Quản lý Phỏng vấn</span>
+          </Link>
         </div>
-
-        {/* Selected count info & Floating Bulk Reject Button */}
-        {selectedCount > 0 && (
-          <div className="flex items-center gap-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/80 rounded-xl px-4 py-2 animate-in fade-in duration-150">
-            <CheckSquare className="w-4 h-4 text-rose-600 shrink-0" />
-            <span className="text-xs font-bold text-rose-800 dark:text-rose-200">
-              Đã chọn <strong className="font-black text-rose-700 dark:text-rose-300">{selectedCount}</strong> đơn
-            </span>
-            <button
-              type="button"
-              onClick={() => setRejectModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-sm transition-colors cursor-pointer"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Từ chối {selectedCount} đơn đã chọn
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* Collapsible Bulk AI Scoring Bar */}
+      {showAiPanel && (
+        <div className="animate-in fade-in zoom-in-95 duration-200">
+          <BulkAiScoringBar
+            unscoredCount={unscoredCount}
+            totalCount={localApplications.length}
+            aiCreditBalance={myCompany?.aiCreditBalance ?? undefined}
+            isScoring={isScoringBulk}
+            thresholdPercent={thresholdPercent}
+            onThresholdChange={setThresholdPercent}
+            onRunBulkScore={handleRunBulkAiScoring}
+          />
+        </div>
+      )}
+
+      <ApplicationFilterBar
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        selectedCount={selectedCount}
+        onBulkReject={() => setRejectModalOpen(true)}
+        counts={{
+          total: localApplications.length,
+          submitted: countSubmitted,
+          scored: countScored,
+          accepted: countAccepted,
+          pendingInterview: countPendingInterview,
+          rejected: countRejected,
+        }}
+      />
 
       {/* Applications Table with Real-time Dynamic Threshold Grayscaling */}
       <JobApplicationsTable
