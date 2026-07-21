@@ -3,6 +3,8 @@ package hrtech.application.abstractions.services;
 import hrtech.application.dtos.response.*;
 import hrtech.shared.dtos.RecentActivityResponse;
 import hrtech.application.dtos.request.SubmitApplicationRequest;
+import hrtech.application.dtos.request.BulkScoreRequest;
+import hrtech.application.dtos.request.BulkRejectRequest;
 import hrtech.company.dtos.response.RecruiterActiveJobResponse;
 import hrtech.company.dtos.response.RecruiterAnalyticsResponse;
 import hrtech.company.dtos.response.RecruiterDashboardSummaryResponse;
@@ -54,4 +56,17 @@ public interface IApplicationService {
     RecruiterAnalyticsResponse getRecruiterAnalytics();
 
     List<RecruiterActiveJobResponse> getRecruiterActiveJobs();
+
+    /**
+     * Chấm điểm hàng loạt tất cả application SUBMITTED của một job.
+     * Dùng calculateMatchScore() (Skill Graph), lưu vào ApplicationScore.
+     * Nếu autoRejectBelowThreshold = true: tự động từ chối dưới ngưỡng.
+     * Cho phép chấm lại (re-score) nhiều lần.
+     */
+    BulkScoreResponse bulkScoreByJob(UUID jobId, BulkScoreRequest request);
+
+    /**
+     * Từ chối thủ công nhiều application theo danh sách IDs HR đã chọn.
+     */
+    List<ApplicationSummaryResponse> bulkRejectApplications(List<UUID> applicationIds);
 }

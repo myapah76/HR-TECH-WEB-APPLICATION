@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import hrtech.application.abstractions.services.IApplicationService;
+import hrtech.application.dtos.request.BulkRejectRequest;
+import hrtech.application.dtos.request.BulkScoreRequest;
 import hrtech.application.dtos.request.SubmitApplicationRequest;
 import hrtech.application.entities.enums.ApplicationStatus;
 import hrtech.identity.utils.AuthUtils;
@@ -85,8 +87,6 @@ public class ApplicationController {
                 "Đã từ chối/loại đơn ứng tuyển thành công"));
     }
 
-
-
     @GetMapping("/jobs/{jobId}")
     @PreAuthorize("@jobSecurity.hasJobRole(#jobId, 'OWNER', 'HR_MANAGER', 'HR')")
     public ResponseEntity<ApiResponse<Page<ApplicationSummaryResponse>>> getApplicationsByJob(
@@ -157,5 +157,30 @@ public class ApplicationController {
     @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<ApiResponse<RecruiterAnalyticsResponse>> getRecruiterAnalytics() {
         return ResponseEntity.ok(ApiResponse.success(applicationService.getRecruiterAnalytics()));
+    }
+
+    /**
+     * Bulk Score: Chấm điểm (và re-score) tất cả application của một job.
+     * currentUserId được lấy nội bộ trong Service, không truyền qua Controller.
+     */
+    @PostMapping("/jobs/{jobId}/bulk-score")
+    @PreAuthorize("@jobSecurity.hasJobRole(#jobId, 'OWNER', 'HR_MANAGER', 'HR')")
+    public ResponseEntity<ApiResponse<BulkScoreResponse>> bulkScoreByJob(
+            @PathVariable UUID jobId,
+            @Valid @RequestBody BulkScoreRequest request) {
+        BulkScoreResponse result = applicationService.bulkScoreByJob(jobId, request);
+        return ResponseEntity.ok(ApiResponse.success(result, "Chấm điểm hàng loạt thành công"));
+    }
+
+    /**
+     * Bulk Reject: Từ chối nhiều application HR đã chọn.
+     * currentUserId được lấy nội bộ trong Service, không truyền qua Controller.
+     */
+    @PostMapping("/bulk-reject")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<ApplicationSummaryResponse>>> bulkRejectApplications(
+            @Valid @RequestBody BulkRejectRequest request) {
+        List<ApplicationSummaryResponse> result = applicationService.bulkRejectApplications(request.getApplicationIds());
+        return ResponseEntity.ok(ApiResponse.success(result, "Từ chối đơn ứng tuyển thành công"));
     }
 }
