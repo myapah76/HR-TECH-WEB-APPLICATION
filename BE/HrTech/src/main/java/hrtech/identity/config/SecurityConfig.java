@@ -47,7 +47,8 @@ public class SecurityConfig {
             "/api/jobs/**",
             "/api/companies/**",
             "/api/files/**",
-            "/api/system/configs/public"
+            "/api/system/configs/public",
+            "/api/cloudinary/**"
     };
 
     private final IJwtService jwtService;

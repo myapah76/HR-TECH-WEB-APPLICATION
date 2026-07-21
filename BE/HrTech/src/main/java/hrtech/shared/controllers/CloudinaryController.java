@@ -1,7 +1,6 @@
 package hrtech.shared.controllers;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import hrtech.shared.dtos.CloudinarySignatureResponse;
 import hrtech.shared.response.ApiResponse;
@@ -15,7 +14,6 @@ public class CloudinaryController {
     private final CloudinaryService cloudinaryService;
 
     @GetMapping("/signature")
-    @PreAuthorize("isAuthenticated()")
     public ApiResponse<CloudinarySignatureResponse> getUploadSignature(
             @RequestParam("folder") String folder
     ) {
