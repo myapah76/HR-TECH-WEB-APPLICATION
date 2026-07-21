@@ -817,16 +817,6 @@ public class ApplicationServiceImpl implements IApplicationService {
                 })
                 .toList();
     }
-}
-=======
-package hrtech.application.services;
-
-import hrtech.application.abstractions.repositories.ApplicationRepository;
-import hrtech.application.abstractions.repositories.ApplicationScoreRepository;
-import hrtech.application.abstractions.repositories.SkillMatchRepository;
-import hrtech.application.abstractions.services.IApplicationService;
-import hrtech.application.dtos.request.SubmitApplicationRequest;
-import hrtech.application.dtos.request.BulkScoreRequest;
 import hrtech.application.dtos.request.BulkRejectRequest;
 import hrtech.application.dtos.response.ApplicationDetailResponse;
 import hrtech.application.dtos.response.ApplicationSummaryResponse;
