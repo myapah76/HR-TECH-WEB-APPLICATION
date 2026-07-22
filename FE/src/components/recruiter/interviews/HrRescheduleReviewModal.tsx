@@ -90,7 +90,7 @@ export default function HrRescheduleReviewModal({
 
   if (!candidate) return null
 
-  const currentAttempts = roundData?.rescheduleCount ?? candidate.rescheduleCount ?? 1
+  const currentAttempts = roundData?.rescheduleCount ?? candidate.rescheduleCount ?? 0
   const isFinalAttempt = currentAttempts >= 3
 
   const preferredTimeRaw = roundData?.candidatePreferredTime || candidate.candidatePreferredTime

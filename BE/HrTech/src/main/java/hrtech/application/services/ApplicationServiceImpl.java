@@ -252,6 +252,21 @@ public class ApplicationServiceImpl implements IApplicationService {
                         res.setOverallScore(score.getOverallScore());
                         res.setGrade(score.getGrade() != null ? score.getGrade().name() : null);
                     }
+                    if (app.getInterviewRounds() != null && !app.getInterviewRounds().isEmpty()) {
+                        List<ApplicationInterviewRound> sortedRounds = app.getInterviewRounds().stream()
+                                .sorted(Comparator.comparing(r -> r.getJobInterviewRound().getRoundNumber()))
+                                .toList();
+                        List<ApplicationInterviewRoundResponse> roundResponses = sortedRounds.stream()
+                                .map(this::toRoundResponse).toList();
+                        res.setInterviewRounds(roundResponses);
+
+                        ApplicationInterviewRound latestRound = sortedRounds.get(sortedRounds.size() - 1);
+                        res.setInterviewRoundStatus(latestRound.getStatus() != null ? latestRound.getStatus().name() : null);
+                        res.setRescheduleCount(latestRound.getRescheduleCount());
+                        res.setCandidatePreferredTime(latestRound.getCandidatePreferredTime());
+                        res.setCandidateRescheduleReason(latestRound.getCandidateRescheduleReason());
+                        res.setScheduledTime(latestRound.getScheduledTime());
+                    }
                     return res;
                 });
     }
