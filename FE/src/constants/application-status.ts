@@ -24,6 +24,13 @@ export const APPLICATION_STATUS_CONFIG: Record<
     border: 'border-violet-200',
     dot: 'bg-violet-500',
   },
+  [ApplicationStatus.CV_REJECTED]: {
+    label: 'Đã loại CV',
+    color: 'text-rose-700',
+    bg: 'bg-rose-50',
+    border: 'border-rose-200',
+    dot: 'bg-rose-500',
+  },
   [ApplicationStatus.INTERVIEW]: {
     label: 'Đang phỏng vấn',
     color: 'text-indigo-700',
@@ -31,19 +38,19 @@ export const APPLICATION_STATUS_CONFIG: Record<
     border: 'border-indigo-200',
     dot: 'bg-indigo-500',
   },
-  [ApplicationStatus.ACCEPTED]: {
+  [ApplicationStatus.FINAL_ACCEPTED]: {
     label: 'ĐÃ TRÚNG TUYỂN',
     color: 'text-green-700',
     bg: 'bg-green-50',
     border: 'border-green-200',
     dot: 'bg-green-500',
   },
-  [ApplicationStatus.REJECTED]: {
-    label: 'TỪ CHỐI',
-    color: 'text-rose-700',
-    bg: 'bg-rose-50',
-    border: 'border-rose-200',
-    dot: 'bg-rose-500',
+  [ApplicationStatus.FINAL_REJECTED]: {
+    label: 'TỪ CHỐI (SAU PHỎNG VẤN)',
+    color: 'text-rose-800',
+    bg: 'bg-rose-100',
+    border: 'border-rose-300',
+    dot: 'bg-rose-600',
   },
   [ApplicationStatus.WITHDRAWN]: {
     label: 'Đã rút',

@@ -12,6 +12,7 @@ import InterviewsBulkActionBar from '@/src/components/recruiter/interviews/Inter
 import JobInterviewsTable from '@/src/components/recruiter/interviews/JobInterviewsTable'
 import ViewEvaluationResultModal from '@/src/components/recruiter/interviews/ViewEvaluationResultModal'
 import ConfirmModal from '@/src/components/common/ConfirmModal'
+import { ApplicationStatus } from '@/src/enums/application.enum'
 import { AvailableSlot, InterviewRoundConfig, InterviewRoundDetail } from '@/src/types/recruiter-interview'
 import { useGetJobInterviewRounds } from '@/src/hooks/job'
 import {
@@ -54,7 +55,7 @@ export default function JobInterviewsPage() {
 
   // ── Real BE Rounds & Applications Data ──────────────────────────────────────
   const { data: dbRounds = [], isLoading: isLoadingRounds } = useGetJobInterviewRounds(jobId)
-  const { data: pageData } = useGetApplicationsByJob(jobId, 0, 100)
+  const { data: pageData, refetch: refetchApplications } = useGetApplicationsByJob(jobId, 0, 100)
 
   // Interview Workflow Mutation Hooks
   const scheduleMultiSlotMutation = useScheduleMultiSlot()
@@ -106,16 +107,23 @@ export default function JobInterviewsPage() {
       const approvalCandidates: InterviewRoundDetail[] = []
       latestAppRoundMap.forEach((c) => {
         const status = c.status
-        const appStatus = c.applicationStatus || (c as any).applicationStatus
-        const isPassedOrCompleted =
-          status === 'INTERVIEW_COMPLETED' ||
-          status === 'PASSED' ||
-          status === ('ACCEPTED' as any) ||
-          status === ('REJECTED' as any) ||
-          appStatus === 'ACCEPTED' ||
-          appStatus === 'REJECTED'
+        const hasEvaluatedHistory =
+          (c.previousRoundsHistory && c.previousRoundsHistory.length > 0) ||
+          c.rating != null ||
+          Boolean(c.feedbackNote)
 
-        if (isPassedOrCompleted) {
+        // 1. Đã được HR quyết định Duyệt Trúng Tuyển hoặc Từ Chối chính thức sau khi phỏng vấn
+        const isFinalDecisionMade =
+          (c.applicationStatus === 'FINAL_ACCEPTED' ||
+            c.applicationStatus === 'FINAL_REJECTED') &&
+          hasEvaluatedHistory
+
+        // 2. Hoặc đã hoàn thành tới vòng hiện tại cao nhất của công ty (roundNumber >= maxRoundNumber và PASSED / INTERVIEW_COMPLETED / FAILED)
+        const isCompletedAllCurrentRounds =
+          c.roundNumber >= maxRoundNumber &&
+          (status === 'INTERVIEW_COMPLETED' || status === 'PASSED' || status === 'FAILED')
+
+        if (isFinalDecisionMade || isCompletedAllCurrentRounds) {
           approvalCandidates.push(c)
         }
       })
@@ -123,7 +131,7 @@ export default function JobInterviewsPage() {
       return approvalCandidates
     }
     return candidates.filter((c) => c.roundNumber === activeRound)
-  }, [candidates, activeRound, isApprovalStep])
+  }, [candidates, activeRound, isApprovalStep, maxRoundNumber])
 
   // Lấy scheduledTime đã CONFIRMED của vòng trước (dùng cho validation slot vòng hiện tại)
   const prevRoundScheduledTime = useMemo(() => {
@@ -152,9 +160,9 @@ export default function JobInterviewsPage() {
     } else if (activeTab === 'CONFIRMED') {
       result = result.filter((c) => c.status === 'CONFIRMED' || c.status === 'ATTENDED' || c.status === 'INTERVIEW_COMPLETED')
     } else if (activeTab === 'PASSED') {
-      result = result.filter((c) => c.status === 'PASSED' || c.status === 'INTERVIEW_COMPLETED' || (c as any).applicationStatus === 'ACCEPTED')
+      result = result.filter((c) => c.status === 'PASSED' || c.status === 'INTERVIEW_COMPLETED' || (c as any).applicationStatus === 'FINAL_ACCEPTED')
     } else if (activeTab === 'FAILED') {
-      result = result.filter((c) => c.status === 'FAILED' || c.status === 'TERMINATED' || (c as any).applicationStatus === 'REJECTED')
+      result = result.filter((c) => c.status === 'FAILED' || c.status === 'TERMINATED' || (c as any).applicationStatus === 'FINAL_REJECTED')
     }
 
     if (searchQuery.trim()) {
@@ -516,6 +524,22 @@ export default function JobInterviewsPage() {
   }
 
   const handleConfirmFinalResult = (appId: string, approved: boolean, note: string) => {
+    const targetStatus = approved ? ApplicationStatus.FINAL_ACCEPTED : ApplicationStatus.FINAL_REJECTED
+
+    // Cập nhật ngay localOverrides cho tất cả các vòng phỏng vấn của ứng viên này
+    setLocalOverrides((prev) => {
+      const next = { ...prev }
+      for (let r = 1; r <= maxRoundNumber; r++) {
+        const k = `${appId}-round-${r}`
+        next[k] = {
+          ...(next[k] || {}),
+          applicationStatus: targetStatus,
+          status: approved ? ('PASSED' as any) : ('FAILED' as any),
+        }
+      }
+      return next
+    })
+
     finalConfirmMutation.mutate(
       {
         applicationId: appId,
@@ -525,18 +549,11 @@ export default function JobInterviewsPage() {
       {
         onSuccess: () => {
           setFinalConfirmationCandidate(null)
-          const key = `${appId}-round-${activeRound}`
-          setLocalOverrides((prev) => ({
-            ...prev,
-            [key]: {
-              ...prev[key],
-              status: approved ? 'PASSED' : 'FAILED',
-            },
-          }))
+          refetchApplications?.()
           toast.success(
             approved
-              ? 'Đã duyệt TRÚNG TUYỂN (ACCEPTED) cho ứng viên!'
-              : 'Đã từ chối ứng viên (REJECTED).'
+              ? 'Đã duyệt TRÚNG TUYỂN CHÍNH THỨC (FINAL_ACCEPTED) cho ứng viên!'
+              : 'Đã từ chối ứng viên (FINAL_REJECTED).'
           )
         },
         onError: (err: any) => {

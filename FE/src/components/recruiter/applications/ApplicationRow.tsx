@@ -16,8 +16,9 @@ export const FILTER_STATUS_OPTIONS: { value: ApplicationStatus | ''; label: stri
   { value: ApplicationStatus.SUBMITTED, label: 'Mới nộp' },
   { value: ApplicationStatus.SCORED, label: 'Đã chấm điểm AI' },
   { value: ApplicationStatus.INTERVIEW, label: 'Đang phỏng vấn' },
-  { value: ApplicationStatus.ACCEPTED, label: 'Đã trúng tuyển' },
-  { value: ApplicationStatus.REJECTED, label: 'Từ chối' },
+  { value: ApplicationStatus.CV_REJECTED, label: 'Đã loại CV' },
+  { value: ApplicationStatus.FINAL_ACCEPTED, label: 'Đã trúng tuyển (Offer)' },
+  { value: ApplicationStatus.FINAL_REJECTED, label: 'Từ chối (Sau phỏng vấn)' },
   { value: ApplicationStatus.WITHDRAWN, label: 'Đã rút' },
 ]
 

@@ -16,14 +16,15 @@ export function useJobInterviewCandidates(
     const interviewEligibleApps = pageData.content.filter((a: any) => {
       const hasInterviewRounds = a.interviewRounds && a.interviewRounds.length > 0
 
-      // Nếu hồ sơ bị từ chối ở bước Duyệt CV (REJECTED và chưa có vòng phỏng vấn nào), BỎ QUA HOÀN TOÀN
-      if (a.status === 'REJECTED' && !hasInterviewRounds) {
+      // Nếu hồ sơ bị từ chối ở bước Duyệt CV (CV_REJECTED và chưa có vòng phỏng vấn nào), BỎ QUA HOÀN TOÀN
+      if (a.status === 'CV_REJECTED' && !hasInterviewRounds) {
         return false
       }
 
       return (
         hasInterviewRounds ||
-        a.status === 'ACCEPTED' ||
+        a.status === 'FINAL_ACCEPTED' ||
+        a.status === 'FINAL_REJECTED' ||
         a.status === 'PENDING_INTERVIEW_SCHEDULE' ||
         a.status === 'CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE' ||
         a.status === 'INTERVIEW' ||
@@ -57,9 +58,13 @@ export function useJobInterviewCandidates(
             evaluatedAt: prevR.attendedAt || undefined,
           }))
 
-          const isAppFinalized = a.status === 'ACCEPTED' || a.status === 'REJECTED'
-          const effectiveStatus = isAppFinalized && idx === roundsSorted.length - 1
-            ? (a.status === 'ACCEPTED' ? 'PASSED' : 'FAILED')
+          const isFinalRound = idx === roundsSorted.length - 1
+          const isAppFinalized =
+            (a.status === 'FINAL_ACCEPTED' || a.status === 'FINAL_REJECTED') && isFinalRound
+          const effectiveStatus = isAppFinalized
+            ? a.status === 'FINAL_ACCEPTED'
+              ? 'PASSED'
+              : 'FAILED'
             : r.status
 
           const baseCandidate: InterviewRoundDetail = {
@@ -94,15 +99,13 @@ export function useJobInterviewCandidates(
       } else {
         const baseStatus =
           (a as any).interviewRoundStatus ||
-          (a.status === 'ACCEPTED'
-            ? 'NOT_STARTED'
-            : a.status === 'PENDING_INTERVIEW_SCHEDULE'
+          (a.status === 'PENDING_INTERVIEW_SCHEDULE' || (a.status as string) === 'SLOTS_SENT'
             ? 'SLOTS_SENT'
-            : a.status === 'CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE'
+            : a.status === 'CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE' || (a.status as string) === 'RESCHEDULE_REQUESTED'
             ? 'RESCHEDULE_REQUESTED'
-            : a.status === 'INTERVIEW'
+            : (a.status as string) === 'CONFIRMED'
             ? 'CONFIRMED'
-            : (a.status as any))
+            : 'NOT_STARTED')
 
         const baseCandidate: InterviewRoundDetail = {
           id: `${a.id}-round-1`,

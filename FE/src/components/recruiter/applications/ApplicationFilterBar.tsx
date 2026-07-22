@@ -4,7 +4,7 @@ import React from 'react'
 import { Search, Trash2 } from 'lucide-react'
 import { ApplicationStatus } from '@/src/types'
 
-type StatusFilterType = 'ALL' | 'SUBMITTED' | 'SCORED' | 'ACCEPTED' | 'INTERVIEW' | 'REJECTED'
+type StatusFilterType = 'ALL' | 'SUBMITTED' | 'SCORED' | 'FINAL_ACCEPTED' | 'INTERVIEW' | 'CV_REJECTED'
 
 interface ApplicationFilterBarProps {
   statusFilter: StatusFilterType
@@ -55,7 +55,7 @@ export default function ApplicationFilterBar({
       inactiveColor: 'bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100',
     },
     {
-      id: 'ACCEPTED',
+      id: 'FINAL_ACCEPTED',
       label: 'Đã trúng tuyển',
       count: counts.accepted,
       activeColor: 'bg-emerald-600 text-white shadow-xs',
@@ -69,7 +69,7 @@ export default function ApplicationFilterBar({
       inactiveColor: 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100',
     },
     {
-      id: 'REJECTED',
+      id: 'CV_REJECTED',
       label: 'Đã từ chối',
       count: counts.rejected,
       activeColor: 'bg-rose-600 text-white shadow-xs',

@@ -77,9 +77,10 @@ export default function JobApplicationsTable({
         paginatedApplications
           .filter(
             (a) =>
-              a.status !== ApplicationStatus.REJECTED &&
+              a.status !== ApplicationStatus.CV_REJECTED &&
+              a.status !== ApplicationStatus.FINAL_REJECTED &&
               a.status !== ApplicationStatus.INTERVIEW &&
-              a.status !== ApplicationStatus.ACCEPTED &&
+              a.status !== ApplicationStatus.FINAL_ACCEPTED &&
               (a.status as string) !== 'SLOTS_SENT' &&
               (a.status as string) !== 'CONFIRMED' &&
               (a.status as string) !== 'RESCHEDULE_REQUESTED' &&
@@ -107,9 +108,10 @@ export default function JobApplicationsTable({
         a.overallScore !== undefined &&
         a.overallScore !== null &&
         a.overallScore < thresholdPercent &&
-        a.status !== ApplicationStatus.REJECTED &&
+        a.status !== ApplicationStatus.CV_REJECTED &&
+        a.status !== ApplicationStatus.FINAL_REJECTED &&
         a.status !== ApplicationStatus.INTERVIEW &&
-        a.status !== ApplicationStatus.ACCEPTED &&
+        a.status !== ApplicationStatus.FINAL_ACCEPTED &&
         (a.status as string) !== 'SLOTS_SENT' &&
         (a.status as string) !== 'CONFIRMED' &&
         (a.status as string) !== 'RESCHEDULE_REQUESTED' &&
@@ -135,7 +137,7 @@ export default function JobApplicationsTable({
     applications.forEach((a) => {
       const isInterview =
         a.status === ApplicationStatus.INTERVIEW ||
-        a.status === ApplicationStatus.ACCEPTED ||
+        a.status === ApplicationStatus.FINAL_ACCEPTED ||
         (a.status as string) === 'SLOTS_SENT' ||
         (a.status as string) === 'CONFIRMED' ||
         (a.status as string) === 'RESCHEDULE_REQUESTED' ||
@@ -146,7 +148,8 @@ export default function JobApplicationsTable({
         a.overallScore !== undefined &&
         a.overallScore !== null &&
         a.overallScore < thresholdPercent &&
-        a.status !== ApplicationStatus.REJECTED &&
+        a.status !== ApplicationStatus.CV_REJECTED &&
+        a.status !== ApplicationStatus.FINAL_REJECTED &&
         !isInterview
       ) {
         next.add(a.id)
@@ -242,10 +245,10 @@ export default function JobApplicationsTable({
                 const globalIndex = (activePage - 1) * activeItemsPerPage + index + 1
                 const score = app.overallScore
                 const grade = app.grade
-                const isRejected = app.status === ApplicationStatus.REJECTED
+                const isRejected = app.status === ApplicationStatus.CV_REJECTED || app.status === ApplicationStatus.FINAL_REJECTED
                 const isInInterviewProcess =
                   app.status === ApplicationStatus.INTERVIEW ||
-                  app.status === ApplicationStatus.ACCEPTED ||
+                  app.status === ApplicationStatus.FINAL_ACCEPTED ||
                   (app.status as string) === 'SLOTS_SENT' ||
                   (app.status as string) === 'CONFIRMED' ||
                   (app.status as string) === 'RESCHEDULE_REQUESTED' ||
@@ -301,15 +304,20 @@ export default function JobApplicationsTable({
 
                     {/* Trạng thái đơn Application Status */}
                     <td className="px-4 py-4 text-center">
-                      {app.status === ApplicationStatus.ACCEPTED ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg">
+                      {app.status === ApplicationStatus.FINAL_ACCEPTED ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black text-emerald-800 bg-emerald-100 border border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800 rounded-lg">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          Đã trúng tuyển
+                          Đã trúng tuyển (Offer)
                         </span>
-                      ) : app.status === ApplicationStatus.REJECTED ? (
+                      ) : app.status === ApplicationStatus.FINAL_REJECTED ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-rose-800 bg-rose-100 border border-rose-300 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800 rounded-lg">
+                          <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                          Từ chối (Sau phỏng vấn)
+                        </span>
+                      ) : app.status === ApplicationStatus.CV_REJECTED ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-lg">
                           <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                          Đã từ chối
+                          Đã loại CV
                         </span>
                       ) : app.status === ApplicationStatus.INTERVIEW ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg">
@@ -374,7 +382,7 @@ export default function JobApplicationsTable({
                     </td>
 
                     <td className="px-5 py-4 text-right not-line-through opacity-100">
-                      {app.status === ApplicationStatus.ACCEPTED ||
+                      {app.status === ApplicationStatus.FINAL_ACCEPTED ||
                       app.status === ApplicationStatus.INTERVIEW ||
                       (app.status as string) === 'SLOTS_SENT' ||
                       (app.status as string) === 'RESCHEDULE_REQUESTED' ? (

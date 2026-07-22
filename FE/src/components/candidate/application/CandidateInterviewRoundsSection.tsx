@@ -120,7 +120,7 @@ export default function CandidateInterviewRoundsSection({
     currentViewRound.status === 'PASSED' || currentViewRound.status === 'INTERVIEW_COMPLETED'
   const isFailed = currentViewRound.status === 'FAILED' || currentViewRound.status === 'TERMINATED'
   const isNotStarted = currentViewRound.status === 'NOT_STARTED'
-  const isFinalAccepted = applicationStatus === 'ACCEPTED'
+  const isFinalAccepted = applicationStatus === 'FINAL_ACCEPTED'
 
   return (
     <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
@@ -136,7 +136,9 @@ export default function CandidateInterviewRoundsSection({
             </h4>
           </div>
           <p className="text-xs font-medium text-emerald-50 leading-relaxed pl-10">
-            Hồ sơ ứng tuyển và sự thể hiện qua các vòng phỏng vấn của bạn cho vị trí <strong>{jobTitle}</strong> đã được Nhà tuyển dụng phê duyệt thành công. Bộ phận Nhân sự (HR) sẽ sớm liên hệ gửi Thư mời nhận việc (Job Offer) và trao đổi chi tiết đến bạn!
+            Hồ sơ ứng tuyển và sự thể hiện qua các vòng phỏng vấn của bạn cho vị trí{' '}
+            <strong>{jobTitle}</strong> đã được Nhà tuyển dụng phê duyệt thành công. Bộ phận Nhân sự
+            (HR) sẽ sớm liên hệ gửi Thư mời nhận việc (Job Offer) và trao đổi chi tiết đến bạn!
           </p>
         </div>
       )}

@@ -1,7 +1,18 @@
 'use client'
 
 import React, { useMemo } from 'react'
-import { Clock, CheckCircle2, Check, XCircle, Calendar, Star, Users, AlertTriangle, Award, UserCheck } from 'lucide-react'
+import {
+  Clock,
+  CheckCircle2,
+  Check,
+  XCircle,
+  Calendar,
+  Star,
+  Users,
+  AlertTriangle,
+  Award,
+  UserCheck,
+} from 'lucide-react'
 import { InterviewRoundDetail } from '@/src/types/recruiter-interview'
 import Pagination from '@/src/components/common/Pagination'
 import { formatDateTime } from '@/src/utils'
@@ -60,7 +71,10 @@ export default function JobInterviewsTable({
   const confirmedCandidates = useMemo(
     () =>
       candidates.filter(
-        (c) => (c.status === 'CONFIRMED' || c.status === 'ATTENDED') && c.scheduledTime && !c.scheduledTime.includes('Chờ')
+        (c) =>
+          (c.status === 'CONFIRMED' || c.status === 'ATTENDED') &&
+          c.scheduledTime &&
+          !c.scheduledTime.includes('Chờ')
       ),
     [candidates]
   )
@@ -82,7 +96,11 @@ export default function JobInterviewsTable({
               month: '2-digit',
               year: 'numeric',
             })
-            timePart = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })
+            timePart = d.toLocaleTimeString('vi-VN', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            })
           } else {
             datePart = cand.scheduledTime
           }
@@ -122,7 +140,8 @@ export default function JobInterviewsTable({
                   Bảng Duyệt Kết Quả Tuyển Dụng Cuối Cùng
                 </h4>
                 <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">
-                  Danh sách các ứng viên đã vượt qua tất cả các vòng phỏng vấn. Bạn có thể xem đánh giá chi tiết từng vòng và thực hiện quyết định Duyệt Trúng Tuyển hoặc Từ Chối.
+                  Danh sách các ứng viên đã vượt qua tất cả các vòng phỏng vấn. Bạn có thể xem đánh
+                  giá chi tiết từng vòng và thực hiện quyết định Duyệt Trúng Tuyển hoặc Từ Chối.
                 </p>
               </div>
             </div>
@@ -136,7 +155,9 @@ export default function JobInterviewsTable({
                 {!isApprovalStep && (
                   <th className="py-3 px-4 w-10 text-center">
                     {(() => {
-                      const schedulableCandidates = candidates.filter((c) => c.status === 'NOT_STARTED')
+                      const schedulableCandidates = candidates.filter(
+                        (c) => c.status === 'NOT_STARTED'
+                      )
                       const isAllSchedulableChecked =
                         schedulableCandidates.length > 0 &&
                         schedulableCandidates.every((c) => selectedIds.has(c.applicationId))
@@ -175,7 +196,10 @@ export default function JobInterviewsTable({
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
               {candidates.length === 0 ? (
                 <tr>
-                  <td colSpan={isApprovalStep ? 5 : 8} className="py-12 text-center text-slate-400 font-semibold">
+                  <td
+                    colSpan={isApprovalStep ? 5 : 8}
+                    className="py-12 text-center text-slate-400 font-semibold"
+                  >
                     {isApprovalStep
                       ? 'Chưa có ứng viên nào hoàn thành tất cả các vòng phỏng vấn để chờ duyệt.'
                       : 'Không tìm thấy ứng viên nào phù hợp trong vòng này.'}
@@ -201,8 +225,13 @@ export default function JobInterviewsTable({
                         : []),
                     ]
 
-                    const isFinalApproved = cand.status === ('ACCEPTED' as any) || (cand as any).applicationStatus === 'ACCEPTED'
-                    const isFinalRejected = cand.status === 'FAILED' || cand.status === ('REJECTED' as any) || (cand as any).applicationStatus === 'REJECTED'
+                    const isFinalApproved =
+                      cand.status === ('FINAL_ACCEPTED' as any) ||
+                      (cand as any).applicationStatus === 'FINAL_ACCEPTED'
+
+                    const isFinalRejected =
+                      cand.status === ('FINAL_REJECTED' as any) ||
+                      (cand as any).applicationStatus === 'FINAL_REJECTED'
 
                     return (
                       <tr
@@ -238,7 +267,9 @@ export default function JobInterviewsTable({
                                 </span>
                               ))
                             ) : (
-                              <span className="text-slate-400 text-xs italic">Đã đạt các vòng phỏng vấn</span>
+                              <span className="text-slate-400 text-xs italic">
+                                Đã đạt các vòng phỏng vấn
+                              </span>
                             )}
                           </div>
                         </td>
@@ -248,12 +279,12 @@ export default function JobInterviewsTable({
                           {isFinalApproved ? (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 text-xs font-black text-emerald-700 dark:text-emerald-300">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              Đã Duyệt Trúng Tuyển (ACCEPTED)
+                              Đã Duyệt Trúng Tuyển (Offer)
                             </span>
                           ) : isFinalRejected ? (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 text-xs font-black text-rose-700 dark:text-rose-300">
                               <XCircle className="w-3.5 h-3.5 text-rose-600" />
-                              Đã Từ Chối (REJECTED)
+                              Từ Chối (Sau phỏng vấn)
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 text-xs font-black text-amber-700 dark:text-amber-300 animate-pulse">
@@ -295,7 +326,11 @@ export default function JobInterviewsTable({
                           disabled={!isConfigured || !canSchedule}
                           onChange={() => onToggleSelect(cand.applicationId)}
                           className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                          title={!canSchedule ? 'Ứng viên này đã được xếp lịch / đang phỏng vấn' : 'Chọn ứng viên'}
+                          title={
+                            !canSchedule
+                              ? 'Ứng viên này đã được xếp lịch / đang phỏng vấn'
+                              : 'Chọn ứng viên'
+                          }
                         />
                       </td>
                       <td className="py-3.5 px-3 text-center font-bold text-slate-400">
@@ -381,8 +416,8 @@ export default function JobInterviewsTable({
                             cand.rescheduleCount >= 3
                               ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300'
                               : cand.rescheduleCount > 0
-                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-200'
-                              : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-200'
+                                : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                           }`}
                         >
                           {cand.rescheduleCount}/3 lần
@@ -397,8 +432,9 @@ export default function JobInterviewsTable({
                             cand.status !== 'INTERVIEW_COMPLETED' &&
                             cand.status !== 'FAILED' &&
                             cand.status !== 'TERMINATED' &&
-                            (cand as any).applicationStatus !== 'ACCEPTED' &&
-                            (cand as any).applicationStatus !== 'REJECTED' && (
+                            cand.applicationStatus !== 'FINAL_ACCEPTED' &&
+                            cand.applicationStatus !== 'FINAL_REJECTED' &&
+                            cand.applicationStatus !== 'CV_REJECTED' && (
                               <button
                                 type="button"
                                 onClick={() => onOpenViewEvaluationResult?.(cand)}
@@ -414,7 +450,9 @@ export default function JobInterviewsTable({
                             <button
                               type="button"
                               onClick={() => {
-                                toast.error('Vui lòng cấu hình quy trình phỏng vấn trước khi thao tác!')
+                                toast.error(
+                                  'Vui lòng cấu hình quy trình phỏng vấn trước khi thao tác!'
+                                )
                                 onOpenConfigModal()
                               }}
                               className="px-3 py-1.5 text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-xl cursor-pointer"
@@ -440,7 +478,10 @@ export default function JobInterviewsTable({
                               <AlertTriangle className="w-3.5 h-3.5" />
                               <span>Duyệt xin đổi lịch ({cand.rescheduleCount}/3)</span>
                             </button>
-                          ) : cand.status === 'INTERVIEW_COMPLETED' || cand.status === 'PASSED' || cand.status === 'FAILED' || cand.status === 'TERMINATED' ? (
+                          ) : cand.status === 'INTERVIEW_COMPLETED' ||
+                            cand.status === 'PASSED' ||
+                            cand.status === 'FAILED' ||
+                            cand.status === 'TERMINATED' ? (
                             <button
                               type="button"
                               onClick={() => onOpenViewEvaluationResult?.(cand)}
@@ -559,17 +600,18 @@ export default function JobInterviewsTable({
                               </td>
                               <td className="py-3.5 px-5 text-right">
                                 <div className="flex items-center justify-end gap-2">
-                                  {cand.previousRoundsHistory && cand.previousRoundsHistory.length > 0 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => onOpenViewEvaluationResult?.(cand)}
-                                      className="px-2.5 py-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 border border-blue-200 dark:border-blue-800 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1 shadow-xs shrink-0"
-                                      title="Xem kết quả đánh giá các vòng trước"
-                                    >
-                                      <Award className="w-3.5 h-3.5 text-blue-600" />
-                                      <span>Xem KQ Vòng trước</span>
-                                    </button>
-                                  )}
+                                  {cand.previousRoundsHistory &&
+                                    cand.previousRoundsHistory.length > 0 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => onOpenViewEvaluationResult?.(cand)}
+                                        className="px-2.5 py-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 border border-blue-200 dark:border-blue-800 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1 shadow-xs shrink-0"
+                                        title="Xem kết quả đánh giá các vòng trước"
+                                      >
+                                        <Award className="w-3.5 h-3.5 text-blue-600" />
+                                        <span>Xem KQ Vòng trước</span>
+                                      </button>
+                                    )}
 
                                   {cand.status === 'CONFIRMED' ? (
                                     <>
@@ -584,7 +626,11 @@ export default function JobInterviewsTable({
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => (onOpenNoShowConfirmModal ? onOpenNoShowConfirmModal(cand) : onOpenEvaluationModal(cand))}
+                                        onClick={() =>
+                                          onOpenNoShowConfirmModal
+                                            ? onOpenNoShowConfirmModal(cand)
+                                            : onOpenEvaluationModal(cand)
+                                        }
                                         className="bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-bold rounded-xl px-3 py-1.5 shrink-0 cursor-pointer inline-flex items-center gap-1.5 shadow-xs transition-all"
                                         title="Đánh Fail trực tiếp nếu ứng viên vắng mặt"
                                       >

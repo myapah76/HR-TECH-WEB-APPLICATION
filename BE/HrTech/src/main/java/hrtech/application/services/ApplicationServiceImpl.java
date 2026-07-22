@@ -111,7 +111,7 @@ public class ApplicationServiceImpl implements IApplicationService {
         if (applicationRepository.existsByUserIdAndJobIdAndStatusNotIn(
                 userId,
                 job.getId(),
-                List.of(ApplicationStatus.REJECTED, ApplicationStatus.WITHDRAWN))) {
+                List.of(ApplicationStatus.CV_REJECTED, ApplicationStatus.FINAL_REJECTED, ApplicationStatus.WITHDRAWN))) {
             throw new AppException(ErrorCode.INVALID_INPUT, "Already applied to this job");
         }
 
@@ -171,10 +171,10 @@ public class ApplicationServiceImpl implements IApplicationService {
     public ApplicationSummaryResponse acceptApplication(UUID applicationId) {
         Application application = getApplicationEntityById(applicationId);
 
-        application.setStatus(ApplicationStatus.ACCEPTED);
+        application.setStatus(ApplicationStatus.INTERVIEW);
         application = applicationRepository.save(application);
 
-        notifyCandidateStatusAfterCommit(application, ApplicationStatus.ACCEPTED);
+        notifyCandidateStatusAfterCommit(application, ApplicationStatus.INTERVIEW);
 
         return applicationMapper.toSummaryResponse(application);
     }
@@ -183,10 +183,10 @@ public class ApplicationServiceImpl implements IApplicationService {
     public ApplicationSummaryResponse rejectApplication(UUID applicationId) {
         Application application = getApplicationEntityById(applicationId);
 
-        application.setStatus(ApplicationStatus.REJECTED);
+        application.setStatus(ApplicationStatus.CV_REJECTED);
         application = applicationRepository.save(application);
 
-        notifyCandidateStatusAfterCommit(application, ApplicationStatus.REJECTED);
+        notifyCandidateStatusAfterCommit(application, ApplicationStatus.CV_REJECTED);
 
         return applicationMapper.toSummaryResponse(application);
     }
@@ -202,9 +202,9 @@ public class ApplicationServiceImpl implements IApplicationService {
 
         Runnable notificationTask;
         switch (status) {
-            case ApplicationStatus.ACCEPTED -> notificationTask = () -> notificationService
+            case ApplicationStatus.INTERVIEW -> notificationTask = () -> notificationService
                     .sendApplicationAcceptedNotification(email, fullName, jobTitle, companyName, appIdStr);
-            case ApplicationStatus.REJECTED -> notificationTask = () -> notificationService
+            case ApplicationStatus.CV_REJECTED -> notificationTask = () -> notificationService
                     .sendApplicationRejectedNotification(email, fullName, jobTitle, companyName, appIdStr);
             default -> {
                 return;
@@ -356,7 +356,7 @@ public class ApplicationServiceImpl implements IApplicationService {
         return applicationRepository.existsByUserIdAndJobIdAndStatusNotIn(
                 userId,
                 jobId,
-                List.of(ApplicationStatus.REJECTED, ApplicationStatus.WITHDRAWN));
+                List.of(ApplicationStatus.CV_REJECTED, ApplicationStatus.FINAL_REJECTED, ApplicationStatus.WITHDRAWN));
     }
 
     @Override
@@ -623,10 +623,9 @@ public class ApplicationServiceImpl implements IApplicationService {
         long total = apps.size();
 
         long appliedCount = total;
-        long acceptedCount = countByStatusExcluding(apps, ApplicationStatus.SUBMITTED, ApplicationStatus.WITHDRAWN,
-                ApplicationStatus.REJECTED);
+        long acceptedCount = countByStatusIn(apps, ApplicationStatus.FINAL_ACCEPTED);
         long interviewingCount = countByStatusIn(apps, ApplicationStatus.INTERVIEW);
-        long offerCount = countByStatusIn(apps, ApplicationStatus.ACCEPTED);
+        long offerCount = countByStatusIn(apps, ApplicationStatus.FINAL_ACCEPTED);
 
         return JobSearchAnalyticsResponse.builder()
                 .funnelData(buildFunnelData(total, appliedCount, acceptedCount, interviewingCount, offerCount))
@@ -741,7 +740,7 @@ public class ApplicationServiceImpl implements IApplicationService {
                 .submittedAppsCount(apps.stream().filter(a -> a.getStatus() == ApplicationStatus.SUBMITTED).count())
                 .screeningAppsCount(apps.stream().filter(a -> a.getStatus() == ApplicationStatus.SCORED).count())
                 .interviewAppsCount(apps.stream().filter(a -> a.getStatus() == ApplicationStatus.INTERVIEW).count())
-                .offerAppsCount(apps.stream().filter(a -> a.getStatus() == ApplicationStatus.ACCEPTED).count())
+                .offerAppsCount(apps.stream().filter(a -> a.getStatus() == ApplicationStatus.FINAL_ACCEPTED).count())
                 .build();
     }
 
@@ -895,10 +894,10 @@ public class ApplicationServiceImpl implements IApplicationService {
                     double scorePercent = score.getOverallScore().doubleValue();
 
                     if (request.isAutoRejectBelowThreshold() && scorePercent < request.getThresholdPercent()) {
-                        app.setStatus(ApplicationStatus.REJECTED);
+                        app.setStatus(ApplicationStatus.CV_REJECTED);
                         autoRejected++;
                         Application savedApp = applicationRepository.save(app);
-                        notifyCandidateStatusAfterCommit(savedApp, ApplicationStatus.REJECTED);
+                        notifyCandidateStatusAfterCommit(savedApp, ApplicationStatus.CV_REJECTED);
                     } else {
                         applicationRepository.save(app);
                     }
@@ -916,9 +915,9 @@ public class ApplicationServiceImpl implements IApplicationService {
                 if (app.getStatus() == ApplicationStatus.SCORED && app.getApplicationScore() != null) {
                     double scorePercent = app.getApplicationScore().getOverallScore().doubleValue();
                     if (scorePercent < request.getThresholdPercent()) {
-                        app.setStatus(ApplicationStatus.REJECTED);
+                        app.setStatus(ApplicationStatus.CV_REJECTED);
                         Application savedApp = applicationRepository.save(app);
-                        notifyCandidateStatusAfterCommit(savedApp, ApplicationStatus.REJECTED);
+                        notifyCandidateStatusAfterCommit(savedApp, ApplicationStatus.CV_REJECTED);
                         autoRejected++;
                     }
                 }
@@ -936,7 +935,8 @@ public class ApplicationServiceImpl implements IApplicationService {
         long aboveThresholdCount = refreshedAll.stream()
                 .filter(a -> a.getApplicationScore() != null
                         && a.getApplicationScore().getOverallScore().doubleValue() >= request.getThresholdPercent()
-                        && a.getStatus() != ApplicationStatus.REJECTED)
+                        && a.getStatus() != ApplicationStatus.CV_REJECTED
+                        && a.getStatus() != ApplicationStatus.FINAL_REJECTED)
                 .count();
 
         return BulkScoreResponse.builder()
@@ -970,10 +970,10 @@ public class ApplicationServiceImpl implements IApplicationService {
                 continue;
             }
 
-            app.setStatus(ApplicationStatus.REJECTED);
+            app.setStatus(ApplicationStatus.CV_REJECTED);
             Application savedApp = applicationRepository.save(app);
             rejected.add(savedApp);
-            notifyCandidateStatusAfterCommit(savedApp, ApplicationStatus.REJECTED);
+            notifyCandidateStatusAfterCommit(savedApp, ApplicationStatus.CV_REJECTED);
         }
 
         return rejected.stream()
@@ -1241,7 +1241,7 @@ public class ApplicationServiceImpl implements IApplicationService {
             int count = appRound.getRescheduleCount() == null ? 0 : appRound.getRescheduleCount();
             if (count >= 3) {
                 appRound.setStatus(InterviewRoundStatus.TERMINATED);
-                app.setStatus(ApplicationStatus.REJECTED);
+                app.setStatus(ApplicationStatus.FINAL_REJECTED);
                 appRound.setFeedbackNote("Đã dừng luồng do đổi lịch quá 3 lần. Lý do từ chối cuối: " + request.getRejectionReason());
             } else {
                 appRound.setStatus(InterviewRoundStatus.RESCHEDULE_REJECTED);
@@ -1361,7 +1361,7 @@ public class ApplicationServiceImpl implements IApplicationService {
             }
         } else {
             appRound.setStatus(InterviewRoundStatus.FAILED);
-            app.setStatus(ApplicationStatus.REJECTED);
+            app.setStatus(ApplicationStatus.FINAL_REJECTED);
         }
 
         appRound = applicationInterviewRoundRepository.save(appRound);
@@ -1378,9 +1378,9 @@ public class ApplicationServiceImpl implements IApplicationService {
         Application app = getApplicationEntityById(applicationId);
 
         if (Boolean.TRUE.equals(request.getApproved())) {
-            app.setStatus(ApplicationStatus.ACCEPTED);
+            app.setStatus(ApplicationStatus.FINAL_ACCEPTED);
         } else {
-            app.setStatus(ApplicationStatus.REJECTED);
+            app.setStatus(ApplicationStatus.FINAL_REJECTED);
         }
 
         List<ApplicationInterviewRound> rounds = applicationInterviewRoundRepository

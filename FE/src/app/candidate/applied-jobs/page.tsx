@@ -74,8 +74,10 @@ export default function AppliedJobsPage() {
       interview: applications.filter(
         (a) => a.status === ApplicationStatus.INTERVIEW
       ).length,
-      accepted: applications.filter((a) => a.status === ApplicationStatus.ACCEPTED).length,
-      rejected: applications.filter((a) => a.status === ApplicationStatus.REJECTED).length,
+      accepted: applications.filter((a) => a.status === ApplicationStatus.FINAL_ACCEPTED).length,
+      rejected: applications.filter(
+        (a) => a.status === ApplicationStatus.CV_REJECTED || a.status === ApplicationStatus.FINAL_REJECTED
+      ).length,
     }
   }, [applications])
 
@@ -97,10 +99,12 @@ export default function AppliedJobsPage() {
       )
     }
     if (activeTab === 'ACCEPTED') {
-      return applications.filter((a) => a.status === ApplicationStatus.ACCEPTED)
+      return applications.filter((a) => a.status === ApplicationStatus.FINAL_ACCEPTED)
     }
     if (activeTab === 'REJECTED') {
-      return applications.filter((a) => a.status === ApplicationStatus.REJECTED)
+      return applications.filter(
+        (a) => a.status === ApplicationStatus.CV_REJECTED || a.status === ApplicationStatus.FINAL_REJECTED
+      )
     }
     return applications
   }, [applications, activeTab])

@@ -57,7 +57,19 @@ const statusConfig: Record<string, { label: string; bg: string; text: string; bo
     text: 'text-purple-700',
     border: 'border-purple-100/40',
   },
+  CV_REJECTED: {
+    label: 'Đã loại CV',
+    bg: 'bg-rose-50/70',
+    text: 'text-rose-700',
+    border: 'border-rose-100/40',
+  },
   ACCEPTED: {
+    label: 'ĐÃ TRÚNG TUYỂN (OFFER)',
+    bg: 'bg-emerald-100 dark:bg-emerald-950/80',
+    text: 'text-emerald-800 dark:text-emerald-300 font-black',
+    border: 'border-emerald-300 dark:border-emerald-800',
+  },
+  FINAL_ACCEPTED: {
     label: 'ĐÃ TRÚNG TUYỂN (OFFER)',
     bg: 'bg-emerald-100 dark:bg-emerald-950/80',
     text: 'text-emerald-800 dark:text-emerald-300 font-black',
@@ -68,6 +80,12 @@ const statusConfig: Record<string, { label: string; bg: string; text: string; bo
     bg: 'bg-rose-50/70',
     text: 'text-rose-700',
     border: 'border-rose-100/40',
+  },
+  FINAL_REJECTED: {
+    label: 'TỪ CHỐI (SAU PHỎNG VẤN)',
+    bg: 'bg-rose-100 dark:bg-rose-950/80',
+    text: 'text-rose-800 dark:text-rose-300 font-black',
+    border: 'border-rose-300 dark:border-rose-800',
   },
   WITHDRAWN: {
     label: 'Đã rút',
@@ -111,7 +129,9 @@ export default function AppliedJobCard({
     (app.status as string) === 'RESCHEDULE_REJECTED' ||
     (app.status as string) === 'PENDING_INTERVIEW_SCHEDULE' ||
     (app.status as string) === 'CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE' ||
-    (app.status as string) === 'ACCEPTED'
+    (app.status as string) === 'ACCEPTED' ||
+    (app.status as string) === 'FINAL_ACCEPTED' ||
+    (app.status as string) === 'FINAL_REJECTED'
 
   const statusInfo = statusConfig[app.status] || {
     label: app.status,

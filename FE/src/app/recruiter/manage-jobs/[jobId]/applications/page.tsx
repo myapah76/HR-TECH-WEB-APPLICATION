@@ -81,7 +81,7 @@ export default function JobApplicationsPage() {
   )
 
   const [statusFilter, setStatusFilter] = useState<
-    'ALL' | 'SUBMITTED' | 'SCORED' | 'ACCEPTED' | 'INTERVIEW' | 'REJECTED'
+    'ALL' | 'SUBMITTED' | 'SCORED' | 'FINAL_ACCEPTED' | 'INTERVIEW' | 'CV_REJECTED'
   >('ALL')
   const [showAiPanel, setShowAiPanel] = useState<boolean>(false)
 
@@ -95,7 +95,7 @@ export default function JobApplicationsPage() {
     [localApplications]
   )
   const countAccepted = useMemo(
-    () => localApplications.filter((a) => a.status === ApplicationStatus.ACCEPTED).length,
+    () => localApplications.filter((a) => a.status === ApplicationStatus.FINAL_ACCEPTED).length,
     [localApplications]
   )
   const countInterview = useMemo(
@@ -103,7 +103,7 @@ export default function JobApplicationsPage() {
     [localApplications]
   )
   const countRejected = useMemo(
-    () => localApplications.filter((a) => a.status === ApplicationStatus.REJECTED).length,
+    () => localApplications.filter((a) => a.status === ApplicationStatus.CV_REJECTED || a.status === ApplicationStatus.FINAL_REJECTED).length,
     [localApplications]
   )
 
@@ -184,9 +184,10 @@ export default function JobApplicationsPage() {
       const app = localApplications.find((a) => a.id === id)
       if (!app) return false
       return (
-        app.status !== ApplicationStatus.REJECTED &&
+        app.status !== ApplicationStatus.CV_REJECTED &&
+        app.status !== ApplicationStatus.FINAL_REJECTED &&
         app.status !== ApplicationStatus.INTERVIEW &&
-        app.status !== ApplicationStatus.ACCEPTED &&
+        app.status !== ApplicationStatus.FINAL_ACCEPTED &&
         (app.status as string) !== 'SLOTS_SENT' &&
         (app.status as string) !== 'CONFIRMED' &&
         (app.status as string) !== 'RESCHEDULE_REQUESTED' &&
@@ -206,7 +207,7 @@ export default function JobApplicationsPage() {
         const rejectedSet = new Set(rejectedApps.map((a) => a.id))
         setLocalApplications((prev) =>
           prev.map((a) =>
-            rejectedSet.has(a.id) ? { ...a, status: ApplicationStatus.REJECTED } : a
+            rejectedSet.has(a.id) ? { ...a, status: ApplicationStatus.CV_REJECTED } : a
           )
         )
         setSelectedIds(new Set())
@@ -221,14 +222,14 @@ export default function JobApplicationsPage() {
 
   const handleAcceptCv = (appId: string) => {
     setLocalApplications((prev) =>
-      prev.map((a) => (a.id === appId ? { ...a, status: ApplicationStatus.ACCEPTED } : a))
+      prev.map((a) => (a.id === appId ? { ...a, status: ApplicationStatus.INTERVIEW } : a))
     )
-    toast.success('Đã duyệt CV thành công!')
+    toast.success('Đã duyệt CV thành công! Đơn đã chuyển sang quy trình phỏng vấn.')
   }
 
   const handleRejectCv = (appId: string) => {
     setLocalApplications((prev) =>
-      prev.map((a) => (a.id === appId ? { ...a, status: ApplicationStatus.REJECTED } : a))
+      prev.map((a) => (a.id === appId ? { ...a, status: ApplicationStatus.CV_REJECTED } : a))
     )
     toast.success('Đã từ chối đơn ứng tuyển!')
   }
