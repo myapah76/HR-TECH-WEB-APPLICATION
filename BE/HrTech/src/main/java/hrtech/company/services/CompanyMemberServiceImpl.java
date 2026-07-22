@@ -130,8 +130,13 @@ public class CompanyMemberServiceImpl implements ICompanyMemberService {
         String fullName = request.fullName();
         if (fullName != null && !fullName.trim().isEmpty()) {
             String[] parts = fullName.trim().split("\\s+", 2);
-            newUser.setFirstName(parts.length > 1 ? parts[1] : "");
-            newUser.setLastName(parts[0]);
+            if (parts.length > 1) {
+                newUser.setLastName(parts[0]);
+                newUser.setFirstName(parts[1]);
+            } else {
+                newUser.setFirstName(parts[0]);
+                newUser.setLastName("");
+            }
         }
 
         newUser.setRole(recruiterRole);

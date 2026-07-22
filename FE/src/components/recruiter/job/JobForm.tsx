@@ -19,6 +19,8 @@ import {
   ExperienceLevel,
   JOB_TYPE_LABELS,
   EXPERIENCE_LEVEL_LABELS,
+  SALARY_TYPE_LABELS,
+  SalaryType,
   JobStatus,
 } from '@/src/enums/job.enum'
 
@@ -64,6 +66,7 @@ export default function JobForm({
     register,
     handleSubmit,
     control,
+    watch,
     formState: { errors },
   } = useForm<z.input<typeof jobSchema>, unknown, JobFormData>({
     resolver: zodResolver(jobSchema),
@@ -71,6 +74,7 @@ export default function JobForm({
       title: job?.title ?? '',
       position: job?.position ?? '',
       jobType: job?.jobType ?? '',
+      salaryType: (job?.salaryType as 'MONTHLY' | 'HOURLY') ?? 'MONTHLY',
       experienceLevel: job?.experienceLevel ?? '',
       location: job?.location ?? '',
       description: job?.description ?? '',
@@ -81,6 +85,15 @@ export default function JobForm({
       salaryMax: job?.salaryMax ?? undefined,
     } as any,
   })
+
+  const watchedJobType = watch('jobType')
+  const watchedSalaryType = watch('salaryType')
+  const isPartTime = watchedJobType === JobType.PART_TIME
+  const isHourly = watchedSalaryType === SalaryType.HOURLY
+
+  const salaryLabel = isHourly ? 'VND/giờ' : 'VND'
+  const salaryMinPlaceholder = isHourly ? 'VD: 50.000' : 'VD: 10.000.000'
+  const salaryMaxPlaceholder = isHourly ? 'VD: 200.000' : 'VD: 25.000.000'
 
   const formatNumber = (val: string | number) => {
     if (val === undefined || val === null || val === '') return ''
@@ -220,10 +233,33 @@ export default function JobForm({
             Lương & Thời hạn
           </h2>
 
+          {isPartTime && (
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Loại lương
+              </label>
+              <select
+                className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-800 dark:text-slate-100"
+                {...register('salaryType')}
+              >
+                {Object.values(SalaryType).map((t) => (
+                  <option key={t} value={t}>
+                    {SALARY_TYPE_LABELS[t]}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-400 mt-1">
+                {isHourly
+                  ? 'Lương nhập theo đơn vị VND/giờ. VD: 50000 → 50k/giờ'
+                  : 'Lương nhập theo đơn vị VND/tháng. VD: 10000000 → 10tr/tháng'}
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Lương tối thiểu (VND)
+                Lương tối thiểu ({salaryLabel})
               </label>
               <Controller
                 control={control}
@@ -232,7 +268,7 @@ export default function JobForm({
                   <input
                     type="text"
                     className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-800 dark:text-slate-100"
-                    placeholder="VD: 10.000.000"
+                    placeholder={salaryMinPlaceholder}
                     value={formatNumber(value ?? '')}
                     onChange={(e) => {
                       const raw = e.target.value.replace(/\D/g, '')
@@ -248,7 +284,7 @@ export default function JobForm({
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Lương tối đa (VND)
+                Lương tối đa ({salaryLabel})
               </label>
               <Controller
                 control={control}
@@ -260,7 +296,7 @@ export default function JobForm({
                     type="text"
                     inputMode="numeric"
                     className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-800 dark:text-slate-100"
-                    placeholder="VD: 25.000.000"
+                    placeholder={salaryMaxPlaceholder}
                     value={formatVND(field.value)}
                     onChange={(e) => {
                       const rawValue = parseVND(e.target.value)
