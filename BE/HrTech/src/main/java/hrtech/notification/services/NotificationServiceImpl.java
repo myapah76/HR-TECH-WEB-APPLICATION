@@ -106,12 +106,54 @@ public class NotificationServiceImpl implements INotificationService {
         try {
             User user = userService.getUserEntityByEmail(email);
             if (user != null) {
-                String title = "Hồ sơ bị từ cối";
+                String title = "Hồ sơ bị từ chối";
                 String content = "Rất tiếc, hồ sơ của bạn cho vị trí " + jobTitle + " đã bị từ chối.";
                 createAndSendNotification(user.getId(), title, content, NotificationType.APPLICATION_STATUS_UPDATED, applicationId);
             }
         } catch (Exception e) {
             log.error("Failed to create and send real-time REJECTED notification for application {}", applicationId, e);
+        }
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void sendFinalOfferAcceptedNotification(String email, String fullName, String jobTitle, String companyName, String applicationId) {
+        try {
+            emailSender.sendFinalOfferAcceptedEmailAsync(email, fullName, jobTitle, companyName);
+        } catch (Exception e) {
+            log.error("Failed to dispatch FINAL OFFER ACCEPTED email for application {} to {}", applicationId, email, e);
+        }
+
+        try {
+            User user = userService.getUserEntityByEmail(email);
+            if (user != null) {
+                String title = "Chúc mừng! Bạn đã trúng tuyển chính thức";
+                String content = "Chúc mừng! Bạn đã xuất sắc vượt qua các vòng phỏng vấn và trúng tuyển vị trí " + jobTitle + ". HR sẽ liên hệ gửi Thư mời nhận việc (Offer) sớm!";
+                createAndSendNotification(user.getId(), title, content, NotificationType.APPLICATION_STATUS_UPDATED, applicationId);
+            }
+        } catch (Exception e) {
+            log.error("Failed to create and send real-time FINAL OFFER ACCEPTED notification for application {}", applicationId, e);
+        }
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void sendFinalOfferRejectedNotification(String email, String fullName, String jobTitle, String companyName, String applicationId) {
+        try {
+            emailSender.sendFinalOfferRejectedEmailAsync(email, fullName, jobTitle, companyName);
+        } catch (Exception e) {
+            log.error("Failed to dispatch FINAL OFFER REJECTED email for application {} to {}", applicationId, email, e);
+        }
+
+        try {
+            User user = userService.getUserEntityByEmail(email);
+            if (user != null) {
+                String title = "Thông báo kết quả phỏng vấn vị trí " + jobTitle;
+                String content = "Cảm ơn bạn đã tham gia ứng tuyển vị trí " + jobTitle + ". Rất tiếc hiện tại công ty chưa thể gửi Thư mời nhận việc (Offer) đến bạn.";
+                createAndSendNotification(user.getId(), title, content, NotificationType.APPLICATION_STATUS_UPDATED, applicationId);
+            }
+        } catch (Exception e) {
+            log.error("Failed to create and send real-time FINAL OFFER REJECTED notification for application {}", applicationId, e);
         }
     }
 

@@ -35,6 +35,7 @@ interface JobInterviewsModalsProps {
   isNoShowPending?: boolean
   onCloseNoShow?: () => void
   onConfirmNoShowFail?: (reason: string) => void
+  isApprovalStep?: boolean
   // View Evaluation Result Modal
   viewingEvaluationResultCandidate?: InterviewRoundDetail | null
   onCloseViewEvaluationResult?: () => void
@@ -52,6 +53,7 @@ interface JobInterviewsModalsProps {
   finalConfirmationCandidate: InterviewRoundDetail | null
   onCloseFinalConfirmation: () => void
   onConfirmFinalResult: (appId: string, approved: boolean, note: string) => void
+  onOpenFinalConfirmationModal?: (cand: InterviewRoundDetail) => void
   // View Sent Slots Modal
   viewSlotsCandidate: InterviewRoundDetail | null
   onCloseViewSlots: () => void
@@ -62,6 +64,7 @@ export default function JobInterviewsModals({
   activeRound,
   maxRoundNumber,
   roundsConfig,
+  isApprovalStep = false,
   isSchedulerOpen,
   onCloseScheduler,
   selectedCandidateNames,
@@ -86,6 +89,7 @@ export default function JobInterviewsModals({
   finalConfirmationCandidate,
   onCloseFinalConfirmation,
   onConfirmFinalResult,
+  onOpenFinalConfirmationModal,
   viewSlotsCandidate,
   onCloseViewSlots,
 }: JobInterviewsModalsProps) {
@@ -142,7 +146,9 @@ export default function JobInterviewsModals({
         <ViewEvaluationResultModal
           candidate={viewingEvaluationResultCandidate}
           activeRound={activeRound}
+          isApprovalStep={isApprovalStep}
           onClose={onCloseViewEvaluationResult}
+          onOpenFinalConfirmationModal={onOpenFinalConfirmationModal}
         />
       )}
 

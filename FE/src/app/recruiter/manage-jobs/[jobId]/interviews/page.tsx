@@ -90,10 +90,40 @@ export default function JobInterviewsPage() {
     localOverrides
   )
 
+  const isApprovalStep = roundsConfig.length > 0 && activeRound === maxRoundNumber + 1
+
   // Filter candidates by active round and round status tab
   const candidatesInActiveRound = useMemo(() => {
+    if (isApprovalStep) {
+      const latestAppRoundMap = new Map<string, InterviewRoundDetail>()
+      candidates.forEach((c) => {
+        const existing = latestAppRoundMap.get(c.applicationId)
+        if (!existing || c.roundNumber > existing.roundNumber) {
+          latestAppRoundMap.set(c.applicationId, c)
+        }
+      })
+
+      const approvalCandidates: InterviewRoundDetail[] = []
+      latestAppRoundMap.forEach((c) => {
+        const status = c.status
+        const appStatus = c.applicationStatus || (c as any).applicationStatus
+        const isPassedOrCompleted =
+          status === 'INTERVIEW_COMPLETED' ||
+          status === 'PASSED' ||
+          status === ('ACCEPTED' as any) ||
+          status === ('REJECTED' as any) ||
+          appStatus === 'ACCEPTED' ||
+          appStatus === 'REJECTED'
+
+        if (isPassedOrCompleted) {
+          approvalCandidates.push(c)
+        }
+      })
+
+      return approvalCandidates
+    }
     return candidates.filter((c) => c.roundNumber === activeRound)
-  }, [candidates, activeRound])
+  }, [candidates, activeRound, isApprovalStep])
 
   // Lấy scheduledTime đã CONFIRMED của vòng trước (dùng cho validation slot vòng hiện tại)
   const prevRoundScheduledTime = useMemo(() => {
@@ -122,9 +152,9 @@ export default function JobInterviewsPage() {
     } else if (activeTab === 'CONFIRMED') {
       result = result.filter((c) => c.status === 'CONFIRMED' || c.status === 'ATTENDED' || c.status === 'INTERVIEW_COMPLETED')
     } else if (activeTab === 'PASSED') {
-      result = result.filter((c) => c.status === 'PASSED')
+      result = result.filter((c) => c.status === 'PASSED' || c.status === 'INTERVIEW_COMPLETED' || (c as any).applicationStatus === 'ACCEPTED')
     } else if (activeTab === 'FAILED') {
-      result = result.filter((c) => c.status === 'FAILED' || c.status === 'TERMINATED')
+      result = result.filter((c) => c.status === 'FAILED' || c.status === 'TERMINATED' || (c as any).applicationStatus === 'REJECTED')
     }
 
     if (searchQuery.trim()) {
@@ -138,6 +168,16 @@ export default function JobInterviewsPage() {
   // Tab counters for active round
   const tabCounts = useMemo(() => {
     const list = candidatesInActiveRound
+    if (isApprovalStep) {
+      return {
+        total: list.length,
+        notStarted: 0,
+        slotsSent: 0,
+        confirmed: 0,
+        passed: list.filter((c) => c.status === 'PASSED' || c.status === 'INTERVIEW_COMPLETED' || (c as any).applicationStatus === 'ACCEPTED').length,
+        failed: list.filter((c) => c.status === 'FAILED' || c.status === 'TERMINATED' || (c as any).applicationStatus === 'REJECTED').length,
+      }
+    }
     return {
       total: list.length,
       notStarted: list.filter((c) => c.status === 'NOT_STARTED').length,
@@ -146,7 +186,7 @@ export default function JobInterviewsPage() {
       passed: list.filter((c) => c.status === 'PASSED').length,
       failed: list.filter((c) => c.status === 'FAILED' || c.status === 'TERMINATED').length,
     }
-  }, [candidatesInActiveRound])
+  }, [candidatesInActiveRound, isApprovalStep])
 
   // Selection toggle handlers
   const handleToggleSelect = (id: string) => {
@@ -527,21 +567,24 @@ export default function JobInterviewsPage() {
         />
       )}
 
-      {/* Filter Tabs */}
+      {/* Filter Tabs & Search Bar */}
       <InterviewStatusFilterTabs
         activeTab={activeTab}
         onTabChange={setActiveTab}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        isApprovalStep={isApprovalStep}
         counts={tabCounts}
       />
 
-      {/* Bulk Action Bar */}
-      <InterviewsBulkActionBar
-        selectedCount={selectedIds.size}
-        onCreateGroupSchedule={handleOpenSchedulerForBulk}
-        onClearSelection={() => setSelectedIds(new Set())}
-      />
+      {/* Bulk Action Bar (chỉ hiện ở các vòng phỏng vấn) */}
+      {!isApprovalStep && (
+        <InterviewsBulkActionBar
+          selectedCount={selectedIds.size}
+          onCreateGroupSchedule={handleOpenSchedulerForBulk}
+          onClearSelection={() => setSelectedIds(new Set())}
+        />
+      )}
 
       {/* Main Candidates & Daily Confirmed Schedule Tables */}
       <JobInterviewsTable
@@ -549,6 +592,7 @@ export default function JobInterviewsPage() {
         totalItems={filteredCandidates.length}
         activeRound={activeRound}
         isConfigured={isConfigured}
+        isApprovalStep={isApprovalStep}
         selectedIds={selectedIds}
         currentPage={currentPage}
         itemsPerPage={itemsPerPage}
@@ -576,6 +620,7 @@ export default function JobInterviewsPage() {
         activeRound={activeRound}
         maxRoundNumber={maxRoundNumber}
         roundsConfig={roundsConfig}
+        isApprovalStep={isApprovalStep}
         isSchedulerOpen={isSchedulerOpen}
         onCloseScheduler={() => setIsSchedulerOpen(false)}
         selectedCandidateNames={candidatesInActiveRound
@@ -602,6 +647,7 @@ export default function JobInterviewsPage() {
         finalConfirmationCandidate={finalConfirmationCandidate}
         onCloseFinalConfirmation={() => setFinalConfirmationCandidate(null)}
         onConfirmFinalResult={handleConfirmFinalResult}
+        onOpenFinalConfirmationModal={setFinalConfirmationCandidate}
         viewSlotsCandidate={viewSlotsCandidate}
         onCloseViewSlots={() => setViewSlotsCandidate(null)}
       />

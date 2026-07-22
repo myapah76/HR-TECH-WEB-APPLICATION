@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body style="font-family: Verdana, sans-serif; background-color: #f8f1e7; padding: 40px;">
+
+<div style="max-width: 520px; margin: auto; background: #fff;
+            border-radius: 16px; padding: 30px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);">
+
+    <h1 style="text-align:center; color:#4b2e2a;">HR Tech</h1>
+
+    <h2 style="color:#c62828;">Thông Báo Về Kết Quả Ứng Tuyển</h2>
+
+    <p>Xin chào <span th:text="${fullName}"></span>,</p>
+
+    <p>
+        Chân thành cảm ơn bạn đã dành thời gian và tâm huyết tham gia hoàn thành tất cả các vòng phỏng vấn cho vị trí
+        <b th:text="${jobTitle}"></b>
+        <span th:if="${companyName != null}">
+            tại <b th:text="${companyName}"></b>
+        </span>.
+    </p>
+
+    <div style="background:#fbe9e7; border-left: 4px solid #c62828; padding:18px; border-radius:12px; margin:24px 0;">
+        <p style="margin:0; color:#b71c1c; font-weight:600;">
+            Hội đồng tuyển dụng đánh giá rất cao năng lực và sự thể hiện của bạn qua các vòng phỏng vấn vừa qua. Tuy nhiên, sau khi cân nhắc kỹ lưỡng về tiêu chí và số lượng định biên hiện tại, rất tiếc chúng tôi chưa thể gửi Thư mời nhận việc đến bạn ở thời điểm này.
+        </p>
+    </div>
+
+    <p style="color:#666;">
+        Hồ sơ của bạn đã được lưu lại trên hệ thống dữ liệu Talent Pool của công ty. Chúng tôi sẽ chủ động liên hệ lại khi có những cơ hội nghề nghiệp phù hợp hơn trong tương lai.
+    </p>
+    <p style="color:#666;">Chúc bạn luôn gặt hái được nhiều thành công trên hành trình sự nghiệp!</p>
+
+    <div th:replace="~{email/fragments/footer :: footer}"></div>
+
+</div>
+</body>
+</html>

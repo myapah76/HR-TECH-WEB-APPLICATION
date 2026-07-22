@@ -12,6 +12,8 @@ public interface INotificationService {
     void OtpNotificationHandler(OtpNotificationRequest request);
     void sendApplicationAcceptedNotification(String email, String fullName, String jobTitle, String companyName, String applicationId);
     void sendApplicationRejectedNotification(String email, String fullName, String jobTitle, String companyName, String applicationId);
+    void sendFinalOfferAcceptedNotification(String email, String fullName, String jobTitle, String companyName, String applicationId);
+    void sendFinalOfferRejectedNotification(String email, String fullName, String jobTitle, String companyName, String applicationId);
     void sendInterviewScheduleNotification(String email, String fullName, String jobTitle, String roundName, String companyName, String applicationId);
 
     SseEmitter createConnection(UUID userId);

@@ -1396,9 +1396,34 @@ public class ApplicationServiceImpl implements IApplicationService {
         }
 
         app = applicationRepository.save(app);
-        notifyCandidateStatusAfterCommit(app, app.getStatus());
+        notifyCandidateFinalOfferAfterCommit(app, Boolean.TRUE.equals(request.getApproved()));
 
         return applicationMapper.toSummaryResponse(app);
+    }
+
+    private void notifyCandidateFinalOfferAfterCommit(Application application, boolean approved) {
+        String email = application.getUser().getEmail();
+        String fullName = buildFullName(application.getUser());
+        String jobTitle = application.getJob() != null ? application.getJob().getTitle() : null;
+        String companyName = (application.getJob() != null && application.getJob().getCompany() != null)
+                ? application.getJob().getCompany().getName()
+                : null;
+        String appIdStr = application.getId().toString();
+
+        Runnable notificationTask = approved
+                ? () -> notificationService.sendFinalOfferAcceptedNotification(email, fullName, jobTitle, companyName, appIdStr)
+                : () -> notificationService.sendFinalOfferRejectedNotification(email, fullName, jobTitle, companyName, appIdStr);
+
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    notificationTask.run();
+                }
+            });
+        } else {
+            notificationTask.run();
+        }
     }
 
     @Override

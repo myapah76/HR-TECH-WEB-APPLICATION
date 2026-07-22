@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, Award } from 'lucide-react'
 import { InterviewRoundConfig } from '@/src/types/recruiter-interview'
 
 interface InterviewRoundsPanelProps {
@@ -58,7 +58,7 @@ export default function InterviewRoundsPanel({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-              Quy trình các vòng phỏng vấn ({roundsConfig.length} vòng)
+              Quy trình các vòng phỏng vấn ({roundsConfig.length} vòng + Duyệt Cuối)
             </span>
             <button
               type="button"
@@ -102,6 +102,39 @@ export default function InterviewRoundsPanel({
                 </button>
               )
             })}
+
+            {/* Final Approval Step Tab */}
+            {(() => {
+              const approvalRoundNumber = roundsConfig.length + 1
+              const isApprovalActive = activeRound === approvalRoundNumber
+              return (
+                <button
+                  type="button"
+                  onClick={() => onRoundClick(approvalRoundNumber)}
+                  className={`flex-1 flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all cursor-pointer border min-w-0 ${
+                    isApprovalActive
+                      ? 'bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-600/20'
+                      : 'bg-amber-50/70 dark:bg-amber-950/30 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-900/60 hover:bg-amber-100/80'
+                  }`}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
+                      isApprovalActive
+                        ? 'bg-white text-amber-600'
+                        : 'bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300'
+                    }`}
+                  >
+                    <Award className="w-4 h-4" />
+                  </div>
+                  <div className="text-left min-w-0 flex-1">
+                    <p className="font-bold text-xs leading-tight truncate">Duyệt Tuyển Dụng</p>
+                    <p className="text-[10px] opacity-80 font-medium truncate mt-0.5">
+                      Duyệt trúng tuyển / Từ chối
+                    </p>
+                  </div>
+                </button>
+              )
+            })()}
           </div>
         </div>
       )}

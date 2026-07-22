@@ -57,6 +57,12 @@ const statusConfig: Record<string, { label: string; bg: string; text: string; bo
     text: 'text-purple-700',
     border: 'border-purple-100/40',
   },
+  ACCEPTED: {
+    label: 'ĐÃ TRÚNG TUYỂN (OFFER)',
+    bg: 'bg-emerald-100 dark:bg-emerald-950/80',
+    text: 'text-emerald-800 dark:text-emerald-300 font-black',
+    border: 'border-emerald-300 dark:border-emerald-800',
+  },
   REJECTED: {
     label: 'Từ chối',
     bg: 'bg-rose-50/70',
@@ -104,7 +110,8 @@ export default function AppliedJobCard({
     (app.status as string) === 'RESCHEDULE_REQUESTED' ||
     (app.status as string) === 'RESCHEDULE_REJECTED' ||
     (app.status as string) === 'PENDING_INTERVIEW_SCHEDULE' ||
-    (app.status as string) === 'CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE'
+    (app.status as string) === 'CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE' ||
+    (app.status as string) === 'ACCEPTED'
 
   const statusInfo = statusConfig[app.status] || {
     label: app.status,
@@ -255,6 +262,7 @@ export default function AppliedJobCard({
           <CandidateInterviewRoundsSection
             applicationId={app.id}
             jobTitle={app.jobTitle}
+            applicationStatus={app.status}
             enabled={hasInterviewSchedule}
             onOpenChangeSchedule={(roundNum) => onOpenChangeSchedule(app.id, roundNum)}
           />

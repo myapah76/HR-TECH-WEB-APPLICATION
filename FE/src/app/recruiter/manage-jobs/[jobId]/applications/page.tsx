@@ -43,7 +43,6 @@ export default function JobApplicationsPage() {
     itemsPerPage,
     undefined
   )
-  const apiApplications: ApplicationSummaryResponse[] = pageData?.content ?? []
 
   // Local state mirror
   const [localApplications, setLocalApplications] = useState<ApplicationSummaryResponse[]>([])
@@ -68,17 +67,22 @@ export default function JobApplicationsPage() {
 
   // Automatically detect if any application has already been scored
   const isAnyScored = useMemo(
-    () => localApplications.some((app) => app.overallScore !== undefined && app.overallScore !== null),
+    () =>
+      localApplications.some((app) => app.overallScore !== undefined && app.overallScore !== null),
     [localApplications]
   )
 
   // Count unscored (chưa có overallScore)
   const unscoredCount = useMemo(
-    () => localApplications.filter((app) => app.overallScore === undefined || app.overallScore === null).length,
+    () =>
+      localApplications.filter((app) => app.overallScore === undefined || app.overallScore === null)
+        .length,
     [localApplications]
   )
 
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'SUBMITTED' | 'SCORED' | 'ACCEPTED' | 'INTERVIEW' | 'REJECTED'>('ALL')
+  const [statusFilter, setStatusFilter] = useState<
+    'ALL' | 'SUBMITTED' | 'SCORED' | 'ACCEPTED' | 'INTERVIEW' | 'REJECTED'
+  >('ALL')
   const [showAiPanel, setShowAiPanel] = useState<boolean>(false)
 
   // Status counts
@@ -152,7 +156,9 @@ export default function JobApplicationsPage() {
 
           const parts: string[] = [`✅ Đã phân tích ${data.totalScored} CV thành công.`]
           if (data.autoRejectedCount > 0)
-            parts.push(`🚫 Tự động từ chối ${data.autoRejectedCount} CV dưới ${options.thresholdPercent}%.`)
+            parts.push(
+              `🚫 Tự động từ chối ${data.autoRejectedCount} CV dưới ${options.thresholdPercent}%.`
+            )
           if (data.aboveThresholdCount > 0)
             parts.push(`🎯 ${data.aboveThresholdCount} CV đạt ngưỡng.`)
           if (data.failedCount > 0)

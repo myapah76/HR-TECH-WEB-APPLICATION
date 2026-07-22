@@ -12,6 +12,7 @@ interface JobInterviewsTableProps {
   totalItems: number
   activeRound: number
   isConfigured: boolean
+  isApprovalStep?: boolean
   selectedIds: Set<string>
   currentPage: number
   itemsPerPage: number
@@ -35,6 +36,7 @@ export default function JobInterviewsTable({
   totalItems,
   activeRound,
   isConfigured,
+  isApprovalStep = false,
   selectedIds,
   currentPage,
   itemsPerPage,
@@ -108,49 +110,177 @@ export default function JobInterviewsTable({
     <div className="space-y-8">
       {/* ── BẢNG DANH SÁCH ỨNG VIÊN CHÍNH ───────────────────────────────────── */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xs">
+        {/* Banner dành riêng cho bước Duyệt Tuyển Dụng Cuối */}
+        {isApprovalStep && (
+          <div className="p-4 bg-amber-50/80 dark:bg-amber-950/40 border-b border-amber-200/80 dark:border-amber-900/60 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Award className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-amber-900 dark:text-amber-200 uppercase tracking-wide">
+                  Bảng Duyệt Kết Quả Tuyển Dụng Cuối Cùng
+                </h4>
+                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">
+                  Danh sách các ứng viên đã vượt qua tất cả các vòng phỏng vấn. Bạn có thể xem đánh giá chi tiết từng vòng và thực hiện quyết định Duyệt Trúng Tuyển hoặc Từ Chối.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                <th className="py-3 px-4 w-10 text-center">
-              {(() => {
-                const schedulableCandidates = candidates.filter((c) => c.status === 'NOT_STARTED')
-                const isAllSchedulableChecked =
-                  schedulableCandidates.length > 0 &&
-                  schedulableCandidates.every((c) => selectedIds.has(c.applicationId))
+                {!isApprovalStep && (
+                  <th className="py-3 px-4 w-10 text-center">
+                    {(() => {
+                      const schedulableCandidates = candidates.filter((c) => c.status === 'NOT_STARTED')
+                      const isAllSchedulableChecked =
+                        schedulableCandidates.length > 0 &&
+                        schedulableCandidates.every((c) => selectedIds.has(c.applicationId))
 
-                return (
-                  <input
-                    type="checkbox"
-                    disabled={!isConfigured || schedulableCandidates.length === 0}
-                    checked={isAllSchedulableChecked}
-                    onChange={(e) => onToggleSelectAll(e.target.checked)}
-                    className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer disabled:opacity-40"
-                    title="Tích chọn tất cả ứng viên chưa xếp lịch"
-                  />
-                )
-              })()}
-                </th>
+                      return (
+                        <input
+                          type="checkbox"
+                          disabled={!isConfigured || schedulableCandidates.length === 0}
+                          checked={isAllSchedulableChecked}
+                          onChange={(e) => onToggleSelectAll(e.target.checked)}
+                          className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer disabled:opacity-40"
+                          title="Tích chọn tất cả ứng viên chưa xếp lịch"
+                        />
+                      )
+                    })()}
+                  </th>
+                )}
                 <th className="py-3 px-3 text-center w-12">STT</th>
                 <th className="py-3 px-4">Ứng viên &amp; Vị trí</th>
-                <th className="py-3 px-4">Vòng phỏng vấn</th>
-                <th className="py-3 px-4">Trạng thái phỏng vấn</th>
-                <th className="py-3 px-4">Thời gian phỏng vấn</th>
-                <th className="py-3 px-4">Số lần đổi lịch</th>
+                {isApprovalStep ? (
+                  <>
+                    <th className="py-3 px-4">Lịch sử đánh giá các vòng</th>
+                    <th className="py-3 px-4">Trạng thái tuyển dụng</th>
+                  </>
+                ) : (
+                  <>
+                    <th className="py-3 px-4">Vòng phỏng vấn</th>
+                    <th className="py-3 px-4">Trạng thái phỏng vấn</th>
+                    <th className="py-3 px-4">Thời gian phỏng vấn</th>
+                    <th className="py-3 px-4">Số lần đổi lịch</th>
+                  </>
+                )}
                 <th className="py-3 px-4 text-right">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
               {candidates.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 font-semibold">
-                    Không tìm thấy ứng viên nào phù hợp trong vòng này.
+                  <td colSpan={isApprovalStep ? 5 : 8} className="py-12 text-center text-slate-400 font-semibold">
+                    {isApprovalStep
+                      ? 'Chưa có ứng viên nào hoàn thành tất cả các vòng phỏng vấn để chờ duyệt.'
+                      : 'Không tìm thấy ứng viên nào phù hợp trong vòng này.'}
                   </td>
                 </tr>
               ) : (
                 candidates.map((cand, idx) => {
                   const isSelected = selectedIds.has(cand.applicationId)
                   const canSchedule = cand.status === 'NOT_STARTED'
+
+                  if (isApprovalStep) {
+                    const allHistory = [
+                      ...(cand.previousRoundsHistory || []),
+                      ...(cand.rating || cand.feedbackNote
+                        ? [
+                            {
+                              roundNumber: activeRound - 1 > 0 ? activeRound - 1 : cand.roundNumber,
+                              roundName: cand.roundName || `Vòng ${cand.roundNumber}`,
+                              rating: cand.rating || 0,
+                              feedbackNote: cand.feedbackNote || '',
+                            },
+                          ]
+                        : []),
+                    ]
+
+                    const isFinalApproved = cand.status === ('ACCEPTED' as any) || (cand as any).applicationStatus === 'ACCEPTED'
+                    const isFinalRejected = cand.status === 'FAILED' || cand.status === ('REJECTED' as any) || (cand as any).applicationStatus === 'REJECTED'
+
+                    return (
+                      <tr
+                        key={cand.id}
+                        className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                      >
+                        <td className="py-3.5 px-3 text-center font-bold text-slate-400">
+                          {(currentPage - 1) * itemsPerPage + idx + 1}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-slate-900 dark:text-slate-100">
+                            {cand.candidateName}
+                          </div>
+                          <div className="text-[11px] font-medium text-slate-500">
+                            {cand.jobTitle}
+                          </div>
+                        </td>
+
+                        {/* Đánh giá các vòng */}
+                        <td className="py-3.5 px-4">
+                          <div className="flex flex-wrap gap-1.5 items-center max-w-md">
+                            {allHistory.length > 0 ? (
+                              allHistory.map((h, i) => (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-extrabold border border-slate-200 dark:border-slate-700"
+                                >
+                                  <span>{h.roundName}:</span>
+                                  <span className="text-amber-500 flex items-center gap-0.5">
+                                    <Star className="w-3 h-3 fill-amber-400" />
+                                    {h.rating}/5
+                                  </span>
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-slate-400 text-xs italic">Đã đạt các vòng phỏng vấn</span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Trạng thái duyệt */}
+                        <td className="py-3.5 px-4">
+                          {isFinalApproved ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 text-xs font-black text-emerald-700 dark:text-emerald-300">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              Đã Duyệt Trúng Tuyển (ACCEPTED)
+                            </span>
+                          ) : isFinalRejected ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 text-xs font-black text-rose-700 dark:text-rose-300">
+                              <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                              Đã Từ Chối (REJECTED)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 text-xs font-black text-amber-700 dark:text-amber-300 animate-pulse">
+                              <Award className="w-3.5 h-3.5 text-amber-500" />
+                              Chờ HR Duyệt Tuyển Dụng
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Hành động Xem Chi Tiết */}
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => onOpenViewEvaluationResult?.(cand)}
+                              className="px-3.5 py-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 border border-blue-200 dark:border-blue-800 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+                              title="Xem chi tiết nhận xét & điểm từng vòng"
+                            >
+                              <Award className="w-3.5 h-3.5 text-blue-600" />
+                              <span>Xem Đánh Giá Chi Tiết</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  }
+
                   return (
                     <tr
                       key={cand.id}
@@ -260,18 +390,25 @@ export default function JobInterviewsTable({
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {/* Always allow viewing previous rounds history if available */}
-                          {cand.previousRoundsHistory && cand.previousRoundsHistory.length > 0 && cand.status !== 'PASSED' && cand.status !== 'FAILED' && cand.status !== 'TERMINATED' && (
-                            <button
-                              type="button"
-                              onClick={() => onOpenViewEvaluationResult?.(cand)}
-                              className="px-2.5 py-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 border border-blue-200 dark:border-blue-800 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1 shadow-xs shrink-0"
-                              title="Xem kết quả đánh giá các vòng trước"
-                            >
-                              <Award className="w-3.5 h-3.5 text-blue-600" />
-                              <span>Xem KQ Vòng trước</span>
-                            </button>
-                          )}
+                          {/* Xem lịch sử vòng trước (chỉ hiện khi đang phỏng vấn vòng sau, ẩn khi đã có nút Xem kết quả đánh giá) */}
+                          {cand.previousRoundsHistory &&
+                            cand.previousRoundsHistory.length > 0 &&
+                            cand.status !== 'PASSED' &&
+                            cand.status !== 'INTERVIEW_COMPLETED' &&
+                            cand.status !== 'FAILED' &&
+                            cand.status !== 'TERMINATED' &&
+                            (cand as any).applicationStatus !== 'ACCEPTED' &&
+                            (cand as any).applicationStatus !== 'REJECTED' && (
+                              <button
+                                type="button"
+                                onClick={() => onOpenViewEvaluationResult?.(cand)}
+                                className="px-2.5 py-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 border border-blue-200 dark:border-blue-800 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1 shadow-xs shrink-0"
+                                title="Xem kết quả đánh giá các vòng trước"
+                              >
+                                <Award className="w-3.5 h-3.5 text-blue-600" />
+                                <span>Xem KQ Vòng trước</span>
+                              </button>
+                            )}
 
                           {!isConfigured ? (
                             <button
@@ -303,47 +440,7 @@ export default function JobInterviewsTable({
                               <AlertTriangle className="w-3.5 h-3.5" />
                               <span>Duyệt xin đổi lịch ({cand.rescheduleCount}/3)</span>
                             </button>
-                          ) : cand.status === 'INTERVIEW_COMPLETED' ? (
-                            <button
-                              type="button"
-                              onClick={() => onOpenFinalConfirmationModal(cand)}
-                              className="px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1 shadow-xs"
-                            >
-                              <Award className="w-3.5 h-3.5" />
-                              <span>Duyệt Kết Quả Cuối Cùng</span>
-                            </button>
-                          ) : cand.status === 'CONFIRMED' ? (
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => onCheckInCandidate(cand)}
-                                className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
-                                title="Xác nhận ứng viên đã có mặt tham dự phỏng vấn"
-                              >
-                                <UserCheck className="w-3.5 h-3.5" />
-                                <span>Check-in (Điểm danh)</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => (onOpenNoShowConfirmModal ? onOpenNoShowConfirmModal(cand) : onOpenEvaluationModal(cand))}
-                                className="px-3 py-1.5 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
-                                title="Đánh Fail trực tiếp nếu ứng viên không đến phỏng vấn (vắng mặt)"
-                              >
-                                <XCircle className="w-3.5 h-3.5 text-rose-600" />
-                                <span>Đánh Fail (Vắng mặt)</span>
-                              </button>
-                            </div>
-                          ) : cand.status === 'ATTENDED' ? (
-                            <button
-                              type="button"
-                              onClick={() => onOpenEvaluationModal(cand)}
-                              className="px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
-                              title="Chấm điểm & nhận xét chuyên môn"
-                            >
-                              <Star className="w-3.5 h-3.5 fill-white" />
-                              <span>Đánh giá Vòng {activeRound}</span>
-                            </button>
-                          ) : cand.status === 'PASSED' || cand.status === 'FAILED' || cand.status === 'TERMINATED' ? (
+                          ) : cand.status === 'INTERVIEW_COMPLETED' || cand.status === 'PASSED' || cand.status === 'FAILED' || cand.status === 'TERMINATED' ? (
                             <button
                               type="button"
                               onClick={() => onOpenViewEvaluationResult?.(cand)}

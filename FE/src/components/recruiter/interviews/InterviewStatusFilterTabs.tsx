@@ -10,6 +10,7 @@ interface InterviewStatusFilterTabsProps {
   onTabChange: (tab: InterviewStatusTab) => void
   searchQuery: string
   onSearchChange: (query: string) => void
+  isApprovalStep?: boolean
   counts: {
     total: number
     notStarted: number
@@ -25,6 +26,7 @@ export default function InterviewStatusFilterTabs({
   onTabChange,
   searchQuery,
   onSearchChange,
+  isApprovalStep = false,
   counts,
 }: InterviewStatusFilterTabsProps) {
   const tabs = [
@@ -68,24 +70,43 @@ export default function InterviewStatusFilterTabs({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-      {/* Filter tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => onTabChange(tab.id)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                isActive ? tab.activeColor : tab.inactiveColor
-              }`}
-            >
-              {tab.label}
-            </button>
-          )
-        })}
-      </div>
+      {isApprovalStep ? (
+        /* Bên trái ở tab Duyệt Tuyển Dụng: Hiện tổng số ứng viên thay thế cho các tabs status */
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className="px-3.5 py-2 rounded-xl text-xs font-black bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 shadow-2xs">
+            Tổng số: {counts.total} ứng viên
+          </span>
+          {counts.passed > 0 && (
+            <span className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              Đã duyệt: {counts.passed}
+            </span>
+          )}
+          {counts.failed > 0 && (
+            <span className="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+              Từ chối: {counts.failed}
+            </span>
+          )}
+        </div>
+      ) : (
+        /* Filter tabs cho các vòng phỏng vấn */
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => onTabChange(tab.id)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  isActive ? tab.activeColor : tab.inactiveColor
+                }`}
+              >
+                {tab.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* Search Input Box */}
       <div className="relative w-full sm:w-72">

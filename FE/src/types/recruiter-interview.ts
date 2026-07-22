@@ -53,6 +53,7 @@ export interface InterviewRoundDetail {
   roundNumber: number
   roundName: string
   status: InterviewRoundStatus
+  applicationStatus?: string
   scheduledTime?: string
   slots?: AvailableSlot[]
   candidatePreferredTime?: string

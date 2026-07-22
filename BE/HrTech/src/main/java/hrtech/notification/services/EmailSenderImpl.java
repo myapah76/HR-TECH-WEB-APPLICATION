@@ -135,6 +135,54 @@ public class EmailSenderImpl implements IEmailSender {
 
     @Override
     @Async
+    public CompletableFuture<Void> sendFinalOfferAcceptedEmailAsync(
+            String toEmail,
+            String fullName,
+            String jobTitle,
+            String companyName) {
+        try {
+            Context context = new Context();
+            context.setVariable("fullName", fullName);
+            context.setVariable("jobTitle", jobTitle);
+            context.setVariable("companyName", companyName);
+            context.setVariable("year", Year.now().getValue());
+
+            String html = templateEngine.process("email/final-offer-accepted", context);
+            sendHtmlEmail(toEmail, "Thông Báo Trúng Tuyển Chính Thức - " + jobTitle, html);
+
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            log.error("Failed to send final offer accepted email to {}", toEmail, e);
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    @Override
+    @Async
+    public CompletableFuture<Void> sendFinalOfferRejectedEmailAsync(
+            String toEmail,
+            String fullName,
+            String jobTitle,
+            String companyName) {
+        try {
+            Context context = new Context();
+            context.setVariable("fullName", fullName);
+            context.setVariable("jobTitle", jobTitle);
+            context.setVariable("companyName", companyName);
+            context.setVariable("year", Year.now().getValue());
+
+            String html = templateEngine.process("email/final-offer-rejected", context);
+            sendHtmlEmail(toEmail, "Thông Báo Kết Quả Phỏng Vấn - " + jobTitle, html);
+
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            log.error("Failed to send final offer rejected email to {}", toEmail, e);
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    @Override
+    @Async
     public CompletableFuture<Void> sendInterviewScheduleEmailAsync(
             String toEmail,
             String fullName,

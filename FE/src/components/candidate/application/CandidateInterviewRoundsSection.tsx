@@ -21,6 +21,7 @@ import { formatDateTime, getErrorMessage } from '@/src/utils'
 interface CandidateInterviewRoundsSectionProps {
   applicationId: string
   jobTitle: string
+  applicationStatus?: string
   enabled?: boolean
   onOpenChangeSchedule: (roundNumber: number) => void
 }
@@ -60,6 +61,7 @@ function formatSlotTimeRange(startTimeIso: string, endTimeIso?: string) {
 export default function CandidateInterviewRoundsSection({
   applicationId,
   jobTitle,
+  applicationStatus,
   enabled = true,
   onOpenChangeSchedule,
 }: CandidateInterviewRoundsSectionProps) {
@@ -118,9 +120,28 @@ export default function CandidateInterviewRoundsSection({
     currentViewRound.status === 'PASSED' || currentViewRound.status === 'INTERVIEW_COMPLETED'
   const isFailed = currentViewRound.status === 'FAILED' || currentViewRound.status === 'TERMINATED'
   const isNotStarted = currentViewRound.status === 'NOT_STARTED'
+  const isFinalAccepted = applicationStatus === 'ACCEPTED'
 
   return (
     <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
+      {/* Banner Chúc Mừng Trúng Tuyển (ACCEPTED) */}
+      {isFinalAccepted && (
+        <div className="p-4.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white shadow-lg shadow-emerald-600/20 space-y-2 border border-emerald-400/40">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-400 text-amber-950 flex items-center justify-center shrink-0 font-black shadow-xs">
+              🎉
+            </div>
+            <h4 className="font-black text-sm uppercase tracking-wide text-amber-300">
+              Chúc Mừng! Bạn Đã Xuất Sắc Trúng Tuyển Chính Thức!
+            </h4>
+          </div>
+          <p className="text-xs font-medium text-emerald-50 leading-relaxed pl-10">
+            Hồ sơ ứng tuyển và sự thể hiện qua các vòng phỏng vấn của bạn cho vị trí <strong>{jobTitle}</strong> đã được Nhà tuyển dụng phê duyệt thành công. Bộ phận Nhân sự (HR) sẽ sớm liên hệ gửi Thư mời nhận việc (Job Offer) và trao đổi chi tiết đến bạn!
+          </p>
+        </div>
+      )}
+
+      {/* ── 1. Visual Round Stepper / Tabs Bar ── */}
       {/* ── 1. Visual Round Stepper / Tabs Bar ── */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">

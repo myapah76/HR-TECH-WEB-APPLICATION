@@ -159,7 +159,7 @@ export default function InterviewEvaluationModal({
             onClick={handlePassClick}
             className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl cursor-pointer"
           >
-            {isFinalRound ? 'Đạt - Complete Tất Cả Vòng' : 'Đạt - Nâng Vòng Kế Tiếp'}
+            {isFinalRound ? 'Đạt - Hoàn Thành Các Vòng' : 'Đạt - Nâng Vòng Kế Tiếp'}
           </Button>
         </div>
       </div>
