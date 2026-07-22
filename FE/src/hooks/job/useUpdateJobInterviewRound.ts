@@ -12,8 +12,5 @@ export const useUpdateJobInterviewRound = (jobId: string) => {
       queryClient.invalidateQueries({ queryKey: ['job-interview-rounds', jobId] })
       toast.success('Đã cập nhật thông tin vòng phỏng vấn!')
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.message || 'Không thể cập nhật vòng phỏng vấn.')
-    },
   })
 }

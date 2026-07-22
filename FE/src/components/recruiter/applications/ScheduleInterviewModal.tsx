@@ -62,7 +62,7 @@ export default function ScheduleInterviewModal({
               required
               value={interviewDateTime}
               onChange={(e) => onDateTimeChange(e.target.value)}
-              className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
+              className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
             />
           </label>
 
@@ -76,7 +76,7 @@ export default function ScheduleInterviewModal({
               value={interviewLocation}
               onChange={(e) => onLocationChange(e.target.value)}
               placeholder="VD: Văn phòng công ty, tầng 5"
-              className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
+              className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
             />
           </label>
 
@@ -90,7 +90,7 @@ export default function ScheduleInterviewModal({
               value={interviewMeetingLink}
               onChange={(e) => onMeetingLinkChange(e.target.value)}
               placeholder="https://meet.google.com/..."
-              className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
+              className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
             />
           </label>
 
@@ -104,7 +104,7 @@ export default function ScheduleInterviewModal({
               onChange={(e) => onNoteChange(e.target.value)}
               rows={3}
               placeholder="Thông tin cần chuẩn bị, người liên hệ..."
-              className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 resize-none"
+              className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 resize-none"
             />
           </label>
         </div>
@@ -124,7 +124,7 @@ export default function ScheduleInterviewModal({
               !interviewDateTime ||
               (!interviewLocation.trim() && !interviewMeetingLink.trim())
             }
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
             Gửi lịch phỏng vấn

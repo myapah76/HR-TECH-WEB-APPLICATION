@@ -10,8 +10,5 @@ export const useDeleteJobInterviewRound = (jobId: string) => {
       queryClient.invalidateQueries({ queryKey: ['job-interview-rounds', jobId] })
       toast.success('Đã xóa vòng phỏng vấn!')
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.message || 'Không thể xóa vòng phỏng vấn.')
-    },
   })
 }

@@ -83,28 +83,21 @@ export default function InterviewRoundConfigModal({
     }
   }
 
-  const handleSaveRoundsConfig = async () => {
-    try {
-      for (const round of tempRounds) {
-        if (round.id && !round.id.startsWith('temp-')) {
-          const original = roundsConfig.find((r) => r.id === round.id)
-          if (
-            original &&
-            (original.roundName !== round.roundName || original.description !== round.description)
-          ) {
-            await updateRoundMutation.mutateAsync({
-              roundId: round.id,
-              payload: {
-                roundName: round.roundName,
-                description: round.description,
-              },
-            })
-          }
-        }
-      }
-      onClose()
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi lưu cấu hình.')
+  const handleBlurUpdateRound = (round: InterviewRoundConfig) => {
+    if (!round.id || round.id.startsWith('temp-')) return
+    const original = roundsConfig.find((r) => r.id === round.id)
+    if (
+      original &&
+      (original.roundName !== round.roundName || original.description !== round.description) &&
+      round.roundName.trim() !== ''
+    ) {
+      updateRoundMutation.mutate({
+        roundId: round.id,
+        payload: {
+          roundName: round.roundName.trim(),
+          description: round.description?.trim(),
+        },
+      })
     }
   }
 
@@ -162,6 +155,7 @@ export default function InterviewRoundConfigModal({
                       prev.map((r, i) => (i === idx ? { ...r, roundName: val } : r))
                     )
                   }}
+                  onBlur={() => handleBlurUpdateRound(round)}
                   className="w-full px-3 py-2 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500"
                 />
               </div>
@@ -177,6 +171,7 @@ export default function InterviewRoundConfigModal({
                       prev.map((r, i) => (i === idx ? { ...r, description: val } : r))
                     )
                   }}
+                  onBlur={() => handleBlurUpdateRound(round)}
                   placeholder="Ví dụ: Kiểm tra kỹ năng chuyên môn & Live Coding..."
                   className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500"
                 />
@@ -242,21 +237,13 @@ export default function InterviewRoundConfigModal({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
+        <div className="flex items-center justify-end border-t border-slate-100 dark:border-slate-800 pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
+            className="px-5 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer transition-colors"
           >
-            Hủy bỏ
-          </button>
-          <button
-            type="button"
-            onClick={handleSaveRoundsConfig}
-            disabled={updateRoundMutation.isPending}
-            className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs disabled:opacity-50 cursor-pointer"
-          >
-            {updateRoundMutation.isPending ? 'Đang lưu...' : 'Lưu thay đổi'}
+            Đóng
           </button>
         </div>
       </div>

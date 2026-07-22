@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, Loader2 } from 'lucide-react'
+import { X, Loader2, RefreshCw, Calendar, Clock, AlertCircle } from 'lucide-react'
 import { formatDateTime } from '@/src/utils'
 
 const HOURLY_OPTIONS = [
@@ -45,68 +45,84 @@ export default function CandidateRescheduleModal({
 
   if (!isOpen) return null
 
-  const handleConfirm = () => {
+  const handleConfirm = (e: React.FormEvent) => {
+    e.preventDefault()
     onSubmit(preferredDate, preferredHour, reason)
   }
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 py-8"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden"
+        className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-5">
-          <div className="space-y-1">
-            <h2 className="text-lg font-black text-slate-900">Change schedule</h2>
-            <p className="text-xs font-semibold text-slate-500">{jobTitle}</p>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-2xl border border-amber-100 dark:border-amber-900">
+              <RefreshCw className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-base sm:text-lg">
+                Đề xuất đổi lịch phỏng vấn
+              </h3>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate max-w-xs sm:max-w-sm">
+                Vị trí: {jobTitle}
+              </p>
+            </div>
           </div>
           <button
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-50 hover:text-slate-700 disabled:opacity-60 cursor-pointer"
-            aria-label="Close change schedule popup"
+            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+            aria-label="Đóng popup"
           >
-            <X className="h-4 w-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="space-y-4 p-5">
+        {/* Form Body */}
+        <form onSubmit={handleConfirm} className="p-6 space-y-5">
           {currentInterviewTime && (
-            <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
-              <p className="text-[11px] font-black uppercase tracking-widest text-indigo-500">
-                Current interview schedule
-              </p>
-              <p className="mt-1 text-sm font-extrabold text-slate-800">
+            <div className="rounded-2xl border border-amber-200/80 bg-amber-50/70 dark:bg-amber-950/30 p-4 space-y-1">
+              <span className="text-[11px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                Lịch phỏng vấn hiện tại
+              </span>
+              <p className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
                 {formatDateTime(currentInterviewTime)}
               </p>
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
-                1. Ngày phỏng vấn mong muốn
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                1. Ngày phỏng vấn mới
               </label>
               <input
                 type="date"
+                required
                 min={new Date().toISOString().split('T')[0]}
                 value={preferredDate}
                 onChange={(e) => setPreferredDate(e.target.value)}
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-amber-300 focus:ring-4 focus:ring-amber-100"
+                className="w-full px-3.5 py-2.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/50"
               />
             </div>
-            <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
-                2. Mốc giờ phỏng vấn (Giờ tròn)
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-blue-600" />
+                2. Mốc giờ bắt đầu
               </label>
               <select
                 value={preferredHour}
                 onChange={(e) => setPreferredHour(e.target.value)}
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-amber-300 focus:ring-4 focus:ring-amber-100 cursor-pointer"
+                className="w-full px-3.5 py-2.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/50 cursor-pointer"
               >
                 {HOURLY_OPTIONS.map((hour) => (
                   <option key={hour} value={hour}>
@@ -117,40 +133,42 @@ export default function CandidateRescheduleModal({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="schedule-change-reason" className="block text-xs font-black uppercase tracking-wider text-slate-600">
-              Reason
+          <div className="space-y-1.5">
+            <label htmlFor="schedule-change-reason" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+              Lý do bạn muốn đổi lịch
             </label>
             <textarea
               id="schedule-change-reason"
+              required
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              rows={4}
-              className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none transition focus:border-amber-300 focus:ring-4 focus:ring-amber-100"
-              placeholder="Nhập lý do bạn muốn đổi lịch phỏng vấn"
+              rows={3}
+              className="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs font-medium text-slate-800 dark:text-slate-100 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/50"
+              placeholder="Nhập lý do chi tiết (ví dụ: bận lịch thi/trùng lịch công việc...)"
             />
           </div>
-        </div>
 
-        <div className="flex flex-col-reverse gap-2 border-t border-slate-100 p-5 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isLoading}
-            className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-600 transition hover:bg-slate-50 disabled:opacity-60 cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirm}
-            disabled={isLoading}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-800 px-4 py-2.5 text-xs font-black text-white shadow-xs transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-          >
-            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-            Confirm change
-          </button>
-        </div>
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading || !preferredDate || !reason.trim()}
+              className="px-5 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-xl transition-colors shadow-xs flex items-center gap-2 cursor-pointer"
+            >
+              {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+              Xác nhận gửi đề xuất
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

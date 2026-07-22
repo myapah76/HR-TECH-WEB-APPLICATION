@@ -19,6 +19,8 @@ import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import { ApplicationStatus } from '@/src/types'
 import { formatDate, formatDateTime, formatSalary } from '@/src/utils'
 
+import CandidateInterviewRoundsSection from '@/src/components/candidate/application/CandidateInterviewRoundsSection'
+
 const statusConfig: Record<string, { label: string; bg: string; text: string; border: string }> = {
   SUBMITTED: {
     label: 'Đã nộp',
@@ -100,9 +102,11 @@ export default function AppliedJobCard({
   const companyName = jobDetail?.companyName || 'Công ty ẩn danh'
   const companyLogo = jobDetail?.companyLogoUrl || null
   const location = jobDetail?.location || 'Chưa cập nhật'
-  const hasInterviewSchedule = Boolean(app.interviewDateTime)
-  const canRespondToSchedule = hasInterviewSchedule && app.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE
-  const isWaitingForRescheduleReview = app.status === ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE
+  const hasInterviewSchedule =
+    Boolean(app.interviewDateTime) ||
+    app.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE ||
+    app.status === ApplicationStatus.INTERVIEW ||
+    app.status === ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE
 
   const statusInfo = statusConfig[app.status] || {
     label: app.status,
@@ -159,7 +163,9 @@ export default function AppliedJobCard({
               {hasInterviewSchedule && (
                 <span className="flex items-center gap-1 text-[11px] font-bold text-indigo-600 bg-indigo-50/70 px-2.5 py-0.5 rounded-lg border border-indigo-100/50">
                   <CalendarCheck2 className="h-3.5 w-3.5" />
-                  Lịch PV: {formatDateTime(app.interviewDateTime)}
+                  {app.interviewDateTime
+                    ? `Lịch PV: ${formatDateTime(app.interviewDateTime)}`
+                    : 'Đã có lịch PV (Click để chọn/xem)'}
                 </span>
               )}
             </div>
@@ -184,7 +190,9 @@ export default function AppliedJobCard({
               title="Xem chi tiết đánh giá AI"
             >
               <Brain className="h-4 w-4 text-emerald-600" />
-              <span>AI: {app.overallScore}% ({app.grade})</span>
+              <span>
+                AI: {app.overallScore}% ({app.grade})
+              </span>
             </button>
           ) : (
             <button
@@ -219,68 +227,13 @@ export default function AppliedJobCard({
         </div>
       </div>
 
-      {isSelected && hasInterviewSchedule && (
-        <div
-          className="mt-5 border-t border-slate-100 pt-5 space-y-4"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 rounded-2xl bg-slate-50/70 border border-slate-100 p-4">
-            <div className="space-y-1">
-              <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                Lịch phỏng vấn đề xuất
-              </p>
-              <p className="text-sm font-extrabold text-slate-800">
-                {formatDateTime(app.interviewDateTime)}
-              </p>
-              {app.candidatePreferredInterviewDateTime && (
-                <p className="text-xs font-semibold text-amber-600">
-                  Đã yêu cầu đổi sang: {formatDateTime(app.candidatePreferredInterviewDateTime)}
-                </p>
-              )}
-            </div>
-
-            {canRespondToSchedule ? (
-              <div className="flex flex-col sm:flex-row gap-2 lg:justify-end">
-                <button
-                  type="button"
-                  onClick={() => onAcceptSchedule(app.id)}
-                  disabled={isAcceptingSchedule || isChangingSchedule}
-                  className="inline-flex items-center justify-center gap-2 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2.5 rounded-xl transition-all shadow-xs cursor-pointer"
-                >
-                  {isAcceptingSchedule ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="h-4 w-4" />
-                  )}
-                  Accept schedule
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onOpenChangeSchedule(app.id)}
-                  disabled={isAcceptingSchedule || isChangingSchedule}
-                  className="inline-flex items-center justify-center gap-2 text-xs font-black text-amber-700 bg-amber-50 hover:bg-amber-100 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2.5 rounded-xl transition-all border border-amber-100 cursor-pointer"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Change schedule
-                </button>
-              </div>
-            ) : isWaitingForRescheduleReview ? (
-              <span className="inline-flex items-center gap-2 text-xs font-black text-cyan-700 bg-cyan-50 border border-cyan-100 px-3 py-2 rounded-xl self-start">
-                <RefreshCw className="h-4 w-4" />
-                Bạn đã gửi yêu cầu đổi lịch phỏng vấn. Vui lòng chờ nhà tuyển dụng phản hồi.
-              </span>
-            ) : app.status === ApplicationStatus.INTERVIEW ? (
-              <span className="inline-flex items-center gap-2 text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-2 rounded-xl self-start">
-                <CheckCircle2 className="h-4 w-4" />
-                Lịch phỏng vấn đã được xác nhận
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-2 text-xs font-black text-slate-600 bg-white border border-slate-100 px-3 py-2 rounded-xl self-start">
-                <CalendarCheck2 className="h-4 w-4" />
-                Đã có lịch phỏng vấn
-              </span>
-            )}
-          </div>
+      {isSelected && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <CandidateInterviewRoundsSection
+            applicationId={app.id}
+            jobTitle={app.jobTitle}
+            onOpenChangeSchedule={() => onOpenChangeSchedule(app.id)}
+          />
         </div>
       )}
     </div>

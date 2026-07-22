@@ -11,8 +11,5 @@ export const useCreateJobInterviewRound = (jobId: string) => {
       queryClient.invalidateQueries({ queryKey: ['job-interview-rounds', jobId] })
       toast.success('Đã thêm vòng phỏng vấn mới!')
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.message || 'Không thể tạo vòng phỏng vấn.')
-    },
   })
 }

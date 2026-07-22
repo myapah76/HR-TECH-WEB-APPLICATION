@@ -148,7 +148,7 @@ export default function MultiSlotSchedulerModal({
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-2xl border border-indigo-100 dark:border-indigo-900">
+            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-100 dark:border-emerald-900">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
@@ -172,14 +172,14 @@ export default function MultiSlotSchedulerModal({
           {/* Candidate Chips */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-indigo-500" />
+              <Users className="w-3.5 h-3.5 text-emerald-500" />
               Ứng viên nhận lịch phỏng vấn:
             </label>
             <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-2xl">
               {candidateNames.map((name, idx) => (
                 <span
                   key={idx}
-                  className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-bold text-xs rounded-full border border-indigo-200 dark:border-indigo-800"
+                  className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 font-bold text-xs rounded-full border border-emerald-200 dark:border-emerald-800"
                 >
                   {name}
                 </span>
@@ -191,13 +191,13 @@ export default function MultiSlotSchedulerModal({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                <Clock className="w-3.5 h-3.5 text-emerald-500" />
                 Các Khung giờ Rảnh để Ứng viên lựa chọn:
               </label>
               <button
                 type="button"
                 onClick={handleAddSlot}
-                className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 flex items-center gap-1 cursor-pointer"
+                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" /> Thêm khung giờ
               </button>
@@ -236,7 +236,7 @@ export default function MultiSlotSchedulerModal({
                         min={getTodayString()}
                         value={slot.date}
                         onChange={(e) => handleSlotChange(slot.id, { date: e.target.value })}
-                        className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500"
+                        className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500"
                       />
                     </div>
 
@@ -249,7 +249,7 @@ export default function MultiSlotSchedulerModal({
                         <select
                           value={slot.startHour}
                           onChange={(e) => handleSlotChange(slot.id, { startHour: e.target.value })}
-                          className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500 cursor-pointer"
+                          className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
                         >
                           {HOURLY_OPTIONS.map((hour) => (
                             <option key={hour} value={hour}>
@@ -265,7 +265,7 @@ export default function MultiSlotSchedulerModal({
                         <select
                           value={slot.endHour}
                           onChange={(e) => handleSlotChange(slot.id, { endHour: e.target.value })}
-                          className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500 cursor-pointer"
+                          className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
                         >
                           {HOURLY_OPTIONS.map((hour, idx) => {
                             const isDisabled = idx <= startIdx
@@ -290,7 +290,7 @@ export default function MultiSlotSchedulerModal({
                           placeholder="Ví dụ: Tầng 5, Tòa nhà FPT Tower..."
                           value={slot.location}
                           onChange={(e) => handleSlotChange(slot.id, { location: e.target.value })}
-                          className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500"
+                          className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500"
                         />
                       </div>
                       <div>
@@ -302,7 +302,7 @@ export default function MultiSlotSchedulerModal({
                           placeholder="https://meet.google.com/..."
                           value={slot.meetingLink}
                           onChange={(e) => handleSlotChange(slot.id, { meetingLink: e.target.value })}
-                          className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500"
+                          className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500"
                         />
                       </div>
                     </div>
@@ -322,7 +322,7 @@ export default function MultiSlotSchedulerModal({
               placeholder="Vui lòng chuẩn bị trang phục lịch sự và mang theo giấy tờ tùy thân..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500"
+              className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500"
             />
           </div>
 
@@ -338,7 +338,7 @@ export default function MultiSlotSchedulerModal({
             </Button>
             <Button
               type="submit"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold px-6"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold px-6"
             >
               Gửi Lịch Cho Ứng Viên
             </Button>
