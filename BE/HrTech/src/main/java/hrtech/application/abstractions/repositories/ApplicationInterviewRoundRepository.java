@@ -21,4 +21,7 @@ public interface ApplicationInterviewRoundRepository extends JpaRepository<Appli
     List<ApplicationInterviewRound> findByJobIdAndRoundNumber(@Param("jobId") UUID jobId, @Param("roundNumber") Integer roundNumber);
 
     boolean existsByJobInterviewRoundId(UUID jobInterviewRoundId);
+
+    @Query("SELECT r FROM ApplicationInterviewRound r WHERE r.application.job.id = :jobId AND r.status = hrtech.application.entities.enums.InterviewRoundStatus.CONFIRMED AND r.scheduledTime IS NOT NULL AND r.id <> :excludeRoundId")
+    List<ApplicationInterviewRound> findConfirmedRoundsByJobIdExcludingCurrentRound(@Param("jobId") UUID jobId, @Param("excludeRoundId") UUID excludeRoundId);
 }

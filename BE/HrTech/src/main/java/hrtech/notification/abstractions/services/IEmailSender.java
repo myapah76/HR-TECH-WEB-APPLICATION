@@ -17,4 +17,6 @@ public interface IEmailSender {
     CompletableFuture<Void> sendApplicationRejectedEmailAsync(String toEmail, String fullName, String jobTitle,
             String companyName);
 
+    CompletableFuture<Void> sendInterviewScheduleEmailAsync(String toEmail, String fullName, String jobTitle,
+            String roundName, String companyName);
 }

@@ -21,6 +21,7 @@ import hrtech.shared.response.ApiResponse;
 
 import org.springframework.security.access.AccessDeniedException;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.stream.Collectors;
 
@@ -130,7 +131,7 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler({AsyncRequestNotUsableException.class, ClientAbortException.class})
+    @ExceptionHandler({AsyncRequestNotUsableException.class, ClientAbortException.class, IOException.class})
     public void handleClientAbortException(Exception ex, HttpServletRequest request) {
         log.debug("Client cancelled/closed connection before response completion for request {}: {}",
                 request.getRequestURI(), ex.getMessage());

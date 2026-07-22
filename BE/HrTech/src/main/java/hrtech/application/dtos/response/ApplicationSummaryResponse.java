@@ -2,6 +2,7 @@ package hrtech.application.dtos.response;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -28,4 +29,12 @@ public class ApplicationSummaryResponse {
     private Instant appliedAt;
     private BigDecimal overallScore;
     private String grade;
+
+    // ── Interview Round Details ──
+    private String interviewRoundStatus;
+    private Integer rescheduleCount;
+    private Instant candidatePreferredTime;
+    private String candidateRescheduleReason;
+    private Instant scheduledTime;
+    private List<ApplicationInterviewRoundResponse> interviewRounds;
 }

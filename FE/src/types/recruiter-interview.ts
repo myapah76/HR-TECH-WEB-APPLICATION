@@ -7,6 +7,7 @@ export interface AvailableSlot {
   location?: string
   meetingLink?: string
   isSelected?: boolean
+  isNewSlot?: boolean
 }
 
 export interface InterviewRoundConfig {

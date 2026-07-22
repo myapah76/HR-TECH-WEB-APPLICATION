@@ -12,13 +12,12 @@ import {
   Sparkles,
   Brain,
   CalendarCheck2,
-  CheckCircle2,
-  RefreshCw,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import { CompanyLogo } from '@/src/components/jobs/CompanyLogo'
 import { ApplicationStatus } from '@/src/types'
 import { formatDate, formatDateTime, formatSalary } from '@/src/utils'
-
 import CandidateInterviewRoundsSection from '@/src/components/candidate/application/CandidateInterviewRoundsSection'
 
 const statusConfig: Record<string, { label: string; bg: string; text: string; border: string }> = {
@@ -77,13 +76,10 @@ interface AppliedJobCardProps {
   jobDetail: any
   isSelected: boolean
   isScoring: boolean
-  isAcceptingSchedule: boolean
-  isChangingSchedule: boolean
   onSelect: () => void
   onOpenScoreDetail: (appId: string) => void
   onConfirmScore: (appId: string) => void
-  onAcceptSchedule: (appId: string) => void
-  onOpenChangeSchedule: (appId: string) => void
+  onOpenChangeSchedule: (appId: string, roundNumber: number) => void
 }
 
 export default function AppliedJobCard({
@@ -91,12 +87,9 @@ export default function AppliedJobCard({
   jobDetail,
   isSelected,
   isScoring,
-  isAcceptingSchedule,
-  isChangingSchedule,
   onSelect,
   onOpenScoreDetail,
   onConfirmScore,
-  onAcceptSchedule,
   onOpenChangeSchedule,
 }: AppliedJobCardProps) {
   const companyName = jobDetail?.companyName || 'Công ty ẩn danh'
@@ -104,9 +97,9 @@ export default function AppliedJobCard({
   const location = jobDetail?.location || 'Chưa cập nhật'
   const hasInterviewSchedule =
     Boolean(app.interviewDateTime) ||
-    app.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE ||
     app.status === ApplicationStatus.INTERVIEW ||
-    app.status === ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE
+    (app.status as string) === 'SLOTS_SENT' ||
+    (app.status as string) === 'RESCHEDULE_REQUESTED'
 
   const statusInfo = statusConfig[app.status] || {
     label: app.status,
@@ -161,12 +154,35 @@ export default function AppliedJobCard({
                 </span>
               )}
               {hasInterviewSchedule && (
-                <span className="flex items-center gap-1 text-[11px] font-bold text-indigo-600 bg-indigo-50/70 px-2.5 py-0.5 rounded-lg border border-indigo-100/50">
-                  <CalendarCheck2 className="h-3.5 w-3.5" />
-                  {app.interviewDateTime
-                    ? `Lịch PV: ${formatDateTime(app.interviewDateTime)}`
-                    : 'Đã có lịch PV (Click để chọn/xem)'}
-                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onSelect()
+                  }}
+                  className={`inline-flex items-center gap-1.5 text-[11px] font-extrabold px-3 py-1 rounded-xl transition-all cursor-pointer border shadow-2xs ${
+                    isSelected
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                      : app.scheduledTime || app.interviewDateTime
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100'
+                      : 'bg-indigo-50 text-indigo-700 border-indigo-200/80 hover:bg-indigo-100 animate-pulse'
+                  }`}
+                  title="Bấm để đóng/mở chi tiết các vòng phỏng vấn"
+                >
+                  <CalendarCheck2 className="h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    {app.scheduledTime || app.interviewDateTime
+                      ? `Lịch PV: ${formatDateTime(app.scheduledTime || app.interviewDateTime)}`
+                      : isSelected
+                      ? 'Tiến trình phỏng vấn (Đang xem)'
+                      : 'Lịch phỏng vấn (Bấm để xem/chọn)'}
+                  </span>
+                  {isSelected ? (
+                    <ChevronUp className="h-3.5 w-3.5 shrink-0" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                  )}
+                </button>
               )}
             </div>
           </div>
@@ -232,7 +248,7 @@ export default function AppliedJobCard({
           <CandidateInterviewRoundsSection
             applicationId={app.id}
             jobTitle={app.jobTitle}
-            onOpenChangeSchedule={() => onOpenChangeSchedule(app.id)}
+            onOpenChangeSchedule={(roundNum) => onOpenChangeSchedule(app.id, roundNum)}
           />
         </div>
       )}

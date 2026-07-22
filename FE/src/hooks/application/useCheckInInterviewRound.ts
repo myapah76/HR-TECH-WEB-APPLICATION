@@ -1,19 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { selectInterviewSlot } from '@/src/services/application.service'
+import { checkInInterviewRound } from '@/src/services/application.service'
 
-export const useSelectInterviewSlot = () => {
+export const useCheckInInterviewRound = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({
       applicationId,
       roundNumber,
-      slotId,
     }: {
       applicationId: string
       roundNumber: number
-      slotId: string
-    }) => selectInterviewSlot(applicationId, roundNumber, slotId),
+    }) => checkInInterviewRound(applicationId, roundNumber),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['applications'] })
       queryClient.invalidateQueries({ queryKey: ['recruiter-job-applications'] })

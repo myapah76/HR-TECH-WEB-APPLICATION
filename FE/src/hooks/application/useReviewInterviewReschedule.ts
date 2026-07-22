@@ -20,6 +20,8 @@ export const useReviewInterviewReschedule = () => {
     }) => reviewInterviewReschedule(applicationId, roundNumber, accepted, rejectionReason, newSlots),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['applications'] })
+      queryClient.invalidateQueries({ queryKey: ['recruiter-job-applications'] })
+      queryClient.invalidateQueries({ queryKey: ['recruiter-interview-schedules'] })
       queryClient.invalidateQueries({ queryKey: ['application-interview-rounds', variables.applicationId] })
     },
   })

@@ -76,6 +76,8 @@ public interface IApplicationService {
 
     ApplicationInterviewRoundResponse reviewInterviewReschedule(UUID applicationId, Integer roundNumber, ReviewRescheduleRequest request);
 
+    ApplicationInterviewRoundResponse checkInInterviewRound(UUID applicationId, Integer roundNumber);
+
     ApplicationInterviewRoundResponse evaluateInterviewRound(UUID applicationId, Integer roundNumber, EvaluateRoundRequest request);
 
     ApplicationSummaryResponse finalConfirmInterview(UUID applicationId, FinalConfirmationRequest request);

@@ -49,20 +49,12 @@ export const getCompanyApplications = async (companyId: string): Promise<Applica
   return applicationsByJob.flat()
 }
 
-const INTERVIEW_SCHEDULE_STATUSES = new Set<ApplicationStatus>([
-  ApplicationStatus.PENDING_INTERVIEW_SCHEDULE,
-  ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE,
-  ApplicationStatus.INTERVIEW,
-  ApplicationStatus.INTERVIEW_COMPLETED,
-  ApplicationStatus.NO_SHOW,
-])
-
 export const getRecruiterInterviewSchedules = async (
   companyId: string
 ): Promise<ApplicationDetailResponse[]> => {
   const applications = await getCompanyApplications(companyId)
   const interviewApplications = applications.filter((application) =>
-    INTERVIEW_SCHEDULE_STATUSES.has(application.status)
+    application.status === ApplicationStatus.INTERVIEW
   )
 
   const details = await Promise.all(
@@ -232,6 +224,16 @@ export const reviewInterviewReschedule = async (
   const response = await api.post<ApiResponse<any>>(
     `/applications/${applicationId}/interview-rounds/${roundNumber}/review-reschedule`,
     { accepted, rejectionReason, newSlots }
+  )
+  return response.data.data
+}
+
+export const checkInInterviewRound = async (
+  applicationId: string,
+  roundNumber: number
+): Promise<any> => {
+  const response = await api.post<ApiResponse<any>>(
+    `/applications/${applicationId}/interview-rounds/${roundNumber}/check-in`
   )
   return response.data.data
 }

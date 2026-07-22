@@ -1,5 +1,32 @@
 import { ApplicationStatus } from '../enums/application.enum';
 export { ApplicationStatus };
+export interface ApplicationInterviewRoundResponse {
+  id: string;
+  applicationId: string;
+  roundNumber: number;
+  roundName: string;
+  status: string;
+  scheduledTime?: string;
+  location?: string;
+  meetingLink?: string;
+  candidatePreferredTime?: string;
+  candidateRescheduleReason?: string;
+  hrRejectionReason?: string;
+  rescheduleCount?: number;
+  feedbackNote?: string;
+  rating?: number;
+  attendedAt?: string;
+  slots?: Array<{
+    id: string;
+    startTime: string;
+    endTime: string;
+    location?: string;
+    meetingLink?: string;
+    isSelected?: boolean;
+    isNewSlot?: boolean;
+  }>;
+}
+
 export interface ApplicationSummaryResponse {
   id: string;
   jobId: string;
@@ -11,8 +38,14 @@ export interface ApplicationSummaryResponse {
   appliedAt: string;
   interviewDateTime?: string;
   candidatePreferredInterviewDateTime?: string;
+  rescheduleCount?: number;
+  candidatePreferredTime?: string;
+  candidateRescheduleReason?: string;
+  scheduledTime?: string;
   overallScore?: number;
   grade?: string;
+  interviewRoundStatus?: string;
+  interviewRounds?: ApplicationInterviewRoundResponse[];
 }
 
 export interface ApplicationDetailResponse {

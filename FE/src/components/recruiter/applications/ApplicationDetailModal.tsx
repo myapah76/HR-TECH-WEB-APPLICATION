@@ -332,14 +332,18 @@ export default function ApplicationDetailModal({
                     <XCircle className="w-4 h-4 text-rose-600" />
                     <span>Hồ sơ ứng tuyển đã bị từ chối</span>
                   </div>
-                ) : activeApp.status === ApplicationStatus.ACCEPTED || activeApp.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE ? (
+                ) : activeApp.status === ApplicationStatus.ACCEPTED ||
+                  activeApp.status === ApplicationStatus.INTERVIEW ||
+                  (activeApp.status as string) === 'SLOTS_SENT' ||
+                  (activeApp.status as string) === 'RESCHEDULE_REQUESTED' ||
+                  (activeApp.status as string) === 'INTERVIEW_COMPLETED' ? (
                   <button
                     type="button"
                     onClick={handleGoToInterviews}
                     className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all cursor-pointer shadow-sm active:scale-98"
                   >
                     <Calendar className="w-4 h-4" />
-                    <span>Xem Phỏng Vấn</span>
+                    <span>Quản Lý Phỏng Vấn (Đã Duyệt CV)</span>
                   </button>
                 ) : (
                   <>

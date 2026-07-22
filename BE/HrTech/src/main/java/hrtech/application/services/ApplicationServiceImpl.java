@@ -43,6 +43,8 @@ import hrtech.company.dtos.response.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+
+import java.time.*;
 import java.util.Comparator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -52,10 +54,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -301,6 +299,21 @@ public class ApplicationServiceImpl implements IApplicationService {
             if (score != null && score.isCompanyPaid()) {
                 res.setOverallScore(score.getOverallScore());
                 res.setGrade(score.getGrade() != null ? score.getGrade().name() : null);
+            }
+            if (app.getInterviewRounds() != null && !app.getInterviewRounds().isEmpty()) {
+                List<ApplicationInterviewRound> sortedRounds = app.getInterviewRounds().stream()
+                        .sorted(Comparator.comparing(r -> r.getJobInterviewRound().getRoundNumber()))
+                        .toList();
+                List<ApplicationInterviewRoundResponse> roundResponses = sortedRounds.stream()
+                        .map(this::toRoundResponse).toList();
+                res.setInterviewRounds(roundResponses);
+
+                ApplicationInterviewRound latestRound = sortedRounds.get(sortedRounds.size() - 1);
+                res.setInterviewRoundStatus(latestRound.getStatus() != null ? latestRound.getStatus().name() : null);
+                res.setRescheduleCount(latestRound.getRescheduleCount());
+                res.setCandidatePreferredTime(latestRound.getCandidatePreferredTime());
+                res.setCandidateRescheduleReason(latestRound.getCandidateRescheduleReason());
+                res.setScheduledTime(latestRound.getScheduledTime());
             }
             return res;
         });
@@ -581,11 +594,7 @@ public class ApplicationServiceImpl implements IApplicationService {
         long appliedCount = total;
         long acceptedCount = countByStatusExcluding(apps, ApplicationStatus.SUBMITTED, ApplicationStatus.WITHDRAWN,
                 ApplicationStatus.REJECTED);
-        long interviewingCount = countByStatusIn(apps,
-                ApplicationStatus.PENDING_INTERVIEW_SCHEDULE,
-                ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE,
-                ApplicationStatus.INTERVIEW,
-                ApplicationStatus.INTERVIEW_COMPLETED);
+        long interviewingCount = countByStatusIn(apps, ApplicationStatus.INTERVIEW);
         long offerCount = countByStatusIn(apps, ApplicationStatus.ACCEPTED);
 
         return JobSearchAnalyticsResponse.builder()
@@ -700,10 +709,7 @@ public class ApplicationServiceImpl implements IApplicationService {
                 .totalApps(apps.size())
                 .submittedAppsCount(apps.stream().filter(a -> a.getStatus() == ApplicationStatus.SUBMITTED).count())
                 .screeningAppsCount(apps.stream().filter(a -> a.getStatus() == ApplicationStatus.SCORED).count())
-                .interviewAppsCount(apps.stream()
-                        .filter(a -> a.getStatus() == ApplicationStatus.INTERVIEW
-                                || a.getStatus() == ApplicationStatus.PENDING_INTERVIEW_SCHEDULE)
-                        .count())
+                .interviewAppsCount(apps.stream().filter(a -> a.getStatus() == ApplicationStatus.INTERVIEW).count())
                 .offerAppsCount(apps.stream().filter(a -> a.getStatus() == ApplicationStatus.ACCEPTED).count())
                 .build();
     }
@@ -946,6 +952,10 @@ public class ApplicationServiceImpl implements IApplicationService {
     @Override
     @Transactional
     public List<ApplicationSummaryResponse> scheduleMultiSlotInterview(ScheduleMultiSlotRequest request) {
+        if (request.getSlots() != null && !request.getSlots().isEmpty() && !request.getApplicationIds().isEmpty()) {
+            UUID jobId = getApplicationEntityById(request.getApplicationIds().get(0)).getJob().getId();
+            validateSlotOverlap(jobId, null, request.getSlots());
+        }
         List<Application> updatedApps = new ArrayList<>();
 
         for (UUID appId : request.getApplicationIds()) {
@@ -969,11 +979,14 @@ public class ApplicationServiceImpl implements IApplicationService {
                             .jobInterviewRound(jobRound)
                             .build());
 
+            InterviewRoundStatus previousStatus = appRound.getStatus();
+            boolean isFirstTimeSendingSlots = (previousStatus == null || previousStatus == InterviewRoundStatus.NOT_STARTED);
+
             appRound.setStatus(InterviewRoundStatus.SLOTS_SENT);
             appRound.setNote(request.getNote());
             appRound = applicationInterviewRoundRepository.save(appRound);
 
-            // Delete old slots if any & insert new slots
+            // Delete previous slots for this round so only newly sent/adjusted slots exist
             interviewSlotRepository.deleteByApplicationInterviewRoundId(appRound.getId());
 
             if (request.getSlots() != null && !request.getSlots().isEmpty()) {
@@ -986,17 +999,18 @@ public class ApplicationServiceImpl implements IApplicationService {
                             .location(slotDto.getLocation())
                             .meetingLink(slotDto.getMeetingLink())
                             .isSelected(false)
+                            .isNewSlot(false)
                             .build();
                     slotEntities.add(slotEntity);
                 }
                 interviewSlotRepository.saveAll(slotEntities);
             }
 
-            application.setStatus(ApplicationStatus.PENDING_INTERVIEW_SCHEDULE);
+            application.setStatus(ApplicationStatus.INTERVIEW);
             Application savedApp = applicationRepository.save(application);
             updatedApps.add(savedApp);
 
-            // Notification
+            // Notification & Email Dispatch
             try {
                 notificationService.createAndSendNotification(
                         application.getUser().getId(),
@@ -1005,6 +1019,19 @@ public class ApplicationServiceImpl implements IApplicationService {
                         NotificationType.INTERVIEW_SCHEDULED,
                         application.getId().toString()
                 );
+
+                if (isFirstTimeSendingSlots) {
+                    String companyName = job.getCompany() != null ? job.getCompany().getName() : "HR Tech";
+                    String candidateFullName = application.getUser().getFirstName() + " " + application.getUser().getLastName();
+                    notificationService.sendInterviewScheduleNotification(
+                            application.getUser().getEmail(),
+                            candidateFullName,
+                            job.getTitle(),
+                            jobRound.getRoundName(),
+                            companyName,
+                            application.getId().toString()
+                    );
+                }
             } catch (Exception e) {
                 log.error("Failed to notify candidate for interview slots", e);
             }
@@ -1065,6 +1092,31 @@ public class ApplicationServiceImpl implements IApplicationService {
                 .findByApplicationIdAndJobInterviewRoundRoundNumber(applicationId, roundNumber)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Interview round not found"));
 
+        if (appRound.getStatus() == InterviewRoundStatus.PASSED ||
+            appRound.getStatus() == InterviewRoundStatus.FAILED ||
+            appRound.getStatus() == InterviewRoundStatus.TERMINATED ||
+            appRound.getStatus() == InterviewRoundStatus.INTERVIEW_COMPLETED) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Vòng phỏng vấn này đã hoàn thành hoặc kết thúc, không thể yêu cầu đổi lịch nữa!");
+        }
+
+        if (request.getPreferredTime() != null) {
+            if (request.getPreferredTime().isBefore(Instant.now())) {
+                throw new AppException(ErrorCode.BAD_REQUEST, "Thời gian bạn đề xuất phải diễn ra trong tương lai!");
+            }
+
+            List<ApplicationInterviewRound> confirmedRounds = applicationInterviewRoundRepository
+                    .findConfirmedRoundsByJobIdExcludingCurrentRound(appRound.getApplication().getJob().getId(), appRound.getId());
+
+            for (ApplicationInterviewRound confirmed : confirmedRounds) {
+                if (confirmed.getScheduledTime() != null) {
+                    long diffMinutes = Math.abs(Duration.between(request.getPreferredTime(), confirmed.getScheduledTime()).toMinutes());
+                    if (diffMinutes < 30) {
+                        throw new AppException(ErrorCode.BAD_REQUEST, "Thời gian bạn đề xuất đã bị trùng hoặc quá gần (dưới 30 phút) với một lịch phỏng vấn khác đã chốt của tin tuyển dụng này!");
+                    }
+                }
+            }
+        }
+
         appRound.setCandidatePreferredTime(request.getPreferredTime());
         appRound.setCandidateRescheduleReason(request.getReason());
         appRound.setRescheduleCount((appRound.getRescheduleCount() == null ? 0 : appRound.getRescheduleCount()) + 1);
@@ -1072,7 +1124,7 @@ public class ApplicationServiceImpl implements IApplicationService {
         appRound = applicationInterviewRoundRepository.save(appRound);
 
         Application app = appRound.getApplication();
-        app.setStatus(ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE);
+        app.setStatus(ApplicationStatus.INTERVIEW);
         applicationRepository.save(app);
 
         if (app.getJob().getCreatedBy() != null) {
@@ -1099,6 +1151,13 @@ public class ApplicationServiceImpl implements IApplicationService {
                 .findByApplicationIdAndJobInterviewRoundRoundNumber(applicationId, roundNumber)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Interview round not found"));
 
+        if (appRound.getStatus() == InterviewRoundStatus.PASSED ||
+            appRound.getStatus() == InterviewRoundStatus.FAILED ||
+            appRound.getStatus() == InterviewRoundStatus.TERMINATED ||
+            appRound.getStatus() == InterviewRoundStatus.INTERVIEW_COMPLETED) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Vòng phỏng vấn này đã hoàn thành hoặc kết thúc, không thể duyệt đổi lịch nữa!");
+        }
+
         Application app = appRound.getApplication();
 
         if (Boolean.TRUE.equals(request.getAccepted())) {
@@ -1116,10 +1175,15 @@ public class ApplicationServiceImpl implements IApplicationService {
                 appRound.setFeedbackNote("Đã dừng luồng do đổi lịch quá 3 lần. Lý do từ chối cuối: " + request.getRejectionReason());
             } else {
                 appRound.setStatus(InterviewRoundStatus.RESCHEDULE_REJECTED);
-                interviewSlotRepository.deleteByApplicationInterviewRoundId(appRound.getId());
+                // Clear old slots and replace with newly adjusted slots provided by HR
                 if (request.getNewSlots() != null && !request.getNewSlots().isEmpty()) {
+                    validateSlotOverlap(app.getJob().getId(), appRound.getId(), request.getNewSlots());
+                    interviewSlotRepository.deleteByApplicationInterviewRoundId(appRound.getId());
+                    
                     List<InterviewSlot> slotEntities = new ArrayList<>();
                     for (InterviewSlotDto slotDto : request.getNewSlots()) {
+                        boolean isNewlyAdded = Boolean.TRUE.equals(slotDto.getIsNewSlot());
+
                         InterviewSlot slotEntity = InterviewSlot.builder()
                                 .applicationInterviewRound(appRound)
                                 .startTime(slotDto.getStartTime())
@@ -1127,12 +1191,13 @@ public class ApplicationServiceImpl implements IApplicationService {
                                 .location(slotDto.getLocation())
                                 .meetingLink(slotDto.getMeetingLink())
                                 .isSelected(false)
+                                .isNewSlot(isNewlyAdded)
                                 .build();
                         slotEntities.add(slotEntity);
                     }
                     interviewSlotRepository.saveAll(slotEntities);
                 }
-                app.setStatus(ApplicationStatus.PENDING_INTERVIEW_SCHEDULE);
+                app.setStatus(ApplicationStatus.INTERVIEW);
             }
         }
 
@@ -1155,6 +1220,20 @@ public class ApplicationServiceImpl implements IApplicationService {
         } catch (Exception e) {
             log.error("Failed to notify candidate on reschedule review", e);
         }
+
+        return toRoundResponse(appRound);
+    }
+
+    @Override
+    @Transactional
+    public ApplicationInterviewRoundResponse checkInInterviewRound(UUID applicationId, Integer roundNumber) {
+        ApplicationInterviewRound appRound = applicationInterviewRoundRepository
+                .findByApplicationIdAndJobInterviewRoundRoundNumber(applicationId, roundNumber)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Interview round not found"));
+
+        appRound.setAttendedAt(Instant.now());
+        appRound.setStatus(InterviewRoundStatus.ATTENDED);
+        appRound = applicationInterviewRoundRepository.save(appRound);
 
         return toRoundResponse(appRound);
     }
@@ -1189,11 +1268,11 @@ public class ApplicationServiceImpl implements IApplicationService {
                                 .status(InterviewRoundStatus.NOT_STARTED)
                                 .build());
                 applicationInterviewRoundRepository.save(nextAppRound);
-                app.setStatus(ApplicationStatus.PENDING_INTERVIEW_SCHEDULE);
+                app.setStatus(ApplicationStatus.INTERVIEW);
             } else {
                 // Passed final round -> INTERVIEW_COMPLETED
                 appRound.setStatus(InterviewRoundStatus.INTERVIEW_COMPLETED);
-                app.setStatus(ApplicationStatus.INTERVIEW_COMPLETED);
+                app.setStatus(ApplicationStatus.INTERVIEW);
             }
         } else {
             appRound.setStatus(InterviewRoundStatus.FAILED);
@@ -1219,6 +1298,18 @@ public class ApplicationServiceImpl implements IApplicationService {
             app.setStatus(ApplicationStatus.REJECTED);
         }
 
+        List<ApplicationInterviewRound> rounds = applicationInterviewRoundRepository
+                .findByApplicationIdOrderByJobInterviewRoundRoundNumberAsc(applicationId);
+        if (rounds != null && !rounds.isEmpty()) {
+            ApplicationInterviewRound finalRound = rounds.get(rounds.size() - 1);
+            if (Boolean.TRUE.equals(request.getApproved())) {
+                finalRound.setStatus(InterviewRoundStatus.PASSED);
+            } else {
+                finalRound.setStatus(InterviewRoundStatus.FAILED);
+            }
+            applicationInterviewRoundRepository.save(finalRound);
+        }
+
         app = applicationRepository.save(app);
         notifyCandidateStatusAfterCommit(app, app.getStatus());
 
@@ -1242,6 +1333,7 @@ public class ApplicationServiceImpl implements IApplicationService {
                 .location(s.getLocation())
                 .meetingLink(s.getMeetingLink())
                 .isSelected(s.getIsSelected())
+                .isNewSlot(Boolean.TRUE.equals(s.getIsNewSlot()))
                 .build()).toList();
 
         return ApplicationInterviewRoundResponse.builder()
@@ -1262,5 +1354,44 @@ public class ApplicationServiceImpl implements IApplicationService {
                 .attendedAt(round.getAttendedAt())
                 .slots(slotDtos)
                 .build();
+    }
+
+    private void validateSlotOverlap(UUID jobId, UUID currentRoundId, List<InterviewSlotDto> slots) {
+        if (slots == null || slots.isEmpty()) return;
+
+        for (int i = 0; i < slots.size(); i++) {
+            InterviewSlotDto s1 = slots.get(i);
+            if (s1.getStartTime() == null || s1.getEndTime() == null) {
+                throw new AppException(ErrorCode.BAD_REQUEST, "Thời gian bắt đầu và kết thúc của khung giờ phỏng vấn không được để trống!");
+            }
+            if (!s1.getEndTime().isAfter(s1.getStartTime())) {
+                throw new AppException(ErrorCode.BAD_REQUEST, "Thời gian kết thúc phải diễn ra sau thời gian bắt đầu!");
+            }
+
+            for (int j = i + 1; j < slots.size(); j++) {
+                InterviewSlotDto s2 = slots.get(j);
+                if (s2.getStartTime() == null || s2.getEndTime() == null) continue;
+                if (s1.getStartTime().isBefore(s2.getEndTime()) && s1.getEndTime().isAfter(s2.getStartTime())) {
+                    throw new AppException(ErrorCode.BAD_REQUEST, "Các khung giờ phỏng vấn tạo ra bị trùng lặp thời gian với nhau! Vui lòng kiểm tra lại.");
+                }
+            }
+        }
+
+        if (jobId != null) {
+            List<ApplicationInterviewRound> confirmedRounds = applicationInterviewRoundRepository
+                    .findConfirmedRoundsByJobIdExcludingCurrentRound(jobId, currentRoundId != null ? currentRoundId : UUID.randomUUID());
+
+            for (InterviewSlotDto slot : slots) {
+                for (ApplicationInterviewRound confirmed : confirmedRounds) {
+                    if (confirmed.getScheduledTime() != null) {
+                        boolean conflicts = !confirmed.getScheduledTime().isBefore(slot.getStartTime()) && confirmed.getScheduledTime().isBefore(slot.getEndTime());
+                        if (conflicts) {
+                            throw new AppException(ErrorCode.BAD_REQUEST, "Khung giờ bị trùng với lịch phỏng vấn đã chốt của ứng viên " 
+                                    + confirmed.getApplication().getUser().getFirstName() + " " + confirmed.getApplication().getUser().getLastName() + "!");
+                        }
+                    }
+                }
+            }
+        }
     }
 }

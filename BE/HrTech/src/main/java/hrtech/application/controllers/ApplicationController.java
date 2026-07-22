@@ -230,6 +230,17 @@ public class ApplicationController {
         ));
     }
 
+    @PostMapping("/{applicationId}/interview-rounds/{roundNumber}/check-in")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<ApplicationInterviewRoundResponse>> checkInInterviewRound(
+            @PathVariable UUID applicationId,
+            @PathVariable Integer roundNumber) {
+        return ResponseEntity.ok(ApiResponse.success(
+                applicationService.checkInInterviewRound(applicationId, roundNumber),
+                "Điểm danh tham dự phỏng vấn thành công"
+        ));
+    }
+
     @PostMapping("/{applicationId}/interview-rounds/{roundNumber}/evaluate")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<ApplicationInterviewRoundResponse>> evaluateInterviewRound(

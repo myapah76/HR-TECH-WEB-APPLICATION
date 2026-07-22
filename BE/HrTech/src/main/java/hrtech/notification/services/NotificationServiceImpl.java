@@ -116,6 +116,16 @@ public class NotificationServiceImpl implements INotificationService {
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void sendInterviewScheduleNotification(String email, String fullName, String jobTitle, String roundName, String companyName, String applicationId) {
+        try {
+            emailSender.sendInterviewScheduleEmailAsync(email, fullName, jobTitle, roundName, companyName);
+        } catch (Exception e) {
+            log.error("Failed to dispatch INTERVIEW SCHEDULE email for application {} to {}", applicationId, email, e);
+        }
+    }
+
+    @Override
     public SseEmitter createConnection(UUID userId) {
         // Cấu hình kết nối với timeout 30 phút (1,800,000 miligiây)
         SseEmitter emitter = new SseEmitter(1_800_000L);

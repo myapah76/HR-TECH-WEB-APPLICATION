@@ -8,7 +8,10 @@ export const useScheduleMultiSlot = () => {
     mutationFn: scheduleMultiSlotInterview,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] })
+      queryClient.invalidateQueries({ queryKey: ['recruiter-job-applications'] })
+      queryClient.invalidateQueries({ queryKey: ['recruiter-interview-schedules'] })
       queryClient.invalidateQueries({ queryKey: ['job-interview-rounds'] })
+      queryClient.invalidateQueries({ queryKey: ['application-interview-rounds'] })
     },
   })
 }

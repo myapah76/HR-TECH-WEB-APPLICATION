@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { X, Loader2, RefreshCw, Calendar, Clock, AlertCircle } from 'lucide-react'
+import { toast } from 'sonner'
 import { formatDateTime } from '@/src/utils'
 
 const HOURLY_OPTIONS = [
@@ -29,6 +30,7 @@ interface CandidateRescheduleModalProps {
   isLoading: boolean
   jobTitle: string
   currentInterviewTime?: string
+  rescheduleCount?: number
 }
 
 export default function CandidateRescheduleModal({
@@ -38,15 +40,28 @@ export default function CandidateRescheduleModal({
   isLoading,
   jobTitle,
   currentInterviewTime,
+  rescheduleCount = 0,
 }: CandidateRescheduleModalProps) {
   const [preferredDate, setPreferredDate] = useState('')
   const [preferredHour, setPreferredHour] = useState('09:00')
   const [reason, setReason] = useState('')
 
+  const currentAttempt = rescheduleCount + 1
+  const remainingCount = Math.max(0, 3 - rescheduleCount)
+
   if (!isOpen) return null
 
   const handleConfirm = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!preferredDate) {
+      toast.error('Vui lòng chọn ngày phỏng vấn mới!')
+      return
+    }
+    const selectedDateTime = new Date(`${preferredDate}T${preferredHour}:00`)
+    if (selectedDateTime.getTime() <= Date.now()) {
+      toast.error('Thời gian phỏng vấn đề xuất phải ở thời điểm tương lai! Vui lòng chọn lại.')
+      return
+    }
     onSubmit(preferredDate, preferredHour, reason)
   }
 
@@ -87,6 +102,15 @@ export default function CandidateRescheduleModal({
 
         {/* Form Body */}
         <form onSubmit={handleConfirm} className="p-6 space-y-5">
+          {/* Attempt Banner */}
+          <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 flex items-center justify-between">
+            <span className="text-xs font-bold text-amber-800 dark:text-amber-300">
+              Số lần bạn xin đổi lịch:
+            </span>
+            <span className="px-3 py-1 text-xs font-black rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
+              Lần thứ {currentAttempt} / 3 (Còn lại {remainingCount} lần)
+            </span>
+          </div>
           {currentInterviewTime && (
             <div className="rounded-2xl border border-amber-200/80 bg-amber-50/70 dark:bg-amber-950/30 p-4 space-y-1">
               <span className="text-[11px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400 flex items-center gap-1.5">

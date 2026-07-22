@@ -37,4 +37,8 @@ public class InterviewSlot extends SoftDeleteEntity {
     @Column(name = "is_selected", columnDefinition = "boolean default false")
     @Builder.Default
     private Boolean isSelected = false;
+
+    @Column(name = "is_new_slot", columnDefinition = "boolean default false")
+    @Builder.Default
+    private Boolean isNewSlot = false;
 }

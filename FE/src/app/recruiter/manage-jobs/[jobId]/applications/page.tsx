@@ -78,7 +78,7 @@ export default function JobApplicationsPage() {
     [localApplications]
   )
 
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'SUBMITTED' | 'SCORED' | 'ACCEPTED' | 'PENDING_INTERVIEW_SCHEDULE' | 'REJECTED'>('ALL')
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'SUBMITTED' | 'SCORED' | 'ACCEPTED' | 'INTERVIEW' | 'REJECTED'>('ALL')
   const [showAiPanel, setShowAiPanel] = useState<boolean>(false)
 
   // Status counts
@@ -94,8 +94,8 @@ export default function JobApplicationsPage() {
     () => localApplications.filter((a) => a.status === ApplicationStatus.ACCEPTED).length,
     [localApplications]
   )
-  const countPendingInterview = useMemo(
-    () => localApplications.filter((a) => a.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE).length,
+  const countInterview = useMemo(
+    () => localApplications.filter((a) => a.status === ApplicationStatus.INTERVIEW).length,
     [localApplications]
   )
   const countRejected = useMemo(
@@ -280,7 +280,7 @@ export default function JobApplicationsPage() {
           submitted: countSubmitted,
           scored: countScored,
           accepted: countAccepted,
-          pendingInterview: countPendingInterview,
+          interview: countInterview,
           rejected: countRejected,
         }}
       />

@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
-import { FileText, Sparkles, Loader2, Trash2, ShieldAlert, CheckCircle2, CheckSquare } from 'lucide-react'
+import Link from 'next/link'
+import { FileText, Sparkles, Loader2, Trash2, ShieldAlert, CheckCircle2, CheckSquare, Calendar } from 'lucide-react'
 import { ApplicationStatus, ApplicationSummaryResponse } from '@/src/types'
 import Pagination from '@/src/components/common/Pagination'
 import { formatDate } from '@/src/utils'
@@ -248,16 +249,17 @@ export default function JobApplicationsTable({
                       {app.status === ApplicationStatus.ACCEPTED ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          Đã duyệt CV
+                          Đã trúng tuyển
                         </span>
                       ) : app.status === ApplicationStatus.REJECTED ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-lg">
                           <Trash2 className="w-3.5 h-3.5 text-rose-600" />
                           Đã từ chối
                         </span>
-                      ) : app.status === ApplicationStatus.PENDING_INTERVIEW_SCHEDULE ? (
+                      ) : app.status === ApplicationStatus.INTERVIEW ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg">
-                          Chờ phỏng vấn
+                          <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+                          Đang phỏng vấn
                         </span>
                       ) : app.status === ApplicationStatus.SCORED ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-teal-700 bg-teal-50 border border-teal-200 rounded-lg">
@@ -317,14 +319,28 @@ export default function JobApplicationsTable({
                     </td>
 
                     <td className="px-5 py-4 text-right">
-                      <button
-                        type="button"
-                        onClick={() => onViewCv(app.id)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer"
-                      >
-                        <FileText className="w-3.5 h-3.5" />
-                        Xem CV
-                      </button>
+                      {app.status === ApplicationStatus.ACCEPTED ||
+                      app.status === ApplicationStatus.INTERVIEW ||
+                      (app.status as string) === 'SLOTS_SENT' ||
+                      (app.status as string) === 'RESCHEDULE_REQUESTED' ? (
+                        <Link
+                          href={`/recruiter/manage-jobs/${app.jobId}/interviews`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+                        >
+                          <Calendar className="w-3.5 h-3.5" />
+                          Quản lý phỏng vấn
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => onViewCv(app.id)}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          Xem &amp; Duyệt CV
+                        </button>
+                      )}
                     </td>
                   </tr>
                 )

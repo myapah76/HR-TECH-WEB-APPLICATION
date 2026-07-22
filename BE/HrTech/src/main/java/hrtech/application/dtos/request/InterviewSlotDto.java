@@ -23,4 +23,5 @@ public class InterviewSlotDto {
     private String location;
     private String meetingLink;
     private Boolean isSelected;
+    private Boolean isNewSlot;
 }

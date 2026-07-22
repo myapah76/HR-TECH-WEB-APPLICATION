@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Star, X, CheckCircle2, History, UserCheck } from 'lucide-react'
+import { Star, X, History } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
 import { InterviewRoundDetail } from '@/src/types/recruiter-interview'
 
@@ -24,7 +24,6 @@ export default function InterviewEvaluationModal({
 }: InterviewEvaluationModalProps) {
   const [rating, setRating] = useState(candidate?.rating || 5)
   const [feedbackNote, setFeedbackNote] = useState(candidate?.feedbackNote || '')
-  const [isAttended, setIsAttended] = useState(candidate?.status === 'ATTENDED' || candidate?.status === 'CONFIRMED')
 
   if (!candidate) return null
 
@@ -79,20 +78,6 @@ export default function InterviewEvaluationModal({
             </div>
           </div>
         )}
-
-        {/* Attendance Confirmation Toggle */}
-        <div className="p-3 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 dark:text-emerald-300">
-            <UserCheck className="w-4 h-4 text-emerald-600" />
-            <span>Xác nhận ứng viên đã có mặt / tham gia phỏng vấn:</span>
-          </div>
-          <input
-            type="checkbox"
-            checked={isAttended}
-            onChange={(e) => setIsAttended(e.target.checked)}
-            className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-          />
-        </div>
 
         {/* Score and Notes Form */}
         <div className="space-y-4">

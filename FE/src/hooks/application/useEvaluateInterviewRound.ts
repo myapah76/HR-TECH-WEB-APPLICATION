@@ -22,6 +22,8 @@ export const useEvaluateInterviewRound = () => {
     }) => evaluateInterviewRound(applicationId, roundNumber, passed, rating, feedbackNote, isAttended),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['applications'] })
+      queryClient.invalidateQueries({ queryKey: ['recruiter-job-applications'] })
+      queryClient.invalidateQueries({ queryKey: ['recruiter-interview-schedules'] })
       queryClient.invalidateQueries({ queryKey: ['application-interview-rounds', variables.applicationId] })
     },
   })

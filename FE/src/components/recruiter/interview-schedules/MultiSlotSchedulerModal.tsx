@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, Calendar, Clock, Plus, Trash2, MapPin, Link as LinkIcon, Users } from 'lucide-react'
+import { X, Calendar, Clock, Plus, Trash2, MapPin, Link as LinkIcon, Users, Timer } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
 import { AvailableSlot } from '@/src/types/recruiter-interview'
 import { toast } from 'sonner'
@@ -33,11 +33,19 @@ const HOURLY_OPTIONS = [
   '21:00',
 ]
 
+const DURATION_OPTIONS = [
+  { value: 30, label: '30 phút' },
+  { value: 45, label: '45 phút' },
+  { value: 60, label: '60 phút (1 giờ)' },
+  { value: 90, label: '90 phút (1.5 giờ)' },
+  { value: 120, label: '120 phút (2 giờ)' },
+]
+
 interface SlotInputState {
   id: string
   date: string
   startHour: string
-  endHour: string
+  durationMinutes: number
   location: string
   meetingLink: string
 }
@@ -60,7 +68,7 @@ export default function MultiSlotSchedulerModal({
       id: '1',
       date: getTodayString(),
       startHour: '09:00',
-      endHour: '10:00',
+      durationMinutes: 60,
       location: '',
       meetingLink: '',
     },
@@ -77,7 +85,7 @@ export default function MultiSlotSchedulerModal({
         id: String(Date.now()),
         date: lastSlot?.date || getTodayString(),
         startHour: '09:00',
-        endHour: '10:00',
+        durationMinutes: lastSlot?.durationMinutes || 60,
         location: lastSlot?.location || '',
         meetingLink: lastSlot?.meetingLink || '',
       },
@@ -93,17 +101,7 @@ export default function MultiSlotSchedulerModal({
     setSlots(
       slots.map((s) => {
         if (s.id !== id) return s
-        const updated = { ...s, ...updates }
-
-        // Enforce startHour < endHour automatically
-        if (updates.startHour) {
-          const startIdx = HOURLY_OPTIONS.indexOf(updates.startHour)
-          const endIdx = HOURLY_OPTIONS.indexOf(updated.endHour)
-          if (endIdx <= startIdx && startIdx < HOURLY_OPTIONS.length - 1) {
-            updated.endHour = HOURLY_OPTIONS[startIdx + 1]
-          }
-        }
-        return updated
+        return { ...s, ...updates }
       })
     )
   }
@@ -118,25 +116,35 @@ export default function MultiSlotSchedulerModal({
         toast.error(`Vui lòng chọn ngày cho Khung giờ ${i + 1}`)
         return
       }
-      const startIdx = HOURLY_OPTIONS.indexOf(slot.startHour)
-      const endIdx = HOURLY_OPTIONS.indexOf(slot.endHour)
-      if (startIdx >= endIdx) {
-        toast.error(`Khung giờ ${i + 1}: Giờ kết thúc phải muộn hơn Giờ bắt đầu!`)
-        return
-      }
     }
 
     const formattedSlots: AvailableSlot[] = slots.map((s) => {
-      const startIso = new Date(`${s.date}T${s.startHour}:00`).toISOString()
-      const endIso = new Date(`${s.date}T${s.endHour}:00`).toISOString()
+      const startDate = new Date(`${s.date}T${s.startHour}:00`)
+      const endDate = new Date(startDate.getTime() + s.durationMinutes * 60 * 1000)
       return {
         id: s.id,
-        startTime: startIso,
-        endTime: endIso,
+        startTime: startDate.toISOString(),
+        endTime: endDate.toISOString(),
         location: s.location,
         meetingLink: s.meetingLink,
       }
     })
+
+    // Validate slot overlap in Frontend
+    for (let i = 0; i < formattedSlots.length; i++) {
+      const s1Start = new Date(formattedSlots[i].startTime).getTime()
+      const s1End = new Date(formattedSlots[i].endTime).getTime()
+
+      for (let j = i + 1; j < formattedSlots.length; j++) {
+        const s2Start = new Date(formattedSlots[j].startTime).getTime()
+        const s2End = new Date(formattedSlots[j].endTime).getTime()
+
+        if (s1Start < s2End && s1End > s2Start) {
+          toast.error(`Khung giờ #${i + 1} và Khung giờ #${j + 1} bị trùng lặp thời gian! Vui lòng kiểm tra lại.`)
+          return
+        }
+      }
+    }
 
     onSubmit(formattedSlots, note)
     onClose()
@@ -153,7 +161,7 @@ export default function MultiSlotSchedulerModal({
             </div>
             <div>
               <h3 className="font-bold text-slate-900 dark:text-slate-100 text-lg">
-                Tạo Lịch Phỏng Vấn (Chọn Ngày & Giờ)
+                Tạo Lịch Phỏng Vấn (Giờ Bắt Đầu &amp; Thời Lượng)
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {roundName} (Vòng {roundNumber}) • {candidateNames.length} Ứng viên được chọn
@@ -205,8 +213,6 @@ export default function MultiSlotSchedulerModal({
 
             <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
               {slots.map((slot, index) => {
-                const startIdx = HOURLY_OPTIONS.indexOf(slot.startHour)
-
                 return (
                   <div
                     key={slot.id}
@@ -240,10 +246,11 @@ export default function MultiSlotSchedulerModal({
                       />
                     </div>
 
-                    {/* Step 2: Start & End Hour Selection */}
+                    {/* Step 2 & 3: Start Hour & Duration */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1 flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-emerald-600" />
                           2. Giờ bắt đầu (Mốc giờ tròn):
                         </span>
                         <select
@@ -259,22 +266,20 @@ export default function MultiSlotSchedulerModal({
                         </select>
                       </div>
                       <div>
-                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">
-                          3. Giờ kết thúc (Vô hiệu hóa ≤ Giờ bắt đầu):
+                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1 flex items-center gap-1">
+                          <Timer className="w-3 h-3 text-amber-600" />
+                          3. Thời lượng phỏng vấn:
                         </span>
                         <select
-                          value={slot.endHour}
-                          onChange={(e) => handleSlotChange(slot.id, { endHour: e.target.value })}
+                          value={slot.durationMinutes}
+                          onChange={(e) => handleSlotChange(slot.id, { durationMinutes: Number(e.target.value) })}
                           className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
                         >
-                          {HOURLY_OPTIONS.map((hour, idx) => {
-                            const isDisabled = idx <= startIdx
-                            return (
-                              <option key={hour} value={hour} disabled={isDisabled}>
-                                {hour} {isDisabled ? '⛔ (không hợp lệ)' : ''}
-                              </option>
-                            )
-                          })}
+                          {DURATION_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>

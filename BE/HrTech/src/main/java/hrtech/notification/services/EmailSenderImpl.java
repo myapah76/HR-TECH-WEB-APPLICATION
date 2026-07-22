@@ -133,6 +133,32 @@ public class EmailSenderImpl implements IEmailSender {
         }
     }
 
+    @Override
+    @Async
+    public CompletableFuture<Void> sendInterviewScheduleEmailAsync(
+            String toEmail,
+            String fullName,
+            String jobTitle,
+            String roundName,
+            String companyName) {
+        try {
+            Context context = new Context();
+            context.setVariable("fullName", fullName);
+            context.setVariable("jobTitle", jobTitle);
+            context.setVariable("roundName", roundName);
+            context.setVariable("companyName", companyName != null ? companyName : "HR Tech");
+            context.setVariable("year", Year.now().getValue());
+
+            String html = templateEngine.process("email/application-interview", context);
+            sendHtmlEmail(toEmail, "Thư Mời Xếp Lịch Phỏng Vấn " + roundName + " - " + jobTitle, html);
+
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            log.error("Failed to send interview schedule email to {}", toEmail, e);
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
     private void sendHtmlEmail(String to, String subject, String html) {
         try {
             SystemConfig config = systemConfigService.getSystemConfigEntity();

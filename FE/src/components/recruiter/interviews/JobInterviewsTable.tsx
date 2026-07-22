@@ -4,6 +4,7 @@ import React, { useMemo } from 'react'
 import { Clock, CheckCircle2, Check, XCircle, Calendar, Star, Users, AlertTriangle, Award, UserCheck } from 'lucide-react'
 import { InterviewRoundDetail } from '@/src/types/recruiter-interview'
 import Pagination from '@/src/components/common/Pagination'
+import { formatDateTime } from '@/src/utils'
 import { toast } from 'sonner'
 
 interface JobInterviewsTableProps {
@@ -20,9 +21,11 @@ interface JobInterviewsTableProps {
   onToggleSelectAll: (checked: boolean) => void
   onOpenScheduler: (appId: string) => void
   onOpenViewSlots: (appId: string) => void
+  onCheckInCandidate: (cand: InterviewRoundDetail) => void
   onOpenEvaluationModal: (cand: InterviewRoundDetail) => void
   onOpenRescheduleReviewModal: (cand: InterviewRoundDetail) => void
   onOpenFinalConfirmationModal: (cand: InterviewRoundDetail) => void
+  onOpenViewEvaluationResult?: (cand: InterviewRoundDetail) => void
   onOpenConfigModal: () => void
 }
 
@@ -40,9 +43,11 @@ export default function JobInterviewsTable({
   onToggleSelectAll,
   onOpenScheduler,
   onOpenViewSlots,
+  onCheckInCandidate,
   onOpenEvaluationModal,
   onOpenRescheduleReviewModal,
   onOpenFinalConfirmationModal,
+  onOpenViewEvaluationResult,
   onOpenConfigModal,
 }: JobInterviewsTableProps) {
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1
@@ -60,9 +65,27 @@ export default function JobInterviewsTable({
     const dateGroups: Record<string, Record<string, InterviewRoundDetail[]>> = {}
 
     confirmedCandidates.forEach((cand) => {
-      const parts = (cand.scheduledTime || '').split(' ')
-      const datePart = parts[0] || 'Chưa rõ ngày'
-      const timePart = parts[1] || parts[0] || '09:00'
+      let datePart = 'Chưa rõ ngày'
+      let timePart = '09:00'
+
+      if (cand.scheduledTime) {
+        try {
+          const d = new Date(cand.scheduledTime)
+          if (!isNaN(d.getTime())) {
+            datePart = d.toLocaleDateString('vi-VN', {
+              weekday: 'long',
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+            })
+            timePart = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })
+          } else {
+            datePart = cand.scheduledTime
+          }
+        } catch {
+          datePart = cand.scheduledTime
+        }
+      }
 
       if (!dateGroups[datePart]) dateGroups[datePart] = {}
       if (!dateGroups[datePart][timePart]) dateGroups[datePart][timePart] = []
@@ -88,22 +111,29 @@ export default function JobInterviewsTable({
             <thead>
               <tr className="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-black text-slate-500 uppercase tracking-wider">
                 <th className="py-3 px-4 w-10 text-center">
+              {(() => {
+                const schedulableCandidates = candidates.filter((c) => c.status === 'NOT_STARTED')
+                const isAllSchedulableChecked =
+                  schedulableCandidates.length > 0 &&
+                  schedulableCandidates.every((c) => selectedIds.has(c.applicationId))
+
+                return (
                   <input
                     type="checkbox"
-                    disabled={!isConfigured || candidates.length === 0}
-                    checked={
-                      candidates.length > 0 &&
-                      candidates.every((c) => selectedIds.has(c.applicationId))
-                    }
+                    disabled={!isConfigured || schedulableCandidates.length === 0}
+                    checked={isAllSchedulableChecked}
                     onChange={(e) => onToggleSelectAll(e.target.checked)}
                     className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer disabled:opacity-40"
-                    title="Tích chọn tất cả"
+                    title="Tích chọn tất cả ứng viên chưa xếp lịch"
                   />
+                )
+              })()}
                 </th>
                 <th className="py-3 px-3 text-center w-12">STT</th>
-                <th className="py-3 px-4">Ứng viên & Vị trí</th>
+                <th className="py-3 px-4">Ứng viên &amp; Vị trí</th>
                 <th className="py-3 px-4">Vòng phỏng vấn</th>
-                <th className="py-3 px-4">Lịch hẹn / Trạng thái</th>
+                <th className="py-3 px-4">Trạng thái phỏng vấn</th>
+                <th className="py-3 px-4">Thời gian phỏng vấn</th>
                 <th className="py-3 px-4">Số lần đổi lịch</th>
                 <th className="py-3 px-4 text-right">Hành động</th>
               </tr>
@@ -111,13 +141,14 @@ export default function JobInterviewsTable({
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
               {candidates.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400 font-semibold">
+                  <td colSpan={8} className="py-12 text-center text-slate-400 font-semibold">
                     Không tìm thấy ứng viên nào phù hợp trong vòng này.
                   </td>
                 </tr>
               ) : (
                 candidates.map((cand, idx) => {
                   const isSelected = selectedIds.has(cand.applicationId)
+                  const canSchedule = cand.status === 'NOT_STARTED'
                   return (
                     <tr
                       key={cand.id}
@@ -129,9 +160,10 @@ export default function JobInterviewsTable({
                         <input
                           type="checkbox"
                           checked={isSelected}
-                          disabled={!isConfigured}
+                          disabled={!isConfigured || !canSchedule}
                           onChange={() => onToggleSelect(cand.applicationId)}
-                          className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer disabled:opacity-40"
+                          className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                          title={!canSchedule ? 'Ứng viên này đã được xếp lịch / đang phỏng vấn' : 'Chọn ứng viên'}
                         />
                       </td>
                       <td className="py-3.5 px-3 text-center font-bold text-slate-400">
@@ -152,7 +184,7 @@ export default function JobInterviewsTable({
                         {cand.status === 'CONFIRMED' ? (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 text-[11px] font-extrabold text-emerald-700 dark:text-emerald-300">
                             <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                            {cand.scheduledTime}
+                            Đã chốt lịch
                           </span>
                         ) : cand.status === 'ATTENDED' ? (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-900/40 text-[11px] font-extrabold text-teal-700 dark:text-teal-300">
@@ -201,6 +233,16 @@ export default function JobInterviewsTable({
                           </span>
                         )}
                       </td>
+                      <td className="py-3.5 px-4 font-extrabold text-slate-800 dark:text-slate-200">
+                        {cand.scheduledTime ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-slate-800 dark:text-slate-200">
+                            <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            {formatDateTime(cand.scheduledTime)}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-xs font-normal">Chưa chốt</span>
+                        )}
+                      </td>
                       <td className="py-3.5 px-4">
                         <span
                           className={`px-2.5 py-1 text-[11px] font-extrabold rounded-full ${
@@ -216,6 +258,19 @@ export default function JobInterviewsTable({
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {/* Always allow viewing previous rounds history if available */}
+                          {cand.previousRoundsHistory && cand.previousRoundsHistory.length > 0 && cand.status !== 'PASSED' && cand.status !== 'FAILED' && cand.status !== 'TERMINATED' && (
+                            <button
+                              type="button"
+                              onClick={() => onOpenViewEvaluationResult?.(cand)}
+                              className="px-2.5 py-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 border border-blue-200 dark:border-blue-800 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1 shadow-xs shrink-0"
+                              title="Xem kết quả đánh giá các vòng trước"
+                            >
+                              <Award className="w-3.5 h-3.5 text-blue-600" />
+                              <span>Xem KQ Vòng trước</span>
+                            </button>
+                          )}
+
                           {!isConfigured ? (
                             <button
                               type="button"
@@ -255,19 +310,36 @@ export default function JobInterviewsTable({
                               <Award className="w-3.5 h-3.5" />
                               <span>Duyệt Kết Quả Cuối Cùng</span>
                             </button>
-                          ) : cand.status === 'CONFIRMED' || cand.status === 'ATTENDED' ? (
+                          ) : cand.status === 'CONFIRMED' ? (
+                            <button
+                              type="button"
+                              onClick={() => onCheckInCandidate(cand)}
+                              className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+                              title="Xác nhận ứng viên đã có mặt tham dự phỏng vấn"
+                            >
+                              <UserCheck className="w-3.5 h-3.5" />
+                              <span>Check-in (Điểm danh)</span>
+                            </button>
+                          ) : cand.status === 'ATTENDED' ? (
                             <button
                               type="button"
                               onClick={() => onOpenEvaluationModal(cand)}
-                              className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1 shadow-xs"
+                              className="px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+                              title="Chấm điểm & nhận xét chuyên môn"
                             >
                               <Star className="w-3.5 h-3.5 fill-white" />
                               <span>Đánh giá Vòng {activeRound}</span>
                             </button>
                           ) : cand.status === 'PASSED' || cand.status === 'FAILED' || cand.status === 'TERMINATED' ? (
-                            <span className="px-3 py-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-xl">
-                              {cand.status === 'PASSED' ? 'Đã duyệt tuyển dụng' : cand.status === 'FAILED' ? 'Đã từ chối' : 'Đã dừng luồng'}
-                            </span>
+                            <button
+                              type="button"
+                              onClick={() => onOpenViewEvaluationResult?.(cand)}
+                              className="px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+                              title="Xem kết quả đánh giá chi tiết"
+                            >
+                              <Award className="w-3.5 h-3.5 text-amber-500" />
+                              <span>Xem kết quả đánh giá</span>
+                            </button>
                           ) : (
                             <button
                               type="button"
@@ -275,7 +347,7 @@ export default function JobInterviewsTable({
                               className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
                             >
                               <Calendar className="w-3.5 h-3.5" />
-                              <span>Tạo lịch hẹn</span>
+                              <span>Tạo lịch Vòng {activeRound}</span>
                             </button>
                           )}
                         </div>
@@ -299,7 +371,7 @@ export default function JobInterviewsTable({
         />
       </div>
 
-      {/* ── MOCK SECTION BAN ĐẦU: LỊCH PHỎNG VẤN ĐÃ CHỐT (GOM THEO NGÀY & GIỜ) ── */}
+      {/* ── SECTION: LỊCH PHỎNG VẤN ĐÃ CHỐT (GOM THEO NGÀY & GIỜ) ── */}
       {confirmedDateAndSlotGroups.length > 0 && (
         <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
@@ -376,14 +448,41 @@ export default function JobInterviewsTable({
                                 )}
                               </td>
                               <td className="py-3.5 px-5 text-right">
-                                <button
-                                  type="button"
-                                  onClick={() => onOpenEvaluationModal(cand)}
-                                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl px-3 py-1.5 shrink-0 cursor-pointer inline-flex items-center gap-1.5 shadow-xs transition-all"
-                                >
-                                  <Star className="w-3.5 h-3.5 fill-white" />
-                                  <span>Đánh giá Vòng {activeRound}</span>
-                                </button>
+                                <div className="flex items-center justify-end gap-2">
+                                  {cand.previousRoundsHistory && cand.previousRoundsHistory.length > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => onOpenViewEvaluationResult?.(cand)}
+                                      className="px-2.5 py-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 border border-blue-200 dark:border-blue-800 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1 shadow-xs shrink-0"
+                                      title="Xem kết quả đánh giá các vòng trước"
+                                    >
+                                      <Award className="w-3.5 h-3.5 text-blue-600" />
+                                      <span>Xem KQ Vòng trước</span>
+                                    </button>
+                                  )}
+
+                                  {cand.status === 'CONFIRMED' ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => onCheckInCandidate(cand)}
+                                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl px-3 py-1.5 shrink-0 cursor-pointer inline-flex items-center gap-1.5 shadow-xs transition-all"
+                                      title="Xác nhận ứng viên đã tham dự phỏng vấn"
+                                    >
+                                      <UserCheck className="w-3.5 h-3.5" />
+                                      <span>Check-in (Điểm danh)</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => onOpenEvaluationModal(cand)}
+                                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl px-3 py-1.5 shrink-0 cursor-pointer inline-flex items-center gap-1.5 shadow-xs transition-all"
+                                      title="Chấm điểm & nhận xét chuyên môn"
+                                    >
+                                      <Star className="w-3.5 h-3.5 fill-white" />
+                                      <span>Đánh giá Vòng {activeRound}</span>
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           ))}
