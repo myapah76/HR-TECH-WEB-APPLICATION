@@ -101,10 +101,7 @@ export function useJobInterviewCandidates(
           roundNumber: 1,
           roundName: firstRoundName,
           status: baseStatus,
-          rescheduleCount:
-            a.status === 'CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE' || a.status === 'RESCHEDULE_REQUESTED'
-              ? Math.max(1, a.rescheduleCount || 1)
-              : a.rescheduleCount || 0,
+          rescheduleCount: a.rescheduleCount || 0,
           scheduledTime: a.scheduledTime,
           candidatePreferredTime: a.candidatePreferredTime,
           candidateRescheduleReason: a.candidateRescheduleReason,
