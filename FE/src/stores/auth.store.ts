@@ -43,8 +43,20 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: () => {
     if (typeof document !== 'undefined') {
-      document.cookie = 'hasSession=; path=/; max-age=0; SameSite=Lax'
-      document.cookie = 'userRole=; path=/; max-age=0; SameSite=Lax'
+      document.cookie =
+        'hasSession=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax'
+      document.cookie =
+        'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax'
+
+      // Loop and sweep all document cookies to ensure complete cleanup
+      const cookies = document.cookie.split(';')
+      for (const cookie of cookies) {
+        const eqPos = cookie.indexOf('=')
+        const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim()
+        if (name) {
+          document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax`
+        }
+      }
     }
     // Xóa toàn bộ cache React Query để tránh hiển thị data của user cũ
     queryClient.clear()

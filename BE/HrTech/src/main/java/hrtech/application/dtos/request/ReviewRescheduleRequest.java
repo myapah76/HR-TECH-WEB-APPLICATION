@@ -1,5 +1,6 @@
 package hrtech.application.dtos.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -17,5 +18,5 @@ public class ReviewRescheduleRequest {
 
     private String rejectionReason;
 
-    private List<InterviewSlotDto> newSlots;
+    private List<@Valid InterviewSlotDto> newSlots;
 }

@@ -328,9 +328,11 @@ export default function ApplicationDetailModal({
               {/* Action Buttons Footer (Handles ACCEPTED, REJECTED, SUBMITTED/SCORED) */}
               <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center gap-3">
                 {activeApp.status === ApplicationStatus.REJECTED ? (
-                  <div className="w-full py-3 text-center rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-xs border border-rose-200 dark:border-rose-900/60 flex items-center justify-center gap-2">
-                    <XCircle className="w-4 h-4 text-rose-600" />
-                    <span>Hồ sơ ứng tuyển đã bị từ chối</span>
+                  <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-2xl bg-rose-50/80 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60">
+                    <div className="flex items-center gap-2 text-rose-700 dark:text-rose-300 font-bold text-xs">
+                      <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                      <span>Hồ sơ ứng tuyển đã bị từ chối</span>
+                    </div>
                   </div>
                 ) : activeApp.status === ApplicationStatus.ACCEPTED ||
                   activeApp.status === ApplicationStatus.INTERVIEW ||

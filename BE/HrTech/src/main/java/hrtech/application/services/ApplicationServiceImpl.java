@@ -866,9 +866,11 @@ public class ApplicationServiceImpl implements IApplicationService {
                     if (request.isAutoRejectBelowThreshold() && scorePercent < request.getThresholdPercent()) {
                         app.setStatus(ApplicationStatus.REJECTED);
                         autoRejected++;
+                        Application savedApp = applicationRepository.save(app);
+                        notifyCandidateStatusAfterCommit(savedApp, ApplicationStatus.REJECTED);
+                    } else {
+                        applicationRepository.save(app);
                     }
-
-                    applicationRepository.save(app);
                 } catch (Exception e) {
                     log.warn("[BulkScore] Failed to score application {}: {}", app.getId(), e.getMessage());
                     failed++;
@@ -884,7 +886,8 @@ public class ApplicationServiceImpl implements IApplicationService {
                     double scorePercent = app.getApplicationScore().getOverallScore().doubleValue();
                     if (scorePercent < request.getThresholdPercent()) {
                         app.setStatus(ApplicationStatus.REJECTED);
-                        applicationRepository.save(app);
+                        Application savedApp = applicationRepository.save(app);
+                        notifyCandidateStatusAfterCommit(savedApp, ApplicationStatus.REJECTED);
                         autoRejected++;
                     }
                 }
@@ -1020,18 +1023,16 @@ public class ApplicationServiceImpl implements IApplicationService {
                         application.getId().toString()
                 );
 
-                if (isFirstTimeSendingSlots) {
-                    String companyName = job.getCompany() != null ? job.getCompany().getName() : "HR Tech";
-                    String candidateFullName = application.getUser().getFirstName() + " " + application.getUser().getLastName();
-                    notificationService.sendInterviewScheduleNotification(
-                            application.getUser().getEmail(),
-                            candidateFullName,
-                            job.getTitle(),
-                            jobRound.getRoundName(),
-                            companyName,
-                            application.getId().toString()
-                    );
-                }
+                String companyName = job.getCompany() != null ? job.getCompany().getName() : "HR Tech";
+                String candidateFullName = application.getUser().getFirstName() + " " + application.getUser().getLastName();
+                notificationService.sendInterviewScheduleNotification(
+                        application.getUser().getEmail(),
+                        candidateFullName,
+                        job.getTitle(),
+                        jobRound.getRoundName(),
+                        companyName,
+                        application.getId().toString()
+                );
             } catch (Exception e) {
                 log.error("Failed to notify candidate for interview slots", e);
             }
@@ -1230,6 +1231,21 @@ public class ApplicationServiceImpl implements IApplicationService {
                     NotificationType.INTERVIEW_SCHEDULED,
                     app.getId().toString()
             );
+
+            // Gửi Email cho Candidate nếu HR từ chối đề xuất và gửi danh sách slot mới
+            if (Boolean.FALSE.equals(request.getAccepted()) && appRound.getStatus() != InterviewRoundStatus.TERMINATED) {
+                String companyName = app.getJob().getCompany() != null ? app.getJob().getCompany().getName() : "HR Tech";
+                String candidateFullName = app.getUser().getFirstName() + " " + app.getUser().getLastName();
+                String roundName = appRound.getJobInterviewRound() != null ? appRound.getJobInterviewRound().getRoundName() : ("Vòng " + roundNumber);
+                notificationService.sendInterviewScheduleNotification(
+                        app.getUser().getEmail(),
+                        candidateFullName,
+                        app.getJob().getTitle(),
+                        roundName,
+                        companyName,
+                        app.getId().toString()
+                );
+            }
         } catch (Exception e) {
             log.error("Failed to notify candidate on reschedule review", e);
         }
@@ -1374,12 +1390,7 @@ public class ApplicationServiceImpl implements IApplicationService {
 
         for (int i = 0; i < slots.size(); i++) {
             InterviewSlotDto s1 = slots.get(i);
-            if (s1.getStartTime() == null || s1.getEndTime() == null) {
-                throw new AppException(ErrorCode.BAD_REQUEST, "Thời gian bắt đầu và kết thúc của khung giờ phỏng vấn không được để trống!");
-            }
-            if (!s1.getEndTime().isAfter(s1.getStartTime())) {
-                throw new AppException(ErrorCode.BAD_REQUEST, "Thời gian kết thúc phải diễn ra sau thời gian bắt đầu!");
-            }
+            if (s1.getStartTime() == null || s1.getEndTime() == null) continue;
 
             for (int j = i + 1; j < slots.size(); j++) {
                 InterviewSlotDto s2 = slots.get(j);

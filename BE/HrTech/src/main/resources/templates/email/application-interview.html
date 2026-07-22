@@ -8,41 +8,35 @@
 
     <h1 style="text-align:center; color:#4b2e2a;">HR Tech</h1>
 
-    <h2 style="color:#4b2e2a;">Interview Schedule</h2>
+    <h2 style="color:#0284c7;">Thư Mời Phỏng Vấn</h2>
 
     <p>Xin chào <span th:text="${fullName}"></span>,</p>
 
     <p>
-        Hồ sơ ứng tuyển của bạn cho vị trí
+        Chúc mừng bạn! Hồ sơ ứng tuyển của bạn cho vị trí
         <b th:text="${jobTitle}"></b>
-        đã được mời tham gia phỏng vấn. Vui lòng kiểm tra lịch bên dưới.
+        <span th:if="${companyName != null}">
+            tại <b th:text="${companyName}"></b>
+        </span>
+        đã được lựa chọn để tiến vào <b th:text="${roundName}"></b>.
     </p>
 
-    <div style="background:#f8f1e7; padding:18px; border-radius:12px; margin:24px 0;">
-        <p style="margin:6px 0;">
-            <b>Thời gian:</b>
-            <span th:text="${#temporals.format(interviewDateTime, 'HH:mm dd/MM/yyyy')}"></span>
-        </p>
-        <p style="margin:6px 0;" th:if="${interviewLocation != null}">
-            <b>Địa điểm:</b>
-            <span th:text="${interviewLocation}"></span>
-        </p>
-        <p style="margin:6px 0;" th:if="${interviewMeetingLink != null}">
-            <b>Meeting link:</b>
-            <a th:href="${interviewMeetingLink}" th:text="${interviewMeetingLink}" style="color:#4b2e2a;"></a>
-        </p>
-        <p style="margin:6px 0;" th:if="${note != null}">
-            <b>Ghi chú:</b>
-            <span th:text="${note}"></span>
+    <div style="background:#e0f2fe; border-left: 4px solid #0284c7; padding:18px; border-radius:12px; margin:24px 0;">
+        <p style="margin:0; color:#0369a1; font-weight:600; line-height: 1.5;">
+            Nhà tuyển dụng đã gửi các khung giờ phỏng vấn phù hợp. Vui lòng bấm vào nút bên dưới để truy cập tài khoản và chốt 1 khung giờ phỏng vấn thuận tiện nhất cho bạn.
         </p>
     </div>
 
     <div style="text-align:center; margin:30px 0;">
-        <a th:href="${actionLink}"
-           style="background:#4b2e2a; color:white; padding:12px 20px; text-decoration:none; border-radius:8px; display:inline-block; margin:4px;">
-            <span th:text="${actionLabel}">Phản hồi lịch phỏng vấn</span>
+        <a th:href="${actionUrl != null ? actionUrl : 'http://localhost:3000/candidate/applied-jobs'}"
+           style="background:#0284c7; color:white; padding:14px 24px; text-decoration:none; border-radius:10px; display:inline-block; font-weight:bold; font-size:14px;">
+            Chọn Khung Giờ Phỏng Vấn Ngay
         </a>
     </div>
+
+    <p style="color:#666; font-size:12px; text-align:center;">
+        Nếu nút bấm trên không hoạt động, bạn có thể truy cập trang Đơn ứng tuyển của tôi trên hệ thống HR Tech để chọn lịch.
+    </p>
 
     <div th:replace="~{email/fragments/footer :: footer}"></div>
 

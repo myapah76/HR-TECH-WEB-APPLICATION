@@ -48,6 +48,7 @@ interface SlotInputState {
   durationMinutes: number
   location: string
   meetingLink: string
+  mode?: 'OFFLINE' | 'ONLINE'
 }
 
 export default function MultiSlotSchedulerModal({
@@ -71,6 +72,7 @@ export default function MultiSlotSchedulerModal({
       durationMinutes: 60,
       location: '',
       meetingLink: '',
+      mode: 'OFFLINE',
     },
   ])
   const [note, setNote] = useState('')
@@ -88,6 +90,7 @@ export default function MultiSlotSchedulerModal({
         durationMinutes: lastSlot?.durationMinutes || 60,
         location: lastSlot?.location || '',
         meetingLink: lastSlot?.meetingLink || '',
+        mode: lastSlot?.mode || 'OFFLINE',
       },
     ])
   }
@@ -284,32 +287,62 @@ export default function MultiSlotSchedulerModal({
                       </div>
                     </div>
 
-                    {/* Location & Meeting Link */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                      <div>
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1 flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-slate-400" /> Địa điểm (Offline):
-                        </span>
-                        <input
-                          type="text"
-                          placeholder="Ví dụ: Tầng 5, Tòa nhà FPT Tower..."
-                          value={slot.location}
-                          onChange={(e) => handleSlotChange(slot.id, { location: e.target.value })}
-                          className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500"
-                        />
+                    {/* Step 4: Mode Choice (Offline vs Online Toggle) */}
+                    <div className="space-y-2 pt-1">
+                      <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block">
+                        4. Hình thức phỏng vấn:
+                      </span>
+                      <div className="flex p-1 bg-slate-200/60 dark:bg-slate-800 rounded-xl">
+                        <button
+                          type="button"
+                          onClick={() => handleSlotChange(slot.id, { mode: 'OFFLINE', meetingLink: '' })}
+                          className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                            (slot.mode || (slot.meetingLink ? 'ONLINE' : 'OFFLINE')) === 'OFFLINE'
+                              ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
+                              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                          }`}
+                        >
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span>Phỏng vấn Offline (Địa điểm)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSlotChange(slot.id, { mode: 'ONLINE', location: '' })}
+                          className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                            (slot.mode || (slot.meetingLink ? 'ONLINE' : 'OFFLINE')) === 'ONLINE'
+                              ? 'bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400 shadow-xs'
+                              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                          }`}
+                        >
+                          <LinkIcon className="w-3.5 h-3.5" />
+                          <span>Phỏng vấn Online (Google Meet)</span>
+                        </button>
                       </div>
-                      <div>
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1 flex items-center gap-1">
-                          <LinkIcon className="w-3 h-3 text-slate-400" /> Link Google Meet (Online):
-                        </span>
-                        <input
-                          type="url"
-                          placeholder="https://meet.google.com/..."
-                          value={slot.meetingLink}
-                          onChange={(e) => handleSlotChange(slot.id, { meetingLink: e.target.value })}
-                          className="w-full px-3 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500"
-                        />
-                      </div>
+
+                      {/* Render Input tương ứng dựa theo mode */}
+                      {(slot.mode || (slot.meetingLink ? 'ONLINE' : 'OFFLINE')) === 'OFFLINE' ? (
+                        <div>
+                          <input
+                            type="text"
+                            required
+                            placeholder="Ví dụ: Tầng 5, Tòa nhà FPT Tower, 10 Phạm Văn Bạch..."
+                            value={slot.location}
+                            onChange={(e) => handleSlotChange(slot.id, { location: e.target.value })}
+                            className="w-full px-3.5 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500"
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <input
+                            type="url"
+                            required
+                            placeholder="Ví dụ: https://meet.google.com/abc-defg-hij"
+                            value={slot.meetingLink}
+                            onChange={(e) => handleSlotChange(slot.id, { meetingLink: e.target.value })}
+                            className="w-full px-3.5 py-2 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-blue-500"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 )

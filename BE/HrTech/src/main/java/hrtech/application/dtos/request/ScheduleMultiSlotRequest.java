@@ -1,5 +1,6 @@
 package hrtech.application.dtos.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -21,7 +22,7 @@ public class ScheduleMultiSlotRequest {
     private Integer roundNumber;
 
     @NotEmpty(message = "Slots list must not be empty")
-    private List<InterviewSlotDto> slots;
+    private List<@Valid InterviewSlotDto> slots;
 
     private String note;
 }

@@ -96,10 +96,15 @@ export default function AppliedJobCard({
   const companyLogo = jobDetail?.companyLogoUrl || null
   const location = jobDetail?.location || 'Chưa cập nhật'
   const hasInterviewSchedule =
+    Boolean(app.scheduledTime) ||
     Boolean(app.interviewDateTime) ||
     app.status === ApplicationStatus.INTERVIEW ||
+    (Array.isArray(app.interviewRounds) && app.interviewRounds.length > 0) ||
     (app.status as string) === 'SLOTS_SENT' ||
-    (app.status as string) === 'RESCHEDULE_REQUESTED'
+    (app.status as string) === 'RESCHEDULE_REQUESTED' ||
+    (app.status as string) === 'RESCHEDULE_REJECTED' ||
+    (app.status as string) === 'PENDING_INTERVIEW_SCHEDULE' ||
+    (app.status as string) === 'CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE'
 
   const statusInfo = statusConfig[app.status] || {
     label: app.status,
@@ -112,8 +117,10 @@ export default function AppliedJobCard({
 
   return (
     <div
-      onClick={onSelect}
-      className={`group relative bg-white rounded-2xl border p-6 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:border-blue-200/80 hover:-translate-y-0.5 cursor-pointer ${
+      onClick={hasInterviewSchedule ? onSelect : undefined}
+      className={`group relative bg-white rounded-2xl border p-6 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:border-blue-200/80 ${
+        hasInterviewSchedule ? 'cursor-pointer' : ''
+      } ${
         isSelected ? 'border-blue-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.03)]' : 'border-slate-200/50'
       }`}
     >
@@ -243,11 +250,12 @@ export default function AppliedJobCard({
         </div>
       </div>
 
-      {isSelected && (
+      {isSelected && hasInterviewSchedule && (
         <div onClick={(e) => e.stopPropagation()}>
           <CandidateInterviewRoundsSection
             applicationId={app.id}
             jobTitle={app.jobTitle}
+            enabled={hasInterviewSchedule}
             onOpenChangeSchedule={(roundNum) => onOpenChangeSchedule(app.id, roundNum)}
           />
         </div>

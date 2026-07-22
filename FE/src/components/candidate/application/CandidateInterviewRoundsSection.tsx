@@ -12,20 +12,16 @@ import {
   AlertTriangle,
   Sparkles,
   Award,
-  Star,
-  Check,
   XCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import {
-  useGetApplicationInterviewRounds,
-  useSelectInterviewSlot,
-} from '@/src/hooks/application'
+import { useGetApplicationInterviewRounds, useSelectInterviewSlot } from '@/src/hooks/application'
 import { formatDateTime, getErrorMessage } from '@/src/utils'
 
 interface CandidateInterviewRoundsSectionProps {
   applicationId: string
   jobTitle: string
+  enabled?: boolean
   onOpenChangeSchedule: (roundNumber: number) => void
 }
 
@@ -38,13 +34,21 @@ function formatSlotTimeRange(startTimeIso: string, endTimeIso?: string) {
       month: '2-digit',
       year: 'numeric',
     })
-    const startHourStr = start.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })
+    const startHourStr = start.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
 
     if (!endTimeIso) {
       return `${startHourStr} (${dateStr})`
     }
     const end = new Date(endTimeIso)
-    const endHourStr = end.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })
+    const endHourStr = end.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
     const diffMinutes = Math.round((end.getTime() - start.getTime()) / (60 * 1000))
     const durationStr = diffMinutes > 0 ? ` • Thời lượng: ${diffMinutes} phút` : ''
     return `${startHourStr} - ${endHourStr} (${dateStr})${durationStr}`
@@ -56,9 +60,10 @@ function formatSlotTimeRange(startTimeIso: string, endTimeIso?: string) {
 export default function CandidateInterviewRoundsSection({
   applicationId,
   jobTitle,
+  enabled = true,
   onOpenChangeSchedule,
 }: CandidateInterviewRoundsSectionProps) {
-  const { data: rounds = [], isLoading } = useGetApplicationInterviewRounds(applicationId)
+  const { data: rounds = [], isLoading } = useGetApplicationInterviewRounds(applicationId, enabled)
   const selectSlotMutation = useSelectInterviewSlot()
 
   // State to track which round tab candidate is currently viewing (default to latest active round)
@@ -104,11 +109,13 @@ export default function CandidateInterviewRoundsSection({
     )
   }
 
-  const isSlotsSent = currentViewRound.status === 'SLOTS_SENT' || currentViewRound.status === 'RESCHEDULE_REJECTED'
+  const isSlotsSent =
+    currentViewRound.status === 'SLOTS_SENT' || currentViewRound.status === 'RESCHEDULE_REJECTED'
   const isConfirmed = currentViewRound.status === 'CONFIRMED'
   const isRescheduleRequested = currentViewRound.status === 'RESCHEDULE_REQUESTED'
   const isAttended = currentViewRound.status === 'ATTENDED'
-  const isPassed = currentViewRound.status === 'PASSED' || currentViewRound.status === 'INTERVIEW_COMPLETED'
+  const isPassed =
+    currentViewRound.status === 'PASSED' || currentViewRound.status === 'INTERVIEW_COMPLETED'
   const isFailed = currentViewRound.status === 'FAILED' || currentViewRound.status === 'TERMINATED'
   const isNotStarted = currentViewRound.status === 'NOT_STARTED'
 
@@ -145,19 +152,26 @@ export default function CandidateInterviewRoundsSection({
                   isSelectedTab
                     ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-400/30'
                     : rPassed
-                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100'
-                    : rFailed
-                    ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800 hover:bg-rose-100'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100'
+                      : rFailed
+                        ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800 hover:bg-rose-100'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
                 }`}
               >
                 <span>{r.roundName || `Vòng ${r.roundNumber}`}</span>
                 {rPassed ? (
-                  <CheckCircle2 className={`w-3.5 h-3.5 ${isSelectedTab ? 'text-white' : 'text-emerald-500'}`} />
+                  <CheckCircle2
+                    className={`w-3.5 h-3.5 ${isSelectedTab ? 'text-white' : 'text-emerald-500'}`}
+                  />
                 ) : rFailed ? (
-                  <XCircle className={`w-3.5 h-3.5 ${isSelectedTab ? 'text-white' : 'text-rose-500'}`} />
+                  <XCircle
+                    className={`w-3.5 h-3.5 ${isSelectedTab ? 'text-white' : 'text-rose-500'}`}
+                  />
                 ) : isCurrentActive ? (
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" title="Vòng hiện tại" />
+                  <span
+                    className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"
+                    title="Vòng hiện tại"
+                  />
                 ) : null}
               </button>
             )
@@ -185,7 +199,8 @@ export default function CandidateInterviewRoundsSection({
               <p className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>
-                  Thời gian phỏng vấn: <strong>{formatDateTime(currentViewRound.scheduledTime)}</strong>
+                  Thời gian phỏng vấn:{' '}
+                  <strong>{formatDateTime(currentViewRound.scheduledTime)}</strong>
                 </span>
               </p>
             )}
@@ -199,7 +214,12 @@ export default function CandidateInterviewRoundsSection({
               <p className="flex items-center gap-2 font-semibold text-blue-600">
                 <LinkIcon className="w-4 h-4" />
                 Link Online:{' '}
-                <a href={currentViewRound.meetingLink} target="_blank" rel="noreferrer" className="underline">
+                <a
+                  href={currentViewRound.meetingLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline"
+                >
                   {currentViewRound.meetingLink}
                 </a>
               </p>
@@ -256,9 +276,7 @@ export default function CandidateInterviewRoundsSection({
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-xs font-extrabold text-slate-800 dark:text-slate-100">
                           <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                          <span>
-                            {formatSlotTimeRange(slot.startTime, slot.endTime)}
-                          </span>
+                          <span>{formatSlotTimeRange(slot.startTime, slot.endTime)}</span>
                           {isExtendedSlot && (
                             <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700">
                               <Sparkles className="w-3 h-3 text-emerald-600" />
@@ -267,52 +285,54 @@ export default function CandidateInterviewRoundsSection({
                           )}
                         </div>
 
-                      {slot.location && (
-                        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-                          <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span>{slot.location}</span>
-                        </div>
-                      )}
+                        {slot.location && (
+                          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span>{slot.location}</span>
+                          </div>
+                        )}
 
-                      {slot.meetingLink && (
-                        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
-                          <LinkIcon className="w-3 h-3 shrink-0" />
-                          <a
-                            href={slot.meetingLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="hover:underline truncate max-w-xs"
-                          >
-                            Google Meet ({slot.meetingLink})
-                          </a>
-                        </div>
-                      )}
+                        {slot.meetingLink && (
+                          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                            <LinkIcon className="w-3 h-3 shrink-0" />
+                            <a
+                              href={slot.meetingLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="hover:underline truncate max-w-xs"
+                            >
+                              Google Meet ({slot.meetingLink})
+                            </a>
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSelectSlot(slot.id)}
+                        disabled={selectSlotMutation.isPending}
+                        className={`px-4 py-2 text-xs font-bold text-white disabled:opacity-50 rounded-xl transition-colors cursor-pointer shadow-xs self-end sm:self-center shrink-0 flex items-center gap-1.5 ${
+                          isExtendedSlot
+                            ? 'bg-emerald-600 hover:bg-emerald-700'
+                            : 'bg-blue-600 hover:bg-blue-700'
+                        }`}
+                      >
+                        {selectSlotMutation.isPending ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        )}
+                        Chọn khung giờ này
+                      </button>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleSelectSlot(slot.id)}
-                      disabled={selectSlotMutation.isPending}
-                      className={`px-4 py-2 text-xs font-bold text-white disabled:opacity-50 rounded-xl transition-colors cursor-pointer shadow-xs self-end sm:self-center shrink-0 flex items-center gap-1.5 ${
-                        isExtendedSlot
-                          ? 'bg-emerald-600 hover:bg-emerald-700'
-                          : 'bg-blue-600 hover:bg-blue-700'
-                      }`}
-                    >
-                      {selectSlotMutation.isPending ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                      )}
-                      Chọn khung giờ này
-                    </button>
-                  </div>
-                )
-              })
-            })()}
+                  )
+                })
+              })()}
             </div>
           ) : (
-            <p className="text-xs text-slate-500 italic">Chưa có khung giờ chi tiết nào được đính kèm.</p>
+            <p className="text-xs text-slate-500 italic">
+              Chưa có khung giờ chi tiết nào được đính kèm.
+            </p>
           )}
 
           {(() => {
@@ -357,16 +377,28 @@ export default function CandidateInterviewRoundsSection({
           <div className="space-y-1.5 text-xs font-bold text-slate-800 dark:text-slate-200">
             {(() => {
               const selectedSlot = currentViewRound.slots?.find((s: any) => s.isSelected)
-              const durationMins = selectedSlot?.startTime && selectedSlot?.endTime
-                ? Math.round((new Date(selectedSlot.endTime).getTime() - new Date(selectedSlot.startTime).getTime()) / (60 * 1000))
-                : 0
+              const durationMins =
+                selectedSlot?.startTime && selectedSlot?.endTime
+                  ? Math.round(
+                      (new Date(selectedSlot.endTime).getTime() -
+                        new Date(selectedSlot.startTime).getTime()) /
+                        (60 * 1000)
+                    )
+                  : 0
 
               return (
                 <p className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>
-                    Thời gian: <strong className="text-emerald-900 dark:text-emerald-100">{formatDateTime(currentViewRound.scheduledTime)}</strong>
-                    {durationMins > 0 && <span className="text-emerald-700 dark:text-emerald-300 font-semibold ml-1.5">(Thời lượng: {durationMins} phút)</span>}
+                    Thời gian:{' '}
+                    <strong className="text-emerald-900 dark:text-emerald-100">
+                      {formatDateTime(currentViewRound.scheduledTime)}
+                    </strong>
+                    {durationMins > 0 && (
+                      <span className="text-emerald-700 dark:text-emerald-300 font-semibold ml-1.5">
+                        (Thời lượng: {durationMins} phút)
+                      </span>
+                    )}
                   </span>
                 </p>
               )
@@ -381,7 +413,12 @@ export default function CandidateInterviewRoundsSection({
               <p className="flex items-center gap-2 font-semibold text-blue-600">
                 <LinkIcon className="w-4 h-4" />
                 Link Online:{' '}
-                <a href={currentViewRound.meetingLink} target="_blank" rel="noreferrer" className="underline">
+                <a
+                  href={currentViewRound.meetingLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline"
+                >
                   {currentViewRound.meetingLink}
                 </a>
               </p>
@@ -411,7 +448,10 @@ export default function CandidateInterviewRoundsSection({
             Bạn đã gửi đề xuất đổi lịch phỏng vấn Vòng {currentViewRound.roundNumber}
           </div>
           <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Thời gian đề xuất: <span className="font-bold">{formatDateTime(currentViewRound.candidatePreferredTime)}</span>
+            Thời gian đề xuất:{' '}
+            <span className="font-bold">
+              {formatDateTime(currentViewRound.candidatePreferredTime)}
+            </span>
           </p>
           {currentViewRound.candidateRescheduleReason && (
             <p className="text-xs text-slate-500 italic">

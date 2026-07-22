@@ -11,5 +11,7 @@ export const useGetApplicationsByJob = (
     queryKey: ['applications', 'job', jobId, page, size, status],
     queryFn: () => getApplicationsByJob(jobId!, page, size, status),
     enabled: !!jobId,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   })
 }

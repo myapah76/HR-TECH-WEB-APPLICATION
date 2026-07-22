@@ -145,12 +145,13 @@ public class EmailSenderImpl implements IEmailSender {
             Context context = new Context();
             context.setVariable("fullName", fullName);
             context.setVariable("jobTitle", jobTitle);
-            context.setVariable("roundName", roundName);
+            context.setVariable("roundName", roundName != null ? roundName : "Vòng phỏng vấn");
             context.setVariable("companyName", companyName != null ? companyName : "HR Tech");
+            context.setVariable("actionUrl", "http://localhost:3000/candidate/applied-jobs");
             context.setVariable("year", Year.now().getValue());
 
             String html = templateEngine.process("email/application-interview", context);
-            sendHtmlEmail(toEmail, "Thư Mời Xếp Lịch Phỏng Vấn " + roundName + " - " + jobTitle, html);
+            sendHtmlEmail(toEmail, "Thư Mời Chọn Lịch Phỏng Vấn " + (roundName != null ? roundName : "") + " - " + jobTitle, html);
 
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {

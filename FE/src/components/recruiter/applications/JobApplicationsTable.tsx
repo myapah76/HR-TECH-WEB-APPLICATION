@@ -2,7 +2,16 @@
 
 import React, { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { FileText, Sparkles, Loader2, Trash2, ShieldAlert, CheckCircle2, CheckSquare, Calendar } from 'lucide-react'
+import {
+  FileText,
+  Sparkles,
+  Loader2,
+  Trash2,
+  ShieldAlert,
+  CheckCircle2,
+  CheckSquare,
+  Calendar,
+} from 'lucide-react'
 import { ApplicationStatus, ApplicationSummaryResponse } from '@/src/types'
 import Pagination from '@/src/components/common/Pagination'
 import { formatDate } from '@/src/utils'
@@ -67,9 +76,7 @@ export default function JobApplicationsTable({
     [paginatedApplications]
   )
   const allCurrentSelected = useMemo(
-    () =>
-      currentIds.size > 0 &&
-      [...currentIds].every((id) => selectedIds?.has(id)),
+    () => currentIds.size > 0 && [...currentIds].every((id) => selectedIds?.has(id)),
     [currentIds, selectedIds]
   )
   const someCurrentSelected = useMemo(
@@ -150,7 +157,11 @@ export default function JobApplicationsTable({
           <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
             <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
-              Phát hiện <strong className="font-black text-amber-900 dark:text-amber-200">{belowThresholdCount}</strong> ứng viên có điểm &lt; <strong className="font-black">{thresholdPercent}%</strong>
+              Phát hiện{' '}
+              <strong className="font-black text-amber-900 dark:text-amber-200">
+                {belowThresholdCount}
+              </strong>{' '}
+              ứng viên có điểm &lt; <strong className="font-black">{thresholdPercent}%</strong>
             </span>
           </div>
           <button
@@ -210,12 +221,12 @@ export default function JobApplicationsTable({
                     key={app.id}
                     className={`transition-all ${
                       isRejected
-                        ? 'opacity-40 bg-slate-100/60 dark:bg-slate-800/40 line-through'
+                        ? 'bg-slate-100/50 dark:bg-slate-800/30 hover:bg-slate-100'
                         : isBelowThreshold
-                        ? 'opacity-60 grayscale-[50%] bg-amber-50/20 dark:bg-amber-950/10 border-l-4 border-l-amber-400 hover:opacity-85'
-                        : isSelected
-                        ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-l-4 border-l-emerald-500'
-                        : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/50'
+                          ? 'opacity-60 grayscale-[50%] bg-amber-50/20 dark:bg-amber-950/10 border-l-4 border-l-amber-400 hover:opacity-85'
+                          : isSelected
+                            ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-l-4 border-l-emerald-500'
+                            : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/50'
                     }`}
                   >
                     {showCheckboxes && (
@@ -233,7 +244,7 @@ export default function JobApplicationsTable({
                       {globalIndex}
                     </td>
                     <td className="px-5 py-4">
-                      <div className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                      <div className={`font-bold text-sm ${isRejected ? 'line-through text-slate-400 opacity-60' : 'text-slate-900 dark:text-slate-100'}`}>
                         {app.candidateName || 'Ứng viên'}
                       </div>
                       {app.cvTitle && (
@@ -280,8 +291,8 @@ export default function JobApplicationsTable({
                             score >= 80
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300'
                               : score >= thresholdPercent
-                              ? 'bg-teal-50 text-teal-700 border-teal-300 dark:bg-teal-950/60 dark:text-teal-300'
-                              : 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300'
+                                ? 'bg-teal-50 text-teal-700 border-teal-300 dark:bg-teal-950/60 dark:text-teal-300'
+                                : 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300'
                           }`}
                         >
                           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
@@ -318,7 +329,7 @@ export default function JobApplicationsTable({
                       {app.appliedAt ? formatDate(app.appliedAt) : 'Chưa có'}
                     </td>
 
-                    <td className="px-5 py-4 text-right">
+                    <td className="px-5 py-4 text-right not-line-through opacity-100">
                       {app.status === ApplicationStatus.ACCEPTED ||
                       app.status === ApplicationStatus.INTERVIEW ||
                       (app.status as string) === 'SLOTS_SENT' ||
@@ -326,7 +337,7 @@ export default function JobApplicationsTable({
                         <Link
                           href={`/recruiter/manage-jobs/${app.jobId}/interviews`}
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-colors cursor-pointer opacity-100"
                         >
                           <Calendar className="w-3.5 h-3.5" />
                           Quản lý phỏng vấn
@@ -335,10 +346,10 @@ export default function JobApplicationsTable({
                         <button
                           type="button"
                           onClick={() => onViewCv(app.id)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer opacity-100"
                         >
                           <FileText className="w-3.5 h-3.5" />
-                          Xem &amp; Duyệt CV
+                          Xem CV
                         </button>
                       )}
                     </td>
