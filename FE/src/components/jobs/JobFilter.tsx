@@ -122,7 +122,7 @@ export default function JobFilter({
                       // Reset salary filter on type switch
                       onSalaryChange([0, 100000000])
                     }}
-                    onChange={() => {}}
+                    onChange={() => { }}
                     className="w-4.5 h-4.5 rounded-full border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer accent-blue-600"
                   />
                   <span>{type.label}</span>
@@ -150,15 +150,65 @@ export default function JobFilter({
 
           {openSections.salary && (
             <div className="space-y-3.5 animate-fade-in select-none">
-              {selectedType === JobType.PART_TIME && (
-                <p className="text-[11px] text-amber-600 font-semibold bg-amber-50 p-2 rounded-lg border border-amber-200">
-                  💡 Part-Time: Nhập số tiền trực tiếp (VD: 30000 = 30k/giờ). Full-Time: Nhập số triệu (VD: 10 = 10tr/tháng).
-                </p>
-              )}
+              {/* Quick Salary Presets */}
+              <div className="flex flex-wrap gap-1.5 pb-1">
+                {selectedType === JobType.PART_TIME ? (
+                  <>
+                    {[
+                      { label: '< 30k/h', range: [0, 30000] },
+                      { label: '30k - 50k/h', range: [30000, 50000] },
+                      { label: '50k - 100k/h', range: [50000, 100000] },
+                      { label: '> 100k/h', range: [100000, 100000000] },
+                    ].map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          const r = preset.range as [number, number]
+                          setTempSalary(r)
+                          onSalaryChange(r)
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${tempSalary[0] === preset.range[0] && tempSalary[1] === preset.range[1]
+                            ? 'bg-blue-600 text-white shadow-2xs'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {[
+                      { label: '< 10tr', range: [0, 10000000] },
+                      { label: '10tr - 20tr', range: [10000000, 20000000] },
+                      { label: '20tr - 35tr', range: [20000000, 35000000] },
+                      { label: '> 35tr', range: [35000000, 100000000] },
+                    ].map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          const r = preset.range as [number, number]
+                          setTempSalary(r)
+                          onSalaryChange(r)
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${tempSalary[0] === preset.range[0] && tempSalary[1] === preset.range[1]
+                            ? 'bg-blue-600 text-white shadow-2xs'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    {selectedType === JobType.PART_TIME ? 'Tối thiểu (VND)' : 'Tối thiểu (Tr. VNĐ)'}
+                    {selectedType === JobType.PART_TIME ? 'Tối thiểu (k/giờ)' : 'Tối thiểu (Tr. VNĐ)'}
                   </label>
                   <input
                     type="number"
@@ -167,7 +217,7 @@ export default function JobFilter({
                       tempSalary[0] === 0
                         ? ''
                         : selectedType === JobType.PART_TIME
-                          ? tempSalary[0]
+                          ? tempSalary[0] / 1000
                           : tempSalary[0] / 1000000
                     }
                     onChange={(e) => {
@@ -176,17 +226,17 @@ export default function JobFilter({
                         setTempSalary([0, tempSalary[1]])
                       } else {
                         const num = Number(typed)
-                        const val = selectedType === JobType.PART_TIME ? num : num * 1000000
+                        const val = selectedType === JobType.PART_TIME ? num * 1000 : num * 1000000
                         setTempSalary([val, tempSalary[1]])
                       }
                     }}
                     className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:border-blue-500 transition-all placeholder:font-medium text-slate-700"
-                    placeholder={selectedType === JobType.PART_TIME ? 'VD: 30000' : 'Từ 0 tr'}
+                    placeholder={selectedType === JobType.PART_TIME ? 'VD: 25 (25k/h)' : 'Từ 0 tr'}
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    {selectedType === JobType.PART_TIME ? 'Tối đa (VND)' : 'Tối đa (Tr. VNĐ)'}
+                    {selectedType === JobType.PART_TIME ? 'Tối đa (k/giờ)' : 'Tối đa (Tr. VNĐ)'}
                   </label>
                   <input
                     type="number"
@@ -195,7 +245,7 @@ export default function JobFilter({
                       tempSalary[1] === 100000000
                         ? ''
                         : selectedType === JobType.PART_TIME
-                          ? tempSalary[1]
+                          ? tempSalary[1] / 1000
                           : tempSalary[1] / 1000000
                     }
                     onChange={(e) => {
@@ -204,12 +254,12 @@ export default function JobFilter({
                         setTempSalary([tempSalary[0], 100000000])
                       } else {
                         const num = Number(typed)
-                        const val = selectedType === JobType.PART_TIME ? num : num * 1000000
+                        const val = selectedType === JobType.PART_TIME ? num * 1000 : num * 1000000
                         setTempSalary([tempSalary[0], val])
                       }
                     }}
                     className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:border-blue-500 transition-all placeholder:font-medium text-slate-700"
-                    placeholder={selectedType === JobType.PART_TIME ? 'VD: 100000' : 'Không giới hạn'}
+                    placeholder={selectedType === JobType.PART_TIME ? 'VD: 100 (100k/h)' : 'Không giới hạn'}
                   />
                 </div>
               </div>
@@ -251,7 +301,7 @@ export default function JobFilter({
                     type="radio"
                     checked={selectedExp === exp.id}
                     onClick={() => onExpChange(selectedExp === exp.id ? null : exp.id)}
-                    onChange={() => {}}
+                    onChange={() => { }}
                     className="w-4.5 h-4.5 rounded-full border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer accent-blue-600"
                   />
                   <span>{exp.label}</span>

@@ -1169,18 +1169,6 @@ public class ApplicationServiceImpl implements IApplicationService {
                     }
                 }
             }
-
-            List<ApplicationInterviewRound> confirmedRounds = applicationInterviewRoundRepository
-                    .findConfirmedRoundsByJobIdExcludingCurrentRound(appRound.getApplication().getJob().getId(), appRound.getId());
-
-            for (ApplicationInterviewRound confirmed : confirmedRounds) {
-                if (confirmed.getScheduledTime() != null) {
-                    long diffMinutes = Math.abs(Duration.between(request.getPreferredTime(), confirmed.getScheduledTime()).toMinutes());
-                    if (diffMinutes < 30) {
-                        throw new AppException(ErrorCode.BAD_REQUEST, "Thời gian bạn đề xuất đã bị trùng hoặc quá gần (dưới 30 phút) với một lịch phỏng vấn khác đã chốt của tin tuyển dụng này!");
-                    }
-                }
-            }
         }
 
         appRound.setCandidatePreferredTime(request.getPreferredTime());

@@ -61,7 +61,7 @@ export const SALARY_TYPE_LABELS: Record<SalaryType, string> = {
 
 export const EXPERIENCE_LEVEL_LABELS: Record<ExperienceLevel, string> = {
   [ExperienceLevel.INTERN]: 'Thực tập sinh',
-  [ExperienceLevel.FRESHER]: 'Mới tốt nghiệp',
+  [ExperienceLevel.FRESHER]: 'Fresher',
   [ExperienceLevel.JUNIOR]: 'Junior',
   [ExperienceLevel.MIDDLE]: 'Middle',
   [ExperienceLevel.SENIOR]: 'Senior',
