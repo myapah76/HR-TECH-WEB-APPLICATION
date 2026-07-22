@@ -15,6 +15,8 @@ import hrtech.skill.abstractions.services.ISkillService;
 import hrtech.skill.dtos.response.SkillResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Mapper(componentModel = "spring")
 public abstract class JobMapper {
 
@@ -52,6 +55,7 @@ public abstract class JobMapper {
     @Mapping(target = "newApplicationsCount", expression = "java(job.getApplications() != null ? job.getApplications().stream().filter(a -> a.getStatus() == hrtech.application.entities.enums.ApplicationStatus.SUBMITTED).count() : 0)")
     @Mapping(target = "totalApplicationsCount", expression = "java(job.getApplications() != null ? job.getApplications().size() : 0)")
     @Mapping(target = "interviewsCount", expression = "java(job.getApplications() != null ? job.getApplications().stream().filter(a -> a.getStatus() == hrtech.application.entities.enums.ApplicationStatus.INTERVIEW).count() : 0)")
+    @Mapping(target = "appealCount", source = "appealCount")
     public abstract RecruiterManageJobResponse toManageResponse(Job job);
 
     @Mapping(target = "skillName", expression = "java(resolveSkillName(jobSkill.getSkillNeo4jId()))")
@@ -104,11 +108,15 @@ public abstract class JobMapper {
         }
         List<JobSkill> result = new ArrayList<>();
         for (JobSkillRequest sr : skillRequests) {
-            // Validate skill exists in Neo4j
-            if (skillService.findSkillById(sr.skillNeo4jId()).isEmpty()) {
-                throw new AppException(
-                        ErrorCode.JOB_SKILL_NOT_FOUND,
-                        "Skill not found in skill graph: " + sr.skillNeo4jId());
+            // Validate skill exists in Neo4j if available
+            if (sr.skillNeo4jId() != null && !sr.skillNeo4jId().isBlank()) {
+                try {
+                    if (skillService.findSkillById(sr.skillNeo4jId()).isEmpty()) {
+                        log.warn("Skill id {} not found in Neo4j (or Neo4j offline), proceeding with SQL save.", sr.skillNeo4jId());
+                    }
+                } catch (Exception e) {
+                    log.warn("Neo4j skill validation skipped for skill {}: {}", sr.skillNeo4jId(), e.getMessage());
+                }
             }
             SkillLevel level = null;
             if (sr.requiredLevel() != null) {

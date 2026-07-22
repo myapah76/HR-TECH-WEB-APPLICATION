@@ -23,6 +23,7 @@ interface JobInterviewsTableProps {
   onOpenViewSlots: (appId: string) => void
   onCheckInCandidate: (cand: InterviewRoundDetail) => void
   onOpenEvaluationModal: (cand: InterviewRoundDetail) => void
+  onOpenNoShowConfirmModal?: (cand: InterviewRoundDetail) => void
   onOpenRescheduleReviewModal: (cand: InterviewRoundDetail) => void
   onOpenFinalConfirmationModal: (cand: InterviewRoundDetail) => void
   onOpenViewEvaluationResult?: (cand: InterviewRoundDetail) => void
@@ -45,6 +46,7 @@ export default function JobInterviewsTable({
   onOpenViewSlots,
   onCheckInCandidate,
   onOpenEvaluationModal,
+  onOpenNoShowConfirmModal,
   onOpenRescheduleReviewModal,
   onOpenFinalConfirmationModal,
   onOpenViewEvaluationResult,
@@ -311,15 +313,26 @@ export default function JobInterviewsTable({
                               <span>Duyệt Kết Quả Cuối Cùng</span>
                             </button>
                           ) : cand.status === 'CONFIRMED' ? (
-                            <button
-                              type="button"
-                              onClick={() => onCheckInCandidate(cand)}
-                              className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
-                              title="Xác nhận ứng viên đã có mặt tham dự phỏng vấn"
-                            >
-                              <UserCheck className="w-3.5 h-3.5" />
-                              <span>Check-in (Điểm danh)</span>
-                            </button>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => onCheckInCandidate(cand)}
+                                className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+                                title="Xác nhận ứng viên đã có mặt tham dự phỏng vấn"
+                              >
+                                <UserCheck className="w-3.5 h-3.5" />
+                                <span>Check-in (Điểm danh)</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => (onOpenNoShowConfirmModal ? onOpenNoShowConfirmModal(cand) : onOpenEvaluationModal(cand))}
+                                className="px-3 py-1.5 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+                                title="Đánh Fail trực tiếp nếu ứng viên không đến phỏng vấn (vắng mặt)"
+                              >
+                                <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                                <span>Đánh Fail (Vắng mặt)</span>
+                              </button>
+                            </div>
                           ) : cand.status === 'ATTENDED' ? (
                             <button
                               type="button"
@@ -462,15 +475,26 @@ export default function JobInterviewsTable({
                                   )}
 
                                   {cand.status === 'CONFIRMED' ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => onCheckInCandidate(cand)}
-                                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl px-3 py-1.5 shrink-0 cursor-pointer inline-flex items-center gap-1.5 shadow-xs transition-all"
-                                      title="Xác nhận ứng viên đã tham dự phỏng vấn"
-                                    >
-                                      <UserCheck className="w-3.5 h-3.5" />
-                                      <span>Check-in (Điểm danh)</span>
-                                    </button>
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => onCheckInCandidate(cand)}
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl px-3 py-1.5 shrink-0 cursor-pointer inline-flex items-center gap-1.5 shadow-xs transition-all"
+                                        title="Xác nhận ứng viên đã tham dự phỏng vấn"
+                                      >
+                                        <UserCheck className="w-3.5 h-3.5" />
+                                        <span>Check-in (Điểm danh)</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => (onOpenNoShowConfirmModal ? onOpenNoShowConfirmModal(cand) : onOpenEvaluationModal(cand))}
+                                        className="bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-bold rounded-xl px-3 py-1.5 shrink-0 cursor-pointer inline-flex items-center gap-1.5 shadow-xs transition-all"
+                                        title="Đánh Fail trực tiếp nếu ứng viên vắng mặt"
+                                      >
+                                        <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                                        <span>Đánh Fail (Vắng mặt)</span>
+                                      </button>
+                                    </>
                                   ) : (
                                     <button
                                       type="button"

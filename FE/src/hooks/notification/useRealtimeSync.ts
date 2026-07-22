@@ -29,6 +29,7 @@ export const useRealtimeSync = () => {
         case NotificationType.JOB_STATUS_UPDATED:
         case NotificationType.APPLICATION_STATUS_UPDATED:
           queryClient.invalidateQueries({ queryKey: ['manageJobs'] })
+          queryClient.invalidateQueries({ queryKey: ['admin-jobs'] })
           queryClient.invalidateQueries({ queryKey: ['recruiter-job-stats'] })
           queryClient.invalidateQueries({ queryKey: ['applications'] })
           queryClient.invalidateQueries({ queryKey: ['jobs'] })

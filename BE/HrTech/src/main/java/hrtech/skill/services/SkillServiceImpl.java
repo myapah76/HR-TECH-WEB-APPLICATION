@@ -308,7 +308,13 @@ public class SkillServiceImpl implements ISkillService {
 
     @Override
     public Optional<SkillResponse> findSkillById(String id) {
-        return skillNodeRepository.findById(id)
-                .map(skillMapper::toResponse);
+        if (id == null || id.isBlank()) return Optional.empty();
+        try {
+            return skillNodeRepository.findById(id)
+                    .map(skillMapper::toResponse);
+        } catch (Exception e) {
+            log.warn("Neo4j lookup failed in findSkillById for id '{}': {}", id, e.getMessage());
+            return Optional.empty();
+        }
     }
 }

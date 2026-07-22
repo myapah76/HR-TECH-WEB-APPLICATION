@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'sonner'
+import { AlertTriangle } from 'lucide-react'
 import JobInterviewsHeader from '@/src/components/recruiter/interviews/JobInterviewsHeader'
 import JobInterviewsModals from '@/src/components/recruiter/interviews/JobInterviewsModals'
 import InterviewStatusFilterTabs, { InterviewStatusTab } from '@/src/components/recruiter/interviews/InterviewStatusFilterTabs'
@@ -10,6 +11,7 @@ import InterviewRoundsPanel from '@/src/components/recruiter/interviews/Intervie
 import InterviewsBulkActionBar from '@/src/components/recruiter/interviews/InterviewsBulkActionBar'
 import JobInterviewsTable from '@/src/components/recruiter/interviews/JobInterviewsTable'
 import ViewEvaluationResultModal from '@/src/components/recruiter/interviews/ViewEvaluationResultModal'
+import ConfirmModal from '@/src/components/common/ConfirmModal'
 import { AvailableSlot, InterviewRoundConfig, InterviewRoundDetail } from '@/src/types/recruiter-interview'
 import { useGetJobInterviewRounds } from '@/src/hooks/job'
 import {
@@ -44,6 +46,7 @@ export default function JobInterviewsPage() {
 
   // Candidate Modals
   const [evaluatingCandidate, setEvaluatingCandidate] = useState<InterviewRoundDetail | null>(null)
+  const [noShowCandidate, setNoShowCandidate] = useState<InterviewRoundDetail | null>(null)
   const [reviewingRescheduleCandidate, setReviewingRescheduleCandidate] = useState<InterviewRoundDetail | null>(null)
   const [finalConfirmationCandidate, setFinalConfirmationCandidate] = useState<InterviewRoundDetail | null>(null)
   const [viewSlotsCandidate, setViewSlotsCandidate] = useState<InterviewRoundDetail | null>(null)
@@ -405,6 +408,43 @@ export default function JobInterviewsPage() {
     )
   }
 
+  const handleConfirmNoShowFail = (reason: string) => {
+    if (!noShowCandidate) return
+
+    const appId = noShowCandidate.applicationId
+    const currentKey = `${appId}-round-${activeRound}`
+
+    setLocalOverrides((prev) => ({
+      ...prev,
+      [currentKey]: {
+        ...prev[currentKey],
+        status: 'FAILED',
+        feedbackNote: reason,
+        rating: 1,
+      },
+    }))
+
+    evaluateRoundMutation.mutate(
+      {
+        applicationId: appId,
+        roundNumber: activeRound,
+        passed: false,
+        rating: 1,
+        feedbackNote: reason,
+        isAttended: false,
+      },
+      {
+        onSuccess: () => {
+          setNoShowCandidate(null)
+          toast.success(`Đã đánh Fail (Vắng mặt) Vòng ${activeRound} cho ứng viên ${noShowCandidate.candidateName}.`)
+        },
+        onError: () => {
+          toast.error('Có lỗi xảy ra khi lưu kết quả đánh giá!')
+        },
+      }
+    )
+  }
+
   // Final Decision Handler (Approve / Reject at INTERVIEW_COMPLETED)
   const checkInMutation = useCheckInInterviewRound()
 
@@ -422,7 +462,7 @@ export default function JobInterviewsPage() {
     checkInMutation.mutate(
       {
         applicationId: cand.applicationId,
-        roundNumber: activeRound,
+        roundNumber: cand.roundNumber || activeRound,
       },
       {
         onSuccess: () => {
@@ -523,20 +563,12 @@ export default function JobInterviewsPage() {
         }}
         onCheckInCandidate={handleCheckInCandidate}
         onOpenEvaluationModal={setEvaluatingCandidate}
+        onOpenNoShowConfirmModal={setNoShowCandidate}
         onOpenRescheduleReviewModal={setReviewingRescheduleCandidate}
         onOpenFinalConfirmationModal={setFinalConfirmationCandidate}
         onOpenViewEvaluationResult={setViewingEvaluationResultCandidate}
         onOpenConfigModal={() => setIsConfigModalOpen(true)}
       />
-
-      {/* View Evaluation Result Modal */}
-      {viewingEvaluationResultCandidate && (
-        <ViewEvaluationResultModal
-          candidate={viewingEvaluationResultCandidate}
-          activeRound={activeRound}
-          onClose={() => setViewingEvaluationResultCandidate(null)}
-        />
-      )}
 
       {/* All Workflow Modals Container */}
       <JobInterviewsModals
@@ -557,6 +589,12 @@ export default function JobInterviewsPage() {
         onCloseEvaluation={() => setEvaluatingCandidate(null)}
         onPassCandidate={handlePassCandidate}
         onFailCandidate={handleFailCandidate}
+        noShowCandidate={noShowCandidate}
+        isNoShowPending={evaluateRoundMutation.isPending}
+        onCloseNoShow={() => setNoShowCandidate(null)}
+        onConfirmNoShowFail={handleConfirmNoShowFail}
+        viewingEvaluationResultCandidate={viewingEvaluationResultCandidate}
+        onCloseViewEvaluationResult={() => setViewingEvaluationResultCandidate(null)}
         reviewingRescheduleCandidate={reviewingRescheduleCandidate}
         onCloseRescheduleReview={() => setReviewingRescheduleCandidate(null)}
         onAcceptCandidateTime={handleAcceptCandidateTime}

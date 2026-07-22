@@ -13,8 +13,16 @@ export function useJobInterviewCandidates(
 
     const firstRoundName = roundsConfig[0]?.roundName || 'Vòng 1: HR Screening'
 
-    const interviewEligibleApps = pageData.content.filter(
-      (a: any) =>
+    const interviewEligibleApps = pageData.content.filter((a: any) => {
+      const hasInterviewRounds = a.interviewRounds && a.interviewRounds.length > 0
+
+      // Nếu hồ sơ bị từ chối ở bước Duyệt CV (REJECTED và chưa có vòng phỏng vấn nào), BỎ QUA HOÀN TOÀN
+      if (a.status === 'REJECTED' && !hasInterviewRounds) {
+        return false
+      }
+
+      return (
+        hasInterviewRounds ||
         a.status === 'ACCEPTED' ||
         a.status === 'PENDING_INTERVIEW_SCHEDULE' ||
         a.status === 'CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE' ||
@@ -26,8 +34,10 @@ export function useJobInterviewCandidates(
         a.status === 'ATTENDED' ||
         a.status === 'PASSED' ||
         a.status === 'INTERVIEW_COMPLETED' ||
+        a.status === 'FAILED' ||
         a.status === 'TERMINATED'
-    )
+      )
+    })
 
     const list: InterviewRoundDetail[] = []
 

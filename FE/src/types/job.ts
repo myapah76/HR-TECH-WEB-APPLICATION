@@ -21,6 +21,7 @@ export interface RecruiterManageJobResponse {
   newApplicationsCount?: number
   totalApplicationsCount?: number
   interviewsCount?: number
+  appealCount?: number
   createdAt: string
 }
 

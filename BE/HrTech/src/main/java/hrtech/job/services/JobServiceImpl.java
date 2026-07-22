@@ -528,7 +528,16 @@ public class JobServiceImpl implements IJobService {
     @Override
     @Transactional(readOnly = true)
     public JobResponse getJobDetails(UUID jobId) {
-        return toResponseWithReason(getJobEntityById(jobId));
+        Job job = getJobEntityById(jobId);
+        User currentUser = authUtils.getCurrentUserOrNull();
+        boolean isAuthorizedToViewUnapproved = currentUser != null && (
+                (job.getCreatedBy() != null && currentUser.getId().equals(job.getCreatedBy().getId()))
+                || authUtils.hasRole("ADMIN") || authUtils.hasRole("ADMIN_SYSTEM") || authUtils.hasRole("RECRUITER") || authUtils.hasRole("HR_MANAGER")
+        );
+        if (job.getStatus() != JobStatus.APPROVED && !isAuthorizedToViewUnapproved) {
+            throw new AppException(ErrorCode.JOB_INVALID_STATUS, "Tin tuyển dụng này đã bị đóng hoặc không còn khả dụng.");
+        }
+        return toResponseWithReason(job);
     }
 
     @Override

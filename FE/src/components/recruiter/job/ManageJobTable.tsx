@@ -16,6 +16,7 @@ import {
   Users,
   Calendar,
   Clock,
+  Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -30,6 +31,7 @@ import { formatDate } from '@/src/utils'
 import { JobStatus, JOB_STATUS_LABELS, JOB_STATUS_STYLES } from '@/src/enums/job.enum'
 import JobPreviewModal from '@/components/common/JobPreviewModal'
 import JobRejectModal from '@/components/common/JobRejectModal'
+import JobAppealModal from '@/components/common/JobAppealModal'
 import ConfirmModal from '@/components/common/ConfirmModal'
 
 interface ManageJobTableProps {
@@ -60,6 +62,29 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
   const [openMenuDirection, setOpenMenuDirection] = useState<'up' | 'down'>('down')
   const [menuTriggerRect, setMenuTriggerRect] = useState<DOMRect | null>(null)
   const [deadlineHasNotEnded, setDeadlineHasNotEnded] = useState(false)
+
+  const [jobToAppeal, setJobToAppeal] = useState<any | null>(null)
+
+  const confirmAppealJob = (reason: string) => {
+    if (!jobToAppeal) return
+
+    statusMutation.mutate(
+      {
+        jobId: jobToAppeal.id,
+        action: 'appeal',
+        companyId: jobToAppeal.companyId,
+        reason,
+      },
+      {
+        onSuccess: () => {
+          toast.success(
+            'Đã gửi khiếu nại lên Admin Hệ thống thành công! Trạng thái tin đã chuyển thành "Đang khiếu nại".'
+          )
+          setJobToAppeal(null)
+        },
+      }
+    )
+  }
 
   useEffect(() => {
     const handleClose = () => {
@@ -94,7 +119,7 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
   const submitJob = (job: any) => {
     statusMutation.mutate(
       { jobId: job.id, action: 'submit', companyId: job.companyId },
-      { onSuccess: () => toast.success('Đã nộp tin tuyển dụng để chờ phê duyệt!') }
+      { onSuccess: () => toast.success('Đã nộp tin tuyển dụng! Hệ thống AI đang tiến hành quét kiểm duyệt nội dung trong nền...') }
     )
   }
 
@@ -324,6 +349,15 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
         />
       )}
 
+      {jobToAppeal && (
+        <JobAppealModal
+          job={jobToAppeal}
+          isPending={statusMutation.isPending}
+          onClose={() => setJobToAppeal(null)}
+          onConfirm={confirmAppealJob}
+        />
+      )}
+
       {jobToClose && (
         <ConfirmModal
           isOpen={true}
@@ -373,16 +407,14 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
         const isManager = companyRole === 'HR_MANAGER'
         const isHr = companyRole === 'HR'
 
-        const canSubmit =
-          activeJob.status === JobStatus.DRAFT && (isJobCreator || isHr) && !isManager
-        const canDirectApprove = activeJob.status === JobStatus.DRAFT && isJobCreator && isManager
+        const canSubmit = activeJob.status === JobStatus.DRAFT
         const canDelete = activeJob.status === JobStatus.DRAFT && (isJobCreator || isManager)
         const canEdit =
           activeJob.status === JobStatus.DRAFT ||
           activeJob.status === JobStatus.FAILED_AI ||
           activeJob.status === JobStatus.REJECTED_BY_ADMIN
         const canClose = activeJob.status === JobStatus.APPROVED && (isJobCreator || isManager)
-        const canAppeal = activeJob.status === JobStatus.FAILED_AI && isManager
+        const canAppeal = activeJob.status === JobStatus.FAILED_AI
         const canOpenPublic =
           activeJob.status === JobStatus.APPROVED || activeJob.status === JobStatus.OPEN
         const viewTitle = canOpenPublic ? 'Xem tin công khai' : 'Xem nội bộ'
@@ -484,7 +516,7 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
                         type: 'submit',
                         title: 'Nộp tin tuyển dụng này?',
                         description:
-                          'Tin tuyển dụng sẽ được gửi lên cấp quản lý (HR Manager) để phê duyệt trước khi quét AI/hiển thị chính thức.',
+                          'Tin tuyển dụng sẽ được nộp lên hệ thống để AI tiến hành quét kiểm duyệt nội dung và kích hoạt đăng tuyển.',
                         confirmLabel: 'Nộp tin',
                         confirmTone: 'blue',
                         onConfirm: () => submitJob(activeJob),
@@ -503,70 +535,13 @@ export default function ManageJobTable({ jobs, currentUserId, companyRole }: Man
                     type="button"
                     onClick={() => {
                       closeMenu()
-                      openConfirmAction({
-                        type: 'appeal',
-                        title: 'Khiếu nại kiểm duyệt AI?',
-                        description:
-                          'Gửi yêu cầu khiếu nại lên Admin Hệ thống để phê duyệt thủ công tin tuyển dụng này. Bạn có chắc chắn muốn gửi khiếu nại không?',
-                        confirmLabel: 'Gửi khiếu nại',
-                        confirmTone: 'blue',
-                        onConfirm: () =>
-                          statusMutation.mutate(
-                            {
-                              jobId: activeJob.id,
-                              action: 'appeal',
-                              companyId: activeJob.companyId,
-                            },
-                            {
-                              onSuccess: () =>
-                                toast.success(
-                                  'Đã gửi khiếu nại lên Admin Hệ thống thành công! Trạng thái tin đã chuyển thành "Đang khiếu nại".'
-                                ),
-                            }
-                          ),
-                      })
+                      setJobToAppeal(activeJob)
                     }}
                     disabled={statusMutation.isPending}
                     className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <ShieldAlert className="h-4 w-4" />
                     Khiếu nại AI
-                  </button>
-                )}
-
-                {canDirectApprove && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      closeMenu()
-                      openConfirmAction({
-                        type: 'approve',
-                        title: 'Duyệt tin tuyển dụng này?',
-                        description:
-                          'Tin nháp do manager tạo sẽ được chuyển sang luồng duyệt và quét AI ngay sau khi xác nhận.',
-                        confirmLabel: 'Duyệt tin',
-                        confirmTone: 'emerald',
-                        onConfirm: () =>
-                          statusMutation.mutate(
-                            {
-                              jobId: activeJob.id,
-                              action: 'submit',
-                              companyId: activeJob.companyId,
-                            },
-                            {
-                              onSuccess: () =>
-                                toast.success(
-                                  'Đang thực hiện gửi duyệt. Hệ thống AI đang quét tin tuyển dụng trong nền...'
-                                ),
-                            }
-                          ),
-                      })
-                    }}
-                    disabled={statusMutation.isPending}
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                    Duyệt tin
                   </button>
                 )}
 

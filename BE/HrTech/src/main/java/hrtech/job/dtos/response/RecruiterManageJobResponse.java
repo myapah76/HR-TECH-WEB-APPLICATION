@@ -15,5 +15,6 @@ public record RecruiterManageJobResponse(
         long newApplicationsCount,
         long totalApplicationsCount,
         long interviewsCount,
+        int appealCount,
         Instant createdAt
 ) {}

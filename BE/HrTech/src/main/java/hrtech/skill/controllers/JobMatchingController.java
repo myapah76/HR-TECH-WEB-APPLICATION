@@ -28,7 +28,14 @@ public class JobMatchingController {
     public ResponseEntity<ApiResponse<JobMatchingTaskResponse>> getTaskStatus(@PathVariable String taskId) {
         JobMatchingTaskResponse status = jobMatchingService.getTaskStatus(taskId);
         if (status == null) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(ApiResponse.success(
+                    JobMatchingTaskResponse.builder()
+                            .taskId(taskId)
+                            .status("FAILED")
+                            .message("Phiên phân tích đã hết hạn hoặc hệ thống vừa khởi động lại. Vui lòng bấm Tìm kiếm lại.")
+                            .progressPercentage(0)
+                            .build()
+            ));
         }
         return ResponseEntity.ok(ApiResponse.success(status));
     }

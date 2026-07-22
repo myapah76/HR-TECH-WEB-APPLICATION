@@ -6,7 +6,10 @@ export const useApproveAppealAdmin = () => {
   return useMutation({
     mutationFn: (id: string) => adminApproveAppeal(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-jobs'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-jobs'], refetchType: 'all' })
+      queryClient.invalidateQueries({ queryKey: ['manageJobs'], refetchType: 'all' })
+      queryClient.invalidateQueries({ queryKey: ['jobs'], refetchType: 'all' })
+      queryClient.invalidateQueries({ queryKey: ['recruiter-job-stats'], refetchType: 'all' })
     },
   })
 }

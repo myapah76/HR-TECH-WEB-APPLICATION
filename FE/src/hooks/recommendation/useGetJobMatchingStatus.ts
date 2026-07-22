@@ -8,10 +8,15 @@ export const useGetJobMatchingStatus = (taskId: string | null, enabled = false) 
     enabled: enabled && !!taskId,
     refetchInterval: (query) => {
       const data = query?.state?.data
-      if (data?.status === 'DONE' || data?.status === 'FAILED') {
+      const isError = query?.state?.status === 'error'
+      if (isError || data?.status === 'DONE' || data?.status === 'FAILED') {
         return false
       }
       return 2000 // Poll every 2 seconds
+    },
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 404) return false
+      return failureCount < 2
     },
   })
 }

@@ -81,9 +81,9 @@ function RecommendedJobCard({
             </div>
             <div className="flex flex-wrap gap-1.5">
               {rec.matchedSkills?.length > 0 ? (
-                rec.matchedSkills.slice(0, 5).map((skill) => (
+                rec.matchedSkills.slice(0, 5).map((skill, idx) => (
                   <span
-                    key={skill}
+                    key={`${skill}-${idx}`}
                     className="px-2.5 py-0.75 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg border border-blue-100/60"
                   >
                     {skill}

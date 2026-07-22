@@ -4,6 +4,8 @@ import React from 'react'
 import MultiSlotSchedulerModal from '@/src/components/recruiter/interview-schedules/MultiSlotSchedulerModal'
 import InterviewRoundConfigModal from '@/src/components/recruiter/interview-schedules/InterviewRoundConfigModal'
 import InterviewEvaluationModal from '@/src/components/recruiter/interviews/InterviewEvaluationModal'
+import ViewEvaluationResultModal from '@/src/components/recruiter/interviews/ViewEvaluationResultModal'
+import NoShowFailModal from '@/src/components/recruiter/interviews/NoShowFailModal'
 import HrRescheduleReviewModal from '@/src/components/recruiter/interviews/HrRescheduleReviewModal'
 import FinalConfirmationModal from '@/src/components/recruiter/interviews/FinalConfirmationModal'
 import ViewSentSlotsModal from '@/src/components/recruiter/interviews/ViewSentSlotsModal'
@@ -28,6 +30,14 @@ interface JobInterviewsModalsProps {
   onCloseEvaluation: () => void
   onPassCandidate: (feedbackNote: string, rating: number) => void
   onFailCandidate: (feedbackNote: string, rating: number) => void
+  // No-Show Fail Modal
+  noShowCandidate?: InterviewRoundDetail | null
+  isNoShowPending?: boolean
+  onCloseNoShow?: () => void
+  onConfirmNoShowFail?: (reason: string) => void
+  // View Evaluation Result Modal
+  viewingEvaluationResultCandidate?: InterviewRoundDetail | null
+  onCloseViewEvaluationResult?: () => void
   // Reschedule Review Modal
   reviewingRescheduleCandidate: InterviewRoundDetail | null
   onCloseRescheduleReview: () => void
@@ -63,6 +73,12 @@ export default function JobInterviewsModals({
   onCloseEvaluation,
   onPassCandidate,
   onFailCandidate,
+  noShowCandidate,
+  isNoShowPending = false,
+  onCloseNoShow,
+  onConfirmNoShowFail,
+  viewingEvaluationResultCandidate,
+  onCloseViewEvaluationResult,
   reviewingRescheduleCandidate,
   onCloseRescheduleReview,
   onAcceptCandidateTime,
@@ -98,16 +114,39 @@ export default function JobInterviewsModals({
       />
 
       {/* 3. Evaluation Modal */}
-      <InterviewEvaluationModal
-        candidate={evaluatingCandidate}
-        activeRound={activeRound}
-        isFinalRound={activeRound === maxRoundNumber}
-        onClose={onCloseEvaluation}
-        onPass={onPassCandidate}
-        onFail={onFailCandidate}
-      />
+      {evaluatingCandidate && (
+        <InterviewEvaluationModal
+          key={evaluatingCandidate.applicationId || evaluatingCandidate.id}
+          candidate={evaluatingCandidate}
+          activeRound={activeRound}
+          isFinalRound={activeRound === maxRoundNumber}
+          onClose={onCloseEvaluation}
+          onPass={onPassCandidate}
+          onFail={onFailCandidate}
+        />
+      )}
 
-      {/* 4. Reschedule Review Modal */}
+      {/* 4. No-Show Fail Modal */}
+      {noShowCandidate && onCloseNoShow && onConfirmNoShowFail && (
+        <NoShowFailModal
+          candidate={noShowCandidate}
+          activeRound={activeRound}
+          isLoading={isNoShowPending}
+          onClose={onCloseNoShow}
+          onConfirm={onConfirmNoShowFail}
+        />
+      )}
+
+      {/* 5. View Evaluation Result Modal */}
+      {viewingEvaluationResultCandidate && onCloseViewEvaluationResult && (
+        <ViewEvaluationResultModal
+          candidate={viewingEvaluationResultCandidate}
+          activeRound={activeRound}
+          onClose={onCloseViewEvaluationResult}
+        />
+      )}
+
+      {/* 6. Reschedule Review Modal */}
       <HrRescheduleReviewModal
         candidate={reviewingRescheduleCandidate}
         onClose={onCloseRescheduleReview}
@@ -115,14 +154,14 @@ export default function JobInterviewsModals({
         onRejectAndOfferNewSlots={onRejectAndOfferNewSlots}
       />
 
-      {/* 5. Final Confirmation Modal */}
+      {/* 7. Final Confirmation Modal */}
       <FinalConfirmationModal
         candidate={finalConfirmationCandidate}
         onClose={onCloseFinalConfirmation}
         onConfirmFinalResult={onConfirmFinalResult}
       />
 
-      {/* 6. View Sent Slots Modal */}
+      {/* 8. View Sent Slots Modal */}
       <ViewSentSlotsModal
         isOpen={!!viewSlotsCandidate}
         onClose={onCloseViewSlots}

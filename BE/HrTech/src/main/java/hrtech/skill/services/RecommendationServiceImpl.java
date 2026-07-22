@@ -10,6 +10,7 @@ import hrtech.cv.entities.CvSkill;
 import hrtech.job.abstractions.services.IJobService;
 import hrtech.job.entities.Job;
 import hrtech.job.entities.JobSkill;
+import hrtech.job.entities.enums.JobStatus;
 import hrtech.shared.enums.ScoreGrade;
 import hrtech.shared.enums.SkillLevel;
 import hrtech.shared.error.ErrorCode;
@@ -94,6 +95,9 @@ public class RecommendationServiceImpl implements IRecommendationService {
         List<JobRecommendationResponse> recommendations = new ArrayList<>();
 
         for (Job job : allJobs) {
+            if (job.getStatus() != JobStatus.APPROVED) {
+                continue;
+            }
             List<JobSkill> jobSkills = job.getJobSkills();
             if (jobSkills == null || jobSkills.isEmpty()) {
                 continue;
@@ -142,6 +146,9 @@ public class RecommendationServiceImpl implements IRecommendationService {
     public SkillMatchScoreResponse calculateMatchScore(UUID cvId, UUID jobId) {
         Cv cv = cvService.getCvEntityById(cvId);
         Job job = jobService.getJobEntityById(jobId);
+        if (job.getStatus() != JobStatus.APPROVED) {
+            throw new AppException(ErrorCode.JOB_INVALID_STATUS, "Tin tuyển dụng này đã bị đóng hoặc không còn khả dụng.");
+        }
 
         Map<String, CvSkill> cvSkillMap = buildSkillMap(cv.getCvSkills());
         Set<String> cvSkillIds = cvSkillMap.keySet();
@@ -551,9 +558,13 @@ public class RecommendationServiceImpl implements IRecommendationService {
             String skillName = skillNameMap.getOrDefault(jId, jId);
 
             if (cvSkillIds.contains(jId) || jobSkillMatchMap.containsKey(jId)) {
-                matchedSkills.add(skillName);
+                if (!matchedSkills.contains(skillName)) {
+                    matchedSkills.add(skillName);
+                }
             } else {
-                missingSkills.add(skillName);
+                if (!missingSkills.contains(skillName)) {
+                    missingSkills.add(skillName);
+                }
             }
         }
     }

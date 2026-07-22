@@ -7,7 +7,10 @@ export const useRejectAppealAdmin = () => {
     mutationFn: ({ jobId, reason }: { jobId: string; reason: string }) =>
       adminRejectAppeal(jobId, reason),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-jobs'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-jobs'], refetchType: 'all' })
+      queryClient.invalidateQueries({ queryKey: ['manageJobs'], refetchType: 'all' })
+      queryClient.invalidateQueries({ queryKey: ['jobs'], refetchType: 'all' })
+      queryClient.invalidateQueries({ queryKey: ['recruiter-job-stats'], refetchType: 'all' })
     },
   })
 }

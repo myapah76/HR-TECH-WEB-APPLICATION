@@ -29,6 +29,26 @@ export default function InterviewEvaluationModal({
 
   const history = candidate.previousRoundsHistory || []
 
+  const [errorNote, setErrorNote] = useState('')
+
+  const handleFailClick = () => {
+    if (!feedbackNote.trim()) {
+      setErrorNote('Bắt buộc phải nhập nhận xét / lý do đánh giá trước khi loại ứng viên!')
+      return
+    }
+    setErrorNote('')
+    onFail(feedbackNote.trim(), rating)
+  }
+
+  const handlePassClick = () => {
+    if (!feedbackNote.trim()) {
+      setErrorNote('Bắt buộc phải nhập nhận xét / đánh giá trước khi duyệt Đạt!')
+      return
+    }
+    setErrorNote('')
+    onPass(feedbackNote.trim(), rating)
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 overflow-y-auto">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl max-w-lg w-full space-y-5 max-h-[90vh]">
@@ -94,11 +114,10 @@ export default function InterviewEvaluationModal({
                   className="p-1 cursor-pointer"
                 >
                   <Star
-                    className={`w-6 h-6 ${
-                      star <= rating
+                    className={`w-6 h-6 ${star <= rating
                         ? 'text-amber-400 fill-amber-400'
                         : 'text-slate-300 dark:text-slate-700'
-                    }`}
+                      }`}
                   />
                 </button>
               ))}
@@ -107,16 +126,22 @@ export default function InterviewEvaluationModal({
 
           <div>
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-              Nhận xét & Feedback chuyên môn Vòng {activeRound}:
+              Nhận xét & Feedback chuyên môn Vòng {activeRound} <span className="text-rose-600">*</span>:
             </label>
             <textarea
               rows={4}
               required
-              placeholder="Nhập nhận xét kỹ năng, câu trả lời, lý do Đạt hoặc Loại..."
+              placeholder="Nhập nhận xét kỹ năng, câu trả lời, lý do Đạt hoặc Loại (bắt buộc)..."
               value={feedbackNote}
-              onChange={(e) => setFeedbackNote(e.target.value)}
-              className="w-full px-3 py-2 text-xs font-medium bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500"
+              onChange={(e) => {
+                setFeedbackNote(e.target.value)
+                if (e.target.value.trim()) setErrorNote('')
+              }}
+              className={`w-full px-3 py-2 text-xs font-medium bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none transition-colors ${
+                errorNote ? 'border-rose-500 focus:border-rose-600' : 'border-slate-200 dark:border-slate-700 focus:border-emerald-500'
+              }`}
             />
+            {errorNote && <p className="text-xs font-bold text-rose-600 mt-1">{errorNote}</p>}
           </div>
         </div>
 
@@ -124,14 +149,14 @@ export default function InterviewEvaluationModal({
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
           <Button
             type="button"
-            onClick={() => onFail(feedbackNote, rating)}
+            onClick={handleFailClick}
             className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl cursor-pointer"
           >
             Không Đạt (Loại)
           </Button>
           <Button
             type="button"
-            onClick={() => onPass(feedbackNote, rating)}
+            onClick={handlePassClick}
             className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl cursor-pointer"
           >
             {isFinalRound ? 'Đạt - Complete Tất Cả Vòng' : 'Đạt - Nâng Vòng Kế Tiếp'}
