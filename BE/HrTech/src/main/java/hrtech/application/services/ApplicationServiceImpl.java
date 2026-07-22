@@ -1104,6 +1104,19 @@ public class ApplicationServiceImpl implements IApplicationService {
                 throw new AppException(ErrorCode.BAD_REQUEST, "Thời gian bạn đề xuất phải diễn ra trong tương lai!");
             }
 
+            // Check overlap with existing available slots sent by HR for this round
+            List<InterviewSlot> existingSlots = interviewSlotRepository.findByApplicationInterviewRoundId(appRound.getId());
+            if (existingSlots != null && !existingSlots.isEmpty()) {
+                for (InterviewSlot slot : existingSlots) {
+                    if (slot.getStartTime() != null) {
+                        long diffMinutes = Math.abs(Duration.between(request.getPreferredTime(), slot.getStartTime()).toMinutes());
+                        if (diffMinutes < 30) {
+                            throw new AppException(ErrorCode.BAD_REQUEST, "Thời gian bạn đề xuất bị trùng (hoặc quá gần - dưới 30 phút) với một trong những lịch phỏng vấn Nhà tuyển dụng đã gửi sẵn! Vui lòng bấm chọn trực tiếp lịch đó thay vì yêu cầu đổi lịch.");
+                        }
+                    }
+                }
+            }
+
             List<ApplicationInterviewRound> confirmedRounds = applicationInterviewRoundRepository
                     .findConfirmedRoundsByJobIdExcludingCurrentRound(appRound.getApplication().getJob().getId(), appRound.getId());
 

@@ -136,9 +136,6 @@ export default function AppliedJobsPage() {
           toast.success('Đã gửi yêu cầu đổi lịch phỏng vấn thành công.')
           setChangeFormInfo(null)
         },
-        onError: (error: unknown) => {
-          toast.error(getErrorMessage(error))
-        },
       }
     )
   }
@@ -255,6 +252,7 @@ export default function AppliedJobsPage() {
             jobTitle={changingApplication?.jobTitle || ''}
             currentInterviewTime={changingApplication?.interviewDateTime}
             rescheduleCount={changingRound?.rescheduleCount ?? changingApplication?.rescheduleCount ?? 0}
+            existingSlots={changingRound?.slots || (changingApplication as any)?.hrAvailableSlots}
           />
         )
       })()}

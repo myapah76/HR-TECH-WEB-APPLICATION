@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { X, Loader2, RefreshCw, Calendar, Clock, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import dayjs from 'dayjs'
 import { formatDateTime } from '@/src/utils'
 
 const HOURLY_OPTIONS = [
@@ -31,6 +32,7 @@ interface CandidateRescheduleModalProps {
   jobTitle: string
   currentInterviewTime?: string
   rescheduleCount?: number
+  existingSlots?: any[]
 }
 
 export default function CandidateRescheduleModal({
@@ -41,6 +43,7 @@ export default function CandidateRescheduleModal({
   jobTitle,
   currentInterviewTime,
   rescheduleCount = 0,
+  existingSlots = [],
 }: CandidateRescheduleModalProps) {
   const [preferredDate, setPreferredDate] = useState('')
   const [preferredHour, setPreferredHour] = useState('09:00')
@@ -57,11 +60,26 @@ export default function CandidateRescheduleModal({
       toast.error('Vui lòng chọn ngày phỏng vấn mới!')
       return
     }
-    const selectedDateTime = new Date(`${preferredDate}T${preferredHour}:00`)
-    if (selectedDateTime.getTime() <= Date.now()) {
+
+    const proposedTime = dayjs(`${preferredDate}T${preferredHour}:00`)
+    if (!proposedTime.isValid() || proposedTime.valueOf() <= Date.now()) {
       toast.error('Thời gian phỏng vấn đề xuất phải ở thời điểm tương lai! Vui lòng chọn lại.')
       return
     }
+
+    if (existingSlots && existingSlots.length > 0) {
+      for (const slot of existingSlots) {
+        if (slot.startTime) {
+          const slotTime = dayjs(slot.startTime)
+          const diffMinutes = Math.abs(proposedTime.diff(slotTime, 'minute'))
+          if (diffMinutes < 30) {
+            toast.error('Thời gian bạn đề xuất bị trùng (hoặc quá gần - dưới 30 phút) với một trong những khung giờ Nhà tuyển dụng đã gửi sẵn! Vui lòng chọn khung giờ đó trực tiếp thay vì đề xuất đổi lịch.')
+            return
+          }
+        }
+      }
+    }
+
     onSubmit(preferredDate, preferredHour, reason)
   }
 
