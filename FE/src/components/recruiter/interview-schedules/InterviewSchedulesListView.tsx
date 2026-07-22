@@ -51,11 +51,19 @@ export default function InterviewSchedulesListView({
         <tbody className="divide-y divide-slate-100">
           {schedules.map((app) => {
             const warning = getWarning(app)
-            const activeRoundName =
+            const latestRound =
               (app as any).interviewRounds && (app as any).interviewRounds.length > 0
-                ? (app as any).interviewRounds[(app as any).interviewRounds.length - 1].roundName ||
-                  `Vòng ${(app as any).interviewRounds[(app as any).interviewRounds.length - 1].roundNumber}`
-                : (app as any).roundName || 'Vòng 1'
+                ? (app as any).interviewRounds[(app as any).interviewRounds.length - 1]
+                : null
+
+            const interviewTime =
+              latestRound?.scheduledTime || app.interviewDateTime || app.candidatePreferredInterviewDateTime
+
+            const activeRoundName = latestRound
+              ? latestRound.roundName || `Vòng ${latestRound.roundNumber}`
+              : (app as any).roundName || 'Vòng 1'
+
+            const roundStatus = latestRound?.status || app.interviewRoundStatus
 
             return (
               <tr key={app.id} className="hover:bg-slate-50/50 transition">
@@ -78,8 +86,8 @@ export default function InterviewSchedulesListView({
                 </td>
                 <td className="px-4 py-4 align-top min-w-64">
                   <p className="text-sm font-black text-slate-800">
-                    {app.interviewDateTime
-                      ? formatDateTime(app.interviewDateTime)
+                    {interviewTime
+                      ? formatDateTime(interviewTime)
                       : 'Chưa có lịch chính thức'}
                   </p>
                   <div className="mt-2 space-y-1">
@@ -98,7 +106,7 @@ export default function InterviewSchedulesListView({
                     )}
                     <DetailLine icon={Clock} text={app.interviewNote} />
                   </div>
-                  {((app.status as string) === 'RESCHEDULE_REQUESTED' || app.candidatePreferredInterviewDateTime != null) && (
+                  {(roundStatus === 'RESCHEDULE_REQUESTED' || (app.status as string) === 'RESCHEDULE_REQUESTED' || app.candidatePreferredInterviewDateTime != null) && (
                     <div className="mt-3 rounded-xl border border-cyan-100 bg-cyan-50/70 p-3">
                       <p className="text-xs font-black text-cyan-700">Candidate đề xuất</p>
                       <p className="mt-1 text-xs font-bold text-slate-700">
@@ -113,14 +121,11 @@ export default function InterviewSchedulesListView({
                   )}
                 </td>
                 <td className="px-4 py-4 align-top space-y-2">
-                  <StatusBadge status={app.status} />
-                  <div>
-                    <span
-                      className={`inline-block rounded-xl border px-2.5 py-1 text-[11px] font-bold ${warning.className}`}
-                    >
-                      {warning.label}
-                    </span>
-                  </div>
+                  <span
+                    className={`inline-block rounded-xl border px-2.5 py-1 text-[11px] font-bold ${warning.className}`}
+                  >
+                    {warning.label}
+                  </span>
                 </td>
                 <td className="px-4 py-4 align-top text-right">
                   <InterviewQuickActions app={app} />

@@ -61,11 +61,13 @@ export interface ApplicationDetailResponse {
   status: ApplicationStatus;
   appliedAt: string;
   interviewDateTime?: string;
+  interviewRoundStatus?: string;
   interviewLocation?: string;
   interviewMeetingLink?: string;
   interviewNote?: string;
   candidateInterviewResponseMessage?: string;
   candidatePreferredInterviewDateTime?: string;
+  interviewRounds?: ApplicationInterviewRoundResponse[];
   overallScore?: number;
   grade?: string;
   aiSummary?: string;

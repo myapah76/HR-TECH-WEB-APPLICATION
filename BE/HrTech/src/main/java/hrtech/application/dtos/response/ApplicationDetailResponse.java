@@ -5,6 +5,7 @@ import hrtech.application.entities.enums.ApplicationStatus;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -24,6 +25,16 @@ public class ApplicationDetailResponse {
     private String coverLetter;
     private ApplicationStatus status;
     private Instant appliedAt;
+
+    // ── Interview Round Details ──
+    private String interviewRoundStatus;
+    private Instant interviewDateTime;
+    private Instant candidatePreferredInterviewDateTime;
+    private String candidateInterviewResponseMessage;
+    private String interviewLocation;
+    private String interviewMeetingLink;
+    private String interviewNote;
+    private List<ApplicationInterviewRoundResponse> interviewRounds;
 
     // Thông tin AI chấm điểm
     private BigDecimal overallScore;

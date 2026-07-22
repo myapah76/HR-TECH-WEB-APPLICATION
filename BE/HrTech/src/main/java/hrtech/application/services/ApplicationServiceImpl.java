@@ -287,6 +287,22 @@ public class ApplicationServiceImpl implements IApplicationService {
         }
 
         ApplicationDetailResponse response = applicationMapper.toDetailResponse(application);
+
+        if (application.getInterviewRounds() != null && !application.getInterviewRounds().isEmpty()) {
+            List<ApplicationInterviewRound> sortedRounds = application.getInterviewRounds().stream()
+                    .sorted(Comparator.comparing(r -> r.getJobInterviewRound().getRoundNumber()))
+                    .toList();
+            List<ApplicationInterviewRoundResponse> roundResponses = sortedRounds.stream()
+                    .map(this::toRoundResponse).toList();
+            response.setInterviewRounds(roundResponses);
+
+            ApplicationInterviewRound latestRound = sortedRounds.get(sortedRounds.size() - 1);
+            response.setInterviewRoundStatus(latestRound.getStatus() != null ? latestRound.getStatus().name() : null);
+            response.setCandidatePreferredInterviewDateTime(latestRound.getCandidatePreferredTime());
+            response.setCandidateInterviewResponseMessage(latestRound.getCandidateRescheduleReason());
+            response.setInterviewDateTime(latestRound.getScheduledTime());
+        }
+
         ApplicationScore score = application.getApplicationScore();
         if (score != null) {
             boolean hasPaid = isApplicant && score.isCandidatePaid() || isCompanyMember && score.isCompanyPaid();

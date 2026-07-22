@@ -59,41 +59,75 @@ function groupInterviewsByDate(interviews: ApplicationDetailResponse[]): Intervi
 }
 
 function getWarning(app: ApplicationDetailResponse) {
+  const roundStatus = app.interviewRoundStatus
   const now = Date.now()
   const interviewTime = app.interviewDateTime ? new Date(app.interviewDateTime).getTime() : null
 
-  if ((app.status as string) === 'RESCHEDULE_REQUESTED' || app.candidatePreferredInterviewDateTime != null) {
+  if (roundStatus === 'INTERVIEW_COMPLETED') {
+    return {
+      label: 'Hoàn thành các vòng phỏng vấn',
+      className: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+    }
+  }
+
+  if (roundStatus === 'PASSED') {
+    return {
+      label: 'Đã đạt vòng phỏng vấn',
+      className: 'bg-blue-50 text-blue-700 border-blue-100',
+    }
+  }
+
+  if (roundStatus === 'FAILED') {
+    return {
+      label: 'Không đạt phỏng vấn',
+      className: 'bg-rose-50 text-rose-700 border-rose-100',
+    }
+  }
+
+  if (roundStatus === 'RESCHEDULE_REQUESTED' || (app.status as string) === 'RESCHEDULE_REQUESTED' || app.candidatePreferredInterviewDateTime != null) {
     return {
       label: 'Candidate yêu cầu đổi lịch',
       className: 'bg-cyan-50 text-cyan-700 border-cyan-100',
     }
   }
 
-  if ((app.status as string) === 'SLOTS_SENT' || (app.status === ApplicationStatus.INTERVIEW && !app.interviewDateTime)) {
+  if (roundStatus === 'SLOTS_SENT' || (!interviewTime && roundStatus !== 'CONFIRMED' && roundStatus !== 'ATTENDED')) {
     return {
       label: 'Đang chờ candidate phản hồi',
       className: 'bg-orange-50 text-orange-700 border-orange-100',
     }
   }
 
-  if (app.status === ApplicationStatus.INTERVIEW && interviewTime) {
-    const diffHours = (interviewTime - now) / (1000 * 60 * 60)
-    if (diffHours < 0) {
+  if (roundStatus === 'CONFIRMED' || roundStatus === 'ATTENDED' || interviewTime) {
+    if (roundStatus === 'ATTENDED') {
       return {
-        label: 'Đã qua giờ phỏng vấn, cần cập nhật kết quả',
-        className: 'bg-rose-50 text-rose-700 border-rose-100',
+        label: 'Đã điểm danh, chờ chấm điểm',
+        className: 'bg-teal-50 text-teal-700 border-teal-100',
       }
     }
-    if (diffHours <= 24) {
-      return {
-        label: 'Sắp đến giờ phỏng vấn',
-        className: 'bg-amber-50 text-amber-700 border-amber-100',
+    if (interviewTime) {
+      const diffHours = (interviewTime - now) / (1000 * 60 * 60)
+      if (diffHours < 0) {
+        return {
+          label: 'Đã qua giờ phỏng vấn, cần cập nhật kết quả',
+          className: 'bg-amber-50 text-amber-700 border-amber-100',
+        }
       }
+      if (diffHours <= 24) {
+        return {
+          label: 'Sắp đến giờ phỏng vấn',
+          className: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+        }
+      }
+    }
+    return {
+      label: 'Đã chốt lịch phỏng vấn',
+      className: 'bg-emerald-50 text-emerald-700 border-emerald-100',
     }
   }
 
   return {
-    label: 'Đã lên lịch',
+    label: 'Đang trong quy trình phỏng vấn',
     className: 'bg-slate-50 text-slate-600 border-slate-100',
   }
 }

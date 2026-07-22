@@ -10,7 +10,7 @@ import {
   Layers,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { ApplicationDetailResponse } from '@/src/types'
+import { ApplicationDetailResponse, ApplicationStatus } from '@/src/types'
 import { formatDateTime, formatTimeOnly } from '@/src/utils'
 import { StatusBadge } from '@/src/components/recruiter/applications/ApplicationRow'
 import InterviewQuickActions from '@/src/components/recruiter/interview-schedules/InterviewQuickActions'
@@ -29,6 +29,59 @@ function DetailLine({ icon: Icon, text }: { icon: typeof MapPin; text?: string }
       {text}
     </p>
   )
+}
+
+function InterviewRoundStatusBadge({ status }: { status?: string }) {
+  if (status === 'INTERVIEW_COMPLETED') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/40 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 shrink-0">
+        Hoàn Thành Các Vòng
+      </span>
+    )
+  }
+  if (status === 'CONFIRMED') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 shrink-0">
+        Đã Chốt Lịch
+      </span>
+    )
+  }
+  if (status === 'ATTENDED') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-900/40 text-[11px] font-bold text-teal-700 dark:text-teal-300 shrink-0">
+        Đã Tham Dự (Chờ Chấm)
+      </span>
+    )
+  }
+  if (status === 'PASSED') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/40 text-[11px] font-bold text-blue-700 dark:text-blue-300 shrink-0">
+        Đã Đạt Vòng
+      </span>
+    )
+  }
+  if (status === 'FAILED') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 text-[11px] font-bold text-rose-700 dark:text-rose-300 shrink-0">
+        Loại / Không Đạt
+      </span>
+    )
+  }
+  if (status === 'SLOTS_SENT') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 text-[11px] font-bold text-amber-700 dark:text-amber-300 shrink-0">
+        Đã Gửi Lịch
+      </span>
+    )
+  }
+  if (status === 'RESCHEDULE_REQUESTED') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-cyan-50 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-900/40 text-[11px] font-bold text-cyan-700 dark:text-cyan-300 shrink-0">
+        Candidate Đổi Lịch
+      </span>
+    )
+  }
+  return <StatusBadge status={ApplicationStatus.INTERVIEW} />
 }
 
 export interface InterviewSchedulesCalendarViewProps {
@@ -63,13 +116,19 @@ export default function InterviewSchedulesCalendarView({
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
             {group.items.map((app) => {
               const warning = getWarning(app)
-              const interviewTime = app.interviewDateTime || app.candidatePreferredInterviewDateTime
-
-              const activeRoundName =
+              const latestRound =
                 (app as any).interviewRounds && (app as any).interviewRounds.length > 0
-                  ? (app as any).interviewRounds[(app as any).interviewRounds.length - 1].roundName ||
-                    `Vòng ${(app as any).interviewRounds[(app as any).interviewRounds.length - 1].roundNumber}`
-                  : (app as any).roundName || 'Vòng 1'
+                  ? (app as any).interviewRounds[(app as any).interviewRounds.length - 1]
+                  : null
+
+              const interviewTime =
+                latestRound?.scheduledTime || app.interviewDateTime || app.candidatePreferredInterviewDateTime
+
+              const activeRoundName = latestRound
+                ? latestRound.roundName || `Vòng ${latestRound.roundNumber}`
+                : (app as any).roundName || 'Vòng 1'
+
+              const roundStatus = latestRound?.status || app.interviewRoundStatus
 
               const handleCardClick = () => {
                 if (app.jobId) {
@@ -97,7 +156,7 @@ export default function InterviewSchedulesCalendarView({
                           {app.candidateName || app.cvTitle}
                         </h3>
                       </div>
-                      <StatusBadge status={app.status} />
+                      <InterviewRoundStatusBadge status={roundStatus} />
                     </div>
 
                     <div className="rounded-xl border border-slate-200/60 bg-slate-50/60 p-3 space-y-1.5">
