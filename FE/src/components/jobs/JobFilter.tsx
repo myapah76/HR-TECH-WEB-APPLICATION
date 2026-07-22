@@ -116,7 +116,12 @@ export default function JobFilter({
                   <input
                     type="radio"
                     checked={selectedType === type.id}
-                    onClick={() => onTypeChange(selectedType === type.id ? null : type.id)}
+                    onClick={() => {
+                      const newType = selectedType === type.id ? null : type.id
+                      onTypeChange(newType)
+                      // Reset salary filter on type switch
+                      onSalaryChange([0, 100000000])
+                    }}
                     onChange={() => {}}
                     className="w-4.5 h-4.5 rounded-full border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer accent-blue-600"
                   />
@@ -145,41 +150,66 @@ export default function JobFilter({
 
           {openSections.salary && (
             <div className="space-y-3.5 animate-fade-in select-none">
+              {selectedType === JobType.PART_TIME && (
+                <p className="text-[11px] text-amber-600 font-semibold bg-amber-50 p-2 rounded-lg border border-amber-200">
+                  💡 Part-Time: Nhập số tiền trực tiếp (VD: 30000 = 30k/giờ). Full-Time: Nhập số triệu (VD: 10 = 10tr/tháng).
+                </p>
+              )}
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    Tối thiểu (Tr. VNĐ)
+                    {selectedType === JobType.PART_TIME ? 'Tối thiểu (VND)' : 'Tối thiểu (Tr. VNĐ)'}
                   </label>
                   <input
                     type="number"
                     min={0}
-                    max={100}
-                    value={tempSalary[0] === 0 ? '' : tempSalary[0] / 1000000}
+                    value={
+                      tempSalary[0] === 0
+                        ? ''
+                        : selectedType === JobType.PART_TIME
+                          ? tempSalary[0]
+                          : tempSalary[0] / 1000000
+                    }
                     onChange={(e) => {
                       const typed = e.target.value
-                      const val = typed === '' ? 0 : Number(typed) * 1000000
-                      setTempSalary([val, tempSalary[1]])
+                      if (typed === '') {
+                        setTempSalary([0, tempSalary[1]])
+                      } else {
+                        const num = Number(typed)
+                        const val = selectedType === JobType.PART_TIME ? num : num * 1000000
+                        setTempSalary([val, tempSalary[1]])
+                      }
                     }}
                     className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:border-blue-500 transition-all placeholder:font-medium text-slate-700"
-                    placeholder="Từ 0 tr"
+                    placeholder={selectedType === JobType.PART_TIME ? 'VD: 30000' : 'Từ 0 tr'}
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    Tối đa (Tr. VNĐ)
+                    {selectedType === JobType.PART_TIME ? 'Tối đa (VND)' : 'Tối đa (Tr. VNĐ)'}
                   </label>
                   <input
                     type="number"
                     min={0}
-                    max={100}
-                    value={tempSalary[1] === 100000000 ? '' : tempSalary[1] / 1000000}
+                    value={
+                      tempSalary[1] === 100000000
+                        ? ''
+                        : selectedType === JobType.PART_TIME
+                          ? tempSalary[1]
+                          : tempSalary[1] / 1000000
+                    }
                     onChange={(e) => {
                       const typed = e.target.value
-                      const val = typed === '' ? 100000000 : Number(typed) * 1000000
-                      setTempSalary([tempSalary[0], val])
+                      if (typed === '') {
+                        setTempSalary([tempSalary[0], 100000000])
+                      } else {
+                        const num = Number(typed)
+                        const val = selectedType === JobType.PART_TIME ? num : num * 1000000
+                        setTempSalary([tempSalary[0], val])
+                      }
                     }}
                     className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:border-blue-500 transition-all placeholder:font-medium text-slate-700"
-                    placeholder="Không giới hạn"
+                    placeholder={selectedType === JobType.PART_TIME ? 'VD: 100000' : 'Không giới hạn'}
                   />
                 </div>
               </div>

@@ -150,7 +150,7 @@ export default function JobListPage() {
     jobType: selectedType || undefined,
     experienceLevel: selectedExp || undefined,
     salaryMin: salaryRange[0] > 0 ? salaryRange[0] : undefined,
-    salaryMax: salaryRange[1] < 100000000 ? salaryRange[1] : undefined,
+    salaryMax: salaryRange[1] > 0 && salaryRange[1] < 100000000 ? salaryRange[1] : undefined,
     skills: selectedTechs.length > 0 ? selectedTechs : undefined,
     sort: sortOrder,
   })
