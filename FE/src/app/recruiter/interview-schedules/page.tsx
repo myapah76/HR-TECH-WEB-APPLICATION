@@ -242,17 +242,11 @@ export default function RecruiterInterviewSchedulesPage() {
           <InterviewSchedulesCalendarView
             calendarGroups={calendarGroups}
             getWarning={getWarning}
-            isActionPending={isActionPending}
-            onAcceptReschedule={handleAcceptReschedule}
-            onRejectReschedule={handleRejectReschedule}
           />
         ) : (
           <InterviewSchedulesListView
             schedules={filteredSchedules}
             getWarning={getWarning}
-            isActionPending={isActionPending}
-            onAcceptReschedule={handleAcceptReschedule}
-            onRejectReschedule={handleRejectReschedule}
           />
         )}
       </div>

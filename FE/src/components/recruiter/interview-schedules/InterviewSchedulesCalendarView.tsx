@@ -7,7 +7,9 @@ import {
   ExternalLink,
   Link as LinkIcon,
   MapPin,
+  Layers,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { ApplicationDetailResponse } from '@/src/types'
 import { formatDateTime, formatTimeOnly } from '@/src/utils'
 import { StatusBadge } from '@/src/components/recruiter/applications/ApplicationRow'
@@ -32,18 +34,17 @@ function DetailLine({ icon: Icon, text }: { icon: typeof MapPin; text?: string }
 export interface InterviewSchedulesCalendarViewProps {
   calendarGroups: InterviewDateGroup[]
   getWarning: (app: ApplicationDetailResponse) => { label: string; className: string }
-  isActionPending: boolean
-  onAcceptReschedule: (id: string) => void
-  onRejectReschedule: (id: string) => void
+  isActionPending?: boolean
+  onAcceptReschedule?: (id: string) => void
+  onRejectReschedule?: (id: string) => void
 }
 
 export default function InterviewSchedulesCalendarView({
   calendarGroups,
   getWarning,
-  isActionPending,
-  onAcceptReschedule,
-  onRejectReschedule,
 }: InterviewSchedulesCalendarViewProps) {
+  const router = useRouter()
+
   return (
     <div className="space-y-4 p-4">
       {calendarGroups.map((group) => (
@@ -64,15 +65,34 @@ export default function InterviewSchedulesCalendarView({
               const warning = getWarning(app)
               const interviewTime = app.interviewDateTime || app.candidatePreferredInterviewDateTime
 
+              const activeRoundName =
+                (app as any).interviewRounds && (app as any).interviewRounds.length > 0
+                  ? (app as any).interviewRounds[(app as any).interviewRounds.length - 1].roundName ||
+                    `Vòng ${(app as any).interviewRounds[(app as any).interviewRounds.length - 1].roundNumber}`
+                  : (app as any).roundName || 'Vòng 1'
+
+              const handleCardClick = () => {
+                if (app.jobId) {
+                  router.push(`/recruiter/manage-jobs/${app.jobId}/interviews?appId=${app.id}`)
+                }
+              }
+
               return (
                 <div
                   key={app.id}
-                  className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-xs flex flex-col justify-between"
+                  onClick={handleCardClick}
+                  className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-xs flex flex-col justify-between hover:border-emerald-300 hover:shadow-md transition-all cursor-pointer group"
                 >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">{app.jobTitle}</p>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-bold text-[11px] border border-indigo-200 dark:border-indigo-800">
+                            <Layers className="w-3 h-3 text-indigo-600" />
+                            {activeRoundName}
+                          </span>
+                        </div>
+                        <p className="text-xs font-semibold text-slate-500 group-hover:text-emerald-600 transition-colors">{app.jobTitle}</p>
                         <h3 className="text-sm font-black text-slate-900 mt-0.5">
                           {app.candidateName || app.cvTitle}
                         </h3>
@@ -92,6 +112,7 @@ export default function InterviewSchedulesCalendarView({
                           href={app.interviewMeetingLink}
                           target="_blank"
                           rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
                           className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800"
                         >
                           <LinkIcon className="h-3.5 w-3.5" />
@@ -131,12 +152,7 @@ export default function InterviewSchedulesCalendarView({
                     <span className="text-[11px] font-semibold text-slate-400">
                       {interviewTime ? formatTimeOnly(interviewTime) : '--:--'}
                     </span>
-                    <InterviewQuickActions
-                      app={app}
-                      isPending={isActionPending}
-                      onAcceptReschedule={onAcceptReschedule}
-                      onRejectReschedule={onRejectReschedule}
-                    />
+                    <InterviewQuickActions app={app} />
                   </div>
                 </div>
               )

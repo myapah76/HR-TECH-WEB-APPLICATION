@@ -1,55 +1,43 @@
 'use client'
 
-import { CheckCircle2, XCircle, UserRoundX } from 'lucide-react'
-import { ApplicationDetailResponse, ApplicationStatus } from '@/src/types'
+import React from 'react'
+import { ArrowRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { ApplicationDetailResponse } from '@/src/types'
 
 interface Props {
   app: ApplicationDetailResponse
   compact?: boolean
-  isPending: boolean
-  onAcceptReschedule: (id: string) => void
-  onRejectReschedule: (id: string) => void
-  onAccept?: (id: string) => void
-  onReject?: (id: string) => void
+  onForwardToJobInterviews?: (jobId: string, appId: string) => void
 }
 
 export default function InterviewQuickActions({
   app,
   compact = false,
-  isPending,
-  onAcceptReschedule,
-  onRejectReschedule,
-  onAccept,
-  onReject,
+  onForwardToJobInterviews,
 }: Props) {
-  const buttonClass = compact
-    ? 'inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-black transition disabled:opacity-60'
-    : 'inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-black transition disabled:opacity-60'
+  const router = useRouter()
 
-  if (app.status === ApplicationStatus.INTERVIEW) {
-    return (
-      <>
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={() => onAccept?.(app.id)}
-          className={`${buttonClass} bg-teal-500 text-white hover:bg-teal-600`}
-        >
-          <CheckCircle2 className="h-4 w-4" />
-          Chấp nhận phỏng vấn
-        </button>
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={() => onReject?.(app.id)}
-          className={`${buttonClass} border border-slate-200 bg-white text-slate-700 hover:bg-slate-50`}
-        >
-          <UserRoundX className="h-4 w-4" />
-          Từ chối candidate
-        </button>
-      </>
-    )
+  const handleForward = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onForwardToJobInterviews && app.jobId) {
+      onForwardToJobInterviews(app.jobId, app.id)
+    } else if (app.jobId) {
+      router.push(`/recruiter/manage-jobs/${app.jobId}/interviews?appId=${app.id}`)
+    }
   }
 
-  return <span className="text-xs font-bold text-slate-400">Không có thao tác nhanh</span>
+  return (
+    <button
+      type="button"
+      onClick={handleForward}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all cursor-pointer ${
+        compact ? 'px-2.5 py-1.5 text-[11px]' : 'px-3.5 py-2 text-xs'
+      }`}
+      title="Đi tới trang quản lý phỏng vấn chi tiết của Job này"
+    >
+      <span>Quản lý tại Job</span>
+      <ArrowRight className="w-3.5 h-3.5" />
+    </button>
+  )
 }
