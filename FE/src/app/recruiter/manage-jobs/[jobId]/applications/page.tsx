@@ -180,7 +180,28 @@ export default function JobApplicationsPage() {
 
   // ─── Bulk Reject handler ───────────────────────────────────────────────────
   const handleConfirmBulkReject = () => {
-    bulkReject([...selectedIds], {
+    const validRejectIds = Array.from(selectedIds).filter((id) => {
+      const app = localApplications.find((a) => a.id === id)
+      if (!app) return false
+      return (
+        app.status !== ApplicationStatus.REJECTED &&
+        app.status !== ApplicationStatus.INTERVIEW &&
+        app.status !== ApplicationStatus.ACCEPTED &&
+        (app.status as string) !== 'SLOTS_SENT' &&
+        (app.status as string) !== 'CONFIRMED' &&
+        (app.status as string) !== 'RESCHEDULE_REQUESTED' &&
+        (app.status as string) !== 'PASSED' &&
+        (app.status as string) !== 'INTERVIEW_COMPLETED'
+      )
+    })
+
+    if (validRejectIds.length === 0) {
+      toast.error('Không có đơn ứng tuyển phù hợp để từ chối!')
+      setRejectModalOpen(false)
+      return
+    }
+
+    bulkReject(validRejectIds, {
       onSuccess: (rejectedApps) => {
         const rejectedSet = new Set(rejectedApps.map((a) => a.id))
         setLocalApplications((prev) =>

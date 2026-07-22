@@ -70,18 +70,34 @@ export default function JobApplicationsTable({
     return applications.slice(start, start + activeItemsPerPage)
   }, [applications, activePage, activeItemsPerPage, isControlled])
 
-  // Checkbox helpers
-  const currentIds = useMemo(
-    () => new Set(paginatedApplications.map((a) => a.id)),
+  // Checkbox helpers - chỉ cho phép chọn các đơn chưa bị từ chối và CHƯA vào quy trình phỏng vấn
+  const currentSelectableIds = useMemo(
+    () =>
+      new Set(
+        paginatedApplications
+          .filter(
+            (a) =>
+              a.status !== ApplicationStatus.REJECTED &&
+              a.status !== ApplicationStatus.INTERVIEW &&
+              a.status !== ApplicationStatus.ACCEPTED &&
+              (a.status as string) !== 'SLOTS_SENT' &&
+              (a.status as string) !== 'CONFIRMED' &&
+              (a.status as string) !== 'RESCHEDULE_REQUESTED' &&
+              (a.status as string) !== 'PASSED' &&
+              (a.status as string) !== 'INTERVIEW_COMPLETED'
+          )
+          .map((a) => a.id)
+      ),
     [paginatedApplications]
   )
+
   const allCurrentSelected = useMemo(
-    () => currentIds.size > 0 && [...currentIds].every((id) => selectedIds?.has(id)),
-    [currentIds, selectedIds]
+    () => currentSelectableIds.size > 0 && [...currentSelectableIds].every((id) => selectedIds?.has(id)),
+    [currentSelectableIds, selectedIds]
   )
   const someCurrentSelected = useMemo(
-    () => [...currentIds].some((id) => selectedIds?.has(id)),
-    [currentIds, selectedIds]
+    () => [...currentSelectableIds].some((id) => selectedIds?.has(id)),
+    [currentSelectableIds, selectedIds]
   )
 
   // Count below threshold items in whole list
@@ -91,7 +107,14 @@ export default function JobApplicationsTable({
         a.overallScore !== undefined &&
         a.overallScore !== null &&
         a.overallScore < thresholdPercent &&
-        a.status !== ApplicationStatus.REJECTED
+        a.status !== ApplicationStatus.REJECTED &&
+        a.status !== ApplicationStatus.INTERVIEW &&
+        a.status !== ApplicationStatus.ACCEPTED &&
+        (a.status as string) !== 'SLOTS_SENT' &&
+        (a.status as string) !== 'CONFIRMED' &&
+        (a.status as string) !== 'RESCHEDULE_REQUESTED' &&
+        (a.status as string) !== 'PASSED' &&
+        (a.status as string) !== 'INTERVIEW_COMPLETED'
     ).length
   }, [applications, thresholdPercent])
 
@@ -99,9 +122,9 @@ export default function JobApplicationsTable({
     if (!onSelectionChange || !selectedIds) return
     const next = new Set(selectedIds)
     if (allCurrentSelected) {
-      currentIds.forEach((id) => next.delete(id))
+      currentSelectableIds.forEach((id) => next.delete(id))
     } else {
-      currentIds.forEach((id) => next.add(id))
+      currentSelectableIds.forEach((id) => next.add(id))
     }
     onSelectionChange(next)
   }
@@ -110,11 +133,21 @@ export default function JobApplicationsTable({
     if (!onSelectionChange || !selectedIds) return
     const next = new Set(selectedIds)
     applications.forEach((a) => {
+      const isInterview =
+        a.status === ApplicationStatus.INTERVIEW ||
+        a.status === ApplicationStatus.ACCEPTED ||
+        (a.status as string) === 'SLOTS_SENT' ||
+        (a.status as string) === 'CONFIRMED' ||
+        (a.status as string) === 'RESCHEDULE_REQUESTED' ||
+        (a.status as string) === 'PASSED' ||
+        (a.status as string) === 'INTERVIEW_COMPLETED'
+
       if (
         a.overallScore !== undefined &&
         a.overallScore !== null &&
         a.overallScore < thresholdPercent &&
-        a.status !== ApplicationStatus.REJECTED
+        a.status !== ApplicationStatus.REJECTED &&
+        !isInterview
       ) {
         next.add(a.id)
       }
@@ -191,7 +224,7 @@ export default function JobApplicationsTable({
                       }}
                       onChange={handleSelectAll}
                       className="w-4 h-4 rounded border-slate-300 text-emerald-600 accent-emerald-600 cursor-pointer"
-                      title="Chọn tất cả trên trang này"
+                      title="Chọn tất cả đơn có thể từ chối trên trang này"
                     />
                   </th>
                 )}
@@ -210,6 +243,15 @@ export default function JobApplicationsTable({
                 const score = app.overallScore
                 const grade = app.grade
                 const isRejected = app.status === ApplicationStatus.REJECTED
+                const isInInterviewProcess =
+                  app.status === ApplicationStatus.INTERVIEW ||
+                  app.status === ApplicationStatus.ACCEPTED ||
+                  (app.status as string) === 'SLOTS_SENT' ||
+                  (app.status as string) === 'CONFIRMED' ||
+                  (app.status as string) === 'RESCHEDULE_REQUESTED' ||
+                  (app.status as string) === 'PASSED' ||
+                  (app.status as string) === 'INTERVIEW_COMPLETED'
+
                 const isSelected = selectedIds?.has(app.id) ?? false
 
                 // Dynamic Threshold calculation
@@ -223,7 +265,7 @@ export default function JobApplicationsTable({
                       isRejected
                         ? 'bg-slate-100/50 dark:bg-slate-800/30 hover:bg-slate-100'
                         : isBelowThreshold
-                          ? 'opacity-60 grayscale-[50%] bg-amber-50/20 dark:bg-amber-950/10 border-l-4 border-l-amber-400 hover:opacity-85'
+                          ? 'bg-amber-50/90 dark:bg-amber-950/40 hover:bg-amber-100/80 dark:hover:bg-amber-900/40 border-l-4 border-l-amber-400'
                           : isSelected
                             ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-l-4 border-l-emerald-500'
                             : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/50'
@@ -231,13 +273,15 @@ export default function JobApplicationsTable({
                   >
                     {showCheckboxes && (
                       <td className="px-4 py-4 text-center">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => handleToggleOne(app.id)}
-                          disabled={isRejected}
-                          className="w-4 h-4 rounded border-slate-300 text-emerald-600 accent-emerald-600 cursor-pointer disabled:opacity-40"
-                        />
+                        {isRejected || isInInterviewProcess ? null : (
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleOne(app.id)}
+                            className="w-4 h-4 rounded border-slate-300 text-emerald-600 accent-emerald-600 cursor-pointer"
+                            title="Chọn đơn ứng tuyển"
+                          />
+                        )}
                       </td>
                     )}
                     <td className="px-4 py-4 text-center font-bold text-slate-400">
