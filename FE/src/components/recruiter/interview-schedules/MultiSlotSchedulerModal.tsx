@@ -13,6 +13,8 @@ interface MultiSlotSchedulerModalProps {
   roundNumber: number
   roundName: string
   onSubmit: (slots: AvailableSlot[], note?: string) => void
+  /** ISO string của scheduledTime đã chốt của vòng trước (nếu có) */
+  prevRoundScheduledTime?: string
 }
 
 const HOURLY_OPTIONS = [
@@ -58,6 +60,7 @@ export default function MultiSlotSchedulerModal({
   roundNumber,
   roundName,
   onSubmit,
+  prevRoundScheduledTime,
 }: MultiSlotSchedulerModalProps) {
   const getTodayString = () => {
     const today = new Date()
@@ -144,6 +147,34 @@ export default function MultiSlotSchedulerModal({
 
         if (s1Start < s2End && s1End > s2Start) {
           toast.error(`Khung giờ #${i + 1} và Khung giờ #${j + 1} bị trùng lặp thời gian! Vui lòng kiểm tra lại.`)
+          return
+        }
+      }
+    }
+
+    // Validate: tất cả slot phải trong tương lai
+    const now = Date.now()
+    for (let i = 0; i < formattedSlots.length; i++) {
+      const slotStart = new Date(formattedSlots[i].startTime).getTime()
+      if (slotStart <= now) {
+        toast.error(`Khung giờ #${i + 1} phải là thời điểm trong tương lai! Vui lòng chọn lại.`)
+        return
+      }
+    }
+
+    // Validate: slot vòng N phải sau scheduledTime đã chốt của vòng N-1
+    if (prevRoundScheduledTime && roundNumber > 1) {
+      const prevTime = new Date(prevRoundScheduledTime).getTime()
+      const formatTime = (iso: string) => {
+        const d = new Date(iso)
+        return d.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })
+      }
+      for (let i = 0; i < formattedSlots.length; i++) {
+        const slotStart = new Date(formattedSlots[i].startTime).getTime()
+        if (slotStart <= prevTime) {
+          toast.error(
+            `Khung giờ #${i + 1} của Vòng ${roundNumber} phải diễn ra SAU thời gian đã chốt của Vòng ${roundNumber - 1} (${formatTime(prevRoundScheduledTime)})!`
+          )
           return
         }
       }

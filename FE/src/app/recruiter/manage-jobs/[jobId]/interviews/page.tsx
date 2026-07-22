@@ -92,6 +92,23 @@ export default function JobInterviewsPage() {
     return candidates.filter((c) => c.roundNumber === activeRound)
   }, [candidates, activeRound])
 
+  // Lấy scheduledTime đã CONFIRMED của vòng trước (dùng cho validation slot vòng hiện tại)
+  const prevRoundScheduledTime = useMemo(() => {
+    if (activeRound <= 1) return undefined
+    const prevRoundCandidates = candidates.filter(
+      (c) => c.roundNumber === activeRound - 1 && c.scheduledTime
+    )
+    if (prevRoundCandidates.length === 0) return undefined
+    // Lấy scheduledTime muộn nhất trong các ứng viên được chọn (hoặc tất cả nếu chưa chọn ai)
+    const selectedPrev = prevRoundCandidates.filter((c) => selectedIds.has(c.applicationId))
+    const pool = selectedPrev.length > 0 ? selectedPrev : prevRoundCandidates
+    const latest = pool.reduce((max, c) => {
+      if (!c.scheduledTime) return max
+      return !max || c.scheduledTime > max ? c.scheduledTime : max
+    }, undefined as string | undefined)
+    return latest
+  }, [candidates, activeRound, selectedIds])
+
   const filteredCandidates = useMemo(() => {
     let result = candidatesInActiveRound
 
@@ -533,6 +550,7 @@ export default function JobInterviewsPage() {
           .filter((c) => selectedIds.has(c.applicationId))
           .map((c) => c.candidateName)}
         onSaveSchedule={(slots) => handleConfirmScheduleSlots(slots, '')}
+        prevRoundScheduledTime={prevRoundScheduledTime}
         isConfigOpen={isConfigModalOpen}
         onCloseConfig={() => setIsConfigModalOpen(false)}
         evaluatingCandidate={evaluatingCandidate}

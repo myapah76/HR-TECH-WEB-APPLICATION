@@ -19,6 +19,7 @@ interface JobInterviewsModalsProps {
   onCloseScheduler: () => void
   selectedCandidateNames: string[]
   onSaveSchedule: (slots: AvailableSlot[]) => void
+  prevRoundScheduledTime?: string
   // Config Modal
   isConfigOpen: boolean
   onCloseConfig: () => void
@@ -55,6 +56,7 @@ export default function JobInterviewsModals({
   onCloseScheduler,
   selectedCandidateNames,
   onSaveSchedule,
+  prevRoundScheduledTime,
   isConfigOpen,
   onCloseConfig,
   evaluatingCandidate,
@@ -84,6 +86,7 @@ export default function JobInterviewsModals({
         roundNumber={activeRound}
         roundName={activeRoundName}
         onSubmit={onSaveSchedule}
+        prevRoundScheduledTime={prevRoundScheduledTime}
       />
 
       {/* 2. Round Config Modal */}

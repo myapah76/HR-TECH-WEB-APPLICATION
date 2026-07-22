@@ -972,7 +972,44 @@ public class ApplicationServiceImpl implements IApplicationService {
     public List<ApplicationSummaryResponse> scheduleMultiSlotInterview(ScheduleMultiSlotRequest request) {
         if (request.getSlots() != null && !request.getSlots().isEmpty() && !request.getApplicationIds().isEmpty()) {
             UUID jobId = getApplicationEntityById(request.getApplicationIds().get(0)).getJob().getId();
-            validateSlotOverlap(jobId, null, request.getSlots());
+
+            // Validate: tất cả slot phải trong tương lai
+            Instant now = Instant.now();
+            for (InterviewSlotDto slot : request.getSlots()) {
+                if (slot.getStartTime() != null && !slot.getStartTime().isAfter(now)) {
+                    throw new AppException(ErrorCode.BAD_REQUEST,
+                            "Thời gian bắt đầu của slot phỏng vấn phải là thời điểm trong tương lai!");
+                }
+            }
+
+            // Validate: slot vòng N phải sau scheduledTime đã chốt của vòng N-1
+            int currentRound = request.getRoundNumber();
+            if (currentRound > 1) {
+                int prevRoundNumber = currentRound - 1;
+                // Lấy scheduledTime của vòng trước cho từng applicationId
+                for (UUID appId : request.getApplicationIds()) {
+                    applicationInterviewRoundRepository
+                            .findByApplicationIdAndJobInterviewRoundRoundNumber(appId, prevRoundNumber)
+                            .ifPresent(prevRound -> {
+                                Instant prevScheduled = prevRound.getScheduledTime();
+                                if (prevScheduled != null) {
+                                    for (InterviewSlotDto slot : request.getSlots()) {
+                                        if (slot.getStartTime() != null && !slot.getStartTime().isAfter(prevScheduled)) {
+                                            Application app = prevRound.getApplication();
+                                            String candidateName = app.getUser().getFirstName() + " " + app.getUser().getLastName();
+                                            throw new AppException(ErrorCode.BAD_REQUEST,
+                                                    "Slot phỏng vấn vòng " + currentRound
+                                                    + " phải diễn ra SAU thời gian đã chốt của vòng " + prevRoundNumber
+                                                    + " (" + prevScheduled.atZone(ZONE_VN).format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")) + ")"
+                                                    + " cho ứng viên " + candidateName + "!");
+                                        }
+                                    }
+                                }
+                            });
+                }
+            }
+
+            validateSlotOverlap(request.getSlots());
         }
         List<Application> updatedApps = new ArrayList<>();
 
@@ -1206,7 +1243,7 @@ public class ApplicationServiceImpl implements IApplicationService {
                 appRound.setStatus(InterviewRoundStatus.RESCHEDULE_REJECTED);
                 // Clear old slots and replace with newly adjusted slots provided by HR
                 if (request.getNewSlots() != null && !request.getNewSlots().isEmpty()) {
-                    validateSlotOverlap(app.getJob().getId(), appRound.getId(), request.getNewSlots());
+                    validateSlotOverlap(request.getNewSlots());
                     interviewSlotRepository.deleteByApplicationInterviewRoundId(appRound.getId());
                     
                     List<InterviewSlot> slotEntities = new ArrayList<>();
@@ -1400,9 +1437,10 @@ public class ApplicationServiceImpl implements IApplicationService {
                 .build();
     }
 
-    private void validateSlotOverlap(UUID jobId, UUID currentRoundId, List<InterviewSlotDto> slots) {
+    private void validateSlotOverlap(List<InterviewSlotDto> slots) {
         if (slots == null || slots.isEmpty()) return;
 
+        // Chỉ kiểm tra các slot trong cùng 1 request không trùng nhau
         for (int i = 0; i < slots.size(); i++) {
             InterviewSlotDto s1 = slots.get(i);
             if (s1.getStartTime() == null || s1.getEndTime() == null) continue;
@@ -1412,23 +1450,6 @@ public class ApplicationServiceImpl implements IApplicationService {
                 if (s2.getStartTime() == null || s2.getEndTime() == null) continue;
                 if (s1.getStartTime().isBefore(s2.getEndTime()) && s1.getEndTime().isAfter(s2.getStartTime())) {
                     throw new AppException(ErrorCode.BAD_REQUEST, "Các khung giờ phỏng vấn tạo ra bị trùng lặp thời gian với nhau! Vui lòng kiểm tra lại.");
-                }
-            }
-        }
-
-        if (jobId != null) {
-            List<ApplicationInterviewRound> confirmedRounds = applicationInterviewRoundRepository
-                    .findConfirmedRoundsByJobIdExcludingCurrentRound(jobId, currentRoundId != null ? currentRoundId : UUID.randomUUID());
-
-            for (InterviewSlotDto slot : slots) {
-                for (ApplicationInterviewRound confirmed : confirmedRounds) {
-                    if (confirmed.getScheduledTime() != null) {
-                        boolean conflicts = !confirmed.getScheduledTime().isBefore(slot.getStartTime()) && confirmed.getScheduledTime().isBefore(slot.getEndTime());
-                        if (conflicts) {
-                            throw new AppException(ErrorCode.BAD_REQUEST, "Khung giờ bị trùng với lịch phỏng vấn đã chốt của ứng viên " 
-                                    + confirmed.getApplication().getUser().getFirstName() + " " + confirmed.getApplication().getUser().getLastName() + "!");
-                        }
-                    }
                 }
             }
         }
