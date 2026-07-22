@@ -18,7 +18,6 @@ public class AdminDashboardSummaryResponse {
     private long newJobsToday;
     private long totalCompanies;
     private long newCompaniesToday;
-    private long dailyVisits;
     private SystemActivitiesResponse systemActivities;
     private UserDistributionResponse userDistribution;
     private List<RevenueMonthResponse> revenueHistory;

@@ -22,7 +22,6 @@ import {
   useAcceptCandidateReschedule,
   useGetRecruiterInterviewSchedules,
   useRejectCandidateReschedule,
-  useUpdateApplicationStatus,
 } from '@/src/hooks/application'
 import { useGetMyCompany } from '@/src/hooks/company'
 import { useAuthStore } from '@/src/stores/auth.store'
@@ -164,7 +163,6 @@ export default function RecruiterInterviewSchedulesPage() {
   )
   const acceptReschedule = useAcceptCandidateReschedule()
   const rejectReschedule = useRejectCandidateReschedule()
-  const updateStatus = useUpdateApplicationStatus()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | ''>('')
@@ -221,34 +219,20 @@ export default function RecruiterInterviewSchedulesPage() {
   )
 
   const isActionPending =
-    acceptReschedule.isPending || rejectReschedule.isPending || updateStatus.isPending
+    acceptReschedule.isPending || rejectReschedule.isPending
 
   const handleAcceptReschedule = (applicationId: string) => {
     acceptReschedule.mutate(applicationId, {
       onSuccess: () => toast.success('Đã chấp nhận lịch mới.'),
-      onError: (error) => toast.error(getErrorMessage(error)),
+      onError: (error: unknown) => toast.error(getErrorMessage(error)),
     })
   }
 
   const handleRejectReschedule = (applicationId: string) => {
     rejectReschedule.mutate(applicationId, {
       onSuccess: () => toast.success('Đã từ chối lịch mới.'),
-      onError: (error) => toast.error(getErrorMessage(error)),
+      onError: (error: unknown) => toast.error(getErrorMessage(error)),
     })
-  }
-
-  const handleUpdateStatus = (
-    applicationId: string,
-    status: ApplicationStatus,
-    message: string
-  ) => {
-    updateStatus.mutate(
-      { id: applicationId, request: { status } },
-      {
-        onSuccess: () => toast.success(message),
-        onError: (error) => toast.error(getErrorMessage(error)),
-      }
-    )
   }
 
   return (
@@ -503,7 +487,6 @@ export default function RecruiterInterviewSchedulesPage() {
                             isPending={isActionPending}
                             onAcceptReschedule={handleAcceptReschedule}
                             onRejectReschedule={handleRejectReschedule}
-                            onUpdateStatus={handleUpdateStatus}
                           />
                         </div>
                       </article>
@@ -607,7 +590,6 @@ export default function RecruiterInterviewSchedulesPage() {
                             isPending={isActionPending}
                             onAcceptReschedule={handleAcceptReschedule}
                             onRejectReschedule={handleRejectReschedule}
-                            onUpdateStatus={handleUpdateStatus}
                           />
                         </div>
                       </td>

@@ -1,11 +1,8 @@
 package hrtech.application.abstractions.services;
 
+import hrtech.application.dtos.request.*;
 import hrtech.application.dtos.response.*;
 import hrtech.shared.dtos.RecentActivityResponse;
-import hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
-import hrtech.application.dtos.request.ScheduleInterviewRequest;
-import hrtech.application.dtos.request.SubmitApplicationRequest;
-import hrtech.application.dtos.request.UpdateApplicationStatusRequest;
 import hrtech.company.dtos.response.RecruiterActiveJobResponse;
 import hrtech.company.dtos.response.RecruiterAnalyticsResponse;
 import hrtech.company.dtos.response.RecruiterDashboardSummaryResponse;
@@ -28,24 +25,17 @@ public interface IApplicationService {
 
     void withdrawApplication(UUID userId, UUID applicationId);
 
-    ApplicationSummaryResponse updateStatus(UUID applicationId, UpdateApplicationStatusRequest request);
+    ApplicationSummaryResponse acceptApplication(UUID applicationId);
 
-    ApplicationSummaryResponse scheduleInterview(UUID applicationId, ScheduleInterviewRequest request);
+    ApplicationSummaryResponse rejectApplication(UUID applicationId);
 
-    ApplicationSummaryResponse acceptInterviewSchedule(UUID userId, UUID applicationId);
-
-    ApplicationSummaryResponse changeInterviewSchedule(UUID userId, UUID applicationId,
-            ChangeInterviewScheduleRequest request);
-
-    ApplicationSummaryResponse acceptCandidateReschedule(UUID applicationId);
-
-    ApplicationSummaryResponse rejectCandidateReschedule(UUID applicationId);
-
-    Page<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId, Pageable pageable);
+    Page<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId, ApplicationStatus status, Pageable pageable);
 
     ApplicationDetailResponse scoreApplication(UUID userId, UUID applicationId);
 
     boolean hasApplied(UUID userId, UUID jobId);
+
+    boolean hasCandidatesInRound(UUID jobInterviewRoundId);
 
     long countApplicationsByStatus(ApplicationStatus status);
 
@@ -64,4 +54,31 @@ public interface IApplicationService {
     RecruiterAnalyticsResponse getRecruiterAnalytics();
 
     List<RecruiterActiveJobResponse> getRecruiterActiveJobs();
+
+    /**
+     * Chấm điểm hàng loạt tất cả application SUBMITTED của một job.
+     * Dùng calculateMatchScore() (Skill Graph), lưu vào ApplicationScore.
+     * Nếu autoRejectBelowThreshold = true: tự động từ chối dưới ngưỡng.
+     * Cho phép chấm lại (re-score) nhiều lần.
+     */
+    BulkScoreResponse bulkScoreByJob(UUID jobId, BulkScoreRequest request);
+
+    /**
+     * Từ chối thủ công nhiều application theo danh sách IDs HR đã chọn.
+     */
+    List<ApplicationSummaryResponse> bulkRejectApplications(List<UUID> applicationIds);
+
+    List<ApplicationSummaryResponse> scheduleMultiSlotInterview(ScheduleMultiSlotRequest request);
+
+    ApplicationInterviewRoundResponse selectInterviewSlot(UUID applicationId, Integer roundNumber, SelectSlotRequest request);
+
+    ApplicationInterviewRoundResponse requestInterviewReschedule(UUID applicationId, Integer roundNumber, RequestRescheduleRequest request);
+
+    ApplicationInterviewRoundResponse reviewInterviewReschedule(UUID applicationId, Integer roundNumber, ReviewRescheduleRequest request);
+
+    ApplicationInterviewRoundResponse evaluateInterviewRound(UUID applicationId, Integer roundNumber, EvaluateRoundRequest request);
+
+    ApplicationSummaryResponse finalConfirmInterview(UUID applicationId, FinalConfirmationRequest request);
+
+    List<ApplicationInterviewRoundResponse> getApplicationInterviewRounds(UUID applicationId);
 }

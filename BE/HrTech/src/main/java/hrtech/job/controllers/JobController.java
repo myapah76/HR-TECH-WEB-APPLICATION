@@ -6,6 +6,8 @@ import hrtech.job.dtos.request.JobSearchCriteria;
 import hrtech.job.dtos.response.HotPositionResponse;
 import hrtech.job.dtos.response.JobResponse;
 import hrtech.job.dtos.response.LandingStatsResponse;
+import hrtech.job.dtos.response.RecruiterJobStatsResponse;
+import hrtech.job.dtos.response.RecruiterManageJobResponse;
 import hrtech.job.dtos.response.TrendingSkillResponse;
 import hrtech.job.entities.enums.ExperienceLevel;
 import hrtech.job.entities.enums.JobStatus;
@@ -91,7 +93,7 @@ public class JobController {
 
     @GetMapping("/recruiter/companies/{companyId}/jobs")
     @PreAuthorize("@companySecurity.isRecruiter(#companyId)")
-    public ResponseEntity<ApiResponse<Page<JobResponse>>> getManageCompanyJobs(
+    public ResponseEntity<ApiResponse<Page<RecruiterManageJobResponse>>> getManageCompanyJobs(
             @PathVariable UUID companyId,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) JobStatus status,
@@ -100,6 +102,14 @@ public class JobController {
             @PageableDefault(size = 10, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(
                 jobService.getManageCompanyJobs(companyId, keyword, status, jobType, jobLevel, pageable)));
+    }
+
+    @PostMapping("/recruiter/companies/{companyId}/jobs/{jobId}/duplicate")
+    @PreAuthorize("@companySecurity.isRecruiter(#companyId)")
+    public ResponseEntity<ApiResponse<JobResponse>> duplicateJob(
+            @PathVariable UUID companyId,
+            @PathVariable UUID jobId) {
+        return ResponseEntity.ok(ApiResponse.success(jobService.duplicateJob(jobId)));
     }
 
     @PostMapping("/recruiter/companies/{companyId}/jobs")
@@ -151,6 +161,13 @@ public class JobController {
             @PathVariable UUID jobId) {
         jobService.deleteJob(jobId);
         return ResponseEntity.ok(ApiResponse.success(null, "Job deleted successfully"));
+    }
+
+    @GetMapping("/recruiter/companies/{companyId}/jobs/stats")
+    @PreAuthorize("@companySecurity.isRecruiter(#companyId)")
+    public ResponseEntity<ApiResponse<RecruiterJobStatsResponse>> getCompanyJobStats(
+            @PathVariable UUID companyId) {
+        return ResponseEntity.ok(ApiResponse.success(jobService.getCompanyJobStats(companyId)));
     }
 
     // ─── Admin ───────────────────────────────────────────────────────────────────

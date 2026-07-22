@@ -1,5 +1,6 @@
 package hrtech.application.controllers;
 
+import hrtech.application.dtos.request.*;
 import hrtech.application.dtos.response.*;
 import hrtech.shared.dtos.RecentActivityResponse;
 import lombok.RequiredArgsConstructor;
@@ -11,10 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import hrtech.application.abstractions.services.IApplicationService;
-import hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
-import hrtech.application.dtos.request.ScheduleInterviewRequest;
-import hrtech.application.dtos.request.SubmitApplicationRequest;
-import hrtech.application.dtos.request.UpdateApplicationStatusRequest;
 import hrtech.application.entities.enums.ApplicationStatus;
 import hrtech.identity.utils.AuthUtils;
 import hrtech.shared.response.ApiResponse;
@@ -70,74 +67,31 @@ public class ApplicationController {
         return ResponseEntity.ok(ApiResponse.success(null, "Rút hồ sơ thành công"));
     }
 
-    @PutMapping("/{id}/status")
+    @PutMapping("/{id}/accept")
     @PreAuthorize("@applicationSecurity.isApplicationOwnerOrManagerOrHr(#id)")
-    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> updateStatus(
-            @PathVariable UUID id,
-            @RequestParam(required = false) ApplicationStatus status,
-            @RequestBody(required = false) UpdateApplicationStatusRequest request) {
-        UpdateApplicationStatusRequest updateRequest = request == null ? new UpdateApplicationStatusRequest() : request;
-        if (updateRequest.getStatus() == null) {
-            updateRequest.setStatus(status);
-        }
-        return ResponseEntity.ok(ApiResponse.success(applicationService.updateStatus(id, updateRequest)));
-    }
-
-    @PutMapping("/{id}/interview-schedule")
-    @PreAuthorize("@applicationSecurity.isApplicationOwnerOrManagerOrHr(#id)")
-    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> scheduleInterview(
-            @PathVariable UUID id,
-            @Valid @RequestBody ScheduleInterviewRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(
-                applicationService.scheduleInterview(id, request),
-                "Lên lịch phỏng vấn thành công"));
-    }
-
-    @PostMapping("/{id}/interview-schedule/accept")
-    @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> acceptInterviewScheduleForCurrentCandidate(
-            @PathVariable UUID id) {
-        UUID currentUserId = authUtils.getCurrentUserId();
-        return ResponseEntity.ok(ApiResponse.success(
-                applicationService.acceptInterviewSchedule(currentUserId, id),
-                "Đã xác nhận lịch phỏng vấn"));
-    }
-
-    @PostMapping("/{id}/interview-schedule/change")
-    @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> changeInterviewScheduleForCurrentCandidate(
-            @PathVariable UUID id,
-            @Valid @RequestBody ChangeInterviewScheduleRequest request) {
-        UUID currentUserId = authUtils.getCurrentUserId();
-        return ResponseEntity.ok(ApiResponse.success(
-                applicationService.changeInterviewSchedule(currentUserId, id, request),
-                "Đã ghi nhận yêu cầu đổi lịch phỏng vấn"));
-    }
-
-    @PostMapping("/{id}/interview-schedule/reschedule/accept")
-    @PreAuthorize("@applicationSecurity.isApplicationOwnerOrManagerOrHr(#id)")
-    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> acceptCandidateReschedule(
+    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> acceptApplication(
             @PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(
-                applicationService.acceptCandidateReschedule(id),
-                "Đã chấp nhận lịch phỏng vấn ứng viên đề xuất"));
+                applicationService.acceptApplication(id),
+                "Duyệt đơn ứng tuyển thành công"));
     }
 
-    @PostMapping("/{id}/interview-schedule/reschedule/reject")
+    @PutMapping("/{id}/reject")
     @PreAuthorize("@applicationSecurity.isApplicationOwnerOrManagerOrHr(#id)")
-    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> rejectCandidateReschedule(
+    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> rejectApplication(
             @PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(
-                applicationService.rejectCandidateReschedule(id),
-                "Đã từ chối yêu cầu đổi lịch phỏng vấn"));
+                applicationService.rejectApplication(id),
+                "Đã từ chối/loại đơn ứng tuyển thành công"));
     }
 
     @GetMapping("/jobs/{jobId}")
     @PreAuthorize("@jobSecurity.hasJobRole(#jobId, 'OWNER', 'HR_MANAGER', 'HR')")
     public ResponseEntity<ApiResponse<Page<ApplicationSummaryResponse>>> getApplicationsByJob(
             @PathVariable UUID jobId,
+            @RequestParam(required = false) ApplicationStatus status,
             @PageableDefault(size = 10, sort = "appliedAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(applicationService.getApplicationsByJob(jobId, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(applicationService.getApplicationsByJob(jobId, status, pageable)));
     }
 
     @PostMapping("/{id}/score")
@@ -201,5 +155,108 @@ public class ApplicationController {
     @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<ApiResponse<RecruiterAnalyticsResponse>> getRecruiterAnalytics() {
         return ResponseEntity.ok(ApiResponse.success(applicationService.getRecruiterAnalytics()));
+    }
+
+    /**
+     * Bulk Score: Chấm điểm (và re-score) tất cả application của một job.
+     * currentUserId được lấy nội bộ trong Service, không truyền qua Controller.
+     */
+    @PostMapping("/jobs/{jobId}/bulk-score")
+    @PreAuthorize("@jobSecurity.hasJobRole(#jobId, 'OWNER', 'HR_MANAGER', 'HR')")
+    public ResponseEntity<ApiResponse<BulkScoreResponse>> bulkScoreByJob(
+            @PathVariable UUID jobId,
+            @Valid @RequestBody BulkScoreRequest request) {
+        BulkScoreResponse result = applicationService.bulkScoreByJob(jobId, request);
+        return ResponseEntity.ok(ApiResponse.success(result, "Chấm điểm hàng loạt thành công"));
+    }
+
+    /**
+     * Bulk Reject: Từ chối nhiều application HR đã chọn.
+     * currentUserId được lấy nội bộ trong Service, không truyền qua Controller.
+     */
+    @PostMapping("/bulk-reject")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<ApplicationSummaryResponse>>> bulkRejectApplications(
+            @Valid @RequestBody BulkRejectRequest request) {
+        List<ApplicationSummaryResponse> result = applicationService.bulkRejectApplications(request.getApplicationIds());
+        return ResponseEntity.ok(ApiResponse.success(result, "Từ chối đơn ứng tuyển thành công"));
+    }
+
+    // ─── INTERVIEW WORKFLOW ENDPOINTS ───────────────────────────────────────
+
+    @PostMapping("/interview-rounds/schedule-slots")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<ApplicationSummaryResponse>>> scheduleMultiSlotInterview(
+            @Valid @RequestBody ScheduleMultiSlotRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                applicationService.scheduleMultiSlotInterview(request),
+                "Gửi khung giờ phỏng vấn thành công"
+        ));
+    }
+
+    @PostMapping("/{applicationId}/interview-rounds/{roundNumber}/select-slot")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<ApiResponse<ApplicationInterviewRoundResponse>> selectInterviewSlot(
+            @PathVariable UUID applicationId,
+            @PathVariable Integer roundNumber,
+            @Valid @RequestBody SelectSlotRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                applicationService.selectInterviewSlot(applicationId, roundNumber, request),
+                "Đã chốt khung giờ phỏng vấn"
+        ));
+    }
+
+    @PostMapping("/{applicationId}/interview-rounds/{roundNumber}/request-reschedule")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<ApiResponse<ApplicationInterviewRoundResponse>> requestInterviewReschedule(
+            @PathVariable UUID applicationId,
+            @PathVariable Integer roundNumber,
+            @Valid @RequestBody RequestRescheduleRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                applicationService.requestInterviewReschedule(applicationId, roundNumber, request),
+                "Gửi yêu cầu đổi lịch phỏng vấn thành công"
+        ));
+    }
+
+    @PostMapping("/{applicationId}/interview-rounds/{roundNumber}/review-reschedule")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<ApplicationInterviewRoundResponse>> reviewInterviewReschedule(
+            @PathVariable UUID applicationId,
+            @PathVariable Integer roundNumber,
+            @Valid @RequestBody ReviewRescheduleRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                applicationService.reviewInterviewReschedule(applicationId, roundNumber, request),
+                "Đã phản hồi yêu cầu đổi lịch của ứng viên"
+        ));
+    }
+
+    @PostMapping("/{applicationId}/interview-rounds/{roundNumber}/evaluate")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<ApplicationInterviewRoundResponse>> evaluateInterviewRound(
+            @PathVariable UUID applicationId,
+            @PathVariable Integer roundNumber,
+            @Valid @RequestBody EvaluateRoundRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                applicationService.evaluateInterviewRound(applicationId, roundNumber, request),
+                "Chấm điểm và kết quả vòng phỏng vấn thành công"
+        ));
+    }
+
+    @PostMapping("/{applicationId}/final-confirm")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<ApplicationSummaryResponse>> finalConfirmInterview(
+            @PathVariable UUID applicationId,
+            @Valid @RequestBody FinalConfirmationRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                applicationService.finalConfirmInterview(applicationId, request),
+                "Đã hoàn thành quyết định tuyển dụng cuối cùng"
+        ));
+    }
+
+    @GetMapping("/{applicationId}/interview-rounds")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<ApplicationInterviewRoundResponse>>> getApplicationInterviewRounds(
+            @PathVariable UUID applicationId) {
+        return ResponseEntity.ok(ApiResponse.success(applicationService.getApplicationInterviewRounds(applicationId)));
     }
 }

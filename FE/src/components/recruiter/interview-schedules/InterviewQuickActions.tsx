@@ -9,7 +9,8 @@ interface Props {
   isPending: boolean
   onAcceptReschedule: (id: string) => void
   onRejectReschedule: (id: string) => void
-  onUpdateStatus: (id: string, status: ApplicationStatus, message: string) => void
+  onAccept?: (id: string) => void
+  onReject?: (id: string) => void
 }
 
 export default function InterviewQuickActions({
@@ -18,7 +19,8 @@ export default function InterviewQuickActions({
   isPending,
   onAcceptReschedule,
   onRejectReschedule,
-  onUpdateStatus,
+  onAccept,
+  onReject,
 }: Props) {
   const buttonClass = compact
     ? 'inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-black transition disabled:opacity-60'
@@ -55,32 +57,20 @@ export default function InterviewQuickActions({
         <button
           type="button"
           disabled={isPending}
-          onClick={() =>
-            onUpdateStatus(
-              app.id,
-              ApplicationStatus.INTERVIEW_COMPLETED,
-              'Đã đánh dấu hoàn thành phỏng vấn.'
-            )
-          }
+          onClick={() => onAccept?.(app.id)}
           className={`${buttonClass} bg-teal-500 text-white hover:bg-teal-600`}
         >
           <CheckCircle2 className="h-4 w-4" />
-          Hoàn thành phỏng vấn
+          Chấp nhận phỏng vấn
         </button>
         <button
           type="button"
           disabled={isPending}
-          onClick={() =>
-            onUpdateStatus(
-              app.id,
-              ApplicationStatus.NO_SHOW,
-              'Đã đánh dấu candidate không tham gia.'
-            )
-          }
+          onClick={() => onReject?.(app.id)}
           className={`${buttonClass} border border-slate-200 bg-white text-slate-700 hover:bg-slate-50`}
         >
           <UserRoundX className="h-4 w-4" />
-          Candidate không tham gia
+          Từ chối candidate
         </button>
       </>
     )
@@ -91,9 +81,7 @@ export default function InterviewQuickActions({
       <button
         type="button"
         disabled={isPending}
-        onClick={() =>
-          onUpdateStatus(app.id, ApplicationStatus.REJECTED, 'Đã từ chối candidate.')
-        }
+        onClick={() => onReject?.(app.id)}
         className={`${buttonClass} border border-rose-200 bg-white text-rose-700 hover:bg-rose-50`}
       >
         <XCircle className="h-4 w-4" />

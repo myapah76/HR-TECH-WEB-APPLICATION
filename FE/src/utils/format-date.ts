@@ -155,6 +155,3 @@ export function getDateLabel(dateKey: string, today: dayjs.Dayjs = dayjs()): str
   if (date.isSame(tomorrow, 'day')) return `Ngày mai - ${dateText}`
   return dateText
 }
-
-
-

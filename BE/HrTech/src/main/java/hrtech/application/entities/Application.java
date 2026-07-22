@@ -13,6 +13,8 @@ import lombok.*;
 import hrtech.application.entities.enums.ApplicationStatus;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "applications")
@@ -46,27 +48,10 @@ public class Application extends SoftDeleteEntity {
     @Column(name = "applied_at")
     private Instant appliedAt;
 
-    @Column(name = "interview_date_time")
-    private Instant interviewDateTime;
-
-    @Column(name = "interview_location")
-    private String interviewLocation;
-
-    @Column(name = "interview_meeting_link")
-    private String interviewMeetingLink;
-
-    @Column(name = "interview_note", columnDefinition = "TEXT")
-    private String interviewNote;
-
-    @Column(name = "interview_accepted_at")
-    private Instant interviewAcceptedAt;
-
-    @Column(name = "candidate_interview_response_message", columnDefinition = "TEXT")
-    private String candidateInterviewResponseMessage;
-
-    @Column(name = "candidate_preferred_interview_date_time")
-    private Instant candidatePreferredInterviewDateTime;
-
     @OneToOne(mappedBy = "application", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private ApplicationScore applicationScore;
+
+    @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ApplicationInterviewRound> interviewRounds = new ArrayList<>();
 }

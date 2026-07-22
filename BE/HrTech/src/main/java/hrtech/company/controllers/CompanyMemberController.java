@@ -35,6 +35,12 @@ public class CompanyMemberController {
         return ResponseEntity.ok(ApiResponse.success(companyMemberService.getMembers(id)));
     }
 
+    @GetMapping("/{id}/members/me")
+    @PreAuthorize("@companySecurity.isRecruiter(#id)")
+    public ResponseEntity<ApiResponse<CompanyMemberResponse>> getMyMember(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(companyMemberService.getMyMember(id)));
+    }
+
     @DeleteMapping("/{id}/members/{memberId}")
     @PreAuthorize("@companySecurity.isOwnerOrManager(#id)")
     public ResponseEntity<ApiResponse<Void>> removeMember(

@@ -87,60 +87,48 @@ public class EmailSenderImpl implements IEmailSender {
 
     @Override
     @Async
-    public CompletableFuture<Void> sendApplicationStatusUpdateEmailAsync(
+    public CompletableFuture<Void> sendApplicationAcceptedEmailAsync(
             String toEmail,
             String fullName,
             String jobTitle,
-            String companyName,
-            String newStatus,
-            Instant interviewDateTime,
-            String interviewLocation,
-            String interviewMeetingLink,
-            String note,
-            String actionLink,
-            String actionLabel,
-            Instant acceptedStartDateTime,
-            String acceptedWorkAddress,
-            String acceptedNote) {
+            String companyName) {
         try {
             Context context = new Context();
             context.setVariable("fullName", fullName);
             context.setVariable("jobTitle", jobTitle);
             context.setVariable("companyName", companyName);
-            context.setVariable("newStatus", newStatus);
-            context.setVariable("interviewDateTime",
-                    interviewDateTime == null ? null : interviewDateTime.atZone(ZoneId.systemDefault()).toLocalDateTime());
-            context.setVariable("interviewLocation", interviewLocation);
-            context.setVariable("interviewMeetingLink", interviewMeetingLink);
-            context.setVariable("note", note);
-            context.setVariable("actionLink", actionLink);
-            context.setVariable("actionLabel", actionLabel);
-            context.setVariable("acceptedStartDateTime",
-                    acceptedStartDateTime == null ? null : acceptedStartDateTime.atZone(ZoneId.systemDefault()).toLocalDateTime());
-            context.setVariable("acceptedWorkAddress", acceptedWorkAddress);
-            context.setVariable("acceptedNote", acceptedNote);
             context.setVariable("year", Year.now().getValue());
 
-            String templateName = switch (newStatus) {
-                case "PENDING_INTERVIEW_SCHEDULE" -> "email/application-interview";
-                case "ACCEPTED" -> "email/application-accepted";
-                case "REJECTED" -> "email/application-rejected";
-                default -> throw new IllegalArgumentException("Unsupported application status email: " + newStatus);
-            };
-
-            String subject = switch (newStatus) {
-                case "PENDING_INTERVIEW_SCHEDULE" -> "Interview Schedule - " + jobTitle;
-                case "ACCEPTED" -> "Application Accepted - " + jobTitle;
-                case "REJECTED" -> "Application Update - " + jobTitle;
-                default -> "Application Status Update - " + jobTitle;
-            };
-
-            String html = templateEngine.process(templateName, context);
-            sendHtmlEmail(toEmail, subject, html);
+            String html = templateEngine.process("email/application-accepted", context);
+            sendHtmlEmail(toEmail, "Application Accepted - " + jobTitle, html);
 
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
-            log.error("Failed to send application status update email to {}", toEmail, e);
+            log.error("Failed to send application accepted email to {}", toEmail, e);
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    @Override
+    @Async
+    public CompletableFuture<Void> sendApplicationRejectedEmailAsync(
+            String toEmail,
+            String fullName,
+            String jobTitle,
+            String companyName) {
+        try {
+            Context context = new Context();
+            context.setVariable("fullName", fullName);
+            context.setVariable("jobTitle", jobTitle);
+            context.setVariable("companyName", companyName);
+            context.setVariable("year", Year.now().getValue());
+
+            String html = templateEngine.process("email/application-rejected", context);
+            sendHtmlEmail(toEmail, "Application Update - " + jobTitle, html);
+
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            log.error("Failed to send application rejected email to {}", toEmail, e);
             return CompletableFuture.failedFuture(e);
         }
     }

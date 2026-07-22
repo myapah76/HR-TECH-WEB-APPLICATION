@@ -5,7 +5,7 @@ import {
   SessionStartResponse,
   AnswerSubmitResponse,
   InterviewResultResponse,
-} from '../types/interview'
+} from '../types/mock-interview'
 import { ApiResponse } from '../types/api'
 
 export const startInterviewSession = async (

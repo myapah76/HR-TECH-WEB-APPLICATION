@@ -1,9 +1,5 @@
 import { ApplicationStatus } from '@/src/types'
 
-/**
- * Cấu hình hiển thị thống nhất cho từng ApplicationStatus.
- * Đây là nguồn sự thật duy nhất (single source of truth) – không khai báo lại ở nơi khác.
- */
 export const APPLICATION_STATUS_CONFIG: Record<
   ApplicationStatus,
   {

@@ -30,6 +30,17 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
     @EntityGraph(attributePaths = {"job", "job.company", "cv", "user"})
     Page<Application> findByJobId(UUID jobId, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"job", "job.company", "cv", "user"})
+    Page<Application> findByJobIdAndStatus(UUID jobId, ApplicationStatus status, Pageable pageable);
+
+    /** Dùng cho Bulk Score: lấy tất cả application của job theo status (không phân trang). */
+    @EntityGraph(attributePaths = {"job", "job.company", "cv", "user", "applicationScore"})
+    List<Application> findAllByJobIdAndStatus(UUID jobId, ApplicationStatus status);
+
+    /** Dùng cho Bulk Reject: lấy nhiều application theo danh sách IDs. */
+    @EntityGraph(attributePaths = {"job", "job.company", "cv", "user"})
+    List<Application> findAllByIdIn(Collection<UUID> ids);
+
     boolean existsByUserIdAndJobIdAndStatusNotIn(UUID userId, UUID jobId, Collection<ApplicationStatus> statuses);
 
     long countByStatus(ApplicationStatus status);
@@ -39,9 +50,6 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
     long countByUserIdAndStatus(UUID userId, ApplicationStatus status);
 
     List<Application> findByUserIdOrderByAppliedAtDesc(UUID userId, Pageable pageable);
-
-    @EntityGraph(attributePaths = {"job", "job.company", "cv", "user"})
-    List<Application> findByUserIdAndStatusAndInterviewDateTimeGreaterThanEqualOrderByInterviewDateTimeAsc(UUID userId, ApplicationStatus status, Instant now);
 
     long countByCreatedAtAfter(Instant date);
 }

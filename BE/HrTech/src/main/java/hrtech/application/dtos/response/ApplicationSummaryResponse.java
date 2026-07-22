@@ -26,8 +26,6 @@ public class ApplicationSummaryResponse {
     private String cvTitle;
     private ApplicationStatus status;
     private Instant appliedAt;
-    private Instant interviewDateTime;
-    private Instant candidatePreferredInterviewDateTime;
     private BigDecimal overallScore;
     private String grade;
 }

@@ -1,23 +1,19 @@
 package hrtech.application.services;
 
-import hrtech.application.abstractions.repositories.ApplicationRepository;
-import hrtech.application.abstractions.repositories.ApplicationScoreRepository;
-import hrtech.application.abstractions.repositories.SkillMatchRepository;
+import hrtech.application.abstractions.repositories.*;
 import hrtech.application.abstractions.services.IApplicationService;
-import hrtech.application.dtos.request.ChangeInterviewScheduleRequest;
-import hrtech.application.dtos.request.ScheduleInterviewRequest;
-import hrtech.application.dtos.request.SubmitApplicationRequest;
-import hrtech.application.dtos.request.UpdateApplicationStatusRequest;
-import hrtech.application.dtos.response.ApplicationDetailResponse;
-import hrtech.application.dtos.response.ApplicationSummaryResponse;
-import hrtech.application.dtos.response.ApplicationDashboardSummaryResponse;
+import hrtech.application.dtos.request.*;
+import hrtech.application.dtos.response.*;
+import hrtech.job.abstractions.repositories.JobInterviewRoundRepository;
 import hrtech.shared.dtos.RecentActivityResponse;
-import hrtech.application.dtos.response.UpcomingInterviewResponse;
-import hrtech.application.dtos.response.JobSearchAnalyticsResponse;
 import hrtech.application.entities.Application;
+import hrtech.application.entities.ApplicationInterviewRound;
+import hrtech.application.entities.InterviewSlot;
 import hrtech.application.entities.ApplicationScore;
 import hrtech.application.entities.SkillMatch;
 import hrtech.application.entities.enums.ApplicationStatus;
+import hrtech.application.entities.enums.InterviewRoundStatus;
+import hrtech.job.entities.JobInterviewRound;
 import hrtech.application.entities.enums.MatchStatus;
 import hrtech.application.entities.enums.MatchType;
 import hrtech.application.mapper.ApplicationMapper;
@@ -32,7 +28,6 @@ import hrtech.job.abstractions.services.ISavedJobService;
 import hrtech.job.entities.Job;
 import hrtech.job.entities.enums.JobStatus;
 import hrtech.notification.abstractions.services.INotificationService;
-import hrtech.notification.dtos.request.ApplicationStatusNotificationRequest;
 import hrtech.notification.entities.enums.NotificationType;
 import hrtech.shared.enums.ScoreGrade;
 import hrtech.shared.enums.SkillLevel;
@@ -64,6 +59,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -86,6 +82,9 @@ public class ApplicationServiceImpl implements IApplicationService {
     private final ApplicationRepository applicationRepository;
     private final ApplicationScoreRepository applicationScoreRepository;
     private final SkillMatchRepository skillMatchRepository;
+    private final ApplicationInterviewRoundRepository applicationInterviewRoundRepository;
+    private final JobInterviewRoundRepository jobInterviewRoundRepository;
+    private final InterviewSlotRepository interviewSlotRepository;
 
     private final ApplicationMapper applicationMapper;
 
@@ -171,99 +170,75 @@ public class ApplicationServiceImpl implements IApplicationService {
     }
 
     @Override
-    public ApplicationSummaryResponse updateStatus(UUID applicationId, UpdateApplicationStatusRequest request) {
-        if (request == null || request.getStatus() == null) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Application status is required");
-        }
-
-        ApplicationStatus newStatus = request.getStatus();
-        if (newStatus == ApplicationStatus.ACCEPTED) {
-            if (request.getAcceptedStartDateTime() == null) {
-                throw new AppException(ErrorCode.INVALID_INPUT, "Accepted start date/time is required");
-            }
-            if (normalizeBlank(request.getAcceptedWorkAddress()) == null) {
-                throw new AppException(ErrorCode.INVALID_INPUT, "Accepted work address is required");
-            }
-        }
-
+    public ApplicationSummaryResponse acceptApplication(UUID applicationId) {
         Application application = getApplicationEntityById(applicationId);
 
-        application.setStatus(newStatus);
+        application.setStatus(ApplicationStatus.ACCEPTED);
         application = applicationRepository.save(application);
 
-        notifyCandidateAfterStatusCommit(application, request);
+        notifyCandidateStatusAfterCommit(application, ApplicationStatus.ACCEPTED);
 
         return applicationMapper.toSummaryResponse(application);
     }
 
     @Override
-    public ApplicationSummaryResponse scheduleInterview(UUID applicationId, ScheduleInterviewRequest request) {
+    public ApplicationSummaryResponse rejectApplication(UUID applicationId) {
         Application application = getApplicationEntityById(applicationId);
 
-        application.setStatus(ApplicationStatus.PENDING_INTERVIEW_SCHEDULE);
-        application.setInterviewDateTime(request.interviewDateTime());
-        application.setInterviewLocation(normalizeBlank(request.interviewLocation()));
-        application.setInterviewMeetingLink(normalizeBlank(request.interviewMeetingLink()));
-        application.setInterviewNote(normalizeBlank(request.note()));
-        application.setInterviewAcceptedAt(null);
-        application.setCandidateInterviewResponseMessage(null);
-        application.setCandidatePreferredInterviewDateTime(null);
-
+        application.setStatus(ApplicationStatus.REJECTED);
         application = applicationRepository.save(application);
 
-        notifyInterviewScheduleAfterCommit(application);
+        notifyCandidateStatusAfterCommit(application, ApplicationStatus.REJECTED);
 
         return applicationMapper.toSummaryResponse(application);
     }
 
-    @Override
-    public ApplicationSummaryResponse acceptInterviewSchedule(UUID userId, UUID applicationId) {
-        Application application = findCandidateApplicationWaitingForSchedule(userId, applicationId);
+    private void notifyCandidateStatusAfterCommit(Application application, ApplicationStatus status) {
+        String email = application.getUser().getEmail();
+        String fullName = buildFullName(application.getUser());
+        String jobTitle = application.getJob() != null ? application.getJob().getTitle() : null;
+        String companyName = (application.getJob() != null && application.getJob().getCompany() != null)
+                ? application.getJob().getCompany().getName()
+                : null;
+        String appIdStr = application.getId().toString();
 
-        application.setStatus(ApplicationStatus.INTERVIEW);
-        application.setInterviewAcceptedAt(Instant.now());
-        application.setCandidateInterviewResponseMessage(null);
-        application.setCandidatePreferredInterviewDateTime(null);
+        Runnable notificationTask;
+        switch (status) {
+            case ApplicationStatus.ACCEPTED -> notificationTask = () -> notificationService
+                    .sendApplicationAcceptedNotification(email, fullName, jobTitle, companyName, appIdStr);
+            case ApplicationStatus.REJECTED -> notificationTask = () -> notificationService
+                    .sendApplicationRejectedNotification(email, fullName, jobTitle, companyName, appIdStr);
+            default -> {
+                return;
+            }
+        }
 
-        return applicationMapper.toSummaryResponse(applicationRepository.save(application));
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    notificationTask.run();
+                }
+            });
+        } else {
+            notificationTask.run();
+        }
     }
 
-    @Override
-    public ApplicationSummaryResponse changeInterviewSchedule(UUID userId, UUID applicationId,
-            ChangeInterviewScheduleRequest request) {
-        Application application = findCandidateApplicationWaitingForSchedule(userId, applicationId);
+    private String buildFullName(User user) {
+        if (user == null)
+            return null;
+        String firstName = user.getFirstName() == null ? "" : user.getFirstName().trim();
+        String lastName = user.getLastName() == null ? "" : user.getLastName().trim();
+        String fullName = (firstName + " " + lastName).trim();
 
-        application.setStatus(ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE);
-        application.setInterviewAcceptedAt(null);
-        application.setCandidatePreferredInterviewDateTime(request.candidatePreferredInterviewDateTime());
-        application.setCandidateInterviewResponseMessage(normalizeBlank(request.reason()));
-
-        return applicationMapper.toSummaryResponse(applicationRepository.save(application));
-    }
-
-    @Override
-    public ApplicationSummaryResponse acceptCandidateReschedule(UUID applicationId) {
-        Application application = findApplicationWaitingForRescheduleReview(applicationId);
-
-        application.setInterviewDateTime(application.getCandidatePreferredInterviewDateTime());
-        application.setStatus(ApplicationStatus.INTERVIEW);
-        application.setInterviewAcceptedAt(Instant.now());
-        application.setCandidatePreferredInterviewDateTime(null);
-        application.setCandidateInterviewResponseMessage(null);
-
-        return applicationMapper.toSummaryResponse(applicationRepository.save(application));
-    }
-
-    @Override
-    public ApplicationSummaryResponse rejectCandidateReschedule(UUID applicationId) {
-        Application application = findApplicationWaitingForRescheduleReview(applicationId);
-
-        application.setStatus(ApplicationStatus.PENDING_INTERVIEW_SCHEDULE);
-        application.setInterviewAcceptedAt(null);
-        application.setCandidatePreferredInterviewDateTime(null);
-        application.setCandidateInterviewResponseMessage(null);
-
-        return applicationMapper.toSummaryResponse(applicationRepository.save(application));
+        if (!fullName.isBlank()) {
+            return fullName;
+        }
+        if (user.getUsername() != null && !user.getUsername().isBlank()) {
+            return user.getUsername();
+        }
+        return user.getEmail();
     }
 
     // ─── QUERY METHODS ─────────────────────────────────────────────────────────
@@ -314,17 +289,21 @@ public class ApplicationServiceImpl implements IApplicationService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId, Pageable pageable) {
-        return applicationRepository.findByJobId(jobId, pageable)
-                .map(app -> {
-                    ApplicationSummaryResponse res = applicationMapper.toSummaryResponse(app);
-                    ApplicationScore score = app.getApplicationScore();
-                    if (score != null && score.isCompanyPaid()) {
-                        res.setOverallScore(score.getOverallScore());
-                        res.setGrade(score.getGrade() != null ? score.getGrade().name() : null);
-                    }
-                    return res;
-                });
+    public Page<ApplicationSummaryResponse> getApplicationsByJob(UUID jobId, ApplicationStatus status,
+            Pageable pageable) {
+        Page<Application> page = (status != null)
+                ? applicationRepository.findByJobIdAndStatus(jobId, status, pageable)
+                : applicationRepository.findByJobId(jobId, pageable);
+
+        return page.map(app -> {
+            ApplicationSummaryResponse res = applicationMapper.toSummaryResponse(app);
+            ApplicationScore score = app.getApplicationScore();
+            if (score != null && score.isCompanyPaid()) {
+                res.setOverallScore(score.getOverallScore());
+                res.setGrade(score.getGrade() != null ? score.getGrade().name() : null);
+            }
+            return res;
+        });
     }
 
     @Override
@@ -334,6 +313,14 @@ public class ApplicationServiceImpl implements IApplicationService {
                 userId,
                 jobId,
                 List.of(ApplicationStatus.REJECTED, ApplicationStatus.WITHDRAWN));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasCandidatesInRound(UUID jobInterviewRoundId) {
+        if (jobInterviewRoundId == null)
+            return false;
+        return applicationInterviewRoundRepository.existsByJobInterviewRoundId(jobInterviewRoundId);
     }
 
     @Override
@@ -564,11 +551,24 @@ public class ApplicationServiceImpl implements IApplicationService {
     @Override
     @Transactional(readOnly = true)
     public List<UpcomingInterviewResponse> getUpcomingInterviewsForDashboard(UUID userId) {
-        return applicationRepository
-                .findByUserIdAndStatusAndInterviewDateTimeGreaterThanEqualOrderByInterviewDateTimeAsc(
-                        userId, ApplicationStatus.INTERVIEW, Instant.now())
-                .stream()
-                .map(this::toUpcomingInterviewResponse)
+        List<Application> apps = applicationRepository.findByUserId(userId);
+        Instant now = Instant.now();
+        return apps.stream()
+                .filter(a -> a.getInterviewRounds() != null)
+                .flatMap(a -> a.getInterviewRounds().stream())
+                .filter(r -> r.getScheduledTime() != null && !r.getScheduledTime().isBefore(now))
+                .sorted(Comparator.comparing(ApplicationInterviewRound::getScheduledTime))
+                .map(r -> UpcomingInterviewResponse.builder()
+                        .company(r.getApplication().getJob() != null && r.getApplication().getJob().getCompany() != null
+                                ? r.getApplication().getJob().getCompany().getName()
+                                : "Nhà tuyển dụng")
+                        .position(r.getApplication().getJob() != null ? r.getApplication().getJob().getTitle()
+                                : "Vị trí không xác định")
+                        .dateTime(r.getScheduledTime())
+                        .meetUrl(r.getMeetingLink())
+                        .location(r.getLocation())
+                        .applicationId(r.getApplication().getId())
+                        .build())
                 .toList();
     }
 
@@ -593,146 +593,6 @@ public class ApplicationServiceImpl implements IApplicationService {
                 .weeklyData(buildWeeklyData(apps))
                 .monthlyData(buildMonthlyData(apps))
                 .yearlyData(buildYearlyData(apps))
-                .build();
-    }
-
-    // ─── PRIVATE HELPERS ────────────────────────────────────────────────────────
-
-    private void notifyCandidateAfterStatusCommit(Application application, UpdateApplicationStatusRequest request) {
-        Job job = application.getJob();
-        String jobTitle = job == null ? null : job.getTitle();
-        String companyName = job == null || job.getCompany() == null ? null : job.getCompany().getName();
-
-        ApplicationStatusNotificationRequest notificationRequest = new ApplicationStatusNotificationRequest(
-                application.getUser().getEmail(),
-                buildFullName(application.getUser()),
-                jobTitle,
-                companyName,
-                request.getStatus().name(),
-                application.getId().toString(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                request.getAcceptedStartDateTime(),
-                normalizeBlank(request.getAcceptedWorkAddress()),
-                normalizeBlank(request.getAcceptedNote()));
-
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    notificationService.ApplicationStatusNotificationHandler(notificationRequest);
-                }
-            });
-            return;
-        }
-
-        notificationService.ApplicationStatusNotificationHandler(notificationRequest);
-    }
-
-    private void notifyInterviewScheduleAfterCommit(Application application) {
-        String actionLink = frontendBaseUrl + "/candidate/applied-jobs";
-
-        ApplicationStatusNotificationRequest notificationRequest = new ApplicationStatusNotificationRequest(
-                application.getUser().getEmail(),
-                buildFullName(application.getUser()),
-                application.getJob().getTitle(),
-                application.getJob().getCompany() == null ? null : application.getJob().getCompany().getName(),
-                ApplicationStatus.PENDING_INTERVIEW_SCHEDULE.name(),
-                application.getId().toString(),
-                application.getInterviewDateTime(),
-                application.getInterviewLocation(),
-                application.getInterviewMeetingLink(),
-                application.getInterviewNote(),
-                actionLink,
-                "Phản hồi lịch phỏng vấn",
-                null,
-                null,
-                null);
-
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    notificationService.ApplicationStatusNotificationHandler(notificationRequest);
-                }
-            });
-            return;
-        }
-
-        notificationService.ApplicationStatusNotificationHandler(notificationRequest);
-    }
-
-    private Application findCandidateApplicationWaitingForSchedule(UUID userId, UUID applicationId) {
-        Application application = getApplicationEntityById(applicationId);
-
-        if (!application.getUser().getId().equals(userId)) {
-            throw new AppException(ErrorCode.FORBIDDEN, "Application does not belong to current candidate");
-        }
-
-        if (application.getStatus() != ApplicationStatus.PENDING_INTERVIEW_SCHEDULE) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS,
-                    "Application is not waiting for interview schedule response");
-        }
-
-        if (application.getInterviewDateTime() == null) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS, "Application does not have an interview schedule");
-        }
-
-        return application;
-    }
-
-    private Application findApplicationWaitingForRescheduleReview(UUID applicationId) {
-        Application application = getApplicationEntityById(applicationId);
-
-        if (application.getStatus() != ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS, "Application is not waiting for reschedule review");
-        }
-
-        if (application.getCandidatePreferredInterviewDateTime() == null) {
-            throw new AppException(ErrorCode.JOB_INVALID_STATUS,
-                    "Application does not have a candidate preferred interview time");
-        }
-
-        return application;
-    }
-
-    private String normalizeBlank(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return value.trim();
-    }
-
-    private String buildFullName(User user) {
-        String firstName = user.getFirstName() == null ? "" : user.getFirstName().trim();
-        String lastName = user.getLastName() == null ? "" : user.getLastName().trim();
-        String fullName = (firstName + " " + lastName).trim();
-
-        if (!fullName.isBlank()) {
-            return fullName;
-        }
-        if (user.getUsername() != null && !user.getUsername().isBlank()) {
-            return user.getUsername();
-        }
-        return user.getEmail();
-    }
-
-    private UpcomingInterviewResponse toUpcomingInterviewResponse(Application app) {
-        String companyName = (app.getJob() != null && app.getJob().getCompany() != null)
-                ? app.getJob().getCompany().getName()
-                : "Nhà tuyển dụng";
-        String jobTitle = app.getJob() != null ? app.getJob().getTitle() : "Vị trí không xác định";
-        return UpcomingInterviewResponse.builder()
-                .company(companyName)
-                .position(jobTitle)
-                .dateTime(app.getInterviewDateTime())
-                .meetUrl(app.getInterviewMeetingLink())
-                .location(app.getInterviewLocation())
-                .applicationId(app.getId())
                 .build();
     }
 
@@ -809,8 +669,6 @@ public class ApplicationServiceImpl implements IApplicationService {
         return result;
     }
 
-    // ─── RECRUITER DASHBOARD METHODS ───────────────────────────────────────────
-
     private Company resolveRecruiterCompany() {
         User currentUser = authUtils.getCurrentUser();
         CompanyMember member = companyService.getMemberEntityByUserId(currentUser.getId());
@@ -858,14 +716,17 @@ public class ApplicationServiceImpl implements IApplicationService {
         List<Application> apps = getCompanyApplications(jobs);
 
         return apps.stream()
-                .filter(a -> a.getInterviewDateTime() != null)
-                .sorted(Comparator.comparing(Application::getInterviewDateTime))
+                .filter(a -> a.getInterviewRounds() != null)
+                .flatMap(a -> a.getInterviewRounds().stream())
+                .filter(r -> r.getScheduledTime() != null)
+                .sorted(Comparator.comparing(ApplicationInterviewRound::getScheduledTime))
                 .limit(4)
-                .map(a -> RecruiterUpcomingInterviewResponse.builder()
-                        .cvTitle(a.getCv() != null ? a.getCv().getTitle() : "CV")
-                        .jobTitle(a.getJob() != null ? a.getJob().getTitle() : "Vị trí tuyển dụng")
-                        .interviewDateTime(a.getInterviewDateTime())
-                        .status(a.getStatus().name())
+                .map(r -> RecruiterUpcomingInterviewResponse.builder()
+                        .cvTitle(r.getApplication().getCv() != null ? r.getApplication().getCv().getTitle() : "CV")
+                        .jobTitle(r.getApplication().getJob() != null ? r.getApplication().getJob().getTitle()
+                                : "Vị trí tuyển dụng")
+                        .interviewDateTime(r.getScheduledTime())
+                        .status(r.getStatus().name())
                         .build())
                 .toList();
     }
@@ -953,5 +814,453 @@ public class ApplicationServiceImpl implements IApplicationService {
                             .build();
                 })
                 .toList();
+    }
+    // ─── BULK SCORING ────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public BulkScoreResponse bulkScoreByJob(UUID jobId, BulkScoreRequest request) {
+        UUID currentUserId = authUtils.getCurrentUserId();
+
+        // 1. Kiểm tra quyền truy cập tính năng APP_SCORING của công ty
+        if (!creditService.hasCompanyFeatureAccessByUserId(currentUserId, "APP_SCORING")) {
+            throw new AppException(ErrorCode.FORBIDDEN,
+                    "Gói của công ty không có tính năng Chấm điểm CV (APP_SCORING). Vui lòng nâng cấp gói.");
+        }
+
+        // 2. Lấy toàn bộ application của job
+        List<Application> allApps = applicationRepository.findByJobId(jobId);
+
+        // 3. Phân loại: Các đơn SUBMITTED chưa được công ty chấm điểm -> Cần chấm
+        List<Application> toScore = allApps.stream()
+                .filter(a -> a.getStatus() == ApplicationStatus.SUBMITTED
+                        && (a.getApplicationScore() == null || !a.getApplicationScore().isCompanyPaid()))
+                .toList();
+
+        List<Application> alreadyScoredList = allApps.stream()
+                .filter(a -> a.getApplicationScore() != null && a.getApplicationScore().isCompanyPaid())
+                .toList();
+
+        int alreadyScoredCount = alreadyScoredList.size();
+        int autoRejected = 0;
+        int failed = 0;
+
+        // 4. Nếu có đơn chưa chấm: Trừ credit và chấm điểm từng đơn
+        if (!toScore.isEmpty()) {
+            creditService.deductCompanyFeatureQuota(currentUserId, "APP_SCORING", toScore.size());
+
+            for (Application app : toScore) {
+                try {
+                    ApplicationScore score = calculateAndSaveScore(app, false, true);
+                    app.setApplicationScore(score);
+                    app.setStatus(ApplicationStatus.SCORED);
+
+                    double scorePercent = score.getOverallScore().doubleValue();
+
+                    if (request.isAutoRejectBelowThreshold() && scorePercent < request.getThresholdPercent()) {
+                        app.setStatus(ApplicationStatus.REJECTED);
+                        autoRejected++;
+                    }
+
+                    applicationRepository.save(app);
+                } catch (Exception e) {
+                    log.warn("[BulkScore] Failed to score application {}: {}", app.getId(), e.getMessage());
+                    failed++;
+                }
+            }
+        }
+
+        // 5. Nếu bật tự động từ chối dưới ngưỡng: Kiểm tra cả các đơn đã scored trước
+        // đó
+        if (request.isAutoRejectBelowThreshold()) {
+            for (Application app : alreadyScoredList) {
+                if (app.getStatus() == ApplicationStatus.SCORED && app.getApplicationScore() != null) {
+                    double scorePercent = app.getApplicationScore().getOverallScore().doubleValue();
+                    if (scorePercent < request.getThresholdPercent()) {
+                        app.setStatus(ApplicationStatus.REJECTED);
+                        applicationRepository.save(app);
+                        autoRejected++;
+                    }
+                }
+            }
+        }
+
+        // 6. Trả về kết quả sau khi xử lý
+        List<Application> refreshedAll = applicationRepository.findByJobId(jobId);
+        List<ApplicationSummaryResponse> allResults = refreshedAll.stream()
+                .map(applicationMapper::toSummaryResponse)
+                .toList();
+
+        int totalNewlyScored = toScore.size() - failed;
+
+        long aboveThresholdCount = refreshedAll.stream()
+                .filter(a -> a.getApplicationScore() != null
+                        && a.getApplicationScore().getOverallScore().doubleValue() >= request.getThresholdPercent()
+                        && a.getStatus() != ApplicationStatus.REJECTED)
+                .count();
+
+        return BulkScoreResponse.builder()
+                .totalScored(totalNewlyScored)
+                .autoRejectedCount(autoRejected)
+                .aboveThresholdCount((int) aboveThresholdCount)
+                .alreadyScoredCount(alreadyScoredCount)
+                .failedCount(failed)
+                .allApplications(allResults)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public List<ApplicationSummaryResponse> bulkRejectApplications(List<UUID> applicationIds) {
+        // Lấy currentUserId nội bộ từ SecurityContext (không nhận từ Controller)
+        UUID currentUserId = authUtils.getCurrentUserId();
+
+        List<Application> apps = applicationRepository.findAllByIdIn(applicationIds);
+
+        List<Application> rejected = new ArrayList<>();
+        for (Application app : apps) {
+            // Xác nhận HR thuộc công ty của job
+            boolean isCompanyMember = app.getJob() != null
+                    && app.getJob().getCompany() != null
+                    && companyService.getMemberByCompanyIdAndUserId(
+                            app.getJob().getCompany().getId(), currentUserId).isPresent();
+
+            if (!isCompanyMember) {
+                log.warn("[BulkReject] User {} không có quyền reject application {}", currentUserId, app.getId());
+                continue;
+            }
+
+            app.setStatus(ApplicationStatus.REJECTED);
+            Application savedApp = applicationRepository.save(app);
+            rejected.add(savedApp);
+            notifyCandidateStatusAfterCommit(savedApp, ApplicationStatus.REJECTED);
+        }
+
+        return rejected.stream()
+                .map(applicationMapper::toSummaryResponse)
+                .toList();
+    }
+
+    // ─── INTERVIEW WORKFLOW METHODS ──────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public List<ApplicationSummaryResponse> scheduleMultiSlotInterview(ScheduleMultiSlotRequest request) {
+        List<Application> updatedApps = new ArrayList<>();
+
+        for (UUID appId : request.getApplicationIds()) {
+            Application application = getApplicationEntityById(appId);
+            Job job = application.getJob();
+
+            JobInterviewRound jobRound = jobInterviewRoundRepository.findByJobIdAndRoundNumber(job.getId(), request.getRoundNumber())
+                    .orElseGet(() -> {
+                        JobInterviewRound newRound = JobInterviewRound.builder()
+                                .job(job)
+                                .roundNumber(request.getRoundNumber())
+                                .roundName("Vòng " + request.getRoundNumber())
+                                .build();
+                        return jobInterviewRoundRepository.save(newRound);
+                    });
+
+            ApplicationInterviewRound appRound = applicationInterviewRoundRepository
+                    .findByApplicationIdAndJobInterviewRoundRoundNumber(appId, request.getRoundNumber())
+                    .orElseGet(() -> ApplicationInterviewRound.builder()
+                            .application(application)
+                            .jobInterviewRound(jobRound)
+                            .build());
+
+            appRound.setStatus(InterviewRoundStatus.SLOTS_SENT);
+            appRound.setNote(request.getNote());
+            appRound = applicationInterviewRoundRepository.save(appRound);
+
+            // Delete old slots if any & insert new slots
+            interviewSlotRepository.deleteByApplicationInterviewRoundId(appRound.getId());
+
+            if (request.getSlots() != null && !request.getSlots().isEmpty()) {
+                List<InterviewSlot> slotEntities = new ArrayList<>();
+                for (InterviewSlotDto slotDto : request.getSlots()) {
+                    InterviewSlot slotEntity = InterviewSlot.builder()
+                            .applicationInterviewRound(appRound)
+                            .startTime(slotDto.getStartTime())
+                            .endTime(slotDto.getEndTime())
+                            .location(slotDto.getLocation())
+                            .meetingLink(slotDto.getMeetingLink())
+                            .isSelected(false)
+                            .build();
+                    slotEntities.add(slotEntity);
+                }
+                interviewSlotRepository.saveAll(slotEntities);
+            }
+
+            application.setStatus(ApplicationStatus.PENDING_INTERVIEW_SCHEDULE);
+            Application savedApp = applicationRepository.save(application);
+            updatedApps.add(savedApp);
+
+            // Notification
+            try {
+                notificationService.createAndSendNotification(
+                        application.getUser().getId(),
+                        "Khung giờ phỏng vấn mới",
+                        "Nhà tuyển dụng đã gửi các khung giờ phỏng vấn cho vị trí " + job.getTitle() + ". Vui lòng chọn thời gian phù hợp.",
+                        NotificationType.INTERVIEW_SCHEDULED,
+                        application.getId().toString()
+                );
+            } catch (Exception e) {
+                log.error("Failed to notify candidate for interview slots", e);
+            }
+        }
+
+        return updatedApps.stream().map(applicationMapper::toSummaryResponse).toList();
+    }
+
+    @Override
+    @Transactional
+    public ApplicationInterviewRoundResponse selectInterviewSlot(UUID applicationId, Integer roundNumber, SelectSlotRequest request) {
+        ApplicationInterviewRound appRound = applicationInterviewRoundRepository
+                .findByApplicationIdAndJobInterviewRoundRoundNumber(applicationId, roundNumber)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Interview round not found"));
+
+        InterviewSlot selectedSlot = interviewSlotRepository.findById(request.getSlotId())
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Interview slot not found"));
+
+        // Reset other slots selection
+        List<InterviewSlot> allSlots = interviewSlotRepository.findByApplicationInterviewRoundId(appRound.getId());
+        for (InterviewSlot s : allSlots) {
+            s.setIsSelected(s.getId().equals(selectedSlot.getId()));
+        }
+        interviewSlotRepository.saveAll(allSlots);
+
+        appRound.setScheduledTime(selectedSlot.getStartTime());
+        appRound.setLocation(selectedSlot.getLocation());
+        appRound.setMeetingLink(selectedSlot.getMeetingLink());
+        appRound.setStatus(InterviewRoundStatus.CONFIRMED);
+        appRound = applicationInterviewRoundRepository.save(appRound);
+
+        Application app = appRound.getApplication();
+        app.setStatus(ApplicationStatus.INTERVIEW);
+        applicationRepository.save(app);
+
+        // Notify Recruiter
+        if (app.getJob().getCreatedBy() != null) {
+            try {
+                notificationService.createAndSendNotification(
+                        app.getJob().getCreatedBy().getId(),
+                        "Lịch phỏng vấn đã chốt",
+                        "Ứng viên " + app.getUser().getFirstName() + " " + app.getUser().getLastName() + " đã chốt thời gian phỏng vấn.",
+                        NotificationType.INTERVIEW_SCHEDULED,
+                        app.getId().toString()
+                );
+            } catch (Exception e) {
+                log.error("Failed to notify recruiter on slot selection", e);
+            }
+        }
+
+        return toRoundResponse(appRound);
+    }
+
+    @Override
+    @Transactional
+    public ApplicationInterviewRoundResponse requestInterviewReschedule(UUID applicationId, Integer roundNumber, RequestRescheduleRequest request) {
+        ApplicationInterviewRound appRound = applicationInterviewRoundRepository
+                .findByApplicationIdAndJobInterviewRoundRoundNumber(applicationId, roundNumber)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Interview round not found"));
+
+        appRound.setCandidatePreferredTime(request.getPreferredTime());
+        appRound.setCandidateRescheduleReason(request.getReason());
+        appRound.setRescheduleCount((appRound.getRescheduleCount() == null ? 0 : appRound.getRescheduleCount()) + 1);
+        appRound.setStatus(InterviewRoundStatus.RESCHEDULE_REQUESTED);
+        appRound = applicationInterviewRoundRepository.save(appRound);
+
+        Application app = appRound.getApplication();
+        app.setStatus(ApplicationStatus.CANDIDATE_REQUESTED_INTERVIEW_RESCHEDULE);
+        applicationRepository.save(app);
+
+        if (app.getJob().getCreatedBy() != null) {
+            try {
+                notificationService.createAndSendNotification(
+                        app.getJob().getCreatedBy().getId(),
+                        "Yêu cầu đổi lịch phỏng vấn",
+                        "Ứng viên " + app.getUser().getFirstName() + " " + app.getUser().getLastName() + " đề xuất đổi lịch phỏng vấn với lý do: " + request.getReason(),
+                        NotificationType.INTERVIEW_SCHEDULED,
+                        app.getId().toString()
+                );
+            } catch (Exception e) {
+                log.error("Failed to notify recruiter on reschedule request", e);
+            }
+        }
+
+        return toRoundResponse(appRound);
+    }
+
+    @Override
+    @Transactional
+    public ApplicationInterviewRoundResponse reviewInterviewReschedule(UUID applicationId, Integer roundNumber, ReviewRescheduleRequest request) {
+        ApplicationInterviewRound appRound = applicationInterviewRoundRepository
+                .findByApplicationIdAndJobInterviewRoundRoundNumber(applicationId, roundNumber)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Interview round not found"));
+
+        Application app = appRound.getApplication();
+
+        if (Boolean.TRUE.equals(request.getAccepted())) {
+            appRound.setScheduledTime(appRound.getCandidatePreferredTime());
+            appRound.setCandidatePreferredTime(null);
+            appRound.setCandidateRescheduleReason(null);
+            appRound.setStatus(InterviewRoundStatus.CONFIRMED);
+            app.setStatus(ApplicationStatus.INTERVIEW);
+        } else {
+            appRound.setHrRejectionReason(request.getRejectionReason());
+            int count = appRound.getRescheduleCount() == null ? 0 : appRound.getRescheduleCount();
+            if (count >= 3) {
+                appRound.setStatus(InterviewRoundStatus.TERMINATED);
+                app.setStatus(ApplicationStatus.REJECTED);
+                appRound.setFeedbackNote("Đã dừng luồng do đổi lịch quá 3 lần. Lý do từ chối cuối: " + request.getRejectionReason());
+            } else {
+                appRound.setStatus(InterviewRoundStatus.RESCHEDULE_REJECTED);
+                interviewSlotRepository.deleteByApplicationInterviewRoundId(appRound.getId());
+                if (request.getNewSlots() != null && !request.getNewSlots().isEmpty()) {
+                    List<InterviewSlot> slotEntities = new ArrayList<>();
+                    for (InterviewSlotDto slotDto : request.getNewSlots()) {
+                        InterviewSlot slotEntity = InterviewSlot.builder()
+                                .applicationInterviewRound(appRound)
+                                .startTime(slotDto.getStartTime())
+                                .endTime(slotDto.getEndTime())
+                                .location(slotDto.getLocation())
+                                .meetingLink(slotDto.getMeetingLink())
+                                .isSelected(false)
+                                .build();
+                        slotEntities.add(slotEntity);
+                    }
+                    interviewSlotRepository.saveAll(slotEntities);
+                }
+                app.setStatus(ApplicationStatus.PENDING_INTERVIEW_SCHEDULE);
+            }
+        }
+
+        appRound = applicationInterviewRoundRepository.save(appRound);
+        applicationRepository.save(app);
+
+        // Notify Candidate
+        try {
+            String title = Boolean.TRUE.equals(request.getAccepted()) ? "Lịch phỏng vấn đã được xác nhận" : "Thông báo về lịch phỏng vấn";
+            String content = Boolean.TRUE.equals(request.getAccepted()) 
+                    ? "Nhà tuyển dụng đã đồng ý với thời gian phỏng vấn bạn đề xuất." 
+                    : "Nhà tuyển dụng đã cập nhật phản hồi lịch phỏng vấn.";
+            notificationService.createAndSendNotification(
+                    app.getUser().getId(),
+                    title,
+                    content,
+                    NotificationType.INTERVIEW_SCHEDULED,
+                    app.getId().toString()
+            );
+        } catch (Exception e) {
+            log.error("Failed to notify candidate on reschedule review", e);
+        }
+
+        return toRoundResponse(appRound);
+    }
+
+    @Override
+    @Transactional
+    public ApplicationInterviewRoundResponse evaluateInterviewRound(UUID applicationId, Integer roundNumber, EvaluateRoundRequest request) {
+        ApplicationInterviewRound appRound = applicationInterviewRoundRepository
+                .findByApplicationIdAndJobInterviewRoundRoundNumber(applicationId, roundNumber)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Interview round not found"));
+
+        Application app = appRound.getApplication();
+        appRound.setRating(request.getRating());
+        appRound.setFeedbackNote(request.getFeedbackNote());
+        if (Boolean.TRUE.equals(request.getIsAttended())) {
+            appRound.setAttendedAt(Instant.now());
+        }
+
+        if (Boolean.TRUE.equals(request.getPassed())) {
+            appRound.setStatus(InterviewRoundStatus.PASSED);
+
+            // Check if next round exists
+            int nextRoundNum = roundNumber + 1;
+            Optional<JobInterviewRound> nextJobRound = jobInterviewRoundRepository.findByJobIdAndRoundNumber(app.getJob().getId(), nextRoundNum);
+            if (nextJobRound.isPresent()) {
+                // Initialize next round for application
+                ApplicationInterviewRound nextAppRound = applicationInterviewRoundRepository
+                        .findByApplicationIdAndJobInterviewRoundRoundNumber(applicationId, nextRoundNum)
+                        .orElseGet(() -> ApplicationInterviewRound.builder()
+                                .application(app)
+                                .jobInterviewRound(nextJobRound.get())
+                                .status(InterviewRoundStatus.NOT_STARTED)
+                                .build());
+                applicationInterviewRoundRepository.save(nextAppRound);
+                app.setStatus(ApplicationStatus.PENDING_INTERVIEW_SCHEDULE);
+            } else {
+                // Passed final round -> INTERVIEW_COMPLETED
+                appRound.setStatus(InterviewRoundStatus.INTERVIEW_COMPLETED);
+                app.setStatus(ApplicationStatus.INTERVIEW_COMPLETED);
+            }
+        } else {
+            appRound.setStatus(InterviewRoundStatus.FAILED);
+            app.setStatus(ApplicationStatus.REJECTED);
+        }
+
+        appRound = applicationInterviewRoundRepository.save(appRound);
+        applicationRepository.save(app);
+
+        notifyCandidateStatusAfterCommit(app, app.getStatus());
+
+        return toRoundResponse(appRound);
+    }
+
+    @Override
+    @Transactional
+    public ApplicationSummaryResponse finalConfirmInterview(UUID applicationId, FinalConfirmationRequest request) {
+        Application app = getApplicationEntityById(applicationId);
+
+        if (Boolean.TRUE.equals(request.getApproved())) {
+            app.setStatus(ApplicationStatus.ACCEPTED);
+        } else {
+            app.setStatus(ApplicationStatus.REJECTED);
+        }
+
+        app = applicationRepository.save(app);
+        notifyCandidateStatusAfterCommit(app, app.getStatus());
+
+        return applicationMapper.toSummaryResponse(app);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ApplicationInterviewRoundResponse> getApplicationInterviewRounds(UUID applicationId) {
+        List<ApplicationInterviewRound> rounds = applicationInterviewRoundRepository
+                .findByApplicationIdOrderByJobInterviewRoundRoundNumberAsc(applicationId);
+        return rounds.stream().map(this::toRoundResponse).toList();
+    }
+
+    private ApplicationInterviewRoundResponse toRoundResponse(ApplicationInterviewRound round) {
+        List<InterviewSlot> slotEntities = interviewSlotRepository.findByApplicationInterviewRoundId(round.getId());
+        List<InterviewSlotDto> slotDtos = slotEntities.stream().map(s -> InterviewSlotDto.builder()
+                .id(s.getId())
+                .startTime(s.getStartTime())
+                .endTime(s.getEndTime())
+                .location(s.getLocation())
+                .meetingLink(s.getMeetingLink())
+                .isSelected(s.getIsSelected())
+                .build()).toList();
+
+        return ApplicationInterviewRoundResponse.builder()
+                .id(round.getId())
+                .applicationId(round.getApplication().getId())
+                .roundNumber(round.getJobInterviewRound().getRoundNumber())
+                .roundName(round.getJobInterviewRound().getRoundName())
+                .status(round.getStatus())
+                .scheduledTime(round.getScheduledTime())
+                .location(round.getLocation())
+                .meetingLink(round.getMeetingLink())
+                .candidatePreferredTime(round.getCandidatePreferredTime())
+                .candidateRescheduleReason(round.getCandidateRescheduleReason())
+                .hrRejectionReason(round.getHrRejectionReason())
+                .rescheduleCount(round.getRescheduleCount() == null ? 0 : round.getRescheduleCount())
+                .feedbackNote(round.getFeedbackNote())
+                .rating(round.getRating())
+                .attendedAt(round.getAttendedAt())
+                .slots(slotDtos)
+                .build();
     }
 }

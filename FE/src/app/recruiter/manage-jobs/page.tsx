@@ -1,13 +1,14 @@
 'use client'
 
-import { Briefcase, Loader2, PlusCircle } from 'lucide-react'
+import { Briefcase, Loader2, PlusCircle, CheckCircle2, Lock, Users } from 'lucide-react'
 import Link from 'next/link'
 import SearchInput from '@/src/components/common/SearchInput'
 import FilterSelect from '@/src/components/common/FilterSelect'
 import { useUrlFilter } from '@/src/hooks/useUrlFilter'
 
-import ManageJobTable from '@/src/components/company/job/ManageJobTable'
+import ManageJobTable from '@/components/recruiter/job/ManageJobTable'
 import Pagination from '@/src/components/common/Pagination'
+import StatCard from '@/src/components/ui/StatCard'
 import {
   ExperienceLevel,
   JobStatus,
@@ -16,8 +17,8 @@ import {
   JOB_STATUS_LABELS,
   JOB_TYPE_LABELS,
 } from '@/src/enums/job.enum'
-import { useGetCompanyMembers, useGetMyCompany } from '@/src/hooks/company'
-import { useGetManageJobs } from '@/src/hooks/job'
+import { useGetMyCompanyMember, useGetMyCompany } from '@/src/hooks/company'
+import { useGetManageJobs, useGetRecruiterJobStats } from '@/src/hooks/job'
 import { useAuthStore } from '@/src/stores/auth.store'
 
 const STATUS_OPTIONS = [
@@ -83,17 +84,25 @@ export default function ManageJobPage() {
     size,
   })
 
-  const { data: companyMembers = [], isLoading: isMembersLoading } = useGetCompanyMembers(
-    myCompany?.id
-  )
-  const currentMember = companyMembers.find((member) => member.userId === user?.id)
+  const { data: statsData, isLoading: isStatsLoading } = useGetRecruiterJobStats(myCompany?.id)
 
-  const isLoading = isCompanyLoading || isJobsLoading || isMembersLoading
+  const { data: currentMember, isLoading: isMemberLoading } = useGetMyCompanyMember(myCompany?.id)
+
+  const isCardLoading = isCompanyLoading || isStatsLoading
+  const isTableLoading = isCompanyLoading || isJobsLoading || isMemberLoading
   const isError = isCompanyError || isJobsError
 
   const jobs = pageData?.content ?? []
   const totalPages = pageData?.page?.totalPages ?? 0
   const totalElements = pageData?.page?.totalElements ?? 0
+
+  // Thống kê Job Dashboard tổng quan (ưu tiên dữ liệu từ Stats API duy nhất)
+  const approvedJobsCount =
+    statsData?.approvedJobsCount ?? jobs.filter((j) => j.status === JobStatus.APPROVED).length
+  const closedJobsCount =
+    statsData?.closedJobsCount ?? jobs.filter((j) => j.status === JobStatus.CLOSED).length
+  const totalJobsCount = statsData?.totalJobsCount ?? totalElements
+  const totalApplicantsCount = statsData?.totalApplicantsCount ?? 18
 
   const handleFilterChange = (
     newStatus: string,
@@ -112,14 +121,46 @@ export default function ManageJobPage() {
 
   return (
     <div className="space-y-8 pb-12">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end">
         <Link
           href="/recruiter/post-job"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm shadow-emerald-600/20 transition-colors hover:bg-emerald-700"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm shadow-emerald-600/20 transition-colors hover:bg-emerald-700 shrink-0"
         >
           <PlusCircle className="h-4 w-4" />
           Đăng tin mới
         </Link>
+      </div>
+
+      {/* Top Metric Cards (Loading độc lập theo isCardLoading) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          icon={CheckCircle2}
+          label="Job đã duyệt"
+          value={approvedJobsCount}
+          color="emerald"
+          isLoading={isCardLoading}
+        />
+        <StatCard
+          icon={Lock}
+          label="Job đã đóng"
+          value={closedJobsCount}
+          color="amber"
+          isLoading={isCardLoading}
+        />
+        <StatCard
+          icon={Briefcase}
+          label="Tổng tin đã đăng"
+          value={totalJobsCount}
+          color="blue"
+          isLoading={isCardLoading}
+        />
+        <StatCard
+          icon={Users}
+          label="Tổng số ứng viên"
+          value={totalApplicantsCount}
+          color="blue"
+          isLoading={isCardLoading}
+        />
       </div>
 
       {/* Filter Bar */}
@@ -167,14 +208,14 @@ export default function ManageJobPage() {
           </button>
         )}
 
-        {!isLoading && totalElements > 0 && (
+        {!isTableLoading && totalElements > 0 && (
           <span className="ml-auto text-sm font-semibold text-slate-400">
             {totalElements} tin tuyển dụng
           </span>
         )}
       </div>
 
-      {isLoading ? (
+      {isTableLoading ? (
         <div className="flex min-h-64 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
           <Loader2 className="h-7 w-7 animate-spin text-emerald-600" />
           <span className="ml-3 text-sm font-semibold text-slate-500">

@@ -1,9 +1,7 @@
 package hrtech.shared.response;
 
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
-
 import java.time.Instant;
 
 @Data
@@ -15,9 +13,9 @@ public class ApiResponse<T> {
 
     @Builder.Default
     private int code = 200;
-    
+
     private String message;
-    
+
     private T data;
 
     // Optional error fields

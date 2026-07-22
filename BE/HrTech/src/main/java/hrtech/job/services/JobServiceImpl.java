@@ -10,6 +10,7 @@ import hrtech.company.entities.enums.CompanyRole;
 import hrtech.identity.entities.User;
 import hrtech.identity.utils.AuthUtils;
 import hrtech.job.abstractions.repositories.JobAuditLogRepository;
+import hrtech.job.abstractions.repositories.JobInterviewRoundRepository;
 import hrtech.job.abstractions.repositories.JobRepository;
 import hrtech.job.abstractions.repositories.JobSkillRepository;
 import hrtech.job.abstractions.services.IJobService;
@@ -18,9 +19,12 @@ import hrtech.job.dtos.request.JobSearchCriteria;
 import hrtech.job.dtos.response.HotPositionResponse;
 import hrtech.job.dtos.response.JobResponse;
 import hrtech.job.dtos.response.LandingStatsResponse;
+import hrtech.job.dtos.response.RecruiterJobStatsResponse;
+import hrtech.job.dtos.response.RecruiterManageJobResponse;
 import hrtech.job.dtos.response.TrendingSkillResponse;
 import hrtech.job.entities.Job;
 import hrtech.job.entities.JobAuditLog;
+import hrtech.job.entities.JobInterviewRound;
 import hrtech.job.entities.JobSkill;
 import hrtech.job.entities.QJob;
 import hrtech.job.entities.enums.*;
@@ -74,6 +78,7 @@ public class JobServiceImpl implements IJobService {
     private final JobRepository jobRepository;
     private final JobSkillRepository jobSkillRepository;
     private final JobAuditLogRepository jobAuditLogRepository;
+    private final JobInterviewRoundRepository jobInterviewRoundRepository;
     private final PlatformTransactionManager transactionManager;
 
     private final JobMapper jobMapper;
@@ -118,7 +123,8 @@ public class JobServiceImpl implements IJobService {
             try {
                 new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
                     Job job = jobRepository.findById(jobId).orElse(null);
-                    if (job == null) return;
+                    if (job == null)
+                        return;
 
                     JobStatus previousStatus = job.getStatus();
 
@@ -198,18 +204,25 @@ public class JobServiceImpl implements IJobService {
                         try {
                             Map<String, Object> errorDetails = new LinkedHashMap<>();
                             errorDetails.put("message", reviewResponse.getOverall_message());
-                            errorDetails.put("reasons", reviewResponse.getRejection_reasons() != null ? reviewResponse.getRejection_reasons() : Collections.emptyList());
-                            errorDetails.put("suggestions", reviewResponse.getSuggestions() != null ? reviewResponse.getSuggestions() : Collections.emptyList());
+                            errorDetails.put("reasons",
+                                    reviewResponse.getRejection_reasons() != null
+                                            ? reviewResponse.getRejection_reasons()
+                                            : Collections.emptyList());
+                            errorDetails.put("suggestions",
+                                    reviewResponse.getSuggestions() != null ? reviewResponse.getSuggestions()
+                                            : Collections.emptyList());
                             reason = objectMapper.writeValueAsString(errorDetails);
                         } catch (Exception e) {
                             log.error("Failed to serialize AI check rejection reasons to JSON", e);
                             reason = reviewResponse.getOverall_message();
-                            if (reviewResponse.getRejection_reasons() != null && !reviewResponse.getRejection_reasons().isEmpty()) {
+                            if (reviewResponse.getRejection_reasons() != null
+                                    && !reviewResponse.getRejection_reasons().isEmpty()) {
                                 reason += " Lý do: " + String.join(", ", reviewResponse.getRejection_reasons());
                             }
                         }
 
-                        logStatusChange(job, previousStatus, JobStatus.FAILED_AI, JobAuditAction.AI_REJECT, null, reason);
+                        logStatusChange(job, previousStatus, JobStatus.FAILED_AI, JobAuditAction.AI_REJECT, null,
+                                reason);
 
                         // Notify recipients
                         try {
@@ -237,7 +250,8 @@ public class JobServiceImpl implements IJobService {
                             notes = reviewResponse.getOverall_message();
                         }
 
-                        logStatusChange(savedJob, previousStatus, JobStatus.APPROVED, JobAuditAction.AI_PASS, null, notes);
+                        logStatusChange(savedJob, previousStatus, JobStatus.APPROVED, JobAuditAction.AI_PASS, null,
+                                notes);
                         eventPublisher.publishEvent(new JobExtractionRequestedEvent(savedJob.getId()));
                         log.info("AI check PASSED for job {}", job.getId());
 
@@ -251,7 +265,8 @@ public class JobServiceImpl implements IJobService {
                             notificationService.createAndSendNotification(
                                     recipientIds,
                                     "Tin tuyển dụng đã được duyệt",
-                                    "Tin tuyển dụng '" + job.getTitle() + "' đã vượt qua kiểm duyệt AI và hiển thị chính thức.",
+                                    "Tin tuyển dụng '" + job.getTitle()
+                                            + "' đã vượt qua kiểm duyệt AI và hiển thị chính thức.",
                                     NotificationType.JOB_STATUS_UPDATED,
                                     job.getId().toString());
                         } catch (Exception e) {
@@ -299,6 +314,15 @@ public class JobServiceImpl implements IJobService {
         Job job = jobMapper.toEntity(request);
         job.setCompany(company);
         job.setCreatedBy(currentUser);
+
+        // Tự động tạo 1 vòng phỏng vấn mặc định (Vòng 1)
+        JobInterviewRound defaultRound = JobInterviewRound.builder()
+                .job(job)
+                .roundNumber(1)
+                .roundName("Vòng 1: Phỏng vấn")
+                .description("Vòng phỏng vấn mặc định")
+                .build();
+        job.getInterviewRounds().add(defaultRound);
 
         Job savedJob = jobRepository.save(job);
         logStatusChange(savedJob, null, JobStatus.DRAFT, JobAuditAction.CREATE, currentUser,
@@ -429,7 +453,8 @@ public class JobServiceImpl implements IJobService {
         // Trừ 1 credit JOB_POSTING của công ty
         creditService.deductCompanyFeatureQuota(job.getCreatedBy().getId(), "JOB_POSTING", 1);
         eventPublisher.publishEvent(new JobExtractionRequestedEvent(savedJob.getId()));
-        // Gửi thông báo cho người dùng đã gửi khiếu nại (nếu có) hoặc người tạo tin tuyển dụng
+        // Gửi thông báo cho người dùng đã gửi khiếu nại (nếu có) hoặc người tạo tin
+        // tuyển dụng
         UUID targetUserId = job.getCreatedBy().getId();
         Optional<JobAuditLog> appealLog = jobAuditLogRepository
                 .findFirstByJobIdAndActionOrderByCreatedAtDesc(jobId, JobAuditAction.SUBMIT_APPEAL);
@@ -464,7 +489,6 @@ public class JobServiceImpl implements IJobService {
         if (reason == null || reason.trim().isEmpty()) {
             throw new AppException(ErrorCode.BAD_REQUEST, "Lý do từ chối khiếu nại không được để trống.");
         }
-        
         logStatusChange(savedJob, previousStatus, JobStatus.REJECTED_BY_ADMIN, JobAuditAction.ADMIN_REJECT_APPEAL,
                 currentUser, reason.trim());
 
@@ -575,8 +599,9 @@ public class JobServiceImpl implements IJobService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<JobResponse> getManageCompanyJobs(
-            UUID companyId, String keyword, JobStatus status, JobType jobType, ExperienceLevel jobLevel, Pageable pageable) {
+    public Page<RecruiterManageJobResponse> getManageCompanyJobs(
+            UUID companyId, String keyword, JobStatus status, JobType jobType, ExperienceLevel jobLevel,
+            Pageable pageable) {
         User currentUser = authUtils.getCurrentUser();
         CompanyMember member = companyService.getMemberByCompanyIdAndUserId(companyId, currentUser.getId())
                 .orElseThrow(
@@ -613,8 +638,70 @@ public class JobServiceImpl implements IJobService {
         }
 
         Page<Job> page = jobRepository.findAll(builder, pageable);
-        jobMapper.preloadSkillNames(page.getContent());
-        return page.map(this::toResponseWithReason);
+        return page.map(jobMapper::toManageResponse);
+    }
+
+    @Override
+    public JobResponse duplicateJob(UUID jobId) {
+        Job original = getJobEntityById(jobId);
+        User currentUser = authUtils.getCurrentUser();
+
+        Job duplicate = Job.builder()
+                .company(original.getCompany())
+                .createdBy(currentUser)
+                .title("Bản sao - " + original.getTitle())
+                .position(original.getPosition())
+                .description(original.getDescription())
+                .location(original.getLocation())
+                .salaryMin(original.getSalaryMin())
+                .salaryMax(original.getSalaryMax())
+                .jobType(original.getJobType())
+                .experienceLevel(original.getExperienceLevel())
+                .deadline(original.getDeadline())
+                .requirements(original.getRequirements())
+                .benefits(original.getBenefits())
+                .status(JobStatus.DRAFT)
+                .build();
+
+        Job savedDuplicate = jobRepository.save(duplicate);
+
+        if (original.getJobSkills() != null && !original.getJobSkills().isEmpty()) {
+            List<JobSkill> copiedSkills = original.getJobSkills().stream()
+                    .map(skill -> JobSkill.builder()
+                            .job(savedDuplicate)
+                            .skillNeo4jId(skill.getSkillNeo4jId())
+                            .requiredLevel(skill.getRequiredLevel())
+                            .isAiExtracted(false)
+                            .build())
+                    .toList();
+            jobSkillRepository.saveAll(copiedSkills);
+            savedDuplicate.setJobSkills(copiedSkills);
+        }
+
+        // Sao chép các vòng phỏng vấn hoặc tạo vòng phỏng vấn mặc định
+        if (original.getInterviewRounds() != null && !original.getInterviewRounds().isEmpty()) {
+            List<JobInterviewRound> copiedRounds = original.getInterviewRounds().stream()
+                    .map(round -> JobInterviewRound.builder()
+                            .job(savedDuplicate)
+                            .roundNumber(round.getRoundNumber())
+                            .roundName(round.getRoundName())
+                            .description(round.getDescription())
+                            .build())
+                    .toList();
+            jobInterviewRoundRepository.saveAll(copiedRounds);
+            savedDuplicate.setInterviewRounds(new ArrayList<>(copiedRounds));
+        } else {
+            JobInterviewRound defaultRound = JobInterviewRound.builder()
+                    .job(savedDuplicate)
+                    .roundNumber(1)
+                    .roundName("Vòng 1: Phỏng vấn")
+                    .description("Vòng phỏng vấn mặc định")
+                    .build();
+            jobInterviewRoundRepository.save(defaultRound);
+            savedDuplicate.getInterviewRounds().add(defaultRound);
+        }
+
+        return jobMapper.toResponse(savedDuplicate);
     }
 
     @Override
@@ -731,5 +818,23 @@ public class JobServiceImpl implements IJobService {
                     .orElse(null);
         }
         return null;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RecruiterJobStatsResponse getCompanyJobStats(UUID companyId) {
+        List<Job> companyJobs = jobRepository.findByCompanyIdAndDeletedFalse(companyId);
+        long approvedJobsCount = companyJobs.stream().filter(j -> j.getStatus() == JobStatus.APPROVED).count();
+        long closedJobsCount = companyJobs.stream().filter(j -> j.getStatus() == JobStatus.CLOSED).count();
+        long totalJobsCount = approvedJobsCount + closedJobsCount;
+        long totalApplicantsCount = companyJobs.stream()
+                .mapToLong(j -> j.getApplications() != null ? j.getApplications().size() : 0)
+                .sum();
+
+        return new RecruiterJobStatsResponse(
+                approvedJobsCount,
+                closedJobsCount,
+                totalJobsCount,
+                totalApplicantsCount);
     }
 }

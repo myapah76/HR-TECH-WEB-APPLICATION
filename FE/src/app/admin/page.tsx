@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import StatCard from '@/src/components/ui/StatCard'
-import { Users, Briefcase, Building2, TrendingUp, Activity, Loader2, Coins, ClipboardList } from 'lucide-react'
+import { Users, Briefcase, Building2, Activity, Loader2, Coins, ClipboardList } from 'lucide-react'
 import { getAdminDashboardSummary } from '@/src/services/admin-dashboard.service'
 import { AdminDashboardSummary } from '@/src/types'
 
@@ -83,8 +83,8 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      {/* 5-Column StatCards grid layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      {/* 4-Column StatCards grid layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard icon={Users} label="Tổng người dùng" value={data.totalUsers.toLocaleString()} change={0} color="blue" />
         <StatCard
           icon={Briefcase}
@@ -94,13 +94,6 @@ export default function AdminDashboard() {
           color="emerald"
         />
         <StatCard icon={Building2} label="Công ty" value={data.totalCompanies.toLocaleString()} change={0} color="violet" />
-        <StatCard
-          icon={TrendingUp}
-          label="Lượt truy cập/ngày"
-          value={data.dailyVisits.toLocaleString()}
-          change={0}
-          color="amber"
-        />
         <StatCard
           icon={ClipboardList}
           label="Việc cần làm hôm nay"

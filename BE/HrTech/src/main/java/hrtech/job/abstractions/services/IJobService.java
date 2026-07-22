@@ -3,6 +3,8 @@ package hrtech.job.abstractions.services;
 import hrtech.job.dtos.response.HotPositionResponse;
 import hrtech.job.dtos.response.TrendingSkillResponse;
 import hrtech.job.dtos.response.LandingStatsResponse;
+import hrtech.job.dtos.response.RecruiterJobStatsResponse;
+import hrtech.job.dtos.response.RecruiterManageJobResponse;
 import hrtech.job.entities.enums.JobStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,9 +48,10 @@ public interface IJobService {
 
     Page<JobResponse> getPublicCompanyJobs(UUID companyId, Pageable pageable);
 
-    Page<JobResponse> getManageCompanyJobs(
-            UUID companyId, String keyword, JobStatus status, JobType jobType, ExperienceLevel jobLevel,
-            Pageable pageable);
+    Page<RecruiterManageJobResponse> getManageCompanyJobs(
+            UUID companyId, String keyword, JobStatus status, JobType jobType, ExperienceLevel jobLevel, Pageable pageable);
+
+    JobResponse duplicateJob(UUID jobId);
 
     Job getJobEntityById(UUID jobId);
 
@@ -67,4 +70,6 @@ public interface IJobService {
     LandingStatsResponse getLandingStats();
 
     List<Job> getJobsByCompanyId(UUID companyId);
+
+    RecruiterJobStatsResponse getCompanyJobStats(UUID companyId);
 }
