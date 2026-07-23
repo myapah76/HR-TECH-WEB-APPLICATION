@@ -145,8 +145,12 @@ export default function PricingPage() {
     }
   }
 
-  const hrPackages = plans.filter((p) => p.subscriptionType === SubscriptionType.COMPANY && p.isActive === true)
-  const candidatePackages = plans.filter((p) => p.subscriptionType === SubscriptionType.CANDIDATE && p.isActive === true)
+  const hrPackages = plans
+    .filter((p) => p.subscriptionType === SubscriptionType.COMPANY && p.isActive === true)
+    .sort((a, b) => a.price - b.price)
+  const candidatePackages = plans
+    .filter((p) => p.subscriptionType === SubscriptionType.CANDIDATE && p.isActive === true)
+    .sort((a, b) => a.price - b.price)
 
   const rawPackages = activeTab === 'candidate' ? candidatePackages : hrPackages
 

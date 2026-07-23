@@ -129,7 +129,9 @@ export default function AdminSubscriptionsPage() {
     return <Loading />
   }
 
-  const filteredPlans = plans?.filter((p) => p.subscriptionType === activeTab) || []
+  const filteredPlans = (plans?.filter((p) => p.subscriptionType === activeTab) || [])
+    .slice()
+    .sort((a, b) => a.price - b.price)
 
   return (
     <div className="space-y-6">

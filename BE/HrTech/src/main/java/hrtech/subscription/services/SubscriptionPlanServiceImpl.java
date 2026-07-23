@@ -41,9 +41,9 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
     @Override
     public List<SubscriptionPlanResponse> getActivePlans() {
         List<SubscriptionPlanResponse> responses = new ArrayList<>();
-        responses.addAll(candidateSubscriptionPlanRepository.findByIsActiveTrue().stream()
+        responses.addAll(candidateSubscriptionPlanRepository.findByIsActiveTrueOrderByPriceAsc().stream()
                 .map(subscriptionPlanMapper::toCandidateResponse).toList());
-        responses.addAll(companySubscriptionPlanRepository.findByIsActiveTrue().stream()
+        responses.addAll(companySubscriptionPlanRepository.findByIsActiveTrueOrderByPriceAsc().stream()
                 .map(subscriptionPlanMapper::toCompanyResponse).toList());
         return responses;
     }
@@ -62,9 +62,9 @@ public class SubscriptionPlanServiceImpl implements ISubscriptionPlanService {
     @Override
     public List<SubscriptionPlanResponse> getAll() {
         List<SubscriptionPlanResponse> responses = new ArrayList<>();
-        responses.addAll(candidateSubscriptionPlanRepository.findAll().stream()
+        responses.addAll(candidateSubscriptionPlanRepository.findAllByOrderByPriceAsc().stream()
                 .map(subscriptionPlanMapper::toCandidateResponse).toList());
-        responses.addAll(companySubscriptionPlanRepository.findAll().stream()
+        responses.addAll(companySubscriptionPlanRepository.findAllByOrderByPriceAsc().stream()
                 .map(subscriptionPlanMapper::toCompanyResponse).toList());
         return responses;
     }

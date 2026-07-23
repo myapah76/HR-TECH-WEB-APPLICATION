@@ -11,6 +11,8 @@ import java.util.UUID;
 @Repository
 public interface CandidateSubscriptionPlanRepository extends JpaRepository<CandidateSubscriptionPlan, UUID> {
     List<CandidateSubscriptionPlan> findByIsActiveTrue();
+    List<CandidateSubscriptionPlan> findByIsActiveTrueOrderByPriceAsc();
+    List<CandidateSubscriptionPlan> findAllByOrderByPriceAsc();
     Optional<CandidateSubscriptionPlan> findByNameAndIsActiveTrue(String name);
     Optional<CandidateSubscriptionPlan> findFirstByPriceAndIsActiveTrue(Long price);
 }
