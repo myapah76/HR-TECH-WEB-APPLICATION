@@ -459,6 +459,10 @@ export default function JobInterviewsTable({
                             >
                               Chưa cấu hình
                             </button>
+                          ) : cand.status === 'CONFIRMED' || cand.status === 'ATTENDED' ? (
+                            <span className="text-slate-400 text-[11px] font-medium italic">
+                              Thao tác ở bảng lịch chốt bên dưới ↓
+                            </span>
                           ) : cand.status === 'SLOTS_SENT' ? (
                             <button
                               type="button"
