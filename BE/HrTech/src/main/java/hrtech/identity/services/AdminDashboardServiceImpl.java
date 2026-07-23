@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -91,7 +92,7 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
                         .build();
 
 
-      List<AdminDashboardSummaryResponse.RevenueMonthResponse> revenueHistory = new java.util.ArrayList<>();
+      List<AdminDashboardSummaryResponse.RevenueMonthResponse> revenueHistory = new ArrayList<>();
         LocalDate sixMonthsAgoLocalDate = LocalDate.now().minusMonths(5).withDayOfMonth(1);
         Instant sixMonthsAgo = sixMonthsAgoLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
 
@@ -107,7 +108,7 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
                         LocalDate paymentDate = p.getCreatedAt().atZone(ZoneId.systemDefault()).toLocalDate();
                         return paymentDate.getYear() == targetMonth.getYear() && paymentDate.getMonth() == targetMonth.getMonth();
                     })
-                    .collect(java.util.stream.Collectors.toList());
+                    .collect(Collectors.toList());
 
             long sum = targetMonthPayments.stream()
                     .mapToLong(p -> p.getAmount() != null ? p.getAmount() : 0L)
@@ -119,7 +120,7 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
 
 
         List<AdminDashboardSummaryResponse.WeeklyProfitResponse> weeklyProfit = new ArrayList<>();
-        LocalDate mondayOfThisWeek = LocalDate.now().with(java.time.temporal.TemporalAdjusters.previousOrSame(MONDAY));
+        LocalDate mondayOfThisWeek = LocalDate.now().with(TemporalAdjusters.previousOrSame(MONDAY));
         Instant startOfWeek = mondayOfThisWeek.atStartOfDay(ZoneId.systemDefault()).toInstant();
 
        List<Payment> weeklyPayments =

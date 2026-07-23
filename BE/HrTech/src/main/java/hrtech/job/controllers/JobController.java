@@ -99,7 +99,7 @@ public class JobController {
             @RequestParam(required = false) JobStatus status,
             @RequestParam(required = false) JobType jobType,
             @RequestParam(required = false) ExperienceLevel jobLevel,
-            @PageableDefault(size = 10, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(
                 jobService.getManageCompanyJobs(companyId, keyword, status, jobType, jobLevel, pageable)));
     }
